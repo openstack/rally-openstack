@@ -1,0 +1,1026 @@
+---
+
+  KeystoneBasic.create_user:
+    -
+      args:
+        name_length: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  KeystoneBasic.create_delete_user:
+    -
+      args:
+        name_length: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  KeystoneBasic.create_and_list_tenants:
+    -
+      args:
+        name_length: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  KeystoneBasic.create_and_list_users:
+    -
+      args:
+        name_length: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  KeystoneBasic.create_tenant:
+    -
+      args:
+        name_length: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  KeystoneBasic.create_tenant_with_users:
+    -
+      args:
+        name_length: 10
+        users_per_tenant: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 3
+      sla:
+        max_failure_percent: 0
+
+  KeystoneBasic.create_delete_user:
+    -
+      args:
+        name_length: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  CeilometerAlarms.create_alarm:
+    -
+      args:
+        meter_name: "ram_util"
+        threshold: 10.0
+        type: "threshold"
+        statistic: "avg"
+        alarm_actions: ["http://localhost:8776/alarm"]
+        ok_actions: ["http://localhost:8776/ok"]
+        insufficient_data_actions: ["http://localhost:8776/notok"]
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerAlarms.create_and_delete_alarm:
+    -
+      args:
+        meter_name: "ram_util"
+        threshold: 10.0
+        type: "threshold"
+        statistic: "avg"
+        alarm_actions: ["http://localhost:8776/alarm"]
+        ok_actions: ["http://localhost:8776/ok"]
+        insufficient_data_actions: ["http://localhost:8776/notok"]
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerAlarms.create_and_list_alarm:
+    -
+      args:
+        meter_name: "ram_util"
+        threshold: 10.0
+        type: "threshold"
+        statistic: "avg"
+        alarm_actions: ["http://localhost:8776/alarm"]
+        ok_actions: ["http://localhost:8776/ok"]
+        insufficient_data_actions: ["http://localhost:8776/notok"]
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerAlarms.create_and_update_alarm:
+    -
+      args:
+        meter_name: "ram_util"
+        threshold: 10.0
+        type: "threshold"
+        statistic: "avg"
+        alarm_actions: ["http://localhost:8776/alarm"]
+        ok_actions: ["http://localhost:8776/ok"]
+        insufficient_data_actions: ["http://localhost:8776/notok"]
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerAlarms.list_alarms:
+    -
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerMeters.list_meters:
+    -
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerResource.list_resources:
+    -
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  Dummy.dummy:
+    -
+      args:
+        sleep: 0.25
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 5
+      sla:
+        max_failure_percent: 0
+
+    -
+      args:
+        sleep: 0.001
+      runner:
+        type: "rps"
+        times: 2000
+        rps: 200
+      sla:
+        max_failure_percent: 0
+
+    -
+      args:
+        sleep: 0.01
+      runner:
+        type: "constant"
+        times: 1
+        concurrency: 1
+      context:
+        quotas:
+          nova:
+            instances: 200
+            cores: 200
+            ram: -1
+            floating_ips: 200
+            fixed_ips: 200
+            metadata_items: -1
+            injected_files: -1
+            injected_file_content_bytes: -1
+            injected_file_path_bytes: -1
+            key_pairs: 500
+            security_groups: 400
+            security_group_rules: 600
+          cinder:
+            gigabytes: -1
+            snapshots: -1
+            volumes: -1
+      sla:
+        max_failure_percent: 0
+
+    -
+      args:
+        sleep: 0.01
+      runner:
+        type: "constant"
+        times: 1
+        concurrency: 1
+      context:
+          users:
+            tenants: 30
+            users_per_tenant: 15
+      sla:
+        max_failure_percent: 0
+
+  Dummy.dummy_exception:
+    -
+      args:
+        size_of_message: 5
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 5
+
+  Dummy.dummy_exception_probability:
+    -
+      args:
+        exception_probability: 0.5
+      runner:
+        type: "constant"
+        times: 100
+        concurrency: 1
+
+    -
+      args:
+        exception_probability: 0.05
+      runner:
+        type: "constant"
+        times: 2042
+        concurrency: 1
+
+  Dummy.dummy_with_scenario_output:
+    -
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 10
+      sla:
+        max_failure_percent: 0
+
+  Dummy.dummy_random_fail_in_atomic:
+    -
+      args:
+        exception_probability: 0.5
+      runner:
+        type: "constant"
+        times: 50
+        concurrency: 10
+
+  FakePlugin.testplugin:
+    -
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 4
+      sla:
+        max_failure_percent: 0
+
+  CeilometerStats.create_meter_and_get_stats:
+   -
+      args:
+        user_id: "user-id"
+        resource_id: "resource-id"
+        counter_volume: 1.0
+        counter_unit: ""
+        counter_type: "cumulative"
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerQueries.create_and_query_alarms:
+    -
+      args:
+        filter: {"and": [{"!=": {"state": "dummy_state"}},{"=": {"type": "threshold"}}]}
+        orderby: !!null
+        limit: 10
+        meter_name: "ram_util"
+        threshold: 10.0
+        type: "threshold"
+        statistic: "avg"
+        alarm_actions: ["http://localhost:8776/alarm"]
+        ok_actions: ["http://localhost:8776/ok"]
+        insufficient_data_actions: ["http://localhost:8776/notok"]
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerQueries.create_and_query_alarm_history:
+    -
+      args:
+        orderby: !!null
+        limit: !!null
+        meter_name: "ram_util"
+        threshold: 10.0
+        type: "threshold"
+        statistic: "avg"
+        alarm_actions: ["http://localhost:8776/alarm"]
+        ok_actions: ["http://localhost:8776/ok"]
+        insufficient_data_actions: ["http://localhost:8776/notok"]
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CeilometerQueries.create_and_query_samples:
+    -
+      args:
+        filter: {"=": {"counter_unit": "instance"}}
+        orderby: !!null
+        limit: 10
+        counter_name: "cpu_util"
+        counter_type: "gauge"
+        counter_unit: "instance"
+        counter_volume: "1.0"
+        resource_id: "resource_id"
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 10
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  HeatStacks.create_and_list_stack:
+    -
+      runner:
+        type: "constant"
+        times: 6
+        concurrency: 3
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  HeatStacks.create_and_delete_stack:
+    -
+      runner:
+        type: "constant"
+        times: 6
+        concurrency: 3
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        max_failure_percent: 0
+
+    -
+      args:
+        template_path: '/home/jenkins/.rally/extra/server_with_volume.yaml.template'
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  Authenticate.keystone:
+    -
+      runner:
+        type: "constant"
+        times: 40
+        concurrency: 20
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 10
+      sla:
+        max_failure_percent: 0
+
+  SaharaNodeGroupTemplates.create_and_list_node_group_templates:
+    -
+      args:
+        flavor:
+         name: "m1.small"
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 20
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  SaharaNodeGroupTemplates.create_delete_node_group_templates:
+    -
+      args:
+        flavor:
+         name: "m1.small"
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 20
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  Authenticate.validate_cinder:
+    -
+      args:
+        repetitions: 2
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 5
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 5
+      sla:
+        max_failure_percent: 0
+
+  Authenticate.validate_glance:
+    -
+      args:
+        repetitions: 2
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 5
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 5
+      sla:
+        max_failure_percent: 0
+
+  Authenticate.validate_heat:
+    -
+      args:
+        repetitions: 2
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 5
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 5
+      sla:
+        max_failure_percent: 0
+
+  Authenticate.validate_nova:
+    -
+      args:
+        repetitions: 2
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 5
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 5
+      sla:
+        max_failure_percent: 0
+
+  Quotas.cinder_update_and_delete:
+    -
+      args:
+        max_quota: 1024
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 1
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  Quotas.cinder_update:
+    -
+      args:
+        max_quota: 1024
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  Quotas.nova_update_and_delete:
+    -
+      args:
+        max_quota: 1024
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 1
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  Quotas.nova_update:
+    -
+      args:
+        max_quota: 1024
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  CinderVolumes.create_and_delete_volume:
+    -
+      args:
+        size: 1
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  CinderVolumes.create_and_list_volume:
+    -
+      args:
+        size: 1
+        detailed: True
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 3
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  CinderVolumes.create_volume:
+    -
+      args:
+        size: 1
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  CinderVolumes.create_and_delete_snapshot:
+    -
+      args:
+        force: false
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+        volumes:
+          size: 1
+      sla:
+        max_failure_percent: 0
+
+  CinderVolumes.create_and_attach_volume:
+    -
+      args:
+        volume_size: 1
+        image:
+          name: "^cirros.*uec$"
+        flavor:
+          name: "m1.tiny"
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  GlanceImages.create_and_delete_image:
+    -
+      args:
+        image_location: "http://download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-disk.img"
+        container_format: "bare"
+        disk_format: "qcow2"
+      runner:
+        type: "constant"
+        times: 6
+        concurrency: 6
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        max_failure_percent: 0
+
+  GlanceImages.create_and_list_image:
+    -
+      args:
+        image_location: "/home/jenkins/.rally/extra/fake-image.img"
+        container_format: "bare"
+        disk_format: "qcow2"
+      runner:
+        type: "constant"
+        times: 6
+        concurrency: 6
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  GlanceImages.create_image_and_boot_instances:
+    -
+      args:
+        image_location: "http://download.cirros-cloud.net/0.3.2/cirros-0.3.2-x86_64-disk.img"
+        container_format: "bare"
+        disk_format: "qcow2"
+        flavor:
+            name: "m1.tiny"
+        number_instances: 2
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  GlanceImages.list_images:
+    -
+      runner:
+        type: "constant"
+        times: 5
+        concurrency: 5
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+        images:
+          image_url: "http://download.cirros-cloud.net/0.3.1/cirros-0.3.1-x86_64-disk.img"
+          image_type: "qcow2"
+          image_container: "bare"
+          images_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.boot_and_delete_server:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.boot_and_list_server:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+        detailed: True
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 4
+      context:
+        users:
+          tenants: 4
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.resize_server:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+        to_flavor:
+            name: "m1.small"
+        confirm: true
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 3
+      context:
+        users:
+          tenants: 4
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.boot_and_bounce_server:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+        actions:
+          -
+            hard_reboot: 1
+          -
+            soft_reboot: 1
+          -
+            stop_start: 1
+          -
+            rescue_unrescue: 1
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 3
+      context:
+        users:
+          tenants: 4
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.boot_server_from_volume_and_delete:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+        volume_size: 1
+      runner:
+        type: "constant"
+        times: 3
+        concurrency: 3
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 3
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.boot_server_from_volume:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+        volume_size: 1
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.snapshot_server:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  NovaServers.boot_server:
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+        auto_assign_nics: false
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+    -
+      args:
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*uec$"
+      runner:
+        type: "constant"
+        times: 4
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2
+      sla:
+        max_failure_percent: 0
+
+  VMTasks.boot_runcommand_delete:
+    -
+      args:
+        flavor:
+          name: "m1.tiny"
+        image:
+          name: "^cirros.*uec$"
+        fixed_network: "private"
+        floating_network: "public"
+        use_floatingip: true
+        script: "/home/jenkins/.rally/extra/instance_dd_test.sh"
+        interpreter: "/bin/sh"
+        username: "cirros"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 2
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+    -
+      args:
+        flavor:
+          name: "m1.tiny"
+        image:
+          name: "^cirros.*uec$"
+        volume_args:
+            size: 2
+        fixed_network: "private"
+        floating_network: "public"
+        use_floatingip: true
+        script: "/home/jenkins/.rally/extra/instance_dd_test.sh"
+        interpreter: "/bin/sh"
+        username: "cirros"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 2
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+    -
+      args:
+        flavor:
+          name: "m1.tiny"
+        image:
+          name: "^cirros.*uec$"
+        fixed_network: "private"
+        use_floatingip: false
+        script: "/home/jenkins/.rally/extra/instance_dd_test.sh"
+        interpreter: "/bin/sh"
+        username: "cirros"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 2
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        max_failure_percent: 0
+
+  Requests.check_response:
+    -
+      args:
+          url: "http://www.google.com"
+          response: 302
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 5
