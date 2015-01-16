@@ -1,0 +1,17 @@
+---
+  NovaServers.boot_server_from_volume:
+    -
+      args:
+        flavor:
+            name: "m1.nano"
+        image:
+            name: "^cirros.*uec$"
+        volume_size: 10
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 2

@@ -1,0 +1,21 @@
+{
+    "CinderVolumes.create_and_list_volume": [
+        {
+            "args": {
+                "size": 1,
+                "detailed": true
+            },
+            "runner": {
+                "type": "constant",
+                "times": 3,
+                "concurrency": 1
+            },
+            "context": {
+                "users": {
+                    "tenants": 1,
+                    "users_per_tenant": 1
+                }
+            }
+        }
+    ]
+}
