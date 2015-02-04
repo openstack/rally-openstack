@@ -1,0 +1,81 @@
+
+#!/bin/bash
+
+_rally()
+{
+    declare -A SUBCOMMANDS
+    declare -A OPTS
+
+    OPTS["deployment_check"]="--deployment"
+    OPTS["deployment_config"]="--deployment"
+    OPTS["deployment_create"]="--name --fromenv --filename --no-use"
+    OPTS["deployment_destroy"]="--deployment"
+    OPTS["deployment_list"]=""
+    OPTS["deployment_recreate"]="--deployment"
+    OPTS["deployment_show"]="--deployment"
+    OPTS["deployment_use"]="--deployment"
+    OPTS["info_BenchmarkScenarios"]=""
+    OPTS["info_DeployEngines"]=""
+    OPTS["info_DeploymentEngines"]=""
+    OPTS["info_SLA"]=""
+    OPTS["info_ServerProviders"]=""
+    OPTS["info_find"]="--query"
+    OPTS["info_list"]=""
+    OPTS["show_flavors"]="--deployment"
+    OPTS["show_images"]="--deployment"
+    OPTS["show_keypairs"]="--deployment"
+    OPTS["show_networks"]="--deployment"
+    OPTS["show_secgroups"]="--deployment"
+    OPTS["task_abort"]="--uuid"
+    OPTS["task_delete"]="--force --uuid"
+    OPTS["task_detailed"]="--uuid --iterations-data"
+    OPTS["task_list"]="--deployment --all-deployments --status"
+    OPTS["task_report"]="--tasks --out --open"
+    OPTS["task_results"]="--uuid"
+    OPTS["task_sla_check"]="--uuid --json"
+    OPTS["task_start"]="--deployment --task --task-args --task-args-file --tag --no-use --abort-on-sla-failure"
+    OPTS["task_status"]="--uuid"
+    OPTS["task_use"]="--task"
+    OPTS["task_validate"]="--deployment --task --task-args --task-args-file"
+    OPTS["use_deployment"]="--deployment"
+    OPTS["use_task"]="--uuid"
+    OPTS["use_verification"]="--uuid"
+    OPTS["verify_compare"]="--uuid-1 --uuid-2 --csv --html --json --output-file --threshold"
+    OPTS["verify_detailed"]="--uuid --sort-by"
+    OPTS["verify_list"]=""
+    OPTS["verify_results"]="--uuid --html --json --output-file"
+    OPTS["verify_show"]="--uuid --sort-by --detailed"
+    OPTS["verify_start"]="--deployment --set --regex --tempest-config --no-use"
+    OPTS["verify_use"]="--verification"
+
+
+    for OPT in ${!OPTS[*]} ; do
+        CMDSUB=(${OPT//_/ })
+        SUBCOMMANDS[${CMDSUB[0]}]+="${CMDSUB[1]} "
+    done
+
+    COMMANDS="${!SUBCOMMANDS[*]}"
+    COMPREPLY=()
+
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $cur =~ (\.|\~|\/).* ]] ; then
+        _filedir
+    elif [ $COMP_CWORD == "1" ] ; then
+        COMPREPLY=($(compgen -W "$COMMANDS" -- ${cur}))
+    elif [ $COMP_CWORD == "2" ] ; then
+        COMPREPLY=($(compgen -W "${SUBCOMMANDS[${prev}]}" -- ${cur}))
+    else
+        if [ $prev == "--filename" ] ; then
+            _filedir "@(json|ya?ml)"
+        elif [ $prev == "--output-file" ] || [ $prev == "--out" ]; then
+            _filedir
+        else
+            COMMAND="${COMP_WORDS[1]}_${COMP_WORDS[2]}"
+            COMPREPLY=($(compgen -W "${OPTS[$COMMAND]}" -- ${cur}))
+        fi
+    fi
+    return 0
+}
+complete -F _rally rally
