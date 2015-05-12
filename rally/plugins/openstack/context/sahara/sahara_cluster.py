@@ -1,0 +1,162 @@
+# Copyright 2014: Mirantis Inc.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+from oslo_config import cfg
+
+from rally.benchmark.context import base
+from rally.benchmark.context.cleanup import manager as resource_manager
+from rally.benchmark.scenarios.sahara import utils
+from rally.benchmark import utils as bench_utils
+from rally.common.i18n import _
+from rally.common import log as logging
+from rally.common import utils as rutils
+from rally import consts
+from rally import exceptions
+from rally import osclients
+
+
+CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
+
+
+@base.context(name="sahara_cluster", order=441)
+class SaharaCluster(base.Context):
+    """Context class for setting up the Cluster an EDP job."""
+
+    CONFIG_SCHEMA = {
+        "type": "object",
+        "$schema": consts.JSON_SCHEMA,
+        "properties": {
+            "plugin_name": {
+                "type": "string"
+            },
+            "hadoop_version": {
+                "type": "string",
+            },
+            "workers_count": {
+                "type": "integer",
+                "minimum": 1
+            },
+            "flavor_id": {
+                "type": "string",
+            },
+            "floating_ip_pool": {
+                "type": "string",
+            },
+            "volumes_per_node": {
+                "type": "integer",
+                "minimum": 1
+            },
+            "volumes_size": {
+                "type": "integer",
+                "minimum": 1
+            },
+            "auto_security_group": {
+                "type": "boolean",
+            },
+            "security_groups": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "node_configs": {
+                "type": "object"
+            },
+            "cluster_configs": {
+                "type": "object"
+            },
+            "enable_anti_affinity": {
+                "type": "boolean"
+            }
+        },
+        "additionalProperties": False,
+        "required": ["plugin_name", "hadoop_version", "workers_count",
+                     "flavor_id"]
+    }
+
+    def __init__(self, context):
+        super(SaharaCluster, self).__init__(context)
+        self.context["sahara_clusters"] = {}
+
+    @rutils.log_task_wrapper(LOG.info, _("Enter context: `Sahara Cluster`"))
+    def setup(self):
+        wait_dict = {}
+
+        for user, tenant_id in rutils.iterate_per_tenants(
+                self.context["users"]):
+            clients = osclients.Clients(user["endpoint"])
+
+            image_id = self.context["tenants"][tenant_id]["sahara_image"]
+
+            floating_ip_pool = self.config.get("floating_ip_pool")
+
+            temporary_context = {"tenant": self.context["tenants"][tenant_id]}
+            cluster = utils.SaharaScenario(
+                context=temporary_context, clients=clients)._launch_cluster(
+                    plugin_name=self.config["plugin_name"],
+                    hadoop_version=self.config["hadoop_version"],
+                    flavor_id=self.config["flavor_id"],
+                    workers_count=self.config["workers_count"],
+                    image_id=image_id,
+                    floating_ip_pool=floating_ip_pool,
+                    volumes_per_node=self.config.get("volumes_per_node"),
+                    volumes_size=self.config.get("volumes_size", 1),
+                    auto_security_group=self.config.get("auto_security_group",
+                                                        True),
+                    security_groups=self.config.get("security_groups"),
+                    node_configs=self.config.get("node_configs"),
+                    cluster_configs=self.config.get("cluster_configs"),
+                    enable_anti_affinity=self.config.get(
+                        "enable_anti_affinity", False),
+                    wait_active=False)
+
+            self.context["tenants"][tenant_id]["sahara_cluster"] = cluster.id
+
+            # Need to save the client instance to poll for active status
+            wait_dict[cluster] = clients.sahara()
+
+        bench_utils.wait_for(
+            resource=wait_dict,
+            update_resource=self.update_clusters_dict,
+            is_ready=self.all_clusters_active,
+            timeout=CONF.benchmark.cluster_create_timeout,
+            check_interval=CONF.benchmark.cluster_check_interval)
+
+    def update_clusters_dict(self, dct):
+        new_dct = {}
+        for cluster, client in dct.items():
+            new_cl = client.clusters.get(cluster.id)
+            new_dct[new_cl] = client
+
+        return new_dct
+
+    def all_clusters_active(self, dct):
+        for cluster, client in dct.items():
+            cluster_status = cluster.status.lower()
+            if cluster_status == "error":
+                raise exceptions.SaharaClusterFailure(
+                    name=cluster.name, action="start",
+                    reason=cluster.status_description)
+            elif cluster_status != "active":
+                return False
+        return True
+
+    @rutils.log_task_wrapper(LOG.info, _("Exit context: `Sahara Cluster`"))
+    def cleanup(self):
+
+        # TODO(boris-42): Delete only resources created by this context
+        resource_manager.cleanup(names=["sahara.clusters"],
+                                 users=self.context.get("users", []))
