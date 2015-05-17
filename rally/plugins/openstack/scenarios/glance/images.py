@@ -1,0 +1,120 @@
+# Copyright 2014: Mirantis Inc.
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from rally.benchmark.scenarios import base
+from rally.benchmark.scenarios.nova import utils as nova_utils
+from rally.benchmark import types as types
+from rally.benchmark import validation
+from rally import consts
+from rally.plugins.openstack.scenarios.glance import utils
+
+
+class GlanceImages(utils.GlanceScenario, nova_utils.NovaScenario):
+    """Benchmark scenarios for Glance images."""
+
+    RESOURCE_NAME_PREFIX = "rally_image_"
+    RESOURCE_NAME_LENGTH = 16
+
+    @validation.required_services(consts.Service.GLANCE)
+    @validation.required_openstack(users=True)
+    @base.scenario(context={"cleanup": ["glance"]})
+    def create_and_list_image(self, container_format,
+                              image_location, disk_format, **kwargs):
+        """Add an image and then list all images.
+
+        Measure the "glance image-list" command performance.
+
+        If you have only 1 user in your context, you will
+        add 1 image on every iteration. So you will have more
+        and more images and will be able to measure the
+        performance of the "glance image-list" command depending on
+        the number of images owned by users.
+
+        :param container_format: container format of image. Acceptable
+                                 formats: ami, ari, aki, bare, and ovf
+        :param image_location: image file location
+        :param disk_format: disk format of image. Acceptable formats:
+                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param kwargs: optional parameters to create image
+        """
+        self._create_image(container_format,
+                           image_location,
+                           disk_format,
+                           **kwargs)
+        self._list_images()
+
+    @validation.required_services(consts.Service.GLANCE)
+    @validation.required_openstack(users=True)
+    @base.scenario(context={"cleanup": ["glance"]})
+    def list_images(self):
+        """List all images.
+
+        This simple scenario tests the glance image-list command by listing
+        all the images.
+
+        Suppose if we have 2 users in context and each has 2 images
+        uploaded for them we will be able to test the performance of
+        glance image-list command in this case.
+        """
+
+        self._list_images()
+
+    @validation.required_services(consts.Service.GLANCE)
+    @validation.required_openstack(users=True)
+    @base.scenario(context={"cleanup": ["glance"]})
+    def create_and_delete_image(self, container_format,
+                                image_location, disk_format, **kwargs):
+        """Add and then delete an image.
+
+        :param container_format: container format of image. Acceptable
+                                 formats: ami, ari, aki, bare, and ovf
+        :param image_location: image file location
+        :param disk_format: disk format of image. Acceptable formats:
+                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param kwargs: optional parameters to create image
+        """
+        image = self._create_image(container_format,
+                                   image_location,
+                                   disk_format,
+                                   **kwargs)
+        self._delete_image(image)
+
+    @types.set(flavor=types.FlavorResourceType)
+    @validation.flavor_exists("flavor")
+    @validation.required_services(consts.Service.GLANCE, consts.Service.NOVA)
+    @validation.required_openstack(users=True)
+    @base.scenario(context={"cleanup": ["glance", "nova"]})
+    def create_image_and_boot_instances(self, container_format,
+                                        image_location, disk_format,
+                                        flavor, number_instances,
+                                        **kwargs):
+        """Add an image and boot several instances from it.
+
+        :param container_format: container format of image. Acceptable
+                                 formats: ami, ari, aki, bare, and ovf
+        :param image_location: image file location
+        :param disk_format: disk format of image. Acceptable formats:
+                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param flavor: Nova flavor to be used to launch an instance
+        :param number_instances: number of Nova servers to boot
+        :param kwargs: optional parameters to create server
+        """
+        image = self._create_image(container_format,
+                                   image_location,
+                                   disk_format)
+        image_id = image.id
+        server_name = self._generate_random_name(prefix="rally_novaserver_")
+        self._boot_servers(server_name, image_id,
+                           flavor, number_instances, **kwargs)
