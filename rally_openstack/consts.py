@@ -92,6 +92,8 @@ class _Service(utils.ImmutableMixin, utils.EnumMixin):
     NOVA = "nova"
     NOVA_NET = "nova-network"
     CINDER = "cinder"
+    CINDERV2 = "cinderv2"
+    CINDERV3 = "cinderv3"
     MANILA = "manila"
     EC2 = "ec2"
     GLANCE = "glance"
@@ -119,6 +121,8 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     """OpenStack services types, mapped to service names."""
 
     VOLUME = "volume"
+    VOLUMEV2 = "volumev2"
+    VOLUMEV3 = "volumev3"
     SHARE = "share"
     EC2 = "ec2"
     IMAGE = "image"
@@ -148,6 +152,8 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
             self.CLUSTERING: _Service.SENLIN,
             self.COMPUTE: _Service.NOVA,
             self.VOLUME: _Service.CINDER,
+            self.VOLUMEV2: _Service.CINDERV2,
+            self.VOLUMEV3: _Service.CINDERV3,
             self.SHARE: _Service.MANILA,
             self.EC2: _Service.EC2,
             self.IMAGE: _Service.GLANCE,

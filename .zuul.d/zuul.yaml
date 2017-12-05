@@ -54,6 +54,7 @@
         - rally-task-basic-with-existing-users:
             # use_existing_users key did not trigger proper ansible tasks
             voting: false
+        - rally-task-cinder
         # NOTE(andreykurilin): this requires more thing to configure before
         #   launching.
         #- rally-task-designate
@@ -103,6 +104,7 @@
         - rally-dsvm-tox-functional
         - rally-docker-check
         - rally-task-simple-job
+        - rally-task-cinder
         #- rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift

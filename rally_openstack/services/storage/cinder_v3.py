@@ -25,15 +25,15 @@ from rally_openstack.services.storage import cinder_common
 CONF = block.CONF
 
 
-@service.service("cinder", service_type="block-storage", version="2")
-class CinderV2Service(service.Service, cinder_common.CinderMixin):
+@service.service("cinder", service_type="block-storage", version="3")
+class CinderV3Service(service.Service, cinder_common.CinderMixin):
 
-    @atomic.action_timer("cinder_v2.create_volume")
+    @atomic.action_timer("cinder_v3.create_volume")
     def create_volume(self, size, consistencygroup_id=None,
                       snapshot_id=None, source_volid=None, name=None,
                       description=None, volume_type=None,
                       availability_zone=None, metadata=None, imageRef=None,
-                      scheduler_hints=None, multiattach=False):
+                      scheduler_hints=None, multiattach=False, backup_id=None):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -50,6 +50,7 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
                             one instance
+        :param backup_id: ID of the backup
 
         :returns: Return a new volume.
         """
@@ -63,7 +64,8 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
                   "metadata": metadata,
                   "imageRef": imageRef,
                   "scheduler_hints": scheduler_hints,
-                  "multiattach": multiattach}
+                  "multiattach": multiattach,
+                  "backup_id": backup_id}
         if isinstance(size, dict):
             size = random.randint(size["min"], size["max"])
 
@@ -77,7 +79,7 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
 
         return self._wait_available_volume(volume)
 
-    @atomic.action_timer("cinder_v2.update_volume")
+    @atomic.action_timer("cinder_v3.update_volume")
     def update_volume(self, volume_id, name=None, description=None):
         """Update the name or description for a volume.
 
@@ -96,14 +98,14 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
             volume_id, **kwargs)
         return updated_volume["volume"]
 
-    @atomic.action_timer("cinder_v2.list_types")
+    @atomic.action_timer("cinder_v3.list_types")
     def list_types(self, search_opts=None, is_public=None):
         """Lists all volume types."""
         return (self._get_client()
                 .volume_types.list(search_opts=search_opts,
                                    is_public=is_public))
 
-    @atomic.action_timer("cinder_v2.create_snapshot")
+    @atomic.action_timer("cinder_v3.create_snapshot")
     def create_snapshot(self, volume_id, force=False,
                         name=None, description=None, metadata=None):
         """Create one snapshot.
@@ -130,7 +132,7 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
         snapshot = self._wait_available_volume(snapshot)
         return snapshot
 
-    @atomic.action_timer("cinder_v2.create_backup")
+    @atomic.action_timer("cinder_v3.create_backup")
     def create_backup(self, volume_id, container=None,
                       name=None, description=None,
                       incremental=False, force=False,
@@ -155,7 +157,7 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
         backup = self._get_client().backups.create(volume_id, **kwargs)
         return self._wait_available_volume(backup)
 
-    @atomic.action_timer("cinder_v2.create_volume_type")
+    @atomic.action_timer("cinder_v3.create_volume_type")
     def create_volume_type(self, name=None, description=None, is_public=True):
         """create volume type.
 
@@ -170,24 +172,26 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
                   "is_public": is_public}
         return self._get_client().volume_types.create(**kwargs)
 
-    @atomic.action_timer("cinder_v2.update_volume_type")
-    def update_volume_type(self, volume_type, name=None,
+    @atomic.action_timer("cinder_v3.update_volume_type")
+    def update_volume_type(self, volume_type, update_name=False,
                            description=None, is_public=None):
         """Update the name and/or description for a volume type.
 
-        :param volume_type: The ID or an instance of the :class:`VolumeType`
+        :param volume_type: The ID or a instance of the :class:`VolumeType`
                             to update.
-        :param name: if None, updates name by generating random name.
-                     else updates name with provided name
-        :param description: Description of the volume type.
+        :param update_name: if True, can update name by generating random name.
+                            if False, don't update name.
+        :param description: Description of the the volume type.
         :rtype: :class:`VolumeType`
         """
-        name = name or self.generate_random_name()
+        name = None
+        if update_name:
+            name = self.generate_random_name()
+        return self._get_client().volume_types.update(
+            volume_type=volume_type, name=name, description=description,
+            is_public=is_public)
 
-        return self._get_client().volume_types.update(volume_type, name,
-                                                      description, is_public)
-
-    @atomic.action_timer("cinder_v2.add_type_access")
+    @atomic.action_timer("cinder_v3.add_type_access")
     def add_type_access(self, volume_type, project):
         """Add a project to the given volume type access list.
 
@@ -197,9 +201,9 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
         :return: An instance of cinderclient.apiclient.base.TupleWithMeta
         """
         return self._get_client().volume_type_access.add_project_access(
-            volume_type, project)
+            volume_type=volume_type, project=project)
 
-    @atomic.action_timer("cinder_v2.list_type_access")
+    @atomic.action_timer("cinder_v3.list_type_access")
     def list_type_access(self, volume_type):
         """Print access information about the given volume type
 
@@ -209,8 +213,8 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
         return self._get_client().volume_type_access.list(volume_type)
 
 
-@service.compat_layer(CinderV2Service)
-class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
+@service.compat_layer(CinderV3Service)
+class UnifiedCinderV3Service(cinder_common.UnifiedCinderMixin,
                              block.BlockStorage):
 
     @staticmethod
@@ -234,7 +238,7 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      multiattach=False, backup_id=None):
+                      source_replica=None, multiattach=False, backup_id=None):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -254,7 +258,7 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
                             one instance
-        :param backup_id: ID of the backup(IGNORED)
+        :param backup_id: ID of the backup
 
         :returns: Return a new volume.
         """
@@ -265,7 +269,7 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
             description=description, volume_type=volume_type,
             availability_zone=availability_zone, metadata=metadata,
             imageRef=imageRef, scheduler_hints=scheduler_hints,
-            multiattach=multiattach))
+            multiattach=multiattach, backup_id=backup_id))
 
     def list_volumes(self, detailed=True):
         """Lists all volumes.

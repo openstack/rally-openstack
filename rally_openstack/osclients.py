@@ -500,12 +500,13 @@ class Heat(OSClient):
         return client
 
 
-@configure("cinder", default_version="2", default_service_type="volumev2",
-           supported_versions=["1", "2"])
+@configure("cinder", default_version="3", default_service_type="volumev3",
+           supported_versions=["1", "2", "3"])
 class Cinder(OSClient):
     """Wrapper for CinderClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return cinder client."""
         from cinderclient import client as cinder

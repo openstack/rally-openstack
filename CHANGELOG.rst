@@ -28,6 +28,9 @@ Added
   key files. Also the support for appropriate system environment variables (
   ``OS_CERT``, ``OS_KEY``) is added.
 * Support client api option while deploying platform.
+* Added Cinder V3 support and make it as the default version. You could use
+  api_versions context or api_info option of the spec to choose the proper
+  version.
 
 Changed
 ~~~~~~~
