@@ -32,6 +32,7 @@ Added
 * GnocchiResourceType.list_resource_type
 * GnocchiResourceType.create_resource_type
 * GnocchiResourceType.create_delete_resource_type
+* NeutronSubnets.delete_subnets
 * [ci] New Zuul V3 native jobs
 
 Changed
