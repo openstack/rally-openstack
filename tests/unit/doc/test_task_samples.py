@@ -20,15 +20,16 @@ import traceback
 
 import mock
 import yaml
-
-import rally
 from rally import api
 from rally.task import context
 from rally.task import engine
 from rally.task import scenario
 from tests.unit import test
 
-RALLY_PATH = os.path.dirname(os.path.dirname(rally.__file__))
+import rally_openstack
+
+
+RALLY_PATH = os.path.dirname(os.path.dirname(rally_openstack.__file__))
 
 
 class TaskSampleTestCase(test.TestCase):
@@ -168,7 +169,7 @@ class TaskSampleTestCase(test.TestCase):
         for p in all_plugins:
             # except contexts which belongs to tests module
             if not inspect.getfile(p).startswith(
-               os.path.dirname(rally.__file__)):
+               os.path.dirname(rally_openstack.__file__)):
                 continue
             file_name = p.get_name().replace("_", "-")
             file_path = os.path.join(context_samples_path, file_name)

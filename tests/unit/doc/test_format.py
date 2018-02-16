@@ -15,6 +15,7 @@ import io
 import os
 import re
 
+import rally_openstack
 import testtools
 
 
@@ -66,8 +67,8 @@ class TestFormat(testtools.TestCase):
     def test_lines(self):
 
         files = []
-        docs_dir = os.path.join(os.path.dirname(__file__), os.pardir,
-                                os.pardir, os.pardir, "doc")
+        docs_dir = os.path.join(
+            os.path.dirname(rally_openstack.__file__), "doc")
         for root, dirnames, filenames in os.walk(docs_dir):
             for filename in fnmatch.filter(filenames, "*.rst"):
                 files.append(os.path.join(root, filename))

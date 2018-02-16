@@ -123,7 +123,7 @@ class ScenarioTestCase(TestCase):
         return key in self._clients
 
     def get_client_mocks(self):
-        base_path = "rally.plugins.openstack"
+        base_path = "rally_openstack"
 
         return [
             mock.patch(
@@ -210,7 +210,7 @@ class ContextTestCase(ScenarioTestCase):
     def get_client_mocks(self):
         return [
             mock.patch(
-                "rally.plugins.openstack.osclients.Clients",
+                "rally_openstack.osclients.Clients",
                 mock.Mock(side_effect=self.context_client))
         ]
 

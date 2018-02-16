@@ -18,8 +18,6 @@ import tempfile
 import traceback
 
 import mock
-
-import rally
 from rally import api
 from rally.common.plugin import discover
 from rally.common import yamlutils as yaml
@@ -28,9 +26,12 @@ from tests.unit import fakes
 from tests.unit import test
 
 
+import rally_openstack
+
+
 class RallyJobsTestCase(test.TestCase):
     rally_jobs_path = os.path.join(
-        os.path.dirname(rally.__file__), "..", "rally-jobs")
+        os.path.dirname(rally_openstack.__file__), "..", "rally-jobs")
 
     def setUp(self):
         super(RallyJobsTestCase, self).setUp()

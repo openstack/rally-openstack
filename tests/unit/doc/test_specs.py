@@ -16,7 +16,7 @@ import re
 
 import docutils.core
 
-import rally
+import rally_openstack
 from tests.unit import test
 
 
@@ -25,7 +25,7 @@ class TitlesTestCase(test.TestCase):
     OPTIONAL_SECTIONS = ["References"]
 
     specs_path = os.path.join(
-        os.path.dirname(rally.__file__), os.pardir, "doc", "specs")
+        os.path.dirname(rally_openstack.__file__), os.pardir, "doc", "specs")
 
     def _get_title(self, section_tree):
         section = {"subtitles": []}
