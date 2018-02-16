@@ -317,6 +317,9 @@ class Gnocchi(ResourceManager):
     def list_resources(self):
         return self.client.resource.list()
 
+    def list_archive_policy_rules(self):
+        return self.client.archive_policy_rule.list()
+
 
 class Ironic(ResourceManager):
 
