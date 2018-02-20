@@ -14,9 +14,9 @@
 #    under the License.
 
 import mock
+from rally.task import context
 
 from rally_openstack.contexts.vm import custom_image
-from rally.task import context
 from tests.unit import test
 
 

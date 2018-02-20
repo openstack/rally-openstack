@@ -16,9 +16,10 @@
 import uuid
 
 from rally.common import logging
+from rally.task import atomic
+
 from rally_openstack import scenario
 from rally_openstack.wrappers import keystone as keystone_wrapper
-from rally.task import atomic
 
 
 LOG = logging.getLogger(__name__)

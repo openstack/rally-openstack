@@ -16,9 +16,10 @@
 import tempfile
 
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.swift import utils
-from rally.task import validation
 
 
 """Scenarios for Swift Objects."""

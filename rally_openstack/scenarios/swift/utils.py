@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally_openstack import scenario
 from rally.task import atomic
+
+from rally_openstack import scenario
 
 
 class SwiftScenario(scenario.OpenStackScenario):

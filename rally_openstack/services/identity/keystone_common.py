@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally.task import atomic
+
 from rally_openstack import osclients
 from rally_openstack.services.identity import identity
-from rally.task import atomic
 
 
 class UnifiedKeystoneMixin(object):

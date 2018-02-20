@@ -19,11 +19,12 @@ from six.moves.urllib import parse
 from rally.common import utils as rutils
 from rally.common import validation
 from rally import consts
+from rally.task import context
+
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import osclients
 from rally_openstack.scenarios.sahara import utils
 from rally_openstack.scenarios.swift import utils as swift_utils
-from rally.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)

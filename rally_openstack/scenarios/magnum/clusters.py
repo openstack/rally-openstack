@@ -13,10 +13,12 @@
 #    under the License.
 
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.magnum import utils
 from rally_openstack.scenarios.nova import utils as nova_utils
-from rally.task import validation
+
 
 """Scenarios for Magnum clusters."""
 

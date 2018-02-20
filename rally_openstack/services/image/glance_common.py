@@ -12,11 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from glanceclient import exc as glance_exc
-
 from rally import exceptions
-from rally_openstack.services.image import image as image_service
 from rally.task import atomic
+
+from rally_openstack.services.image import image as image_service
 
 
 class GlanceMixin(object):
@@ -29,6 +28,8 @@ class GlanceMixin(object):
 
         :param image: ID or object with ID of image to obtain.
         """
+        from glanceclient import exc as glance_exc
+
         image_id = getattr(image, "id", image)
         try:
             aname = "glance_v%s.get_image" % self.version

@@ -17,8 +17,9 @@ from rally.common import logging
 from rally.common import validation
 from rally import consts
 from rally import exceptions
-from rally_openstack.contexts.swift import utils as swift_utils
 from rally.task import context
+
+from rally_openstack.contexts.swift import utils as swift_utils
 
 LOG = logging.getLogger(__name__)
 

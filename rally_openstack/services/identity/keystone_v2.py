@@ -14,10 +14,11 @@
 
 import uuid
 
+from rally.task import atomic
+
 from rally_openstack import service
 from rally_openstack.services.identity import identity
 from rally_openstack.services.identity import keystone_common
-from rally.task import atomic
 
 
 @service.service("keystone", service_type="identity", version="2")

@@ -15,11 +15,11 @@
 
 import ddt
 import mock
-
 from rally.common import utils
+from rally.task import context
+
 from rally_openstack.contexts.cleanup import admin
 from rally_openstack import scenario
-from rally.task import context
 from tests.unit import test
 
 

@@ -13,9 +13,10 @@
 #    under the License.
 
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.gnocchi import utils as gnocchiutils
-from rally.task import validation
 
 """Scenarios for Gnocchi capabilities."""
 

@@ -15,8 +15,9 @@ import random
 from rally.common import validation
 from rally import consts
 from rally import exceptions
-from rally_openstack import osclients
 from rally.task import context
+
+from rally_openstack import osclients
 
 
 @validation.configure("check_api_versions")

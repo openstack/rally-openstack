@@ -13,9 +13,10 @@
 #    under the License.
 
 from rally import consts
-from rally_openstack import scenario
 from rally.task import atomic
 from rally.task import validation
+
+from rally_openstack import scenario
 
 
 """Scenarios for Authentication mechanism."""

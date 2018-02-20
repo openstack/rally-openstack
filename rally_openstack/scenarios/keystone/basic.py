@@ -14,9 +14,10 @@
 #    under the License.
 
 from rally.common import logging
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.services.identity import identity
-from rally.task import validation
 
 
 class KeystoneBasic(scenario.OpenStackScenario):

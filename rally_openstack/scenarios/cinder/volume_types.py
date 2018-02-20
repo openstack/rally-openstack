@@ -14,10 +14,11 @@
 
 from rally.common import logging
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.cinder import utils as cinder_utils
 from rally_openstack.services.storage import cinder_v2
-from rally.task import validation
 
 
 LOG = logging.getLogger(__name__)

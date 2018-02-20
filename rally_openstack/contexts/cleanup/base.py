@@ -15,6 +15,7 @@
 
 from rally.common import validation
 from rally import consts
+
 from rally_openstack.cleanup import manager
 
 

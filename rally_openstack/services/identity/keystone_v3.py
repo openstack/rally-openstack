@@ -14,10 +14,11 @@
 
 from rally.common import logging
 from rally import exceptions
+from rally.task import atomic
+
 from rally_openstack import service
 from rally_openstack.services.identity import identity
 from rally_openstack.services.identity import keystone_common
-from rally.task import atomic
 
 
 LOG = logging.getLogger(__name__)

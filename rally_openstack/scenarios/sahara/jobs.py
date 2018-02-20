@@ -15,9 +15,11 @@
 
 from rally.common import logging
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.sahara import utils
-from rally.task import validation
+
 
 LOG = logging.getLogger(__name__)
 

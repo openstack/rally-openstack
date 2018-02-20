@@ -23,12 +23,13 @@ from rally.common import validation
 from rally import consts
 from rally import exceptions
 from rally.plugins.common import validators
+from rally.task import atomic
+from rally.task import types
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.cinder import utils as cinder_utils
 from rally_openstack.scenarios.vm import utils as vm_utils
 from rally_openstack.services import heat
-from rally.task import atomic
-from rally.task import types
 
 
 """Scenarios that are to be run inside VM instances."""

@@ -15,10 +15,12 @@
 import random
 
 from rally.common import utils as rutils
+from rally.task import atomic
+
 from rally_openstack import service
 from rally_openstack.services.storage import block
 from rally_openstack.services.storage import cinder_common
-from rally.task import atomic
+
 
 CONF = block.CONF
 

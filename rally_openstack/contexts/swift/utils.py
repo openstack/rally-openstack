@@ -17,6 +17,7 @@ import tempfile
 
 from rally.common import broker
 from rally.common import utils as rutils
+
 from rally_openstack.scenarios.swift import utils as swift_utils
 
 

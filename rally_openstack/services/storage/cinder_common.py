@@ -15,10 +15,12 @@
 import random
 
 from rally import exceptions
-from rally_openstack.services.image import image
-from rally_openstack.services.storage import block
 from rally.task import atomic
 from rally.task import utils as bench_utils
+
+from rally_openstack.services.image import image
+from rally_openstack.services.storage import block
+
 
 CONF = block.CONF
 

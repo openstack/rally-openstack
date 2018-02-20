@@ -15,15 +15,16 @@
 import os
 import time
 
-import requests
-
 from rally.common import cfg
 from rally.common import utils as rutils
+from rally.task import atomic
+from rally.task import utils
+import requests
+
 from rally_openstack import service
 from rally_openstack.services.image import glance_common
 from rally_openstack.services.image import image
-from rally.task import atomic
-from rally.task import utils
+
 
 CONF = cfg.CONF
 

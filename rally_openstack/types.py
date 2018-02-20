@@ -16,8 +16,9 @@ import copy
 
 from rally.common.plugin import plugin
 from rally import exceptions
-from rally_openstack.services.image import image
 from rally.task import types
+
+from rally_openstack.services.image import image
 
 
 @plugin.configure(name="nova_flavor")

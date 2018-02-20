@@ -16,10 +16,11 @@
 import sys
 
 from rally.common import validation
+from rally.task import context
+
 from rally_openstack.cleanup import manager
 from rally_openstack.contexts.cleanup import base
 from rally_openstack import scenario
-from rally.task import context
 
 
 @validation.add(name="check_cleanup_resources", admin_required=False)

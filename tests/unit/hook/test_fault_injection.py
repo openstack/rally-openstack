@@ -18,10 +18,10 @@ import ddt
 import mock
 import os_faults
 from os_faults.api import error
-
 from rally import consts
-from rally_openstack.hook import fault_injection
 from rally.task import hook
+
+from rally_openstack.hook import fault_injection
 from tests.unit import fakes
 from tests.unit import test
 

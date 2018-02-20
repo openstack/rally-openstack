@@ -15,10 +15,11 @@
 
 from rally.common import cfg
 from rally.common import logging
-from rally_openstack import scenario
-from rally_openstack.wrappers import glance as glance_wrapper
 from rally.task import atomic
 from rally.task import utils
+
+from rally_openstack import scenario
+from rally_openstack.wrappers import glance as glance_wrapper
 
 
 CONF = cfg.CONF

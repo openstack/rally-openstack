@@ -17,10 +17,11 @@ Scenarios for Ceilometer Events API.
 """
 
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.ceilometer import utils as cutils
 from rally_openstack.scenarios.keystone import basic as kbasic
-from rally.task import validation
 
 
 # NOTE(idegtiarov): to work with event we need to create it, there are

@@ -17,12 +17,13 @@ import functools
 import random
 
 from osprofiler import profiler
-
 from rally.common import cfg
 from rally.common.plugin import plugin
-from rally_openstack import osclients
 from rally.task import context
 from rally.task import scenario
+
+from rally_openstack import osclients
+
 
 configure = functools.partial(scenario.configure, platform="openstack")
 
@@ -119,8 +120,9 @@ class OpenStackScenario(scenario.Scenario):
         """Inits the profiler."""
         if not CONF.openstack.enable_profiler:
             return
+
         if context is not None:
-            cred = None
+
             profiler_hmac_key = None
             profiler_conn_str = None
             if context.get("admin"):
