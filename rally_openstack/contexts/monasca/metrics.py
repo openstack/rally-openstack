@@ -17,8 +17,9 @@ from six import moves
 from rally.common import utils as rutils
 from rally.common import validation
 from rally import consts
-from rally_openstack.scenarios.monasca import utils as monasca_utils
 from rally.task import context
+
+from rally_openstack.scenarios.monasca import utils as monasca_utils
 
 
 @validation.add("required_platform", platform="openstack", users=True)

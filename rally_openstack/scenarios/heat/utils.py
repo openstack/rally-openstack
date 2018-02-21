@@ -13,14 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import requests
-
 from rally.common import cfg
 from rally.common import logging
 from rally import exceptions
-from rally_openstack import scenario
 from rally.task import atomic
 from rally.task import utils
+import requests
+
+from rally_openstack import scenario
 
 
 LOG = logging.getLogger(__name__)

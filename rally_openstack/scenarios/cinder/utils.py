@@ -18,12 +18,14 @@ import random
 from rally.common import cfg
 from rally.common import logging
 from rally import exceptions
+from rally.task import atomic
+from rally.task import utils as bench_utils
+
 from rally_openstack import scenario
 from rally_openstack.services.storage import block
 from rally_openstack.wrappers import cinder as cinder_wrapper
 from rally_openstack.wrappers import glance as glance_wrapper
-from rally.task import atomic
-from rally.task import utils as bench_utils
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

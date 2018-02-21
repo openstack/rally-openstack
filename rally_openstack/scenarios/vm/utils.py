@@ -18,15 +18,15 @@ import subprocess
 import sys
 
 import netaddr
-import six
-
 from rally.common import cfg
 from rally.common import logging
 from rally.common import sshutils
-from rally_openstack.scenarios.nova import utils as nova_utils
-from rally_openstack.wrappers import network as network_wrapper
 from rally.task import atomic
 from rally.task import utils
+import six
+
+from rally_openstack.scenarios.nova import utils as nova_utils
+from rally_openstack.wrappers import network as network_wrapper
 
 LOG = logging.getLogger(__name__)
 

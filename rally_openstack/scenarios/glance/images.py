@@ -15,12 +15,13 @@
 
 from rally.common import logging
 from rally import consts
+from rally.task import types
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.nova import utils as nova_utils
 from rally_openstack.services.image import glance_v2
 from rally_openstack.services.image import image
-from rally.task import types
-from rally.task import validation
 
 LOG = logging.getLogger(__name__)
 

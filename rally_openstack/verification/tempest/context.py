@@ -16,17 +16,17 @@
 import os
 import re
 
-import requests
-from six.moves import configparser
-
 from rally.common import logging
 from rally import exceptions
-from rally_openstack.services.image import image
-from rally_openstack.verification.tempest import config as conf
-from rally_openstack.wrappers import network
 from rally.task import utils as task_utils
 from rally.verification import context
 from rally.verification import utils
+import requests
+from six.moves import configparser
+
+from rally_openstack.services.image import image
+from rally_openstack.verification.tempest import config as conf
+from rally_openstack.wrappers import network
 
 
 LOG = logging.getLogger(__name__)

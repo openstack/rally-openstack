@@ -19,14 +19,14 @@ import os
 import traceback
 
 import mock
-import yaml
 from rally import api
 from rally.task import context
 from rally.task import engine
 from rally.task import scenario
-from tests.unit import test
+import yaml
 
 import rally_openstack
+from tests.unit import test
 
 
 RALLY_PATH = os.path.dirname(os.path.dirname(rally_openstack.__file__))

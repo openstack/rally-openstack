@@ -14,11 +14,12 @@
 #    under the License.
 
 from rally import consts
-from rally_openstack import scenario
-from rally_openstack.scenarios.heat import utils
 from rally.task import atomic
 from rally.task import types
 from rally.task import validation
+
+from rally_openstack import scenario
+from rally_openstack.scenarios.heat import utils
 
 
 """Scenarios for Heat stacks."""

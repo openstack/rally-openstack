@@ -12,9 +12,10 @@
 
 from rally.common import cfg
 from rally import exceptions
-from rally_openstack import scenario
 from rally.task import atomic
 from rally.task import utils
+
+from rally_openstack import scenario
 
 
 CONF = cfg.CONF

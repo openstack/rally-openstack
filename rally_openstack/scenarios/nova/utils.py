@@ -17,11 +17,13 @@
 from rally.common import cfg
 from rally.common import logging
 from rally import exceptions
+from rally.task import atomic
+from rally.task import utils
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.cinder import utils as cinder_utils
 from rally_openstack.services.image import image as image_service
-from rally.task import atomic
-from rally.task import utils
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__file__)

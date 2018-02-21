@@ -14,9 +14,11 @@
 #    under the License.
 
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.quotas import utils
-from rally.task import validation
+
 
 """Scenarios for quotas."""
 

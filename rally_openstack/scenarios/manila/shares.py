@@ -15,10 +15,11 @@
 
 from rally.common import logging
 from rally import consts
+from rally.task import validation
+
 from rally_openstack.contexts.manila import consts as manila_consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.manila import utils
-from rally.task import validation
 
 
 """Scenarios for Manila shares."""

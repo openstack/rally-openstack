@@ -15,10 +15,11 @@
 
 from rally.common import logging
 from rally import consts
-from rally_openstack import scenario
-from rally_openstack.scenarios.nova import utils
 from rally.task import types
 from rally.task import validation
+
+from rally_openstack import scenario
+from rally_openstack.scenarios.nova import utils
 
 
 """Scenarios for Nova keypairs."""

@@ -15,8 +15,9 @@
 
 import random
 
-from rally_openstack import scenario
 from rally.task import atomic
+
+from rally_openstack import scenario
 
 
 class QuotasScenario(scenario.OpenStackScenario):

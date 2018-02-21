@@ -16,10 +16,11 @@ from rally.common import logging
 from rally.common import utils
 from rally.common import validation
 from rally import consts
+from rally.task import context
+
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import osclients
 from rally_openstack.services.storage import block
-from rally.task import context
 
 
 LOG = logging.getLogger(__name__)

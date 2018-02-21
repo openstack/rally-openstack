@@ -16,17 +16,16 @@
 import random
 
 from oslo_utils import uuidutils
-from saharaclient.api import base as sahara_base
-
 from rally.common import cfg
 from rally.common import logging
 from rally.common import utils as rutils
 from rally import consts
 from rally import exceptions
-from rally_openstack import scenario
-from rally_openstack.scenarios.sahara import consts as sahara_consts
 from rally.task import atomic
 from rally.task import utils
+
+from rally_openstack import scenario
+from rally_openstack.scenarios.sahara import consts as sahara_consts
 
 
 LOG = logging.getLogger(__name__)
@@ -463,6 +462,8 @@ class SaharaScenario(scenario.OpenStackScenario):
             is_ready=self._is_cluster_deleted)
 
     def _is_cluster_deleted(self, cluster):
+        from saharaclient.api import base as sahara_base
+
         LOG.debug("Checking cluster `%s` to be deleted. Status: `%s`"
                   % (cluster.name, cluster.status))
         try:

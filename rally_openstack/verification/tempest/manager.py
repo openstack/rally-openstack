@@ -20,10 +20,11 @@ import subprocess
 from rally.common import yamlutils as yaml
 from rally import exceptions
 from rally.plugins.common.verification import testr
-from rally_openstack.verification.tempest import config
-from rally_openstack.verification.tempest import consts
 from rally.verification import manager
 from rally.verification import utils
+
+from rally_openstack.verification.tempest import config
+from rally_openstack.verification.tempest import consts
 
 
 AVAILABLE_SETS = (list(consts.TempestTestSets) +

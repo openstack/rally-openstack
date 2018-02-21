@@ -16,9 +16,9 @@ import copy
 
 import ddt
 import mock
+from rally.task import context
 
 from rally_openstack.contexts.cinder import volumes
-from rally.task import context
 from tests.unit import test
 
 CTX = "rally_openstack.contexts"

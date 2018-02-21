@@ -16,13 +16,14 @@
 from rally.common import logging
 from rally.common import validation
 from rally import consts
+from rally.task import context
+
 from rally_openstack.contexts.quotas import cinder_quotas
 from rally_openstack.contexts.quotas import designate_quotas
 from rally_openstack.contexts.quotas import manila_quotas
 from rally_openstack.contexts.quotas import neutron_quotas
 from rally_openstack.contexts.quotas import nova_quotas
 from rally_openstack import osclients
-from rally.task import context
 
 
 LOG = logging.getLogger(__name__)

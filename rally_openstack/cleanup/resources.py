@@ -13,21 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from boto import exception as boto_exception
-from neutronclient.common import exceptions as neutron_exceptions
-from novaclient import exceptions as nova_exc
-from saharaclient.api import base as saharaclient_base
-
 from rally.common import cfg
 from rally.common import logging
+from rally.task import utils as task_utils
+
 from rally_openstack.cleanup import base
 from rally_openstack.services.identity import identity
 from rally_openstack.services.image import glance_v2
 from rally_openstack.services.image import image
-from rally.task import utils as task_utils
+
 
 CONF = cfg.CONF
-
 LOG = logging.getLogger(__name__)
 
 
@@ -178,6 +174,8 @@ class NovaFlavors(base.ResourceManager):
     pass
 
     def is_deleted(self):
+        from novaclient import exceptions as nova_exc
+
         try:
             self._manager().get(self.name())
         except nova_exc.NotFound:
@@ -211,6 +209,8 @@ class EC2Mixin(object):
 class EC2Server(EC2Mixin, base.ResourceManager):
 
     def is_deleted(self):
+        from boto import exception as boto_exception
+
         try:
             instances = self._manager().get_only_instances(
                 instance_ids=[self.id()])
@@ -405,6 +405,8 @@ class NeutronPort(NeutronMixin):
             self._manager().remove_interface_router(
                 self.raw_resource["device_id"], {"port_id": self.id()})
         else:
+            from neutronclient.common import exceptions as neutron_exceptions
+
             try:
                 self._manager().delete_port(self.id())
             except neutron_exceptions.PortNotFoundClient:
@@ -616,6 +618,8 @@ class SaharaCluster(base.ResourceManager):
     # saharaclient/api/base.py#L145
 
     def is_deleted(self):
+        from saharaclient.api import base as saharaclient_base
+
         try:
             self._manager().get(self.id())
             return False

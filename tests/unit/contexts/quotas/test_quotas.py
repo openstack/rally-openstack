@@ -17,10 +17,10 @@ import copy
 
 import ddt
 import mock
-
 from rally.common import logging
-from rally_openstack.contexts.quotas import quotas
 from rally.task import context
+
+from rally_openstack.contexts.quotas import quotas
 from tests.unit import test
 
 QUOTAS_PATH = "rally_openstack.contexts.quotas"

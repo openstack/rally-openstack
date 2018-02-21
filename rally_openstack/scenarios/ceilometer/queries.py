@@ -15,9 +15,10 @@
 import json
 
 from rally import consts
+from rally.task import validation
+
 from rally_openstack import scenario
 from rally_openstack.scenarios.ceilometer import utils as ceiloutils
-from rally.task import validation
 
 
 """Scenarios for Ceilometer Queries API."""

@@ -15,12 +15,12 @@
 import datetime as dt
 import uuid
 
-import six
-
 from rally import exceptions
-from rally_openstack import scenario
 from rally.task import atomic
 from rally.task import utils as bench_utils
+import six
+
+from rally_openstack import scenario
 
 
 class CeilometerScenario(scenario.OpenStackScenario):

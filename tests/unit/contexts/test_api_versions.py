@@ -12,11 +12,11 @@
 
 import ddt
 import mock
-
 from rally.common import utils
 from rally import exceptions
-from rally_openstack.contexts import api_versions
 from rally.task import context
+
+from rally_openstack.contexts import api_versions
 from tests.unit import test
 
 
