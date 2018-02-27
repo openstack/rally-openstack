@@ -1,0 +1,9 @@
+- name: Import a current JSON report
+  become: True
+  become_user: stack
+  command: rally task import --file {{ rally_results_dir }}/report.json
+
+- name: Import an old JSON report
+  become: True
+  become_user: stack
+  command: rally task import --file {{ rally_results_dir }}/results.json

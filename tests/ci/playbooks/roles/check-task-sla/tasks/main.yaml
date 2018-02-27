@@ -1,0 +1,4 @@
+- name: Check SLA of the last task
+  become: True
+  become_user: stack
+  shell: "rally task sla-check > {{ rally_results_dir }}/sla.txt"

@@ -1,0 +1,79 @@
+- job:
+    name: rally-tox-pep8
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``pep8`` environment.
+    vars:
+      tox_envlist: pep8
+
+- job:
+    name: rally-tox-py27
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``py27`` environment.
+    vars:
+      tox_envlist: py27
+
+- job:
+    name: rally-tox-py35
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``py35`` environment.
+    vars:
+      tox_envlist: py35
+
+- job:
+    name: rally-task-at-devstack
+    parent: devstack
+    description: Base job for launching Rally task at Devstack
+    required-projects:
+      - name: openstack-dev/devstack
+      - name: openstack-infra/devstack-gate
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+    timeout: 7200
+    roles:
+      - zuul: openstack-dev/devstack
+    vars:
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+      devstack_services:
+        rally-openstack: true
+        cinder: true
+        # disable redundant services for the job
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        horizon: false
+        tempest: false
+    run: tests/ci/playbooks/run-rally-task.yaml
+    post-run: tests/ci/playbooks/post-rally-task.yaml
+
+- job:
+    name: rally-task-simple-job
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/simple-cinder.yaml
+
+- project:
+    check:
+      jobs:
+        - rally-tox-pep8
+        - rally-tox-py27
+        - rally-tox-py35
+        - rally-task-simple-job
+    gate:
+      jobs:
+        - rally-tox-pep8
+        - rally-tox-py27
+        - rally-tox-py35
