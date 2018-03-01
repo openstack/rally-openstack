@@ -1,0 +1,20 @@
+---
+  version: 2
+  title: Task for rally-task-simple-job
+  description: Testing just one cinder scenario to verify that rally-task-job works
+  subtasks:
+    -
+      title: CinderVolumes.create_volume tests
+      workloads:
+        -
+          scenario:
+            CinderVolumes.create_volume:
+              size: 1
+          runner:
+            constant:
+              times: 2
+              concurrency: 2
+          contexts:
+            users:
+              tenants: 2
+              users_per_tenant: 2

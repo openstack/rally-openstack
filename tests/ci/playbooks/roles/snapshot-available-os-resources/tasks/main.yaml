@@ -1,0 +1,6 @@
+- name: Dump all available OpenStack resources
+  become: yes
+  become_user: stack
+  shell: "python ./tests/ci/osresources.py --dump-list {{ rally_resources_at_start }}"
+  args:
+    chdir: "{{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}"

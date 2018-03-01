@@ -1,0 +1,14 @@
+- name: Run Rally task
+  become: True
+  become_user: stack
+  shell:
+    cmd: |
+      set +e
+
+      rally --rally-debug task start --task {{ rally_home_dir }}/task.yaml #--task-args-file {{ rally_home_dir }}/task_args_file.yaml
+      retval=$?
+      if [[ $? -eq 1 ]]; then
+          # 1 exit code means that something unexpected had happened
+          exit $retval
+      fi
+    executable: /bin/bash

@@ -1,0 +1,198 @@
+- name: Create Rally home directory
+  become: True
+  become_user: stack
+  file:
+    path: '{{ rally_home_dir }}'
+    state: directory
+    owner: stack
+    group: stack
+
+- name: Create directory for Rally results
+  become: True
+  become_user: stack
+  file:
+    path: '{{ rally_home_dir }}/results'
+    state: directory
+    owner: stack
+    group: stack
+
+- name: Create a directory for custom plugins
+  become: True
+  become_user: stack
+  file:
+    path: '{{ rally_home_dir }}/plugins'
+    state: directory
+    owner: stack
+    group: stack
+
+- name: Check the existence of custom plugins
+  stat:
+    path: '{{ zuul.project.src_dir }}/rally-jobs/plugins'
+  register: custom_plugins_stat
+
+- name: Copy custom plugins, if they are presented
+  become: True
+  become_user: stack
+  command: cp -r {{ zuul.project.src_dir }}/rally-jobs/plugins {{ rally_home_dir }}/
+  when: custom_plugins_stat.stat.exists == True
+
+- name: Create a directory for extra files
+  become: True
+  become_user: stack
+  file:
+    path: '{{ rally_home_dir }}/extra'
+    state: directory
+    owner: stack
+    group: stack
+
+- name: Check the existence of extra files
+  stat:
+    path: '{{ zuul.project.src_dir }}/rally-jobs/extra'
+  register: extra_files_stat
+
+- name: Copy extra files, if they are presented
+  become: True
+  become_user: stack
+  command: cp -r {{ zuul.project.src_dir }}/rally-jobs/extra {{ rally_home_dir }}/extra
+  when: extra_files_stat.stat.exists == True
+
+- name: Check the existence of fake image
+  stat:
+    path: '{{ rally_fake_image_path }}'
+  register: fake_image_stat
+
+- name: Create a fake image
+  become: True
+  become_user: stack
+  file:
+    path: '{{ rally_fake_image_path }}'
+    state: touch
+  when: fake_image_stat.stat.exists == False
+
+- name: List glance, cinder, neutron resources
+  become: True
+  become_user: stack
+  shell:
+    executable: /bin/sh
+    cmd: |
+      set -e
+
+      rally deployment use --deployment devstack
+
+      . {{ rally_home_dir }}/openrc admin admin
+
+      OPENSTACK_SERVICES=$(openstack service list)
+      if [[ $OPENSTACK_SERVICES == *"glance"* ]]; then
+          openstack image list
+      fi
+      if [[ $OPENSTACK_SERVICES == *"cinder"* ]]; then
+          openstack volume list --all-projects
+      fi
+      if [[ $OPENSTACK_SERVICES == *"neutron"* ]]; then
+          openstack network list
+      fi
+
+- name: Create new projects and users
+  become: True
+  become_user: stack
+  shell:
+    executable: /bin/sh
+    cmd: |
+      set -e
+
+      . {{ rally_home_dir }}/openrc admin admin
+
+      openstack --version
+
+      openstack project create {{ existing_user_project_1 }}
+      openstack user create --project {{ existing_user_project_1 }} --password {{ existing_user_password_1 }} {{ existing_user_name_1 }}
+      openstack role add --project {{ existing_user_project_1 }} --user {{ existing_user_name_1 }} Member
+
+      openstack project create {{ existing_user_project_2 }}
+      openstack user create --project {{ existing_user_project_2 }} --password {{ existing_user_password_2 }} {{ existing_user_name_2 }}
+      openstack role add --project {{ existing_user_project_2 }} --user {{ existing_user_name_2 }} Member
+
+      set +e
+      NEUTRON_EXISTS=$(openstack --os-interface admin service list | grep neutron)
+      set -e
+      if [ "$NEUTRON_EXISTS" ]; then
+          OS_QUOTA_STR="--networks -1 --subnets -1 --routers -1 --floating-ips -1 --subnetpools -1 --secgroups -1 --secgroup-rules -1 --ports -1"
+          openstack --debug quota set $OS_QUOTA_STR {{ existing_user_project_1 }}
+          openstack --debug quota show {{ existing_user_project_1 }}
+          openstack --debug quota set $OS_QUOTA_STR {{ existing_user_project_2 }}
+          openstack --debug quota show {{ existing_user_project_2 }}
+      fi
+  when: rally_use_existing_users == True
+
+- name: Capture Keystone auth URL
+  become: True
+  become_user: stack
+  shell: ". {{ rally_home_dir }}/openrc admin admin > /dev/null && echo $OS_AUTH_URL"
+  register: keystone_auth_url
+  when: rally_use_existing_users == True
+
+- name: Make Rally Environment spec with existing users
+  become: True
+  become_user: stack
+  template:
+    src: env.yaml.j2
+    dest: "{{ rally_existing_users_config }}"
+  when: rally_use_existing_users == True
+
+- name: Create new projects and users
+  become: True
+  become_user: stack
+  shell: rally env create --name devstask-with-users --spec {{ rally_existing_users_config }}
+  when: rally_use_existing_users == True
+
+- name: Print Rally deployment config
+  become: True
+  become_user: stack
+  command: "rally deployment config"
+
+- name: Check Environment works
+  become: True
+  become_user: stack
+  command: "rally env check"
+
+- name: Print Environment info
+  become: True
+  become_user: stack
+  command: "rally env info"
+
+- name: Create nova flavor
+  become: True
+  become_user: stack
+  shell:
+    executable: /bin/sh
+    cmd: |
+      set -e
+
+      . {{ rally_home_dir }}/openrc admin admin
+
+      if rally deployment check | grep 'nova' | grep 'Available' > /dev/null;
+      then
+          nova flavor-create m1.nano 42 64 0 1
+      fi
+
+- name: Copy task file
+  become: True
+  become_user: stack
+  command: cp -r {{ zuul.project.src_dir }}/{{ rally_task }} {{ rally_home_dir }}/task.yaml
+
+- name: Check the existence of task_args_file
+  stat:
+    path: '{{ zuul.project.src_dir }}/{{ rally_task_args_file }}'
+  register: task_args_file_stat
+
+- name: Copy task_args_file
+  become: True
+  become_user: stack
+  command: cp {{ zuul.project.src_dir }}/{{ rally_task_args_file }} {{ rally_home_dir }}/task_args_file.yaml
+  when: task_args_file_stat.stat.exists == True
+
+- name: Create an empty task_args_file
+  become: True
+  become_user: stack
+  command: echo "{}" > {{ rally_home_dir }}/task_args_file.yaml
+  when: task_args_file_stat.stat.exists == False

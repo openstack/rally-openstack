@@ -1,0 +1,6 @@
+- hosts: controller
+  vars:
+    rally_home_dir: '/opt/stack/.rally'
+    rally_results_dir: '{{ rally_home_dir }}/results'
+  roles:
+    - fetch-rally-task-results

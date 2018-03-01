@@ -1,0 +1,21 @@
+- hosts: all
+  roles:
+  - run-devstack
+
+- hosts: controller
+  vars:
+    rally_home_dir: '/opt/stack/.rally'
+    rally_fake_image_path: '{{ rally_home_dir }}/extra/fake-image.img'
+    rally_use_existing_users: false
+    rally_existing_users_config: '{{ rally_home_dir }}/with-existing-users-config'
+    rally_results_dir: '{{ rally_home_dir }}/results'
+    rally_resources_at_start: '{{ rally_results_dir }}/resources_at_start.txt'
+    rally_task_args_file: "100-percent-not-exist-file"
+  roles:
+  - prepare-for-rally-task
+  - snapshot-available-os-resources
+  - run-rally-task
+  - process-task-results
+  - import-task-results
+  - check-os-resources
+  - check-task-sla

@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rally | Performance job results</title>
+  
+  <script type="text/javascript"></script>
+  <style>
+    body { margin:0; padding:0 0 50px; font-size:14px; font-family:Helvetica,Arial,sans-serif }
+    a, a:active, a:focus, a:visited { text-decoration:none; outline:none }
+    p { margin:0; padding:5px 0 }
+    p.thesis { padding:10px 0 }
+    h1 { color:#666; margin:0 0 20px; font-size:30px; font-weight:normal }
+    h2, .h2 { color:#666; margin:24px 0 6px; font-size:25px; font-weight:normal }
+    h3, .h3 { color:#777; margin:12px 0 4px; font-size:18px; font-weight:normal }
+    table { border-collapse:collapse; border-spacing:0; width:100%; font-size:12px; margin:0 0 10px }
+    table th { text-align:left; padding:8px; color:#000; border:2px solid #ddd; border-width:0 0 2px 0 }
+    table th.sortable { cursor:pointer }
+    table td { text-align:left; border-top:1px solid #ddd; padding:8px; color:#333 }
+    table.compact td { padding:4px 8px }
+    table.striped tr:nth-child(odd) td { background:#f9f9f9 }
+    table.linked tbody tr:hover { background:#f9f9f9; cursor:pointer }
+    .pointer { cursor:pointer }
+    .rich, .rich td { font-weight:bold }
+    .oblique { font-style:italic }
+    .code { padding:10px; font-size:13px; color:#333; background:#f6f6f6; border:1px solid #e5e5e5; border-radius:4px }
+
+    .header { text-align:left; background:#333; font-size:18px; padding:13px 0; margin-bottom:20px; color:#fff; background-image:linear-gradient(to bottom, #444 0px, #222 100%) }
+    .header a, .header a:visited, .header a:focus { color:#999 }
+
+    .notify-error { padding:5px 10px; background:#fee; color:red }
+    .status-skip, .status-skip td { color:grey }
+    .status-pass, .status-pass td { color:green }
+    .status-fail, .status-fail td { color:red }
+    .capitalize { text-transform:capitalize }
+    
+    li { margin:2px 0 }
+    a, a:visited { color:#039 }
+    code { padding:0 5px; color:#888 }
+    .columns li { position:relative }
+    .columns li > :first-child { display:block }
+    .columns li > :nth-child(2) { display:block; position:static; left:165px; top:0; white-space:nowrap }
+
+    .content-wrap {  margin:0 auto; padding:0 5px;  }
+    
+    @media only screen and (min-width: 320px) { .content-wrap { width:400px } }
+    @media only screen and (min-width: 520px) { .content-wrap { width:500px } }
+    @media only screen and (min-width: 620px) { .content-wrap { width:90% } .columns li > :nth-child(2) { position:absolute } }
+    @media only screen and (min-width: 720px) { .content-wrap { width:70% } }
+
+  </style>
+</head>
+<body>
+
+  <div class="header" id="page-header">
+    <div class="content-wrap">
+      <a href="https://github.com/openstack/rally">Rally</a>&nbsp;
+      <span>performance job results</span>
+    </div>
+  </div>
+
+  <div class="content-wrap" id="page-content">
+
+    <h2>Status of the job</h2>
+    <p><span id="status-message" class="rich">Everything is ok! (All workloads passed their SLA and all tests resources were removed as expected)</span></p>
+
+    
+    <h2>Logs and files</h2>
+    <ul class="columns">
+      <li><a href="job-output.txt.gz" class="rich check-gz">Rally Task Logs</a> <code>job-output.txt.gz</code>
+      <li><a href="zuul-info/">Zuul info</a> <code>zuul-info</code>
+      <li><a href="controller/logs/">Logs of controller node</a> <code>controller/logs/</code>
+      <li><a href="ara/">ARA | Ansible Run Analysis</a>
+    </ul>
+
+    <h2>Job results, in different formats</h2>
+    <ul class="columns">
+      <li><a href="results/report.html.gz" class="rich">HTML report</a> <code>$ rally task report</code>
+      <li><a href="results/detailed.txt.gz">Text report</a> <code>$ rally task detailed</code>
+      <li><a href="results/detailed_with_iterations.txt.gz">Text report detailed</a> <code>$ rally task detailed --iterations-data</code>
+      <li><a href="results/sla.txt">Success criteria (SLA)</a> <code>$ rally task sla_check</code>
+      <li><a href="results/report.json.gz">JSON report</a> <code>$ rally task report --json</code>
+      <li><a href="results/results.json.gz">Old json results</a> <code>$ rally task results</code>
+      <li><a href="results/junit.xml.gz">JUNIT-XML report</a> <code>$ rally task export --type junit-xml</code>
+      <li><a href="results/elasticsearch.txt.gz">ElasticSearch x5 dump file</a> <code>$ rally task export --type elastic</code>
+    </ul>
+
+    <h2>About Rally</h2>
+    <p>Rally is tool & framework that allows one to write simple plugins and combine them in
+       complex tests scenarios that allows to perform all kinds of testing!
+    </p>
+    <ul>
+      <li><a href="https://git.openstack.org/cgit/openstack/rally">Rally git repository</a> (<a href="https://github.com/openstack/rally">GitHub mirror</a>)
+      <li><a href="https://git.openstack.org/cgit/openstack/rally-openstack">Git repository with OpenStack plugins for Rally</a> (<a href="https://github.com/openstack/rally-openstack">GitHub mirror</a>)
+      <li><a href="https://rally.readthedocs.org/en/latest/">Documentation</a>
+      <li><a href="https://rally.readthedocs.io/en/latest/quick_start/tutorial.html">How to use Rally (locally)</a>
+      <li><a href="https://rally.readthedocs.io/en/latest/quick_start/gates.html">How to add Rally job to your project</a>
+    </ul>
+
+    <h2>Steps to repeat locally</h2>
+    <ol>
+      <li>Fetch rally task from <a href="results/task.yaml">here</a></li>
+      <li>Fetch rally plugins from <a href="results/plugins.tar.gz">here</a></li>
+      <li>Install OpenStack and Rally using <a href="https://github.com/openstack/rally-openstack/tree/master/devstack">this instruction</a></li>
+      <li>Unzip plugins and put to <code>.rally/plugins/</code> directory</li>
+      <li>Run rally task: <code>$ rally task start task.yaml</code></li>
+    </ol>
+
+  </div>
+
+  <script type="text/javascript">
+    var errorMessage = null;
+    if (errorMessage) {
+      var statusMessage = document.getElementById("status-message");
+      statusMessage.style.color = 'red';
+      statusMessage.innerHTML = errorMessage
+    }
+  </script>
+</body>
+</html>
