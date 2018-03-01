@@ -8,7 +8,7 @@ Rally plugins for `OpenStack platform <https://openstack.org>`_
 Usage
 -----
 
-..code-block:: bash
+.. code-block:: bash
 
     # Install this package (will install rally if not installed)
     pip install rally-openstack
