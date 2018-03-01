@@ -1,0 +1,5 @@
+- job:
+    name: rally-task-neutron
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/neutron.yaml

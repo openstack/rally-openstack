@@ -1,0 +1,5 @@
+- job:
+    name: rally-task-keystone-glance-swift
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/keystone-glance-swift.yaml

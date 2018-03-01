@@ -36,7 +36,7 @@ resources:
     properties:
       count: {get_param: num_instances}
       resource_def:
-        type: /home/jenkins/.rally/extra/server_with_volume.yaml.template
+        type: /opt/stack/.rally/extra/server_with_volume.yaml.template
         properties:
           image: {get_param: instance_image}
           volume_size: {get_param: instance_volume_size}

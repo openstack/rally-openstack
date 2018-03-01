@@ -1,5 +1,5 @@
 - job:
-    name: rally-task-heat
+    name: rally-task-murano
     parent: rally-task-at-devstack
     required-projects:
       - name: openstack-dev/devstack
@@ -7,17 +7,13 @@
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/heat
+      - name: openstack/murano
     vars:
       devstack_plugins:
         rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        heat: https://git.openstack.org/openstack/heat
+        murano: https://git.openstack.org/openstack/murano
       devstack_services:
-        cinder: true
-        heat: True
-        h-api: True
-        h-api-cfn: True
-        h-api-cw: True
-        h-eng: True
+        murano: true
         # disable redundant services for the job
         ceilometer-acentral: false
         ceilometer-acompute: false
@@ -28,4 +24,4 @@
         ceilometer-collector: false
         horizon: false
         tempest: false
-      rally_task: rally-jobs/heat.yaml
+      rally_task: rally-jobs/murano.yaml

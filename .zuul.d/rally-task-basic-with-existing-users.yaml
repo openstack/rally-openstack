@@ -1,0 +1,6 @@
+- job:
+    name: rally-task-basic-with-existing-users
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/basic-with-existing-users.yaml
+      rally_use_existing_users: True

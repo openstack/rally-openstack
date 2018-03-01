@@ -1,0 +1,25 @@
+- job:
+    name: rally-task-telemetry
+    parent: rally-task-at-devstack
+    required-projects:
+      - name: openstack-dev/devstack
+      - name: openstack-infra/devstack-gate
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+      - name: openstack/heat
+      - name: openstack/ceilometer
+    vars:
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+        ceilometer: https://git.openstack.org/openstack/ceilometer
+      devstack_services:
+        ceilometer-acentral: true
+        ceilometer-acompute: true
+        ceilometer-alarm-evaluator: true
+        ceilometer-alarm-notifier: true
+        ceilometer-anotification: true
+        ceilometer-api: true
+        ceilometer-collector: true
+      rally_task: rally-jobs/telemetry.yaml
+      devstack_localrc:
+        CEILOMETER_BACKEND: gnocchi

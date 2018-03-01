@@ -1,0 +1,15 @@
+- job:
+    name: rally-task-zaqar
+    parent: rally-task-at-devstack
+    required-projects:
+      - name: openstack-dev/devstack
+      - name: openstack-infra/devstack-gate
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+      - name: openstack/zaqar
+      - name: openstack/python-zaqarclient
+    vars:
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+        zaqar: https://git.openstack.org/openstack/zaqar
+      rally_task: rally-jobs/zaqar.yaml

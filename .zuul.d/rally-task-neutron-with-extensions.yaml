@@ -1,0 +1,28 @@
+- job:
+    name: rally-task-neutron-with-extensions
+    parent: rally-task-at-devstack
+    vars:
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+        networking-bgpvpn: https://git.openstack.org/openstack/networking-bgpvpn
+        neutron-fwaas: https://git.openstack.org/openstack/neutron-fwaas
+        neutron-lbaas: git://git.openstack.org/openstack/neutron-lbaas
+        neutron-vpnaas: https://git.openstack.org/openstack/neutron-vpnaas
+        octavia: https://git.openstack.org/openstack/octavia
+      devstack_services:
+        networking-bgpvpn: true
+        neutron-fwaas: true
+        neutron-lbaas: true
+        neutron-vpnaas: true
+        octavia: true
+        # disable redundant services for the job
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        horizon: false
+        tempest: false
+      rally_task: rally-jobs/neutron-with-extensions.yaml
