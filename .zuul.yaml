@@ -77,3 +77,5 @@
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
+        - rally-task-simple-job
+
