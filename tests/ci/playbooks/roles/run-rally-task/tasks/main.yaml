@@ -3,12 +3,38 @@
   become_user: stack
   shell:
     cmd: |
-      set +e
 
-      rally --rally-debug task start --task {{ rally_home_dir }}/task.yaml #--task-args-file {{ rally_home_dir }}/task_args_file.yaml
-      retval=$?
-      if [[ $? -eq 1 ]]; then
-          # 1 exit code means that something unexpected had happened
-          exit $retval
-      fi
+      export RALLY_PLUGINS_DIR="{{ rally_home_dir }}/plugins"
+      export RALLY_EXTRA_DIR="{{ rally_home_dir }}/extra"
+
+      rally --rally-debug --plugin-paths "{{ rally_home_dir }}/plugins" task start --task {{ rally_home_dir }}/task.yaml #--task-args-file {{ rally_home_dir }}/task_args_file.yaml
     executable: /bin/bash
+  register: command_result
+  ignore_errors: True
+
+- name: Check rally task exit code
+  become: True
+  become_user: stack
+  shell:
+    cmd: |
+      STATUS="OK"
+      EXIT_CODE=0
+      if [ "{{ command_result.rc }}" -eq "2" ]; then
+          STATUS="At least one workload did not pass SLA criteria."
+          EXIT_CODE=0
+      # actually, InvalidTaskException has 457 error code, but exit codes are
+      # limited by the range 0-255 . So 457 means 201... need to fix exit
+      # codes
+      elif [ "{{ command_result.rc }} " -eq "201" ]; then
+          STATUS="Task config is invalid. Check logs for validation errors."
+          # no results can be produced. stop play
+          EXIT_CODE=1
+      elif [ "{{ command_result.rc }}" -ne "0" ]; then
+          STATUS="Unexpected error had happened while launching Rally task. Check logs for more details."
+          EXIT_CODE=1
+      fi
+
+      # dump status, so it can be parsed in post script
+      echo "$STATUS" > "{{ rally_results_dir }}/status.txt"
+
+      exit $EXIT_CODE

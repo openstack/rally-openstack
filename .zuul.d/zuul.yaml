@@ -1,0 +1,52 @@
+- job:
+    name: rally-tox-pep8
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``pep8`` environment.
+    vars:
+      tox_envlist: pep8
+
+- job:
+    name: rally-tox-py27
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``py27`` environment.
+    vars:
+      tox_envlist: py27
+
+- job:
+    name: rally-tox-py35
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``py35`` environment.
+    vars:
+      tox_envlist: py35
+
+- project:
+    check:
+      jobs:
+        - rally-tox-pep8
+        - rally-tox-py27
+        - rally-tox-py35
+        - rally-task-simple-job
+        # it should fail at installing devstack step
+        - rally-task-heat:
+            voting: false
+        # it should not pass SLA
+        - rally-task-nova:
+            voting: false
+        # should fail at validation step
+        - rally-task-manila:
+            voting: false
+    gate:
+      jobs:
+        - rally-tox-pep8
+        - rally-tox-py27
+        - rally-tox-py35
+        - rally-task-simple-job

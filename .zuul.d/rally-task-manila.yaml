@@ -1,0 +1,11 @@
+- job:
+    name: rally-task-manila
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/rally-manila.yaml
+
+- job:
+    name: rally-task-manila-no-ss
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/manila-no-ss.yaml

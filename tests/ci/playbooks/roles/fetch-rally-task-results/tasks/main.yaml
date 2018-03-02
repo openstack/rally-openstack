@@ -1,9 +1,30 @@
+- name: Change the status message
+  become: yes
+  shell:
+    cmd: |
+      set -e
+      if [ -f "{{ rally_results_dir }}/status.txt" ]; then
+        MSG=`cat {{ rally_results_dir }}/status.txt`
+      else
+        MSG="Unexpected error had happened before Rally Task start. Check ARA for more details."
+      fi
+
+      if [ "$MSG" != "OK" ]; then
+        sed -i -- "s/var errorMessage = null\;/var errorMessage = \'$MSG\';/g" {{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html
+      fi
+
+- name: Check the existence of results dir
+  stat:
+    path: '{{ rally_results_dir }}'
+  register: results_dir_stat
+
 - name: Gzip results files
   become: yes
   become_user: stack
-  shell: "gzip * -9 -q"
+  shell: "gzip * -9 -q | true"
   args:
     chdir: '{{ rally_results_dir }}'
+  when: results_dir_stat.stat.exists == True
 
 - name: Gzip custom plugins
   become: yes
@@ -11,6 +32,7 @@
   shell: "tar -czf {{ rally_results_dir }}/plugins.tar.gz ./plugins"
   args:
     chdir: '{{ rally_home_dir }}'
+  when: results_dir_stat.stat.exists == True
 
 - name: Copy Rally results
   become: yes
@@ -25,13 +47,7 @@
       - --include=*/
       - --exclude=*
       - --prune-empty-dirs
-
-- name: Change the status message
-  become: yes
-  shell:
-    cmd: |
-       set -e
-       #sed -i -- "s/var errorMessage = null\;/var errorMessage = \'TBD\';/g" {{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html
+  when: results_dir_stat.stat.exists == True
 
 - name: Put index.html in the right place
   become: yes

@@ -53,7 +53,7 @@
 - name: Copy extra files, if they are presented
   become: True
   become_user: stack
-  command: cp -r {{ zuul.project.src_dir }}/rally-jobs/extra {{ rally_home_dir }}/extra
+  command: cp -r {{ zuul.project.src_dir }}/rally-jobs/extra {{ rally_home_dir }}/
   when: extra_files_stat.stat.exists == True
 
 - name: Check the existence of fake image
@@ -142,7 +142,7 @@
 - name: Create new projects and users
   become: True
   become_user: stack
-  shell: rally env create --name devstask-with-users --spec {{ rally_existing_users_config }}
+  shell: rally env create --name devstask-with-users --spec "{{ rally_existing_users_config }}"
   when: rally_use_existing_users == True
 
 - name: Print Rally deployment config
@@ -178,7 +178,7 @@
 - name: Copy task file
   become: True
   become_user: stack
-  command: cp -r {{ zuul.project.src_dir }}/{{ rally_task }} {{ rally_home_dir }}/task.yaml
+  command: cp "{{ zuul.project.src_dir }}/{{ rally_task }}" "{{ rally_home_dir }}/task.yaml"
 
 - name: Check the existence of task_args_file
   stat:
@@ -188,11 +188,11 @@
 - name: Copy task_args_file
   become: True
   become_user: stack
-  command: cp {{ zuul.project.src_dir }}/{{ rally_task_args_file }} {{ rally_home_dir }}/task_args_file.yaml
+  command: cp "{{ zuul.project.src_dir }}/{{ rally_task_args_file }}" "{{ rally_home_dir }}/task_args_file.yaml"
   when: task_args_file_stat.stat.exists == True
 
 - name: Create an empty task_args_file
   become: True
   become_user: stack
-  command: echo "{}" > {{ rally_home_dir }}/task_args_file.yaml
+  command: echo "{}" > "{{ rally_home_dir }}/task_args_file.yaml"
   when: task_args_file_stat.stat.exists == False

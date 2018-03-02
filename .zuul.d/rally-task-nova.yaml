@@ -1,0 +1,5 @@
+- job:
+    name: rally-task-nova
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/nova.yaml
