@@ -33,6 +33,9 @@ Added
 * GnocchiResourceType.create_resource_type
 * GnocchiResourceType.create_delete_resource_type
 * [ci] New Zuul V3 native jobs
+* Extend existing@openstack platform to support creating a specification based
+  on system environment variables. This feature should be available with
+  Rally>0.11.1
 
 Changed
 -------
