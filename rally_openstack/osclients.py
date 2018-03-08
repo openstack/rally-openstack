@@ -396,6 +396,28 @@ class Neutron(OSClient):
         return client
 
 
+@configure("octavia", default_version="2",
+           default_service_type="load-balancer", supported_versions=["2"])
+class Octavia(OSClient):
+    """Wrapper for OctaviaClient which returns an authenticated native client.
+
+    """
+
+    def create_client(self, version=None, service_type=None):
+        """Return octavia client."""
+        from octaviaclient.api.v2 import octavia
+
+        kw_args = {}
+        if self.credential.endpoint_type:
+            kw_args["endpoint_type"] = self.credential.endpoint_type
+
+        client = octavia.OctaviaAPI(
+            endpoint=self._get_endpoint(service_type),
+            session=self.keystone.get_session()[0],
+            **kw_args)
+        return client
+
+
 @configure("glance", default_version="2", default_service_type="image",
            supported_versions=["1", "2"])
 class Glance(OSClient):

@@ -471,6 +471,24 @@ class OSClientsTestCase(test.TestCase):
             mock_neutron.client.Client.assert_called_once_with("2.0", **kw)
             self.assertEqual(fake_neutron, self.clients.cache["neutron"])
 
+    @mock.patch("%s.Octavia._get_endpoint" % PATH)
+    def test_octavia(self, mock_octavia__get_endpoint):
+        fake_octavia = fakes.FakeOctaviaClient()
+        mock_octavia__get_endpoint.return_value = "http://fake.to:2/fake"
+        mock_octavia = mock.MagicMock()
+        mock_keystoneauth1 = mock.MagicMock()
+        mock_octavia.octavia.OctaviaAPI.return_value = fake_octavia
+        self.assertNotIn("octavia", self.clients.cache)
+        with mock.patch.dict("sys.modules",
+                             {"octaviaclient.api.v2": mock_octavia,
+                              "keystoneauth1": mock_keystoneauth1}):
+            client = self.clients.octavia()
+            self.assertEqual(fake_octavia, client)
+            kw = {"endpoint": mock_octavia__get_endpoint.return_value,
+                  "session": mock_keystoneauth1.session.Session()}
+            mock_octavia.octavia.OctaviaAPI.assert_called_once_with(**kw)
+            self.assertEqual(fake_octavia, self.clients.cache["octavia"])
+
     @mock.patch("%s.Heat._get_endpoint" % PATH)
     def test_heat(self, mock_heat__get_endpoint):
         fake_heat = fakes.FakeHeatClient()

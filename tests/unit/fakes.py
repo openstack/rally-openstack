@@ -1490,6 +1490,12 @@ class FakeNeutronClient(object):
         return ""
 
 
+class FakeOctaviaClient(object):
+
+    def __init__(self):
+        pass
+
+
 class FakeIronicClient(object):
 
     def __init__(self):
@@ -1590,6 +1596,7 @@ class FakeClients(object):
         self._keystone = None
         self._cinder = None
         self._neutron = None
+        self._octavia = None
         self._sahara = None
         self._heat = None
         self._designate = None
@@ -1636,6 +1643,11 @@ class FakeClients(object):
         if not self._neutron:
             self._neutron = FakeNeutronClient()
         return self._neutron
+
+    def octavia(self):
+        if not self._octavia:
+            self._octavia = FakeOctaviaClient()
+        return self._octavia
 
     def sahara(self):
         if not self._sahara:
