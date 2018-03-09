@@ -1,0 +1,14 @@
+---
+  GnocchiArchivePolicy.create_archive_policy:
+    -
+      args:
+        definition:
+          - granularity: "0:00:01"
+            timespan: "1:00:00"
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      sla:
+        failure_rate:
+          max: 0

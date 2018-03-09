@@ -1102,10 +1102,10 @@ class CinderImageVolumeCacheTestCase(test.TestCase):
         self.assertEqual("image-name", res.name())
 
 
-class GnocchiArchivePolicyRuleTestCase(test.TestCase):
+class GnocchiMixinTestCase(test.TestCase):
 
     def get_gnocchi(self):
-        gnocchi = resources.GnocchiArchivePolicyRule()
+        gnocchi = resources.GnocchiMixin()
         gnocchi._service = "gnocchi"
         return gnocchi
 

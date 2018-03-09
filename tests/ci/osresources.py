@@ -320,6 +320,9 @@ class Gnocchi(ResourceManager):
     def list_archive_policy_rules(self):
         return self.client.archive_policy_rule.list()
 
+    def list_archive_policy(self):
+        return self.client.archive_policy.list()
+
 
 class Ironic(ResourceManager):
 

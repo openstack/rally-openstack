@@ -28,8 +28,11 @@ class GnocchiService(service.Service):
         :param aggregation_methods: Aggregation method of the archive policy
         """
         archive_policy = {"name": name}
-        archive_policy["definition"] = definition
-        archive_policy["aggregation_methods"] = aggregation_methods
+        if definition is not None:
+            archive_policy["definition"] = definition
+        if aggregation_methods is not None:
+            archive_policy["aggregation_methods"] = aggregation_methods
+
         return self._clients.gnocchi().archive_policy.create(
             archive_policy)
 
