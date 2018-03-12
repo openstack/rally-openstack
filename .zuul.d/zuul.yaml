@@ -54,9 +54,7 @@
         - rally-task-mistral
         # it did not work for a long time. try to re-configure it
         #- rally-task-monasca
-        - rally-task-murano:
-            # some workloads began fail. need more time to investigate
-            voting: false
+        - rally-task-murano
         - rally-task-neutron
         - rally-task-neutron-with-extensions:
             # more services should be enabled
@@ -81,6 +79,7 @@
         - rally-task-ironic
         - rally-task-keystone-glance-swift
         - rally-task-mistral
+        - rally-task-murano
         - rally-task-neutron
         - rally-task-telemetry
         - rally-task-zaqar

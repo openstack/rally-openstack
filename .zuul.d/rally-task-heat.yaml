@@ -12,12 +12,6 @@
         rally-openstack: https://git.openstack.org/openstack/rally-openstack
         heat: https://git.openstack.org/openstack/heat
       devstack_services:
-        cinder: true
-        heat: True
-        h-api: True
-        h-api-cfn: True
-        h-api-cw: True
-        h-eng: True
         # disable redundant services for the job
         ceilometer-acentral: false
         ceilometer-acompute: false
