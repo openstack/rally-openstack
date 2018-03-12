@@ -1,20 +1,28 @@
 - job:
     name: rally-task-neutron-with-extensions
     parent: rally-task-at-devstack
+    required-projects:
+      - name: openstack-dev/devstack
+      - name: openstack-infra/devstack-gate
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+      - name: openstack/networking-bgpvpn
+      # NOTE(andreykurilin): this neutron plugin uses an old naming of
+      #   devstack neutron services. The wrong check triggers call of
+      #   an old (legacy) neutron devstack plugin and turns off all neutron
+      #   services except q-svc
+      #- name: openstack/neutron-fwaas
+      - name: openstack/neutron-vpnaas
     vars:
       devstack_plugins:
         rally-openstack: https://git.openstack.org/openstack/rally-openstack
         networking-bgpvpn: https://git.openstack.org/openstack/networking-bgpvpn
-        neutron-fwaas: https://git.openstack.org/openstack/neutron-fwaas
-        neutron-lbaas: git://git.openstack.org/openstack/neutron-lbaas
+        #neutron-fwaas: https://git.openstack.org/openstack/neutron-fwaas
         neutron-vpnaas: https://git.openstack.org/openstack/neutron-vpnaas
-        octavia: https://git.openstack.org/openstack/octavia
       devstack_services:
         networking-bgpvpn: true
-        neutron-fwaas: true
-        neutron-lbaas: true
+        #neutron-fwaas: true
         neutron-vpnaas: true
-        octavia: true
         # disable redundant services for the job
         ceilometer-acentral: false
         ceilometer-acompute: false
