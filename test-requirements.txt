@@ -21,6 +21,3 @@ testtools>=2.2.0                                       # UNKNOWN
 sphinx>=1.6.2,!=1.6.6                                  # BSD
 oslosphinx>=4.7.0                                      # Apache Software License
 oslotest>=3.2.0                                        # Apache Software License
-
-testresources>=2.0.0                                   # UNKNOWN
-testscenarios>=0.4                                     # UNKNOWN
