@@ -870,6 +870,12 @@ class GnocchiArchivePolicy(GnocchiMixin):
     pass
 
 
+@base.resource("gnocchi", "resource_type", order=next(_gnocchi_order),
+               admin_required=True, perform_for_admin_only=True)
+class GnocchiResourceType(GnocchiMixin):
+    pass
+
+
 # WATCHER
 
 _watcher_order = get_order(1500)

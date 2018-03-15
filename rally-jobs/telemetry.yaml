@@ -106,3 +106,53 @@
       sla:
         failure_rate:
           max: 0
+
+  GnocchiResourceType.list_resource_type:
+    -
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        failure_rate:
+          max: 0
+
+  GnocchiResourceType.create_resource_type:
+    -
+      args:
+        attributes:
+          foo:
+            required: false
+            type: "string"
+          bar:
+            required: true
+            type: "number"
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      sla:
+        failure_rate:
+          max: 0
+
+  GnocchiResourceType.create_delete_resource_type:
+    -
+      args:
+        attributes:
+          foo:
+            required: false
+            type: "string"
+          bar:
+            required: true
+            type: "number"
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      sla:
+        failure_rate:
+          max: 0

@@ -157,22 +157,25 @@ class GnocchiService(service.Service):
             resource_type=resource_type)
 
     @atomic.action_timer("gnocchi.create_resource_type")
-    def create_resource_type(self, name):
+    def create_resource_type(self, name, attributes=None):
         """Create a resource type.
 
         :param name: Name of the resource type
         """
         resource_type = {"name": name or self.generate_random_name()}
+        if attributes is not None:
+            resource_type["attributes"] = attributes
+
         return self._clients.gnocchi().resource_type.create(
             resource_type)
 
     @atomic.action_timer("gnocchi.delete_resource_type")
-    def delete_resource_type(self, resource_type):
+    def delete_resource_type(self, name):
         """Delete a resource type.
 
-        :param resource_type: Resource type dict
+        :param name: Name of the resource type
         """
-        return self._clients.gnocchi().resource_type.delete(resource_type)
+        return self._clients.gnocchi().resource_type.delete(name)
 
     @atomic.action_timer("gnocchi.list_resource_type")
     def list_resource_type(self):

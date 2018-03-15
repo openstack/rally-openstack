@@ -1,0 +1,28 @@
+{
+    "GnocchiResourceType.create_delete_resource_type": [
+        {
+            "args": {
+                "attributes": {
+                    "foo": {
+                        "required": false,
+                        "type": "string"
+                    },
+                    "bar": {
+                        "required": true,
+                        "type": "number"
+                    }
+                }
+            },
+            "runner": {
+                "type": "constant",
+                "times": 10,
+                "concurrency": 2
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
+        }
+    ]
+}
