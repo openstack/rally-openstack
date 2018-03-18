@@ -21,6 +21,7 @@ from rally_openstack.cleanup import base
 from rally_openstack.services.identity import identity
 from rally_openstack.services.image import glance_v2
 from rally_openstack.services.image import image
+from rally_openstack.services.loadbalancer import octavia
 
 
 CONF = cfg.CONF
@@ -321,6 +322,34 @@ class NeutronV2Loadbalancer(NeutronLbaasV2Mixin):
             return getattr(e, "status_code", 400) == 404
 
         return False
+
+
+@base.resource("octavia", "loadbalancer", order=next(_neutron_order),
+               tenant_resource=True)
+class OctaviaLoadbalancer(base.ResourceManager):
+
+    def _client(self):
+        return octavia.Octavia(self.admin or self.user)
+
+    def id(self):
+        return self.raw_resource["id"]
+
+    def name(self):
+        return self.raw_resource["name"]
+
+    def delete(self):
+        return self._client().load_balancer_delete(self.id())
+
+    def is_deleted(self):
+        try:
+            self._client().load_balancer_show(self.id())
+        except Exception as e:
+            return True
+
+        return False
+
+    def list(self):
+        return self._client().load_balancer_list()["loadbalancers"]
 
 
 @base.resource("neutron", "bgpvpn", order=next(_neutron_order),

@@ -195,6 +195,10 @@ class FakeSecret(FakeResource):
         self.secret_ref = secret_ref
 
 
+class FakeLoadBalancer(FakeResource):
+    pass
+
+
 class FakeKeypair(FakeResource):
     pass
 

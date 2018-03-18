@@ -20,3 +20,21 @@
       sla:
         failure_rate:
           max: 0
+    -
+      title: Test base Octavia actions
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_list_loadbalancers: {}
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
