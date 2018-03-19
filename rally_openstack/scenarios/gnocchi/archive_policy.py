@@ -34,8 +34,9 @@ class ListArchivePolicy(gnocchiutils.GnocchiBase):
 
 @validation.add("required_services", services=[consts.Service.GNOCCHI])
 @validation.add("required_platform", platform="openstack", admin=True)
-@scenario.configure(context={"admin_cleanup@openstack": ["gnocchi"]},
-                    name="GnocchiArchivePolicy.create_archive_policy")
+@scenario.configure(
+    context={"admin_cleanup@openstack": ["gnocchi.archive_policy"]},
+    name="GnocchiArchivePolicy.create_archive_policy")
 class CreateArchivePolicy(gnocchiutils.GnocchiBase):
 
     def run(self, definition=None, aggregation_methods=None):
@@ -55,8 +56,9 @@ class CreateArchivePolicy(gnocchiutils.GnocchiBase):
 
 @validation.add("required_services", services=[consts.Service.GNOCCHI])
 @validation.add("required_platform", platform="openstack", admin=True)
-@scenario.configure(context={"admin_cleanup@openstack": ["gnocchi"]},
-                    name="GnocchiArchivePolicy.create_delete_archive_policy")
+@scenario.configure(
+    context={"admin_cleanup@openstack": ["gnocchi.archive_policy"]},
+    name="GnocchiArchivePolicy.create_delete_archive_policy")
 class CreateDeleteArchivePolicy(gnocchiutils.GnocchiBase):
 
     def run(self, definition=None, aggregation_methods=None):
