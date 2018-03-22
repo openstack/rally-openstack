@@ -129,17 +129,17 @@ class GnocchiServiceTestCase(test.TestCase):
                                        "gnocchi.get_measures")
 
     def test__create_metric(self):
-        metric = {"name": "fake_name"}
-        metric["archive_policy_name"] = "fake_archive_policy"
-        metric["unit"] = "fake_unit"
-        metric["resource_id"] = "fake_resource_id"
+        param = {"name": "fake_name"}
+        param["archive_policy_name"] = "fake_archive_policy"
+        param["unit"] = "fake_unit"
+        param["resource_id"] = "fake_resource_id"
         self.assertEqual(
             self.service.create_metric(
                 name="fake_name",
                 archive_policy_name="fake_archive_policy",
                 unit="fake_unit",
                 resource_id="fake_resource_id"),
-            self.service._clients.gnocchi().metric.create(metric)
+            self.service._clients.gnocchi().metric.create(param)
         )
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "gnocchi.create_metric")
@@ -152,10 +152,9 @@ class GnocchiServiceTestCase(test.TestCase):
                                        "gnocchi.delete_metric")
 
     def test__list_metric(self):
+        self.service.list_metric(limit=0)
         self.assertEqual(
-            self.service.list_metric(),
-            self.service._clients.gnocchi().metric.list.return_value
-        )
+            1, self.service._clients.gnocchi().metric.list.call_count)
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "gnocchi.list_metric")
 

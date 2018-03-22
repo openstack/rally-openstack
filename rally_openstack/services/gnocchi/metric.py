@@ -128,9 +128,26 @@ class GnocchiService(service.Service):
         return self._clients.gnocchi().metric.delete(metric_id)
 
     @atomic.action_timer("gnocchi.list_metric")
-    def list_metric(self):
+    def list_metric(self, limit=None):
         """List metrics."""
-        return self._clients.gnocchi().metric.list()
+        metrics = []
+        marker = None
+        limit_val = limit
+        while True:
+            page = self._clients.gnocchi().metric.list(limit=limit_val,
+                                                       marker=marker)
+            if not page:
+                break
+            metrics.extend(page)
+            marker = page[-1]["id"]
+            if limit_val is not None:
+                cnt = len(metrics)
+                if cnt < limit:
+                    limit_val = limit - cnt
+                else:
+                    break
+
+        return metrics
 
     @atomic.action_timer("gnocchi.create_resource")
     def create_resource(self, resource_type="generic"):

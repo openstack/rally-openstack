@@ -156,3 +156,51 @@
       sla:
         failure_rate:
           max: 0
+
+  GnocchiMetric.list_metric:
+    -
+      args:
+        limit: 10000
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        failure_rate:
+          max: 0
+
+  GnocchiMetric.create_metric:
+    -
+      args:
+        archive_policy_name: "low"
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        failure_rate:
+          max: 0
+
+  GnocchiMetric.create_delete_metric:
+    -
+      args:
+        archive_policy_name: "low"
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        failure_rate:
+          max: 0

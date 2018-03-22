@@ -876,6 +876,29 @@ class GnocchiResourceType(GnocchiMixin):
     pass
 
 
+@base.resource("gnocchi", "metric", order=next(_gnocchi_order),
+               tenant_resource=True)
+class GnocchiMetric(GnocchiMixin):
+
+    def id(self):
+        return self.raw_resource["id"]
+
+    def list(self):
+        result = []
+        marker = None
+        while True:
+            metrics = self._manager().list(marker=marker)
+            if not metrics:
+                break
+            result.extend(metrics)
+            marker = metrics[-1]["id"]
+        if self.tenant_uuid:
+            result = [r for r in result
+                      if r["creator"].partition(":")[2] == self.tenant_uuid]
+
+        return result
+
+
 # WATCHER
 
 _watcher_order = get_order(1500)

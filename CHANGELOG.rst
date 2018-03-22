@@ -16,6 +16,16 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[Unreleased]
+------------
+
+Added
+~~~~~
+
+* [scenario plugin] GnocchiMetric.list_metric
+* [scenario plugin] GnocchiMetric.create_metric
+* [scenario plugin] GnocchiMetric.create_delete_metric
+
 [1.0.0] - 2018-03-28
 --------------------
 Start a fork of `rally/plugins/openstack module of original OpenStack Rally

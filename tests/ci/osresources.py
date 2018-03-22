@@ -320,11 +320,22 @@ class Gnocchi(ResourceManager):
     def list_archive_policy_rules(self):
         return self.client.archive_policy_rule.list()
 
-    def list_archive_policy(self):
+    def list_archive_policys(self):
         return self.client.archive_policy.list()
 
-    def list_resource_type(self):
+    def list_resource_types(self):
         return self.client.resource_type.list()
+
+    def list_metrics(self):
+        result = []
+        marker = None
+        while True:
+            metrics = self.client.metric.list(marker=marker)
+            if not metrics:
+                break
+            result.extend(metrics)
+            marker = metrics[-1]["id"]
+        return result
 
 
 class Ironic(ResourceManager):

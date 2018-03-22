@@ -1118,3 +1118,29 @@ class GnocchiMixinTestCase(test.TestCase):
         gnocchi = self.get_gnocchi()
         gnocchi.raw_resource = {"name": "test_name"}
         self.assertEqual("test_name", gnocchi.name())
+
+
+class GnocchiMetricTestCase(test.TestCase):
+
+    def get_gnocchi(self):
+        gnocchi = resources.GnocchiMetric()
+        gnocchi._service = "gnocchi"
+        return gnocchi
+
+    def test_id(self):
+        gnocchi = self.get_gnocchi()
+        gnocchi.raw_resource = {"id": "test_id"}
+        self.assertEqual("test_id", gnocchi.id())
+
+    def test_list(self):
+        gnocchi = self.get_gnocchi()
+        gnocchi._manager = mock.MagicMock()
+        metrics = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock(),
+                   mock.MagicMock()]
+        gnocchi._manager.return_value.list.side_effect = (
+            metrics[:2], metrics[2:4], [])
+        self.assertEqual(metrics, gnocchi.list())
+        self.assertEqual(
+            [mock.call(marker=None), mock.call(marker=metrics[1]["id"]),
+             mock.call(marker=metrics[3]["id"])],
+            gnocchi._manager.return_value.list.call_args_list)
