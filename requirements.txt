@@ -24,6 +24,7 @@ python-muranoclient>=0.8.2                             # Apache License, Version
 python-monascaclient>=1.7.0                            # Apache Software License
 python-neutronclient>=6.3.0                            # Apache Software License
 python-novaclient>=9.1.0                               # Apache License, Version 2.0
+python-octaviaclient>=1.4.0                            # Apache License, Version 2.0
 python-saharaclient>=1.4.0                             # Apache License, Version 2.0
 python-senlinclient>=1.1.0                             # Apache Software License
 python-swiftclient>=3.2.0                              # Apache Software License
