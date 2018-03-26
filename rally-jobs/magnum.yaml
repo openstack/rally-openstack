@@ -1,4 +1,4 @@
-{% set image = "Fedora-Atomic-26-20170723.0.x86_64" %}
+{% set image = "Fedora-Atomic-27-20180212.2.x86_64" %}
 ---
   version: 2
   title: Task for gate-rally-dsvm-magnum-rally-nv job
