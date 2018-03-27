@@ -22,12 +22,12 @@ import os
 import subprocess
 import sys
 
-import six
-
 from rally.cli import cliutils
 from rally.common.plugin import discover
-from rally import consts
-from rally.plugins.openstack import credential
+import six
+
+from rally_openstack import consts
+from rally_openstack import credential
 
 
 def skip_if_service(service):
