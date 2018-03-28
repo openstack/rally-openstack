@@ -1,0 +1,34 @@
+- job:
+    name: rally-task-load-balancing
+    description: A Rally job for checking Octavia plugins and legacy LbaasV2
+    parent: rally-task-at-devstack
+    required-projects:
+      - name: openstack-dev/devstack
+      - name: openstack-infra/devstack-gate
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+      - name: openstack/neutron-lbaas
+      - name: openstack/octavia
+    vars:
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+        neutron-lbaas: git://git.openstack.org/openstack/neutron-lbaas
+        octavia: https://git.openstack.org/openstack/octavia
+      devstack_services:
+        neutron-lbaas: true
+        octavia: true
+        o-api: true
+        o-cw: true
+        o-hm: true
+        o-hk: true
+        # disable redundant services for the job
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        horizon: false
+        tempest: false
+      rally_task: rally-jobs/load-balancing.yaml

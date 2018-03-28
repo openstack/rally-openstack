@@ -44,6 +44,8 @@
         - rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift
+        - rally-task-load-balancing:
+            voting: false
         - rally-task-magnum:
             voting: false
         # NOTE(andreykurilin): manila requires some specific configuration.
@@ -57,10 +59,8 @@
         - rally-task-murano
         - rally-task-neutron
         - rally-task-neutron-with-extensions:
-            # more services should be enabled
             voting: false
         - rally-task-nova:
-            # should fail due to novaclient release
             voting: false
         # it did not work for a long time
         #- rally-task-senlin

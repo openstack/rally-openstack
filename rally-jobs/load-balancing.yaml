@@ -1,0 +1,22 @@
+---
+  version: 2
+  title: Task for rally-task-load-balancing job
+  description: >
+    This task contains various scenarios for testing load balancing
+  subtasks:
+    -
+      title: Test Legacy lbaas neutron extension
+      scenario:
+        NeutronLoadbalancerV2.create_and_list_loadbalancers:
+          lb_create_args: {}
+      runner:
+        constant:
+          times: 2
+          concurrency: 2
+      contexts:
+        users:
+          tenants: 2
+        network: {}
+      sla:
+        failure_rate:
+          max: 0
