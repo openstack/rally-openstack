@@ -16,15 +16,14 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-[Unreleased]
-============
-
+[1.0.0] - 2018-03-28
+--------------------
 Start a fork of `rally/plugins/openstack module of original OpenStack Rally
 project
 <https://github.com/openstack/rally/tree/0.11.1/rally/plugins/openstack>`_
 
 Added
------
+~~~~~
 
 * [scenario plugin] GnocchiArchivePolicy.list_archive_policy
 * [scenario plugin] GnocchiArchivePolicy.create_archive_policy
@@ -39,7 +38,7 @@ Added
   Rally>0.11.1
 
 Changed
--------
+~~~~~~~
 
 * Methods for association and dissociation floating ips  were deprecated in
   novaclient a year ago and latest major release (python-novaclient 10)
@@ -50,7 +49,7 @@ Changed
   in results of scenarios.
 
 Removed
--------
+~~~~~~~
 
 * *os-hosts* CLIs and python API bindings had been deprecated in
   python-novaclient 9.0.0 and became removed in `10.0.0 release
@@ -63,7 +62,7 @@ Removed
   have proper interfaces any more).
 
 Fixed
------
+~~~~~
 
 * The support of `kubernetes python client
   <https://pypi.python.org/pypi/kubernetes>`_ (which is used by Magnum plugins)
