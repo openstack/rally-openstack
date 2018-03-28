@@ -21,10 +21,10 @@ from rally.common import cfg
 from rally.common import logging
 from rally.common import utils as rutils
 from rally.common import validation
-from rally import consts
 from rally import exceptions
 from rally.task import context
 
+from rally_openstack import consts
 from rally_openstack import credential
 from rally_openstack import osclients
 from rally_openstack.services.identity import identity

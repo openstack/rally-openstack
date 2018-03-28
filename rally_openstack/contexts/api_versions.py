@@ -13,10 +13,10 @@
 import random
 
 from rally.common import validation
-from rally import consts
 from rally import exceptions
 from rally.task import context
 
+from rally_openstack import consts
 from rally_openstack import osclients
 
 

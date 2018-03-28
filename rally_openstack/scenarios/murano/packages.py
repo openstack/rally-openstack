@@ -16,10 +16,10 @@
 
 import os
 
-from rally import consts
 from rally.task import types
 from rally.task import validation
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.murano import utils
 

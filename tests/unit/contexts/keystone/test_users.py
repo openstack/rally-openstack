@@ -15,11 +15,12 @@
 
 import mock
 
-from rally import consts
 from rally import exceptions
 from rally_openstack.contexts.keystone import users
 from rally_openstack import credential as oscredential
 from tests.unit import test
+
+from rally_openstack import consts
 
 CTX = "rally_openstack.contexts.keystone.users"
 

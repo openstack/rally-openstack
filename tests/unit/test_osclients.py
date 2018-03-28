@@ -17,14 +17,14 @@ import ddt
 import mock
 
 from rally.common import cfg
-from rally import consts
 from rally import exceptions
 from rally import osclients as deprecated_osclients  # noqa
+
+from rally_openstack import consts
 from rally_openstack import credential as oscredential
 from rally_openstack import osclients
 from tests.unit import fakes
 from tests.unit import test
-
 
 PATH = "rally_openstack.osclients"
 

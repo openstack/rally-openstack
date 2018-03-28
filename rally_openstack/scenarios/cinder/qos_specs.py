@@ -11,10 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-from rally import consts
 from rally.task import validation
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.cinder import utils as cinder_utils
 

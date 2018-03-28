@@ -15,8 +15,9 @@
 
 from rally.common import logging
 from rally.common import objects
-from rally import consts
 from rally.task import hook
+
+from rally_openstack import consts
 
 LOG = logging.getLogger(__name__)
 

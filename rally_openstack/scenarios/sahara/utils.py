@@ -19,11 +19,11 @@ from oslo_utils import uuidutils
 from rally.common import cfg
 from rally.common import logging
 from rally.common import utils as rutils
-from rally import consts
 from rally import exceptions
 from rally.task import atomic
 from rally.task import utils
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.sahara import consts as sahara_consts
 

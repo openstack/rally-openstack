@@ -14,9 +14,9 @@
 #    under the License.
 
 from rally.common import validation
-from rally import consts
 
 from rally_openstack.cleanup import manager
+from rally_openstack import consts
 
 
 @validation.configure("check_cleanup_resources")

@@ -15,9 +15,9 @@
 
 from rally.common import logging
 from rally.common import validation
-from rally import consts
 from rally.task import context
 
+from rally_openstack import consts
 from rally_openstack.contexts.quotas import cinder_quotas
 from rally_openstack.contexts.quotas import designate_quotas
 from rally_openstack.contexts.quotas import manila_quotas

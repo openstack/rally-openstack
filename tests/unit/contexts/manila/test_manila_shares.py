@@ -19,7 +19,7 @@ import ddt
 import mock
 import six
 
-from rally import consts as rally_consts
+from rally_openstack import consts as rally_consts
 from rally_openstack.contexts.manila import consts
 from rally_openstack.contexts.manila import manila_shares
 from rally_openstack.scenarios.manila import utils as manila_utils

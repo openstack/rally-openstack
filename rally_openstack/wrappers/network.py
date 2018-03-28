@@ -15,17 +15,16 @@
 
 import abc
 import itertools
-
 import netaddr
 import six
 
+from neutronclient.common import exceptions as neutron_exceptions
 from rally.common import cfg
 from rally.common import logging
 from rally.common import utils
-from rally import consts
 from rally import exceptions
 
-from neutronclient.common import exceptions as neutron_exceptions
+from rally_openstack import consts
 
 
 LOG = logging.getLogger(__name__)

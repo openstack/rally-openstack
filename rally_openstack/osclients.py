@@ -16,15 +16,15 @@
 import abc
 import os
 
-from six.moves.urllib import parse
-
 from rally.cli import envutils
 from rally.common import cfg
 from rally.common import logging
 from rally.common.plugin import plugin
 from rally.common import utils
-from rally import consts
 from rally import exceptions
+from six.moves.urllib import parse
+
+from rally_openstack import consts
 
 
 LOG = logging.getLogger(__name__)

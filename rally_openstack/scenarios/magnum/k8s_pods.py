@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally import consts
 from rally.task import validation
 import yaml
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.magnum import utils
 

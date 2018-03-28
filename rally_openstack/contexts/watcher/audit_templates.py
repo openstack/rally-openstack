@@ -17,10 +17,10 @@ import random
 import six
 
 from rally.common import validation
-from rally import consts
 from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
+from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.watcher import utils as watcher_utils
 from rally_openstack import types

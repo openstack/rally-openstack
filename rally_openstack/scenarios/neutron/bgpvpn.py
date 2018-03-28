@@ -12,9 +12,9 @@
 
 import random
 
-from rally import consts
 from rally.task import validation
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.neutron import utils
 

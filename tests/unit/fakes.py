@@ -25,14 +25,14 @@ from glanceclient import exc
 import mock
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exceptions
+from rally import api
+from rally.common import utils as rally_utils
+from rally.task import context
+from rally.task import scenario
 import six
 from swiftclient import exceptions as swift_exceptions
 
-from rally import api
-from rally.common import utils as rally_utils
-from rally import consts
-from rally.task import context
-from rally.task import scenario
+from rally_openstack import consts
 
 
 def generate_uuid():

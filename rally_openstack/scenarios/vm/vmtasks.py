@@ -20,12 +20,12 @@ import pkgutil
 from rally.common import logging
 from rally.common import sshutils
 from rally.common import validation
-from rally import consts
 from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import atomic
 from rally.task import types
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.cinder import utils as cinder_utils
 from rally_openstack.scenarios.vm import utils as vm_utils

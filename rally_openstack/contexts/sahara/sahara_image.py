@@ -14,11 +14,11 @@
 
 from rally.common import utils as rutils
 from rally.common import validation
-from rally import consts
 from rally import exceptions
 from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
+from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.sahara import utils
 from rally_openstack.services.image import image as image_services

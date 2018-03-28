@@ -15,11 +15,11 @@
 
 import jsonschema
 from rally.common import logging
-from rally import consts
 from rally import exceptions as rally_exceptions
 from rally.task import types
 from rally.task import validation
 
+from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.cinder import utils as cinder_utils
 from rally_openstack.scenarios.neutron import utils as neutron_utils

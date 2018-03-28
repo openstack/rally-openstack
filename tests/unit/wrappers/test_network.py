@@ -16,12 +16,13 @@
 import ddt
 import mock
 
+from neutronclient.common import exceptions as neutron_exceptions
 from rally.common import utils
-from rally import consts
+
+from rally_openstack import consts
 from rally_openstack.wrappers import network
 from tests.unit import test
 
-from neutronclient.common import exceptions as neutron_exceptions
 
 SVC = "rally_openstack.wrappers.network."
 

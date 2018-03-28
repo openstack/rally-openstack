@@ -14,9 +14,9 @@
 
 from rally.common import utils
 from rally.common import validation
-from rally import consts
 from rally.task import context
 
+from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.wrappers import network as network_wrapper
 

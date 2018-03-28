@@ -23,9 +23,9 @@ from cryptography.x509 import oid
 
 from rally.common import utils as rutils
 from rally.common import validation
-from rally import consts
 from rally.task import context
 
+from rally_openstack import consts
 from rally_openstack.scenarios.magnum import utils as magnum_utils
 
 

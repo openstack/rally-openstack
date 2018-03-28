@@ -13,10 +13,10 @@
 # under the License.
 
 from rally.common import utils as rutils
-from rally import consts
 from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
+from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.services.storage import block
 

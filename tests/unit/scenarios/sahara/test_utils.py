@@ -18,10 +18,11 @@ from oslo_utils import uuidutils
 from saharaclient.api import base as sahara_base
 
 from rally.common import cfg
-from rally import consts
 from rally import exceptions
 from rally_openstack.scenarios.sahara import utils
 from tests.unit import test
+
+from rally_openstack import consts
 
 CONF = cfg.CONF
 

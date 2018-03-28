@@ -213,9 +213,9 @@ method:
   import shlex
   import subprocess
 
-  from rally import consts
   from rally.task import hook
 
+  from rally_openstack import consts
 
   @hook.configure(name="simple_sys_call")
   class SimpleSysCallHook(hook.Hook):
@@ -318,9 +318,9 @@ This example shows the code of the existing Event trigger:
 
 .. code-block:: python
 
-  from rally import consts
   from rally.task import trigger
 
+  from rally_openstack import consts
 
   @trigger.configure(name="event")
   class EventTrigger(trigger.Trigger):

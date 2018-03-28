@@ -31,10 +31,11 @@ clients:
 
 .. code-block:: python
 
-    from rally import consts
     from rally.plugins.openstack import scenario
     from rally.task import atomic
     from rally.task import validation
+
+    from rally_openstack import consts
 
 
     @validation.add("required_services", services=[consts.Service.NOVA])

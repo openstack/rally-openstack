@@ -32,7 +32,8 @@ and implement its API (the *_run_scenario()* method):
     import random
 
     from rally.task import runner
-    from rally import consts
+
+    from rally_openstack import consts
 
 
     @runner.configure(name="random_times")

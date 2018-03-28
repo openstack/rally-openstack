@@ -20,9 +20,9 @@ import six
 from rally.common import broker
 from rally.common import logging
 from rally.common import utils
-from rally import consts
 from rally.task import context
 
+from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.vm import vmtasks
 from rally_openstack.services.image import image

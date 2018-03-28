@@ -20,17 +20,18 @@ import six
 
 from glanceclient import exc as glance_exc
 from novaclient import exceptions as nova_exc
-from rally.task import types
-
 from rally.common import logging
 from rally.common import validation
 from rally.common import yamlutils as yaml
-from rally import consts
 from rally import exceptions
 from rally.plugins.common import validators
+from rally.task import types
+
+from rally_openstack import consts
 from rally_openstack.contexts.keystone import roles
 from rally_openstack.contexts.nova import flavors as flavors_ctx
 from rally_openstack import types as openstack_types
+
 
 LOG = logging.getLogger(__name__)
 

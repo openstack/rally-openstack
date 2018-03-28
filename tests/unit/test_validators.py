@@ -19,9 +19,9 @@ import mock
 
 from glanceclient import exc as glance_exc
 from novaclient import exceptions as nova_exc
-
-from rally import consts
 from rally import exceptions
+
+from rally_openstack import consts
 from rally_openstack import validators
 from tests.unit import test
 
