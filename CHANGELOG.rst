@@ -26,13 +26,13 @@ project
 Added
 -----
 
-* GnocchiArchivePolicy.list_archive_policy
-* GnocchiArchivePolicy.create_archive_policy
-* GnocchiArchivePolicy.create_delete_archive_policy
-* GnocchiResourceType.list_resource_type
-* GnocchiResourceType.create_resource_type
-* GnocchiResourceType.create_delete_resource_type
-* NeutronSubnets.delete_subnets
+* [scenario plugin] GnocchiArchivePolicy.list_archive_policy
+* [scenario plugin] GnocchiArchivePolicy.create_archive_policy
+* [scenario plugin] GnocchiArchivePolicy.create_delete_archive_policy
+* [scenario plugin] GnocchiResourceType.list_resource_type
+* [scenario plugin] GnocchiResourceType.create_resource_type
+* [scenario plugin] GnocchiResourceType.create_delete_resource_type
+* [scenario plugin] NeutronSubnets.delete_subnets
 * [ci] New Zuul V3 native jobs
 * Extend existing@openstack platform to support creating a specification based
   on system environment variables. This feature should be available with
