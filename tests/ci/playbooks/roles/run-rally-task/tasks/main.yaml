@@ -7,7 +7,7 @@
       export RALLY_PLUGINS_DIR="{{ rally_home_dir }}/plugins"
       export RALLY_EXTRA_DIR="{{ rally_home_dir }}/extra"
 
-      rally --rally-debug --plugin-paths "{{ rally_home_dir }}/plugins" task start --task {{ rally_home_dir }}/task.yaml #--task-args-file {{ rally_home_dir }}/task_args_file.yaml
+      rally --rally-debug task start --task {{ rally_home_dir }}/task.yaml #--task-args-file {{ rally_home_dir }}/task_args_file.yaml
     executable: /bin/bash
   register: command_result
   ignore_errors: True

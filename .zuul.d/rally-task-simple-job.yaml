@@ -3,4 +3,4 @@
     description: A simple job which checks Rally integration with Devstack in Zuul V3 env.
     parent: rally-task-at-devstack
     vars:
-      rally_task: rally-jobs/simple-cinder.yaml
+      rally_task: rally-jobs/simple-job.yaml

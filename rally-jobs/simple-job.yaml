@@ -18,3 +18,15 @@
             users:
               tenants: 2
               users_per_tenant: 2
+    -
+      title: Test a subtask with only one workload
+      description: Check that a fake plugin is loaded from ~/.rally/plugins dir
+      scenario:
+        FakePlugin.testplugin: {}
+      runner:
+        constant:
+          times: 4
+          concurrency: 4
+      sla:
+        failure_rate:
+          max: 0
