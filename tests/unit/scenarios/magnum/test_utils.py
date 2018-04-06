@@ -174,7 +174,12 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         _api_client = mock_api_client.return_value
         self.scenario._get_k8s_api_client()
         mock_configuration_object.assert_called_once_with()
-        mock_api_client.assert_called_once_with(config=config)
+        if hasattr(kubernetes_client, "ConfigurationObject"):
+            # k8s-python < 4.0.0
+            mock_api_client.assert_called_once_with(config=config)
+        else:
+            mock_api_client.assert_called_once_with(config)
+
         mock_core_v1_api.assert_called_once_with(_api_client)
 
     @mock.patch("kubernetes.client.api_client.ApiClient")
@@ -211,7 +216,11 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         _api_client = mock_api_client.return_value
         self.scenario._get_k8s_api_client()
         mock_configuration_object.assert_called_once_with()
-        mock_api_client.assert_called_once_with(config=config)
+        if hasattr(kubernetes_client, "ConfigurationObject"):
+            # k8s-python < 4.0.0
+            mock_api_client.assert_called_once_with(config=config)
+        else:
+            mock_api_client.assert_called_once_with(config)
         mock_core_v1_api.assert_called_once_with(_api_client)
 
     @mock.patch(MAGNUM_UTILS + ".MagnumScenario._get_k8s_api_client")

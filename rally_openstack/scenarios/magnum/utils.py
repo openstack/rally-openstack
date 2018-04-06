@@ -172,7 +172,12 @@ class MagnumScenario(scenario.OpenStackScenario):
         config.ssl_ca_cert = ca_certs
         config.cert_file = cert_file
         config.key_file = key_file
-        client = api_client.ApiClient(config=config)
+        if hasattr(k8s_config, "ConfigurationObject"):
+            # k8sclient < 4.0.0
+            client = api_client.ApiClient(config=config)
+        else:
+            client = api_client.ApiClient(config)
+
         return core_v1_api.CoreV1Api(client)
 
     @atomic.action_timer("magnum.k8s_list_v1pods")
