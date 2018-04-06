@@ -8,10 +8,12 @@
       - name: openstack/rally-openstack
       - name: openstack/magnum
       - name: openstack/python-magnumclient
+      - name: openstack/heat
     vars:
       devstack_plugins:
         rally-openstack: https://git.openstack.org/openstack/rally-openstack
         magnum: https://git.openstack.org/openstack/magnum
+        heat: https://git.openstack.org/openstack/heat
       devstack_services:
         magnum: true
         # disable redundant services for the job

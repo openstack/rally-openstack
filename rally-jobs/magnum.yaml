@@ -1,7 +1,7 @@
 {% set image = "Fedora-Atomic-27-20180212.2.x86_64" %}
 ---
   version: 2
-  title: Task for gate-rally-dsvm-magnum-rally-nv job
+  title: Task for rally-task-magnum job
   description: >
     This task contains various subtasks for testing magnum plugins
   subtasks:
