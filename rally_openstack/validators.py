@@ -18,8 +18,7 @@ import os
 import re
 import six
 
-from glanceclient import exc as glance_exc
-from novaclient import exceptions as nova_exc
+
 from rally.common import logging
 from rally.common import validation
 from rally.common import yamlutils as yaml
@@ -75,6 +74,8 @@ class ImageExistsValidator(validation.Validator):
 
     @with_roles_ctx()
     def validate(self, context, config, plugin_cls, plugin_cfg):
+
+        from glanceclient import exc as glance_exc
 
         image_args = config.get("args", {}).get(self.param_name)
 
@@ -202,6 +203,9 @@ class FlavorExistsValidator(validation.Validator):
         return flavor
 
     def _get_validated_flavor(self, config, clients, param_name):
+
+        from novaclient import exceptions as nova_exc
+
         flavor_value = config.get("args", {}).get(param_name)
         if not flavor_value:
             self.fail("Parameter %s is not specified." % param_name)
@@ -252,6 +256,9 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
         self.validate_disk = validate_disk
 
     def _get_validated_image(self, config, clients, param_name):
+
+        from glanceclient import exc as glance_exc
+
         image_context = config.get("contexts", {}).get("images", {})
         image_args = config.get("args", {}).get(param_name)
         image_ctx_name = image_context.get("image_name")
@@ -414,11 +421,16 @@ class RequiredServicesValidator(validation.Validator):
                         "a long time and latest novaclient doesn't support "
                         "it, so we too.")
 
+        if "api_versions" in config.get("contexts", {}):
+            api_versions = config["contexts"]["api_versions"]
+        else:
+            api_versions = config.get("contexts", {}).get(
+                "api_versions@openstack", {})
+
         for service in self.services:
             # NOTE(andreykurilin): validator should ignore services configured
             # via context(a proper validation should be in context)
-            service_config = config.get("contexts", {}).get(
-                "api_versions@openstack", {}).get(service, {})
+            service_config = api_versions.get(service, {})
 
             if (service not in available_services and
                     not ("service_type" in service_config or

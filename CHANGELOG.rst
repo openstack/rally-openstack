@@ -26,6 +26,18 @@ Added
 * [scenario plugin] GnocchiMetric.create_metric
 * [scenario plugin] GnocchiMetric.create_delete_metric
 
+Fixed
+~~~~~
+
+* ``required_services`` validator should not check services which are
+  configured via ``api_versions@openstack`` context since the proper validation
+  is done at the context itself.
+  The inner check for ``api_versions@openstack`` in ``required_services``
+  checked only ``api_versions@openstack``, but ``api_versions`` string is also
+  valid name for the context (if there is no other ``api_versions`` contexts
+  for other platforms, but the case of name conflict is covered by another
+  check).
+
 [1.0.0] - 2018-03-28
 --------------------
 Start a fork of `rally/plugins/openstack module of original OpenStack Rally
