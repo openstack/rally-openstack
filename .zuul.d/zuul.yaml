@@ -46,6 +46,12 @@
         - rally-task-keystone-glance-swift
         - rally-task-magnum:
             voting: false
+            files:
+              - rally-jobs/magnum.yaml
+              - rally_openstack/cleanup/resources.py
+              - rally_openstack/contexts/magnum
+              - rally_openstack/scenarios/magnum
+              - rally_openstack/osclients.py
         # NOTE(andreykurilin): manila requires some specific configuration.
         #   Calling special hook can help.
         # https://github.com/openstack/manila/blob/master/playbooks/legacy/rally-dsvm-manila-multibackend/run.yaml
