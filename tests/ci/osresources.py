@@ -315,7 +315,15 @@ class Gnocchi(ResourceManager):
     REQUIRED_SERVICE = consts.Service.GNOCCHI
 
     def list_resources(self):
-        return self.client.resource.list()
+        result = []
+        marker = None
+        while True:
+            resources = self.client.resource.list(marker=marker)
+            if not resources:
+                break
+            result.extend(resources)
+            marker = resources[-1]["id"]
+        return result
 
     def list_archive_policy_rules(self):
         return self.client.archive_policy_rule.list()

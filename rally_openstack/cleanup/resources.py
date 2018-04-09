@@ -899,6 +899,36 @@ class GnocchiMetric(GnocchiMixin):
         return result
 
 
+@base.resource("gnocchi", "resource", order=next(_gnocchi_order),
+               tenant_resource=True)
+class GnocchiResource(GnocchiMixin):
+    def id(self):
+        return self.raw_resource["id"]
+
+    def name(self):
+        return self.raw_resource["original_resource_id"]
+
+    def is_deleted(self):
+        from gnocchiclient import exceptions as gnocchi_exc
+        try:
+            self._manager().get(self.raw_resource["type"], self.id())
+        except gnocchi_exc.NotFound:
+            return True
+        return False
+
+    def list(self):
+        result = []
+        marker = None
+        while True:
+            resources = self._manager().list(marker=marker)
+            if not resources:
+                break
+            result.extend(resources)
+            marker = resources[-1]["id"]
+
+        return result
+
+
 # WATCHER
 
 _watcher_order = get_order(1500)

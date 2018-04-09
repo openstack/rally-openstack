@@ -25,6 +25,7 @@ Added
 * [scenario plugin] GnocchiMetric.list_metric
 * [scenario plugin] GnocchiMetric.create_metric
 * [scenario plugin] GnocchiMetric.create_delete_metric
+* [scenario plugin] GnocchiResource.create_resource
 
 Fixed
 ~~~~~
