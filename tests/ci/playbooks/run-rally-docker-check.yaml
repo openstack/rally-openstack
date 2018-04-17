@@ -1,0 +1,58 @@
+
+- hosts: all
+  name: Performs checks for building rally-openstack docker image
+  tasks:
+    - name: Install docker
+      become: True
+      become_user: root
+      shell:
+        executable: /bin/sh
+        cmd: |
+          set -e
+
+          apt-get update
+
+          apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+          apt-add-repository 'deb https://apt.dockerproject.org/repo ubuntu-xenial main'
+
+          apt-get update
+          apt-cache policy docker-engine
+
+          apt-get install -y docker-engine
+
+    - name: Check docker service status
+      become: True
+      become_user: root
+      command: systemctl status docker
+
+    - name: Build rally-openstack image
+      become: True
+      become_user: root
+      shell: "cd {{ zuul.project.src_dir }} && docker build -t xrally/xrally-openstack ./"
+
+    - name: Create Docker volume as for persistant Rally container storage
+      become: True
+      become_user: root
+      command: "docker volume create --name rally_volume"
+
+    - name: Create an Environment
+      become: True
+      become_user: root
+      command: docker run -v rally_volume:/home/rally/data xrally/xrally-openstack env create --name "special_env_name"
+
+    - name: List all available environments
+      become: True
+      become_user: root
+      command: docker run -v rally_volume:/home/rally/data xrally/xrally-openstack env list
+      register: env_list
+
+    # Check availability of that environment (check that volume stores Rally database)
+    - fail:
+        msg: There is no created environment available.
+      when: '"special_env_name" not in env_list.stdout'
+
+    - name: Check loading of rally-openstack plugin
+      become: True
+      become_user: root
+      # this plugin was added with rally-openstack 1.1.0
+      command: docker run -v rally_volume:/home/rally/data xrally/xrally-openstack plugin show GnocchiMetric.list_metric

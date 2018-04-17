@@ -1,0 +1,6 @@
+- job:
+    name: rally-docker-check
+    parent: base
+    nodeset: ubuntu-xenial
+    run: tests/ci/playbooks/run-rally-docker-check.yaml
+    timeout: 1800
