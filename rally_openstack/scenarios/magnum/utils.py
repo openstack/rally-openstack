@@ -115,6 +115,7 @@ class MagnumScenario(scenario.OpenStackScenario):
         cluster = utils.wait_for_status(
             cluster,
             ready_statuses=["CREATE_COMPLETE"],
+            failure_statuses=["CREATE_FAILED", "ERROR"],
             update_resource=utils.get_from_manager(),
             timeout=CONF.openstack.magnum_cluster_create_timeout,
             check_interval=CONF.openstack.magnum_cluster_create_poll_interval,

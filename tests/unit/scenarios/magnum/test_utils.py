@@ -97,6 +97,7 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         self.mock_wait_for_status.mock.assert_called_once_with(
             self.cluster,
             ready_statuses=["CREATE_COMPLETE"],
+            failure_statuses=["CREATE_FAILED", "ERROR"],
             update_resource=self.mock_get_from_manager.mock.return_value,
             check_interval=CONF.openstack.
             magnum_cluster_create_poll_interval,
