@@ -34,6 +34,7 @@
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
+        - rally-docker-check
         - rally-task-simple-job
         - rally-task-basic-with-existing-users:
             # use_existing_users key did not trigger proper ansible tasks
@@ -80,6 +81,7 @@
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
+        - rally-docker-check
         - rally-task-simple-job
         - rally-task-heat
         - rally-task-ironic

@@ -26,6 +26,16 @@ Added
 * [scenario plugin] GnocchiMetric.create_metric
 * [scenario plugin] GnocchiMetric.create_delete_metric
 
+Changed
+~~~~~~~
+
+* `Docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ ported
+  to publish images from `rally-openstack
+  <https://github.com/openstack/rally-openstack>`_ repo instead of using the
+  rally framework repository.
+  Also, the CI is extended to check ability to build Docker image for any of
+  changes.
+
 Fixed
 ~~~~~
 
