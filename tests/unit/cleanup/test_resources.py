@@ -1144,3 +1144,29 @@ class GnocchiMetricTestCase(test.TestCase):
             [mock.call(marker=None), mock.call(marker=metrics[1]["id"]),
              mock.call(marker=metrics[3]["id"])],
             gnocchi._manager.return_value.list.call_args_list)
+
+
+class GnocchiResourceTestCase(test.TestCase):
+
+    def get_gnocchi(self):
+        gnocchi = resources.GnocchiResource()
+        gnocchi._service = "gnocchi"
+        return gnocchi
+
+    def test_id(self):
+        gnocchi = self.get_gnocchi()
+        gnocchi.raw_resource = {"id": "test_id"}
+        self.assertEqual("test_id", gnocchi.id())
+
+    def test_list(self):
+        gnocchi = self.get_gnocchi()
+        gnocchi._manager = mock.MagicMock()
+        res = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock(),
+               mock.MagicMock()]
+        gnocchi._manager.return_value.list.side_effect = (
+            res[:2], res[2:4], [])
+        self.assertEqual(res, gnocchi.list())
+        self.assertEqual(
+            [mock.call(marker=None), mock.call(marker=res[1]["id"]),
+             mock.call(marker=res[3]["id"])],
+            gnocchi._manager.return_value.list.call_args_list)

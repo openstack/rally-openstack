@@ -150,12 +150,13 @@ class GnocchiService(service.Service):
         return metrics
 
     @atomic.action_timer("gnocchi.create_resource")
-    def create_resource(self, resource_type="generic"):
+    def create_resource(self, name, resource_type="generic"):
         """Create a resource.
 
+        :param name: Name of the resource
         :param resource_type: Type of the resource
         """
-        resource = {"id": self.generate_random_name()}
+        resource = {"id": name}
         return self._clients.gnocchi().resource.create(
             resource_type, resource)
 
