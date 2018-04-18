@@ -1,217 +1,228 @@
 ---
-  Gnocchi.list_capabilities:
+  version: 2
+  title: Task for rally-task-telemetry job
+  description: >
+    This task contains various subtasks for testing gnocchi plugins
+  subtasks:
     -
+      title: Gnocchi.list_capabilities tests
+      scenario:
+        Gnocchi.list_capabilities: {}
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  Gnocchi.get_status:
     -
-      args:
-        detailed: false
+      title: Gnocchi.get_status tests
+      scenario:
+        Gnocchi.get_status:
+          detailed: false
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiArchivePolicyRule.list_archive_policy_rule:
     -
+      title: GnocchiArchivePolicyRule.list_archive_policy_rule tests
+      scenario:
+        GnocchiArchivePolicyRule.list_archive_policy_rule: {}
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  GnocchiArchivePolicyRule.create_archive_policy_rule:
     -
-      args:
-        metric_pattern: "cpu_*"
-        archive_policy_name: "low"
+      title: GnocchiArchivePolicyRule.create_archive_policy_rule tests
+      scenario:
+        GnocchiArchivePolicyRule.create_archive_policy_rule:
+          metric_pattern: "cpu_*"
+          archive_policy_name: "low"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiArchivePolicyRule.create_delete_archive_policy_rule:
     -
-      args:
-        metric_pattern: "cpu_*"
-        archive_policy_name: "low"
+      title: GnocchiArchivePolicyRule.create_delete_archive_policy_rule tests
+      scenario:
+        GnocchiArchivePolicyRule.create_delete_archive_policy_rule:
+          metric_pattern: "cpu_*"
+          archive_policy_name: "low"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiArchivePolicy.list_archive_policy:
     -
+      title: GnocchiArchivePolicy.list_archive_policy tests
+      scenario:
+        GnocchiArchivePolicy.list_archive_policy: {}
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  GnocchiArchivePolicy.create_archive_policy:
     -
-      args:
-        definition:
-          - granularity: "0:00:01"
-            timespan: "1:00:00"
+      title: GnocchiArchivePolicy.create_archive_policy tests
+      scenario:
+        GnocchiArchivePolicy.create_archive_policy:
+          definition:
+            - granularity: "0:00:01"
+              timespan: "1:00:00"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiArchivePolicy.create_delete_archive_policy:
     -
-      args:
-        definition:
-          - granularity: "0:00:01"
-            timespan: "1:00:00"
+      title: GnocchiArchivePolicy.create_archive_policy tests
+      scenario:
+        GnocchiArchivePolicy.create_archive_policy:
+          definition:
+            - granularity: "0:00:01"
+              timespan: "1:00:00"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiResourceType.list_resource_type:
     -
+      title: GnocchiResourceType.list_resource_type tests
+      scenario:
+        GnocchiResourceType.list_resource_type: {}
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  GnocchiResourceType.create_resource_type:
     -
-      args:
-        attributes:
-          foo:
-            required: false
-            type: "string"
-          bar:
-            required: true
-            type: "number"
+      title: GnocchiResourceType.create_resource_type tests
+      scenario:
+        GnocchiResourceType.create_resource_type:
+          attributes:
+            foo:
+              required: false
+              type: "string"
+            bar:
+              required: true
+              type: "number"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiResourceType.create_delete_resource_type:
     -
-      args:
-        attributes:
-          foo:
-            required: false
-            type: "string"
-          bar:
-            required: true
-            type: "number"
+      title: GnocchiResourceType.create_delete_resource_type tests
+      scenario:
+        GnocchiResourceType.create_delete_resource_type:
+          attributes:
+            foo:
+              required: false
+              type: "string"
+            bar:
+              required: true
+              type: "number"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
+        constant:
+          times: 10
+          concurrency: 2
       sla:
         failure_rate:
           max: 0
-
-  GnocchiMetric.list_metric:
     -
-      args:
-        limit: 10000
+      title: GnocchiMetric.list_metric tests
+      scenario:
+        GnocchiMetric.list_metric:
+          limit: 10000
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  GnocchiMetric.create_metric:
     -
-      args:
-        archive_policy_name: "low"
+      title: GnocchiMetric.create_metric tests
+      scenario:
+        GnocchiMetric.create_metric:
+          archive_policy_name: "low"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  GnocchiMetric.create_delete_metric:
     -
-      args:
-        archive_policy_name: "low"
+      title: GnocchiMetric.create_delete_metric tests
+      scenario:
+        GnocchiMetric.create_delete_metric:
+          archive_policy_name: "low"
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
       sla:
         failure_rate:
           max: 0
-
-  GnocchiResource.create_resource:
     -
+      title: GnocchiResource.create_resource tests
+      scenario:
+        GnocchiResource.create_resource: {}
       runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
         users:
           tenants: 2
           users_per_tenant: 3
