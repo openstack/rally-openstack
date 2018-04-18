@@ -1,0 +1,25 @@
+---
+  GrafanaMetrics.push_metric_locally:
+    -
+      args:
+        monitor_vip: 10.0.0.5
+        pushgateway_port: 9091
+        grafana:
+          user: admin
+          password: password
+          port: 3000
+        datasource_id: 1
+        job_name: rally_test
+        sleep_time: 5
+        retries_total: 30
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 1
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        failure_rate:
+          max: 0

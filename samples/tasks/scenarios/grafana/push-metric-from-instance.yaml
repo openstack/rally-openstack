@@ -1,0 +1,43 @@
+{% set flavor_name = flavor_name or "grafana_test.small" %}
+{% set image_name = image_name or "testVM" %}
+---
+  GrafanaMetrics.push_metric_from_instance:
+    -
+      args:
+        flavor:
+          name: {{ flavor_name }}
+        image:
+          name: {{ image_name }}
+        monitor_vip: 10.0.0.5
+        pushgateway_port: 9091
+        grafana:
+          user: admin
+          password: password
+          port: 3000
+        datasource_id: 1
+        job_name: rally_test
+        sleep_time: 5
+        retries_total: 30
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 1
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+        flavors:
+          -
+            name: {{ flavor_name }}
+            ram: 512
+            disk: 1
+            vcpus: 1
+        images:
+          image_name: {{ image_name }}
+          image_url: http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img
+          disk_format: qcow2
+          container_format: bare
+          visibility: public
+      sla:
+        failure_rate:
+          max: 0
