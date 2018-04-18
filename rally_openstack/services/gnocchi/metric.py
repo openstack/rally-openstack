@@ -180,7 +180,7 @@ class GnocchiService(service.Service):
 
         :param name: Name of the resource type
         """
-        resource_type = {"name": name or self.generate_random_name()}
+        resource_type = {"name": name}
         if attributes is not None:
             resource_type["attributes"] = attributes
 
