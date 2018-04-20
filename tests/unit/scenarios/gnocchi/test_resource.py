@@ -49,3 +49,12 @@ class GnocchiResourceTestCase(test.ScenarioTestCase):
         scenario.run(resource_type="foo")
         resource_service.create_resource.assert_called_once_with(
             "name", resource_type="foo")
+
+    def test_create_delete_resource(self):
+        resource_service = self.mock_metric.return_value
+        scenario = resource.CreateDeleteResource(self.context)
+        scenario.generate_random_name = mock.MagicMock(return_value="name")
+        scenario.run(resource_type="foo")
+        resource_service.create_resource.assert_called_once_with(
+            "name", resource_type="foo")
+        self.assertEqual(1, resource_service.delete_resource.call_count)

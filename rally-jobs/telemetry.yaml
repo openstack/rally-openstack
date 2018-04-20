@@ -229,3 +229,18 @@
       sla:
         failure_rate:
           max: 0
+    -
+      title: GnocchiResource.create_delete_resource tests
+      scenario:
+        GnocchiResource.create_delete_resource: {}
+      runner:
+        constant:
+          times: 10
+          concurrency: 2
+      contexts:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+      sla:
+        failure_rate:
+          max: 0

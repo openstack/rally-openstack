@@ -34,3 +34,20 @@ class CreateResource(gnocchiutils.GnocchiBase):
         """
         name = self.generate_random_name()
         self.gnocchi.create_resource(name, resource_type=resource_type)
+
+
+@validation.add("required_services", services=[consts.Service.GNOCCHI])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(context={"cleanup@openstack": ["gnocchi.resource"]},
+                    name="GnocchiResource.create_delete_resource")
+class CreateDeleteResource(gnocchiutils.GnocchiBase):
+
+    def run(self, resource_type="generic"):
+        """Create resource and then delete it.
+
+        :param resource_type: Type of the resource
+        """
+        name = self.generate_random_name()
+        resource = self.gnocchi.create_resource(name,
+                                                resource_type=resource_type)
+        self.gnocchi.delete_resource(resource["id"])
