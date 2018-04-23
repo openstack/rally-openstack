@@ -18,7 +18,6 @@ from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
-from rally_openstack import osclients
 from rally_openstack.scenarios.ec2 import utils as ec2_utils
 from rally_openstack import types
 
@@ -65,9 +64,8 @@ class EC2ServerGenerator(context.Context):
         image = self.config["image"]
         flavor = self.config["flavor"]
 
-        clients = osclients.Clients(self.context["users"][0]["credential"])
-        image_id = types.EC2Image.transform(clients=clients,
-                                            resource_config=image)
+        image_id = types.EC2Image(self.context).pre_process(
+            resource_spec=image, config={})
 
         for user, tenant_id in rutils.iterate_per_tenants(
                 self.context["users"]):

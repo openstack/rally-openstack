@@ -21,7 +21,6 @@ from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
-from rally_openstack import osclients
 from rally_openstack.scenarios.watcher import utils as watcher_utils
 from rally_openstack import types
 
@@ -85,8 +84,6 @@ class AuditTemplateGenerator(context.Context):
                      "api_versions", [])}
              })
 
-        clients = osclients.Clients(self.context["admin"]["credential"])
-
         self.context["audit_templates"] = []
         for i in six.moves.range(self.config["audit_templates_per_admin"]):
             cfg_size = len(self.config["params"])
@@ -95,12 +92,10 @@ class AuditTemplateGenerator(context.Context):
             elif self.config["fill_strategy"] == "random":
                 audit_params = random.choice(self.config["params"])
 
-            goal_id = types.WatcherGoal.transform(
-                clients=clients,
-                resource_config=audit_params["goal"])
-            strategy_id = types.WatcherStrategy.transform(
-                clients=clients,
-                resource_config=audit_params["strategy"])
+            goal_id = types.WatcherGoal(self.context).pre_process(
+                resource_spec=audit_params["goal"], config={})
+            strategy_id = types.WatcherStrategy(self.context).pre_process(
+                resource_spec=audit_params["strategy"], config={})
 
             audit_template = watcher_scenario._create_audit_template(
                 goal_id, strategy_id)

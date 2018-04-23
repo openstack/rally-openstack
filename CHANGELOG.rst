@@ -42,6 +42,11 @@ Changed
   rally framework repository.
   Also, the CI is extended to check ability to build Docker image for any of
   changes.
+* An interface of ResourceType plugins is changed since Rally 0.12. All our
+  plugins ared adpoted to support it.
+  The port is done in a backward compatible way, so the minimum required
+  version of Rally still is 0.11.0, but we suggest you to use the latest
+  release of Rally.
 
 Removed
 ~~~~~~~
