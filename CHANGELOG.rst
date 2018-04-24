@@ -38,6 +38,14 @@ Changed
   Also, the CI is extended to check ability to build Docker image for any of
   changes.
 
+Removed
+~~~~~~~
+
+* Calculation of the duration for "nova.bind_actions" action. It shows
+  only duration of initialization Rally inner class and can be easily
+  misunderstood as some kind of "Nova operation".
+  Affects 1 inner scenario "NovaServers.boot_and_bounce_server".
+
 Fixed
 ~~~~~
 

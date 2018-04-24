@@ -1078,7 +1078,6 @@ class NovaScenario(scenario.OpenStackScenario):
         """
         return self.admin_clients("nova").aggregates.delete(aggregate)
 
-    @atomic.action_timer("nova.bind_actions")
     def _bind_actions(self):
         actions = ["hard_reboot", "soft_reboot", "stop_start",
                    "rescue_unrescue", "pause_unpause", "suspend_resume",
