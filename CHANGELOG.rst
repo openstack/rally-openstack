@@ -24,6 +24,12 @@ Added
 
 * Added neutron trunk scenarios
 
+Fixed
+~~~~~
+
+* Do not ignore ``region_name`` from environment specification while
+  initializing keystone client.
+
 [1.3.0] - 2018-10-08
 --------------------
 
@@ -151,8 +157,6 @@ Fixed
   valid name for the context (if there is no other ``api_versions`` contexts
   for other platforms, but the case of name conflict is covered by another
   check).
-* The endpoint_type defined in environment specification/deployment
-  configuration is the endpoint interface for gnocchi.
 
 [1.0.0] - 2018-03-28
 --------------------
