@@ -102,9 +102,9 @@
         failure_rate:
           max: 0
     -
-      title: GnocchiArchivePolicy.create_archive_policy tests
+      title: GnocchiArchivePolicy.create_delete_archive_policy tests
       scenario:
-        GnocchiArchivePolicy.create_archive_policy:
+        GnocchiArchivePolicy.create_delete_archive_policy:
           definition:
             - granularity: "0:00:01"
               timespan: "1:00:00"
