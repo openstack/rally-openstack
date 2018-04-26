@@ -591,18 +591,14 @@ def check_opts_import_path(logical_line, physical_line, filename):
 
      N342
      """
-    excluded_files = ["./rally/task/engine.py",
-                      "./rally/task/context.py",
-                      "./rally/task/scenario.py",
-                      "./rally/common/opts.py"]
+    excluded_files = ["./rally_openstack/__init__.py"]
     forbidden_methods = [".register_opts("]
 
     if filename not in excluded_files:
         for forbidden_method in forbidden_methods:
             if logical_line.find(forbidden_method) != -1:
                 yield (0, "N342 All options should be loaded from correct "
-                          "paths only. For 'openstack' "
-                          "its './rally/plugin/openstack/cfg'")
+                          "paths only - rally_openstack.cfg module.")
 
 
 def factory(register):
