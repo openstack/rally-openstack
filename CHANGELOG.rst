@@ -27,6 +27,11 @@ Added
 * [scenario plugin] GnocchiMetric.create_delete_metric
 * [scenario plugin] GnocchiResource.create_resource
 * [scenario plugin] GnocchiResource.create_delete_resource
+* Introduce *__version__*, *__version_tuple__* at *rally_openstack* module.
+  As like other python packages each release of *rally-openstack* package can
+  introduce new things, deprecate or even remove other ones. To simplify
+  integration with other plugins which depends on *rally-openstack*, the new
+  properties can be used with proper checks.
 
 Changed
 ~~~~~~~
