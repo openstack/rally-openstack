@@ -13,6 +13,8 @@
 #    under the License.
 
 import copy
+import operator
+import re
 import traceback
 
 from rally.common import logging
@@ -27,6 +29,9 @@ from rally_openstack.services.storage import block
 
 
 LOG = logging.getLogger(__name__)
+
+
+configure = plugin.configure
 
 
 class OpenStackResourceType(types.ResourceType):
@@ -49,6 +54,81 @@ class OpenStackResourceType(types.ResourceType):
         elif self._context.get("users"):
             self._clients = osclients.Clients(
                 self._context["users"][0]["credential"])
+
+    def _find_resource(self, resource_spec, resources):
+        """Return the resource whose name matches the pattern.
+
+        .. note:: This method is a modified version of
+            `rally.task.types.obj_from_name`. The difference is supporting the
+            case of returning the latest version of resource in case of
+            `accurate=False` option.
+
+        :param resource_spec: resource specification to find.
+            Expected keys:
+
+            * name - The exact name of resource to search. If no exact match
+              and value of *accurate* key is False (default behaviour), name
+              will be interpreted as a regexp
+            * regexp - a regexp of resource name to match. If several resources
+              match and value of *accurate* key is False (default behaviour),
+              the latest resource will be returned.
+        :param resources: iterable containing all resources
+        :raises InvalidScenarioArgument: if the pattern does
+            not match anything.
+
+        :returns: resource object mapped to `name` or `regex`
+        """
+        if "name" in resource_spec:
+            # In a case of pattern string exactly matches resource name
+            matching_exact = [resource for resource in resources
+                              if resource.name == resource_spec["name"]]
+            if len(matching_exact) == 1:
+                return matching_exact[0]
+            elif len(matching_exact) > 1:
+                raise exceptions.InvalidScenarioArgument(
+                    "%(typename)s with name '%(pattern)s' "
+                    "is ambiguous, possible matches "
+                    "by id: %(ids)s" % {
+                        "typename": self.get_name().title(),
+                        "pattern": resource_spec["name"],
+                        "ids": ", ".join(map(operator.attrgetter("id"),
+                                             matching_exact))})
+            if resource_spec.get("accurate", False):
+                raise exceptions.InvalidScenarioArgument(
+                    "%(typename)s with name '%(name)s' not found" % {
+                        "typename": self.get_name().title(),
+                        "name": resource_spec["name"]})
+            # Else look up as regex
+            patternstr = resource_spec["name"]
+        elif "regex" in resource_spec:
+            patternstr = resource_spec["regex"]
+        else:
+            raise exceptions.InvalidScenarioArgument(
+                "%(typename)s 'id', 'name', or 'regex' not found "
+                "in '%(resource_spec)s' " % {
+                    "typename": self.get_name().title(),
+                    "resource_spec": resource_spec})
+
+        pattern = re.compile(patternstr)
+        matching = [resource for resource in resources
+                    if re.search(pattern, resource.name or "")]
+        if not matching:
+            raise exceptions.InvalidScenarioArgument(
+                "%(typename)s with pattern '%(pattern)s' not found" % {
+                    "typename": self.get_name().title(),
+                    "pattern": pattern.pattern})
+        elif len(matching) > 1:
+            if not resource_spec.get("accurate", False):
+                return sorted(matching, key=lambda o: o.name or "")[-1]
+
+            raise exceptions.InvalidScenarioArgument(
+                "%(typename)s with name '%(pattern)s' is ambiguous, possible "
+                "matches by id: %(ids)s" % {
+                    "typename": self.get_name().title(),
+                    "pattern": pattern.pattern,
+                    "ids": ", ".join(map(operator.attrgetter("id"),
+                                         matching))})
+        return matching[0]
 
     if rally_openstack.__rally_version__ < (0, 12):
         @classmethod
@@ -121,10 +201,8 @@ class GlanceImage(DeprecatedBehaviourMixin, OpenStackResourceType):
                 glance = image.Image(self._clients)
                 self._cache[cache_id] = glance.list_images(**list_kwargs)
             images = self._cache[cache_id]
-            resource_id = types._id_from_name(
-                resource_config=resource_spec,
-                resources=images,
-                typename="image")
+            resource = self._find_resource(resource_spec, images)
+            return resource.id
         return resource_id
 
 

@@ -21,6 +21,96 @@ from tests.unit import fakes
 from tests.unit import test
 
 
+class OpenStackResourceTypeTestCase(test.TestCase):
+    def test__find_resource(self):
+
+        @types.configure(name=self.id())
+        class FooType(types.OpenStackResourceType):
+            def pre_process(self, resource_spec, config):
+                pass
+
+        ftype = FooType({})
+
+        resources = dict(
+            (name, fakes.FakeResource(name=name))
+            for name in ["Fake1", "Fake2", "Fake3"])
+        # case #1: 100% name match
+        self.assertEqual(
+            resources["Fake2"],
+            ftype._find_resource({"name": "Fake2"}, resources.values()))
+
+        # case #2: pick the latest one
+        self.assertEqual(
+            resources["Fake3"],
+            ftype._find_resource({"name": "Fake"}, resources.values()))
+
+        # case #3: regex one match
+        self.assertEqual(
+            resources["Fake2"],
+            ftype._find_resource({"regex": ".ake2"}, resources.values()))
+
+        # case #4: regex, pick the latest one
+        self.assertEqual(
+            resources["Fake3"],
+            ftype._find_resource({"regex": "Fake"}, resources.values()))
+
+    def test__find_resource_negative(self):
+
+        @types.configure(name=self.id())
+        class FooType(types.OpenStackResourceType):
+            def pre_process(self, resource_spec, config):
+                pass
+
+        ftype = FooType({})
+        # case #1: the wrong resource spec
+        e = self.assertRaises(exceptions.InvalidScenarioArgument,
+                              ftype._find_resource, {}, [])
+        self.assertIn("'id', 'name', or 'regex' not found",
+                      e.format_message())
+
+        # case #2: two matches for one name
+        resources = [fakes.FakeResource(name="Fake1"),
+                     fakes.FakeResource(name="Fake2"),
+                     fakes.FakeResource(name="Fake1")]
+        e = self.assertRaises(
+            exceptions.InvalidScenarioArgument,
+            ftype._find_resource, {"name": "Fake1"}, resources)
+        self.assertIn("with name 'Fake1' is ambiguous, possible matches",
+                      e.format_message())
+
+        # case #3: no matches at all
+        resources = [fakes.FakeResource(name="Fake1"),
+                     fakes.FakeResource(name="Fake2"),
+                     fakes.FakeResource(name="Fake3")]
+        e = self.assertRaises(
+            exceptions.InvalidScenarioArgument,
+            ftype._find_resource, {"name": "Foo"}, resources)
+        self.assertIn("with pattern 'Foo' not found",
+                      e.format_message())
+
+        # case #4: two matches for one name, but 'accurate' is True
+        resources = [fakes.FakeResource(name="Fake1"),
+                     fakes.FakeResource(name="Fake2"),
+                     fakes.FakeResource(name="Fake3")]
+        e = self.assertRaises(
+            exceptions.InvalidScenarioArgument,
+            ftype._find_resource, {"name": "Fake", "accurate": True},
+            resources)
+        self.assertIn("with name 'Fake' not found",
+                      e.format_message())
+
+        # case #5: two matches for one name, but 'accurate' is True
+        resources = [fakes.FakeResource(name="Fake1"),
+                     fakes.FakeResource(name="Fake2"),
+                     fakes.FakeResource(name="Fake3")]
+        e = self.assertRaises(
+            exceptions.InvalidScenarioArgument,
+            ftype._find_resource, {"regex": "Fake", "accurate": True},
+            resources)
+        self.assertIn("with name 'Fake' is ambiguous, possible matches",
+                      e.format_message())
+
+
 class FlavorTestCase(test.TestCase):
 
     def setUp(self):
@@ -168,9 +258,11 @@ class GlanceImageTestCase(test.TestCase):
 
     def test_preprocess_by_regex_match_multiple(self):
         resource_spec = {"regex": "^cirros"}
-        self.assertRaises(exceptions.InvalidScenarioArgument,
-                          self.type_cls.pre_process,
-                          resource_spec=resource_spec, config={})
+        image_id = self.type_cls.pre_process(resource_spec=resource_spec,
+                                             config={})
+        # matching resources are sorted by the names. It is impossible to
+        #   predict which resource will be luckiest
+        self.assertIn(image_id, ["102", "103"])
 
     def test_preprocess_by_regex_no_match(self):
         resource_spec = {"regex": "-boot$"}
