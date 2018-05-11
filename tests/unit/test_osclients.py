@@ -624,6 +624,7 @@ class OSClientsTestCase(test.TestCase):
         mock_gnocchi.client.Client.return_value = fake_gnocchi
         mock_keystoneauth1 = mock.MagicMock()
         self.assertNotIn("gnocchi", self.clients.cache)
+        self.credential["endpoint_type"] = "internal"
         with mock.patch.dict("sys.modules",
                              {"gnocchiclient": mock_gnocchi,
                               "keystoneauth1": mock_keystoneauth1}):
@@ -636,7 +637,8 @@ class OSClientsTestCase(test.TestCase):
             self.assertEqual(fake_gnocchi, client)
             kw = {"version": "1",
                   "session": mock_keystoneauth1.session.Session(),
-                  "adapter_options": {"service_type": "metric"}}
+                  "adapter_options": {"service_type": "metric",
+                                      "interface": "internal"}}
             mock_gnocchi.client.Client.assert_called_once_with(**kw)
             self.assertEqual(fake_gnocchi, self.clients.cache["gnocchi"])
 
