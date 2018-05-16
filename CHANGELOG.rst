@@ -119,6 +119,6 @@ Fixed
 ~~~~~
 
 * The support of `kubernetes python client
-  <https://pypi.python.org/pypi/kubernetes>`_ (which is used by Magnum plugins)
+  <https://pypi.org/project/kubernetes>`_ (which is used by Magnum plugins)
   is not limited by 3.0.0 max version. You can use more modern releases of that
   library.
