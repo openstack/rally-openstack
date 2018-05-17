@@ -31,4 +31,5 @@ python-swiftclient>=3.2.0                              # Apache Software License
 python-troveclient>=2.2.0                              # Apache Software License
 python-watcherclient>=1.1.0                            # Apache Software License
 python-zaqarclient>=1.0.0                              # Apache Software License
+requests>=2.14.2                                       # Apache License, Version 2.0
 kubernetes>1.0.0                                       # Apache License Version 2.0
