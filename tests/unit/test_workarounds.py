@@ -30,9 +30,15 @@ class WorkaroundTestCase(test.TestCase):
         ([0, 12], [
             "'rally_openstack.__init__' module contains a hack for loading "
             "configuration options.",
+
             "'rally_openstack.types' module contains a compatibility layer for"
             " an old interface of ResourceTypes."]
-         )
+         ),
+        ([0, 13], [
+            "'rally_openstack.validators' module has a check to do not "
+            "register 'required_platforms@openstack' validator for old Rally "
+            "releases."
+        ])
     ]
 
     def get_min_required_version(self):

@@ -66,6 +66,49 @@ def test_with_roles_ctx(mock_role_generator):
     mock_role_generator().setup.assert_called_once_with()
 
 
+class RequiredOpenStackValidatorTestCase(test.TestCase):
+    def validate(self):
+        validator = validators.RequiredOpenStackValidator(admin=True)
+        validator.validate(
+            {"platforms": {"openstack": {"admin": "foo"}}}, {}, None, None)
+
+        validator = validators.RequiredOpenStackValidator(users=True)
+        validator.validate(
+            {"platforms": {"openstack": {"admin": "foo"}}}, {}, None, None)
+
+        validator = validators.RequiredOpenStackValidator(users=True)
+        validator.validate(
+            {"platforms": {"openstack": {"users": ["foo"]}}}, {}, None, None)
+
+    def test_validate_failed(self):
+        # case #1: wrong configuration of validator
+        validator = validators.RequiredOpenStackValidator()
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, {}, None, None)
+        self.assertEqual(
+            "You should specify admin=True or users=True or both.",
+            e.message)
+
+        # case #2: admin is not present
+        validator = validators.RequiredOpenStackValidator(admin=True)
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate,
+            {"platforms": {"openstack": {}}}, {}, None, None)
+        self.assertEqual("No admin credentials for openstack",
+                         e.message)
+
+        # case #3: users are not present
+        validator = validators.RequiredOpenStackValidator(users=True)
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate,
+            {"platforms": {"openstack": {}}}, {}, None, None)
+        self.assertEqual("No user credentials for openstack",
+                         e.message)
+
+
 @ddt.ddt
 class ImageExistsValidatorTestCase(test.TestCase):
 

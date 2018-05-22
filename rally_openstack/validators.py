@@ -26,6 +26,7 @@ from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import types
 
+import rally_openstack
 from rally_openstack import consts
 from rally_openstack.contexts.keystone import roles
 from rally_openstack.contexts.nova import flavors as flavors_ctx
@@ -33,6 +34,46 @@ from rally_openstack import types as openstack_types
 
 
 LOG = logging.getLogger(__name__)
+
+
+class RequiredOpenStackValidator(validation.RequiredPlatformValidator):
+    def __init__(self, admin=False, users=False):
+        """Validates credentials for OpenStack platform.
+
+        This allows us to create 3 kind of tests cases:
+        1) requires platform with admin
+        2) requires platform with admin + users
+        3) requires platform with users
+
+        :param admin: requires admin credential
+        :param users: requires user credentials
+        """
+        super(RequiredOpenStackValidator, self).__init__(platform="openstack")
+        self.admin = admin
+        self.users = users
+
+    def validate(self, context, config, plugin_cls, plugin_cfg):
+        if not (self.admin or self.users):
+            self.fail("You should specify admin=True or users=True or both.")
+
+        context = context["platforms"].get(self.platform, {})
+
+        if self.admin and context.get("admin") is None:
+            self.fail("No admin credentials for openstack")
+        if self.users and len(context.get("users", ())) == 0:
+            if context.get("admin") is None:
+                self.fail("No user credentials for openstack")
+            else:
+                # NOTE(andreykurilin): It is a case when the plugin requires
+                #   'users' for launching, but there are no specified users in
+                #   deployment. Let's assume that 'users' context can create
+                #   them via admin user and do not fail."
+                pass
+
+
+if rally_openstack.__rally_version__ >= (0, 13):
+    RequiredOpenStackValidator = validation.configure(
+        "required_platform", platform="openstack")(RequiredOpenStackValidator)
 
 
 def with_roles_ctx():
