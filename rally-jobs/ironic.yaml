@@ -8,7 +8,7 @@
       title: IronicNodes.create_and_list_node tests
       scenario:
         IronicNodes.create_and_list_node:
-          driver: "fake"
+          driver: "fake-hardware"
           properties:
             capabilities: "boot_option:local"
       runner:
@@ -23,7 +23,7 @@
       title: IronicNodes.create_and_delete_node tests
       scenario:
         IronicNodes.create_and_delete_node:
-          driver: "fake"
+          driver: "fake-hardware"
           properties:
             capabilities: "boot_option:local"
       runner:
