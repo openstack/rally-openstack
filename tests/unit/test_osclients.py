@@ -18,7 +18,6 @@ import mock
 
 from rally.common import cfg
 from rally import exceptions
-from rally import osclients as deprecated_osclients  # noqa
 
 from rally_openstack import consts
 from rally_openstack import credential as oscredential

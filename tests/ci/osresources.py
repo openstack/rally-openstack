@@ -24,6 +24,7 @@ import sys
 
 from rally.cli import cliutils
 from rally.common.plugin import discover
+from rally import plugins
 import six
 
 from rally_openstack import consts
@@ -514,6 +515,7 @@ def _print_tabular_resources(resources, table_label):
     print("")
 
 
+@plugins.ensure_plugins_are_loaded
 def main():
 
     parser = argparse.ArgumentParser(

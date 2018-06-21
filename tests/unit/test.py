@@ -26,6 +26,9 @@ from rally import plugins
 from tests.unit import fakes
 
 
+plugins.load()
+
+
 class DatabaseFixture(cfg.fixture.Config):
     """Create clean DB before starting test."""
     def setUp(self):
@@ -43,7 +46,6 @@ class TestCase(base.BaseTestCase):
     def setUp(self):
         super(TestCase, self).setUp()
         self.addCleanup(mock.patch.stopall)
-        plugins.load()
 
     def _test_atomic_action_timer(self, atomic_actions, name, count=1,
                                   parent=[]):

@@ -16,10 +16,12 @@
 
 import sys
 
-from rally.plugins.workload import siege
+import mock
+
+
+from rally_openstack.workload import siege
 from tests.unit import test
 
-import mock
 
 SIEGE_OUTPUT = """
 Transactions:                    522 hits
@@ -50,15 +52,15 @@ OUTPUT = [
 
 class SiegeTestCase(test.TestCase):
 
-    @mock.patch("rally.plugins.workload.siege.json.load")
+    @mock.patch("rally_openstack.workload.siege.json.load")
     def test_get_instances(self, mock_load):
         mock_load.return_value = OUTPUT
         instances = list(siege.get_instances())
         self.assertEqual(["10.0.0.4", "10.0.0.5"], instances)
 
-    @mock.patch("rally.plugins.workload.siege.get_instances")
-    @mock.patch("rally.plugins.workload.siege.generate_urls_list")
-    @mock.patch("rally.plugins.workload.siege.subprocess.check_output")
+    @mock.patch("rally_openstack.workload.siege.get_instances")
+    @mock.patch("rally_openstack.workload.siege.generate_urls_list")
+    @mock.patch("rally_openstack.workload.siege.subprocess.check_output")
     def test_run(self, mock_check_output, mock_generate_urls_list,
                  mock_get_instances):
         mock_get_instances.return_value = [1, 2]
@@ -74,7 +76,7 @@ class SiegeTestCase(test.TestCase):
         sys.stdout = real_stdout
         self.assertEqual(expected, mock_write.mock_calls)
 
-    @mock.patch("rally.plugins.workload.siege.tempfile.NamedTemporaryFile")
+    @mock.patch("rally_openstack.workload.siege.tempfile.NamedTemporaryFile")
     def test_generate_urls_list(self, mock_named_temporary_file):
         mock_urls = mock.MagicMock()
         mock_named_temporary_file.return_value = mock_urls
