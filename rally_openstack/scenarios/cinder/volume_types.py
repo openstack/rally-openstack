@@ -254,7 +254,7 @@ class CreateGetAndDeleteEncryptionType(cinder_utils.CinderBasic):
             key_size=None, control_location="front-end"):
         """Create get and delete an encryption type
 
-        This scenario firstly creates an encryption type for a volome
+        This scenario firstly creates an encryption type for a volume
         type created in the context, then gets detailed information of
         the created encryption type, finally deletes the created
         encryption type.
