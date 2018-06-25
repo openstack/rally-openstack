@@ -16,6 +16,21 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[1.2.0] - 2018-06-25
+--------------------
+
+Rally 1.0.0 has released. This is a major release which doesn't contain
+in-tree OpenStack plugins. Also, this release extends flexibility of
+validating required platforms which means that logic of required admin/users
+for the plugin can be implemented at **rally-openstack** side and this is
+done in rally-openstack 1.2.0
+
+Changed
+~~~~~~~
+
+Also, it is sad to mention, but due to OpenStack policies we need to stop
+duplicating release notes at ``git tag message``. At least for now.
+
 [1.1.0] - 2018-05-11
 --------------------
 
