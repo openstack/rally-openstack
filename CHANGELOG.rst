@@ -16,6 +16,16 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[unreleased] - 2018-07-20
+-------------------------
+
+Fixed
+~~~~~
+
+* Keypairs are now properly cleaned up after the execution of Magnum
+  tests.
+
+
 [1.2.0] - 2018-06-25
 --------------------
 

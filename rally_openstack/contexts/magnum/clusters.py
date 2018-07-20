@@ -51,6 +51,7 @@ class ClusterGenerator(context.Context):
             nova_scenario = nova_utils.NovaScenario({
                 "user": user,
                 "task": self.context["task"],
+                "owner_id": self.context["owner_id"],
                 "config": {"api_versions": self.context["config"].get(
                     "api_versions", [])}
             })

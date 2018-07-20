@@ -53,7 +53,7 @@ class ListClusters(utils.MagnumScenario):
     context={"cleanup@openstack": ["magnum.clusters", "nova.keypairs"]},
     name="MagnumClusters.create_and_list_clusters",
     platform="openstack")
-class CreateAndListClusters(utils.MagnumScenario):
+class CreateAndListClusters(utils.MagnumScenario, nova_utils.NovaScenario):
 
     def run(self, node_count, **kwargs):
         """create cluster and then list all clusters.
@@ -69,13 +69,7 @@ class CreateAndListClusters(utils.MagnumScenario):
         else:
             del kwargs["cluster_template_uuid"]
 
-        nova_scenario = nova_utils.NovaScenario({
-            "user": self.context["user"],
-            "task": self.context["task"],
-            "config": {"api_versions": self.context["config"].get(
-                "api_versions", [])}
-        })
-        keypair = nova_scenario._create_keypair()
+        keypair = self._create_keypair()
 
         new_cluster = self._create_cluster(cluster_template_uuid, node_count,
                                            keypair=keypair, **kwargs)
