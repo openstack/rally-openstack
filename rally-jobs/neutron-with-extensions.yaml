@@ -1,22 +1,5 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 ---
-  NeutronLoadbalancerV2.create_and_list_loadbalancers:
-    -
-      args:
-        lb_create_args: {}
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        network: {}
-      sla:
-        failure_rate:
-          max: 0
-
   NeutronBGPVPN.create_and_list_bgpvpns:
     -
       runner:
