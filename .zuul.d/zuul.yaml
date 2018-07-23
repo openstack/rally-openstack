@@ -42,7 +42,8 @@
         # NOTE(andreykurilin): this requires more thing to configure before
         #   launching.
         #- rally-task-designate
-        - rally-task-heat
+        - rally-task-heat:
+            voting: false
         - rally-task-ironic
         - rally-task-keystone-glance-swift
         - rally-task-load-balancing:
@@ -83,7 +84,7 @@
         - rally-tox-py35
         - rally-docker-check
         - rally-task-simple-job
-        - rally-task-heat
+        #- rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift
         - rally-task-mistral
