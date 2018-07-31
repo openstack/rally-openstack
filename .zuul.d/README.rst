@@ -9,7 +9,7 @@ See `official doc
 <https://docs.openstack.org/infra/system-config/zuulv3.html>`_ for more
 details.
 
-What do we have in this this dir?
+What do we have in this dir?
 ---------------------------------
 
 .. note:: Do not document all files and jobs here. It will (for sure) become
