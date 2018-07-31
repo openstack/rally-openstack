@@ -39,7 +39,7 @@ class BlockTestCase(test.TestCase):
             "fake_volume", availability_zone=None, consistencygroup_id=None,
             description=None, group_id=None, imageRef=None, metadata=None,
             multiattach=False, name=None, project_id=None,
-            scheduler_hints=None, snapshot_id=None, source_replica=None,
+            scheduler_hints=None, snapshot_id=None,
             source_volid=None, user_id=None, volume_type=None)
 
     def test_list_volumes(self):

@@ -177,7 +177,7 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      source_replica=None, multiattach=False):
+                      multiattach=False):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -193,7 +193,6 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
         :param metadata: Optional metadata to set on volume creation
         :param imageRef: reference to an image stored in glance
         :param source_volid: ID of source volume to clone from
-        :param source_replica: ID of source volume to clone replica
         :param scheduler_hints: (optional extension) arbitrary key-value pairs
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than

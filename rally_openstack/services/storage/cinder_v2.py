@@ -31,10 +31,9 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
     @atomic.action_timer("cinder_v2.create_volume")
     def create_volume(self, size, consistencygroup_id=None,
                       snapshot_id=None, source_volid=None, name=None,
-                      description=None, volume_type=None, user_id=None,
-                      project_id=None, availability_zone=None,
-                      metadata=None, imageRef=None, scheduler_hints=None,
-                      source_replica=None, multiattach=False):
+                      description=None, volume_type=None,
+                      availability_zone=None, metadata=None, imageRef=None,
+                      scheduler_hints=None, multiattach=False):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -43,13 +42,10 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
         :param name: Name of the volume
         :param description: Description of the volume
         :param volume_type: Type of volume
-        :param user_id: User id derived from context
-        :param project_id: Project id derived from context
         :param availability_zone: Availability Zone to use
         :param metadata: Optional metadata to set on volume creation
         :param imageRef: reference to an image stored in glance
         :param source_volid: ID of source volume to clone from
-        :param source_replica: ID of source volume to clone replica
         :param scheduler_hints: (optional extension) arbitrary key-value pairs
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
@@ -63,13 +59,10 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
                   "snapshot_id": snapshot_id,
                   "source_volid": source_volid,
                   "volume_type": volume_type,
-                  "user_id": user_id,
-                  "project_id": project_id,
                   "availability_zone": availability_zone,
                   "metadata": metadata,
                   "imageRef": imageRef,
                   "scheduler_hints": scheduler_hints,
-                  "source_replica": source_replica,
                   "multiattach": multiattach}
         if isinstance(size, dict):
             size = random.randint(size["min"], size["max"])
@@ -241,7 +234,7 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      source_replica=None, multiattach=False):
+                      multiattach=False):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -251,13 +244,12 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
         :param name: Name of the volume
         :param description: Description of the volume
         :param volume_type: Type of volume
-        :param user_id: User id derived from context
-        :param project_id: Project id derived from context
+        :param user_id: User id derived from context(IGNORED)
+        :param project_id: Project id derived from context(IGNORED)
         :param availability_zone: Availability Zone to use
         :param metadata: Optional metadata to set on volume creation
         :param imageRef: reference to an image stored in glance
         :param source_volid: ID of source volume to clone from
-        :param source_replica: ID of source volume to clone replica
         :param scheduler_hints: (optional extension) arbitrary key-value pairs
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
@@ -270,10 +262,9 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
             snapshot_id=snapshot_id,
             source_volid=source_volid, name=name,
             description=description, volume_type=volume_type,
-            user_id=user_id, project_id=project_id,
             availability_zone=availability_zone, metadata=metadata,
             imageRef=imageRef, scheduler_hints=scheduler_hints,
-            source_replica=source_replica, multiattach=multiattach))
+            multiattach=multiattach))
 
     def list_volumes(self, detailed=True):
         """Lists all volumes.

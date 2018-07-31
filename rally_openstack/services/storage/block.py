@@ -13,10 +13,12 @@
 #    under the License.
 
 from rally.common import cfg
+from rally.common import logging
 from rally.task import service
 
 
 CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 
 
 Volume = service.make_resource_cls(
@@ -58,7 +60,7 @@ class BlockStorage(service.UnifiedService):
         :param metadata: Optional metadata to set on volume creation
         :param imageRef: reference to an image stored in glance
         :param source_volid: ID of source volume to clone from
-        :param source_replica: ID of source volume to clone replica
+        :param source_replica: ID of source volume to clone replica(IGNORED)
         :param scheduler_hints: (optional extension) arbitrary key-value pairs
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
@@ -66,6 +68,9 @@ class BlockStorage(service.UnifiedService):
 
         :returns: Return a new volume.
         """
+        if source_replica:
+            LOG.warning("The argument `source_replica` would be ignored"
+                        " because it was removed from cinder api.")
         return self._impl.create_volume(
             size, consistencygroup_id=consistencygroup_id, group_id=group_id,
             snapshot_id=snapshot_id, source_volid=source_volid,
@@ -73,7 +78,7 @@ class BlockStorage(service.UnifiedService):
             user_id=user_id, project_id=project_id,
             availability_zone=availability_zone, metadata=metadata,
             imageRef=imageRef, scheduler_hints=scheduler_hints,
-            source_replica=source_replica, multiattach=multiattach)
+            multiattach=multiattach)
 
     @service.should_be_overridden
     def list_volumes(self, detailed=True):

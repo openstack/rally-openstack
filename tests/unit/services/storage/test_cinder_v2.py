@@ -49,13 +49,10 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
                   "snapshot_id": None,
                   "source_volid": None,
                   "volume_type": None,
-                  "user_id": None,
-                  "project_id": None,
                   "availability_zone": None,
                   "metadata": None,
                   "imageRef": None,
                   "scheduler_hints": None,
-                  "source_replica": None,
                   "multiattach": False}
         self.cinder.volumes.create.assert_called_once_with(1, **kwargs)
         self.service._wait_available_volume.assert_called_once_with(
@@ -80,13 +77,10 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
                   "snapshot_id": None,
                   "source_volid": None,
                   "volume_type": None,
-                  "user_id": None,
-                  "project_id": None,
                   "availability_zone": None,
                   "metadata": None,
                   "imageRef": None,
                   "scheduler_hints": None,
-                  "source_replica": None,
                   "multiattach": False}
         self.cinder.volumes.create.assert_called_once_with(
             3, **kwargs)
@@ -309,9 +303,9 @@ class UnifiedCinderV2ServiceTestCase(test.TestCase):
         self.service._impl.create_volume.assert_called_once_with(
             1, availability_zone=None, consistencygroup_id=None,
             description=None, imageRef=None,
-            metadata=None, multiattach=False, name=None, project_id=None,
-            scheduler_hints=None, snapshot_id=None, source_replica=None,
-            source_volid=None, user_id=None, volume_type=None)
+            metadata=None, multiattach=False, name=None,
+            scheduler_hints=None, snapshot_id=None,
+            source_volid=None, volume_type=None)
         self.service._unify_volume.assert_called_once_with(
             self.service._impl.create_volume.return_value)
 
