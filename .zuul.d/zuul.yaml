@@ -28,12 +28,24 @@
     vars:
       tox_envlist: py35
 
+- job:
+    name: rally-tox-cover
+    parent: tox
+    description: |
+      Run test for rally project.
+
+      Uses tox with the ``cover`` environment.
+    vars:
+      tox_envlist: cover
+    post-run: tests/ci/playbooks/post-rally-coverage.yaml
+
 - project:
     check:
       jobs:
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
+        - rally-tox-cover
         - rally-docker-check
         - rally-task-simple-job
         - rally-task-basic-with-existing-users:
@@ -82,6 +94,7 @@
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
+        - rally-tox-cover
         - rally-docker-check
         - rally-task-simple-job
         #- rally-task-heat

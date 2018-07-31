@@ -32,8 +32,8 @@ fi
 # Checkout master and save coverage report
 git checkout HEAD^
 
-baseline_report=$(mktemp -t rally_coverageXXXXXXX)
-py.test --cov=rally tests/unit/ --cov-report=html -n auto
+baseline_report=$(mktemp -t rally_openstack_coverageXXXXXXX)
+py.test --cov=rally_openstack tests/unit/ --cov-report=html -n auto
 coverage report > $baseline_report
 mv cover cover-master
 cat $baseline_report
@@ -42,8 +42,8 @@ baseline_missing=$(awk 'END { print $3 }' $baseline_report)
 # Checkout back and save coverage report
 git checkout -
 
-current_report=$(mktemp -t rally_coverageXXXXXXX)
-py.test --cov=rally tests/unit/ --cov-report=html -n auto
+current_report=$(mktemp -t rally_openstack_coverageXXXXXXX)
+py.test --cov=rally_openstack tests/unit/ --cov-report=html -n auto
 coverage report > $current_report
 current_missing=$(awk 'END { print $3 }' $current_report)
 
