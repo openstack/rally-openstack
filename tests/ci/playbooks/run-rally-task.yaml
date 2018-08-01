@@ -1,6 +1,6 @@
 - hosts: all
   roles:
-  - run-devstack
+    - run-devstack
 
 - hosts: controller
   vars:
@@ -12,10 +12,10 @@
     rally_resources_at_start: '{{ rally_results_dir }}/resources_at_start.txt'
     rally_task_args_file: "100-percent-not-exist-file"
   roles:
-  - prepare-for-rally-task
-  - snapshot-available-os-resources
-  - run-rally-task
-  - process-task-results
-  - import-task-results
-  - check-os-resources
-  - check-task-sla
+    - prepare-for-rally-task
+    - snapshot-available-os-resources
+    - run-rally-task
+    - process-task-results
+    - import-task-results
+    - check-os-resources
+    - check-task-sla
