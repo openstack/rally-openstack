@@ -18,7 +18,7 @@ import os
 import traceback
 import unittest
 
-import rally as rally_m
+import rally_openstack
 from tests.check_samples import utils
 
 
@@ -32,7 +32,8 @@ class TestPreCreatedTasks(unittest.TestCase):
 
         rally = utils.Rally()
         full_path = os.path.join(
-            os.path.dirname(rally_m.__file__), os.pardir, "tasks", "openstack")
+            os.path.dirname(rally_openstack.__file__), os.pardir,
+            "tasks", "openstack")
         task_path = os.path.join(full_path, "task.yaml")
         args_path = os.path.join(full_path, "task_arguments.yaml")
 

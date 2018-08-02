@@ -22,7 +22,6 @@ from tests.unit import test
 BASE_CTX = "rally.task.context"
 CTX = "rally_openstack.contexts.sahara.sahara_image"
 BASE_SCN = "rally.task.scenarios"
-SCN = "rally_openstack.scenarios"
 
 
 class SaharaImageTestCase(test.ScenarioTestCase):
@@ -135,19 +134,17 @@ class SaharaImageTestCase(test.ScenarioTestCase):
             superclass=sahara_ctx.__class__,
             task_id=ctx["owner_id"])
 
-    @mock.patch("%s.glance.utils.GlanceScenario._create_image" % SCN,
-                return_value=mock.MagicMock(id=42))
     @mock.patch("%s.resource_manager.cleanup" % CTX)
     @mock.patch("%s.osclients.Clients" % CTX)
     def test_setup_and_cleanup_existing_image(
-            self, mock_clients, mock_cleanup,
-            mock_glance_scenario__create_image):
+            self, mock_clients, mock_cleanup):
 
         mock_clients.glance.images.get.return_value = mock.MagicMock(
             is_public=True)
 
         ctx = self.existing_image_context
         sahara_ctx = sahara_image.SaharaImage(ctx)
+        sahara_ctx._create_image = mock.Mock()
 
         sahara_ctx.setup()
         for tenant_id in sahara_ctx.context["tenants"]:
@@ -155,7 +152,7 @@ class SaharaImageTestCase(test.ScenarioTestCase):
                 sahara_ctx.context["tenants"][tenant_id]["sahara"]["image"])
             self.assertEqual("some_id", image_id)
 
-        self.assertFalse(mock_glance_scenario__create_image.called)
+        self.assertFalse(sahara_ctx._create_image.called)
 
         sahara_ctx.cleanup()
         self.assertFalse(mock_cleanup.called)

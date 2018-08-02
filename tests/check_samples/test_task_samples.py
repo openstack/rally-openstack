@@ -29,7 +29,7 @@ from rally import api
 from rally.common import broker
 from rally.common import yamlutils as yaml
 from rally import plugins
-from rally.plugins.openstack.context.keystone import users
+from rally_openstack.contexts.keystone import users
 from tests.check_samples import utils
 
 

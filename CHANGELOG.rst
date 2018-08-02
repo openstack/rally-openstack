@@ -19,6 +19,16 @@ Changelog
 [unreleased] - 2018-07-20
 -------------------------
 
+Removed
+~~~~~~~
+
+* Remove deprecated wrappers (rally_openstack.wrappers) and 
+  helpers (scenario utils) for keystone, cinder, glance 
+  services. The new service model should be used instead 
+  (see ``rally_openstack.services`` module for more details)
+  while developing custom plugins. All the inner plugins used
+  the new code for a long time.
+
 Fixed
 ~~~~~
 
