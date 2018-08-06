@@ -75,6 +75,25 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                                             spec, spec["existing@openstack"])
         self.assertNotEqual([], result)
 
+    def test_validate_spec_schema_with_api_info(self):
+        spec = {
+            "existing@openstack": {
+                "auth_url": "url",
+                "admin": {
+                    "username": "admin",
+                    "password": "password123",
+                    "tenant_name": "admin"
+                },
+                "api_info": {
+                    "nova": {"version": 1},
+                    "cinder": {"version": 2, "service_type": "volumev2"}
+                }
+            }
+        }
+        result = platform.Platform.validate("existing@openstack", {},
+                                            spec, spec["existing@openstack"])
+        self.assertEqual([], result)
+
     def test_create_users_only(self):
 
         spec = {

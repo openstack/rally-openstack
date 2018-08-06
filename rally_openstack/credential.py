@@ -28,7 +28,8 @@ class OpenStackCredential(dict):
                  domain_name=None, endpoint=None, user_domain_name=None,
                  project_domain_name=None,
                  https_insecure=False, https_cacert=None, https_cert=None,
-                 profiler_hmac_key=None, profiler_conn_str=None, **kwargs):
+                 profiler_hmac_key=None, profiler_conn_str=None,
+                 api_info=None, **kwargs):
         if kwargs:
             raise TypeError("%s" % kwargs)
 
@@ -50,7 +51,8 @@ class OpenStackCredential(dict):
             ("https_cacert", https_cacert),
             ("https_cert", https_cert),
             ("profiler_hmac_key", profiler_hmac_key),
-            ("profiler_conn_str", profiler_conn_str)
+            ("profiler_conn_str", profiler_conn_str),
+            ("api_info", api_info or {})
         ])
 
         self._clients_cache = {}

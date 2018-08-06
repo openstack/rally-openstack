@@ -33,6 +33,13 @@ class OpenStack(platform.Platform):
 
     It may be used to test any existing OpenStack API compatible cloud.
     """
+    VERSION_SCHEMA = {
+        "anyOf": [
+            {"type": "string", "description": "a string-like version."},
+            {"type": "number", "description": "a number-like version."}
+        ]
+    }
+
     CONFIG_SCHEMA = {
         "type": "object",
         "definitions": {
@@ -63,6 +70,21 @@ class OpenStack(platform.Platform):
                         "additionalProperties": False
                     }
                 ],
+            },
+            "api_info": {
+                "type": "object",
+                "patternProperties": {
+                    "^[a-z]+$": {
+                        "type": "object",
+                        "properties": {
+                            "version": VERSION_SCHEMA,
+                            "service_type": {"type": "string"}
+                        },
+                        "minProperties": 1,
+                        "additionalProperties": False
+                    }
+                },
+                "additionalProperties": False
             }
         },
         "properties": {
@@ -81,7 +103,8 @@ class OpenStack(platform.Platform):
                 "type": "array",
                 "items": {"$ref": "#/definitions/user"},
                 "minItems": 1
-            }
+            },
+            "api_info": {"$ref": "#/definitions/api_info"}
         },
         "anyOf": [
             {
@@ -115,6 +138,7 @@ class OpenStack(platform.Platform):
             del new_data["endpoint"]
         admin = new_data.pop("admin", None)
         users = new_data.pop("users", [])
+        api_info = new_data.pop("api_info", None)
 
         if new_data.get("https_cert") and new_data.get("https_key"):
             new_data["https_cert"] = (new_data["https_cert"],
@@ -132,7 +156,10 @@ class OpenStack(platform.Platform):
             user.update(new_data)
             for k, v in defaults.items():
                 user.setdefault(k, v)
-        return {"admin": admin, "users": users}, {}
+        platform_data = {"admin": admin, "users": users}
+        if api_info:
+            platform_data["api_info"] = api_info
+        return platform_data, {}
 
     def destroy(self):
         # NOTE(boris-42): No action need to be performed.

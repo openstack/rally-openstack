@@ -27,6 +27,7 @@ Added
   ``existing@openstack`` platform to represent client certificate bundle and
   key files. Also the support for appropriate system environment variables (
   ``OS_CERT``, ``OS_KEY``) is added.
+* Support client api option while deploying platform.
 
 Changed
 ~~~~~~~

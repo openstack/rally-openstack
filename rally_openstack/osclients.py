@@ -111,7 +111,8 @@ class OSClient(plugin.Plugin):
         self.credential = credential
         if not isinstance(self.credential, oscred.OpenStackCredential):
             self.credential = oscred.OpenStackCredential(**self.credential)
-        self.api_info = api_info
+        if api_info:
+            self.credential.api_info.update(api_info)
         self.cache = cache_obj
 
     def choose_version(self, version=None):
@@ -138,8 +139,8 @@ class OSClient(plugin.Plugin):
         # For those clients which doesn't accept string value(for example
         # zaqarclient), this method should be overridden.
         version = (version or
-                   self.api_info.get(self.get_name(), {}).get("version") or
-                   self._meta_get("default_version"))
+                   self.credential.api_info.get(self.get_name(), {}).get(
+                       "version") or self._meta_get("default_version"))
         if version is not None:
             version = str(version)
         return version
@@ -172,8 +173,8 @@ class OSClient(plugin.Plugin):
         service type from api_info(configured from a context) and default.
         """
         return (service_type or
-                self.api_info.get(self.get_name(), {}).get("service_type") or
-                self._meta_get("default_service_type"))
+                self.credential.api_info.get(self.get_name(), {}).get(
+                    "service_type") or self._meta_get("default_service_type"))
 
     @classmethod
     def is_service_type_configurable(cls):
@@ -184,7 +185,7 @@ class OSClient(plugin.Plugin):
 
     @property
     def keystone(self):
-        return OSClient.get("keystone")(self.credential, self.api_info,
+        return OSClient.get("keystone")(self.credential, None,
                                         self.cache)
 
     def _get_endpoint(self, service_type=None):

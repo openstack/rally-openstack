@@ -28,3 +28,9 @@ existing-with-predefined-users.json
 If you are using read-only backend in Keystone like LDAP, AD then
 you need this sample. If you don't specify "users" rally will use already
 existing users that you provide.
+
+existing-api.json
+--------------------------------
+
+If you expect to specify version of some clients, you could register existing
+Openstack cluster like this sample.

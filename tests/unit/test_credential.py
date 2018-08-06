@@ -43,7 +43,8 @@ class OpenStackCredentialTestCase(test.TestCase):
                           "project_domain_name": None,
                           "user_domain_name": None,
                           "profiler_hmac_key": None,
-                          "profiler_conn_str": None},
+                          "profiler_conn_str": None,
+                          "api_info": {}},
                          self.credential.to_dict())
 
     @mock.patch("rally_openstack.osclients.Clients")

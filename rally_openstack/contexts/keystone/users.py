@@ -14,6 +14,7 @@
 #    under the License.
 
 import collections
+import copy
 import uuid
 
 from rally.common import broker
@@ -106,8 +107,14 @@ class UserGenerator(context.Context):
 
         creds = self.env["platforms"]["openstack"]
         if creds.get("admin"):
+            admin_cred = copy.deepcopy(creds["admin"])
+            api_info = copy.deepcopy(creds.get("api_info", {}))
+            if "api_info" in admin_cred:
+                api_info.update(creds["admin"]["api_info"])
+            admin_cred["api_info"] = api_info
             context["admin"] = {
-                "credential": credential.OpenStackCredential(**creds["admin"])}
+                "credential": credential.OpenStackCredential(**admin_cred)
+            }
 
         if creds["users"] and not (set(self.config) - {"user_choice_method"}):
             self.existing_users = creds["users"]
@@ -218,7 +225,8 @@ class UserGenerator(context.Context):
                 https_cacert=self.credential["https_cacert"],
                 region_name=self.credential["region_name"],
                 profiler_hmac_key=self.credential["profiler_hmac_key"],
-                profiler_conn_str=self.credential["profiler_conn_str"])
+                profiler_conn_str=self.credential["profiler_conn_str"],
+                api_info=self.credential["api_info"])
             users.append({"id": user.id,
                           "credential": user_credential,
                           "tenant_id": tenant_id})
@@ -284,7 +292,13 @@ class UserGenerator(context.Context):
 
     def use_existing_users(self):
         LOG.debug("Using existing users for OpenStack platform.")
+        api_info = copy.deepcopy(self.env["platforms"]["openstack"].get(
+            "api_info", {}))
         for user_credential in self.existing_users:
+            user_credential = copy.deepcopy(user_credential)
+            if "api_info" in user_credential:
+                api_info.update(user_credential["api_info"])
+            user_credential["api_info"] = api_info
             user_credential = credential.OpenStackCredential(**user_credential)
             user_clients = osclients.Clients(user_credential)
             user_id = user_clients.keystone.auth_ref.user_id
