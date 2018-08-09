@@ -30,14 +30,14 @@
 
 - job:
     name: rally-tox-cover
-    parent: tox
+    parent: tox-cover
     description: |
       Run test for rally project.
 
       Uses tox with the ``cover`` environment.
     vars:
-      tox_envlist: cover
-    post-run: tests/ci/playbooks/post-rally-coverage.yaml
+      coverage_output_src: '{{ zuul.project.src_dir }}/cover/'
+      zuul_executor_dest: '{{ zuul.executor.log_root }}/coverage/'
 
 - project:
     check:
