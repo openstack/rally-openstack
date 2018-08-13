@@ -7,7 +7,7 @@ corresponding repositories:
 .. code-block:: bash
 
    git clone https://git.openstack.org/openstack-dev/devstack
-   git clone https://github.com/openstack/rally
+   git clone https://github.com/openstack/rally-openstack
 
 Then, configure DevStack to run Rally. First, create your ``local.conf`` file:
 
@@ -21,7 +21,7 @@ section.
 
 .. code-block:: bash
 
-    enable_plugin rally https://github.com/openstack/rally master
+    enable_plugin rally https://github.com/openstack/rally-openstack master
 
 Finally, run DevStack as usually:
 
