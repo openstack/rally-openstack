@@ -30,7 +30,7 @@ Usage
           project_name: project_that_users_belong_to
     EOT
 
-    rally env create --name my_openstack --spec env.yml
+    rally env create --name my_openstack --spec env.yaml
 
     # Check that you provide correct credentials
     rally env check
