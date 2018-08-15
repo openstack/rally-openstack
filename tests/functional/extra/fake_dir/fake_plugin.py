@@ -26,6 +26,14 @@ class FakeDummy(osclients.OSClient):
         return {"version": version, "service_type": service_type}
 
 
+@osclients.configure("faileddummy", default_version="1",
+                     default_service_type="faileddummy",
+                     supported_versions=["1", "2"])
+class FailedDummy(osclients.OSClient):
+    def create_client(self, version=None, service_type=None):
+        raise Exception("Failed Dummy")
+
+
 @scenario.configure(name="FakeDummy.openstack_api")
 class FakeDummyOpenstackAPI(scenario.OpenStackScenario):
 

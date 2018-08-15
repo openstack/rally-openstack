@@ -298,7 +298,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
             {"available": False,
              "message":
                 "Bad admin creds: \n%s"
-                % json.dumps({"username": "balbab", "password": "***"},
+                % json.dumps({"username": "balbab", "password": "***",
+                              "api_info": {}},
                              indent=2, sort_keys=True),
              "traceback": mock.ANY},
             result)
@@ -315,11 +316,64 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
             {"available": False,
              "message":
                 "Bad user creds: \n%s"
-                % json.dumps({"username": "balbab", "password": "***"},
+                % json.dumps({"username": "balbab", "password": "***",
+                              "api_info": {}},
                              indent=2, sort_keys=True),
              "traceback": mock.ANY},
             result)
         self.assertIn("Traceback (most recent call last)", result["traceback"])
+
+    @mock.patch("rally_openstack.osclients.Clients")
+    def test_check_health_with_api_info(self, mock_clients):
+        pdata = {"admin": mock.MagicMock(),
+                 "users": [],
+                 "api_info": {"fakeclient": "version"}}
+        result = existing.OpenStack({}, platform_data=pdata).check_health()
+        self._check_health_schema(result)
+        self.assertEqual({"available": True}, result)
+        mock_clients.assert_has_calls(
+            [mock.call(pdata["admin"]), mock.call().verified_keystone(),
+             mock.call().fakeclient.choose_version(),
+             mock.call().fakeclient.validate_version(
+                 mock.call().fakeclient.choose_version.return_value),
+             mock.call().fakeclient.create_client()])
+
+    @mock.patch("rally_openstack.osclients.Clients")
+    def test_check_version_failed_with_api_info(self, mock_clients):
+        pdata = {"admin": mock.MagicMock(),
+                 "users": [],
+                 "api_info": {"fakeclient": "version"}}
+
+        def validate_version(version):
+            raise exceptions.RallyException("Version is not supported.")
+        (mock_clients.return_value.fakeclient
+         .validate_version) = validate_version
+        result = existing.OpenStack({}, platform_data=pdata).check_health()
+        self._check_health_schema(result)
+        self.assertEqual({"available": False,
+                          "message": ("Invalid setting for 'fakeclient':"
+                                      " Version is not supported.")},
+                         result)
+
+    @mock.patch("rally_openstack.osclients.Clients")
+    def test_check_unexpected_failed_with_api_info(self, mock_clients):
+        pdata = {"admin": mock.MagicMock(),
+                 "users": [],
+                 "api_info": {"fakeclient": "version"}}
+
+        def create_client():
+            raise Exception("Invalid client.")
+
+        (mock_clients.return_value.fakeclient
+         .choose_version.return_value) = "1.0"
+        mock_clients.return_value.fakeclient.create_client = create_client
+        result = existing.OpenStack({}, platform_data=pdata).check_health()
+        self._check_health_schema(result)
+        self.assertEqual({"available": False,
+                          "message": ("Can not create 'fakeclient' with"
+                                      " 1.0 version."),
+                          "traceback": mock.ANY},
+                         result)
 
     @mock.patch("rally_openstack.osclients.Clients")
     def test_info(self, mock_clients):

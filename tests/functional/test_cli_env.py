@@ -121,3 +121,74 @@ class EnvTestCase(unittest.TestCase):
         self.assertEqual(
             TEST_ENV["OS_AUTH_URL"],
             config["existing@openstack"]["auth_url"])
+
+    def test_check_api_info_success(self):
+        rally = utils.Rally()
+        spec = copy.deepcopy(rally.env_spec)
+        spec["existing@openstack"]["api_info"] = {
+            "fakedummy": {
+                "version": "2",
+                "service_type": "dummyv2"
+            }
+        }
+        spec = utils.JsonTempFile(spec)
+        rally("env create --name t_create_env_with_api_info"
+              " --spec %s" % spec.filename)
+        plugings = "tests/functional/extra/fake_dir/fake_plugin.py"
+        rally("--plugin-paths %s env check" % plugings)
+
+    def test_check_api_info_fail_1(self):
+        rally = utils.Rally()
+        spec = copy.deepcopy(rally.env_spec)
+        spec["existing@openstack"]["api_info"] = {
+            "fakedummy": {
+                "version": "3",
+                "service_type": "dummyv2"
+            }
+        }
+        spec = utils.JsonTempFile(spec)
+        rally("env create --name t_create_env_with_api_info"
+              " --spec %s" % spec.filename)
+        try:
+            plugings = "tests/functional/extra/fake_dir/fake_plugin.py"
+            rally("--plugin-paths %s env check" % plugings)
+        except utils.RallyCliError as e:
+            self.assertIn("Invalid setting for 'fakedummy':", e.output)
+
+    def test_check_api_info_fail_2(self):
+        rally = utils.Rally()
+        spec = copy.deepcopy(rally.env_spec)
+        spec["existing@openstack"]["api_info"] = {
+            "noneclient": {
+                "version": "1",
+                "service_type": "none"
+            }
+        }
+        spec = utils.JsonTempFile(spec)
+        rally("env create --name t_create_env_with_api_info"
+              " --spec %s" % spec.filename)
+        try:
+            plugings = "tests/functional/extra/fake_dir/fake_plugin.py"
+            rally("--plugin-paths %s env check" % plugings)
+        except utils.RallyCliError as e:
+            self.assertIn("There is no OSClient plugin 'noneclient'",
+                          e.output)
+
+    def test_check_api_info_fail_3(self):
+        rally = utils.Rally()
+        spec = copy.deepcopy(rally.env_spec)
+        spec["existing@openstack"]["api_info"] = {
+            "faileddummy": {
+                "version": "2",
+                "service_type": "dummy"
+            }
+        }
+        spec = utils.JsonTempFile(spec)
+        rally("env create --name t_create_env_with_api_info"
+              " --spec %s" % spec.filename)
+        try:
+            plugings = "tests/functional/extra/fake_dir/fake_plugin.py"
+            rally("--plugin-paths %s env check" % plugings)
+        except utils.RallyCliError as e:
+            self.assertIn("Can not create 'faileddummy' with 2 version",
+                          e.output)

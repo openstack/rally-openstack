@@ -181,13 +181,15 @@ class OpenStack(platform.Platform):
         users_to_check = self.platform_data["users"]
         if self.platform_data["admin"]:
             users_to_check.append(self.platform_data["admin"])
-
+        clients = None
         for user in users_to_check:
+            user["api_info"] = self.platform_data.get("api_info", {})
             try:
+                clients = osclients.Clients(user)
                 if self.platform_data["admin"] == user:
-                    osclients.Clients(user).verified_keystone()
+                    clients.verified_keystone()
                 else:
-                    osclients.Clients(user).keystone()
+                    clients.keystone()
             except osclients.exceptions.RallyException as e:
                 # all rally native exceptions should provide user-friendly
                 # messages
@@ -213,6 +215,36 @@ class OpenStack(platform.Platform):
                         "Bad %s creds: \n%s"
                         % (user_role,
                            json.dumps(d, indent=2, sort_keys=True))),
+                    "traceback": traceback.format_exc()
+                }
+
+        for name in self.platform_data.get("api_info", {}):
+            if name == "keystone":
+                continue
+            if not hasattr(clients, name):
+                return {
+                    "available": False,
+                    "message": ("There is no OSClient plugin '%s' for"
+                                " communicating with OpenStack API."
+                                % name)}
+            client = getattr(clients, name)
+            try:
+                client.validate_version(client.choose_version())
+                client.create_client()
+            except osclients.exceptions.RallyException as e:
+                return {
+                    "available": False,
+                    "message": ("Invalid setting for '%(client)s':"
+                                " %(error)s") % {
+                        "client": name, "error": e.format_message()}
+                }
+            except Exception:
+                return {
+                    "available": False,
+                    "message": ("Can not create '%(client)s' with"
+                                " %(version)s version.") % {
+                        "client": name,
+                        "version": client.choose_version()},
                     "traceback": traceback.format_exc()
                 }
 
