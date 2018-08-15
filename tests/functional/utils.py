@@ -215,6 +215,20 @@ class Rally(object):
                     rep.write("%s\n" % output)
 
 
+class RallyWithSpecifiedDeployment(Rally):
+
+    DEPLOYMENT_FILE = "/tmp/rally_functests_main_deployment.json"
+
+    def __init__(self, force_new_db=False):
+        self._DEPLOYMENT_CREATE_ARGS = " --file %s" % self.DEPLOYMENT_FILE
+        if not os.path.exists(self.DEPLOYMENT_FILE):
+            subprocess.call(["rally", "--log-file", "/dev/null",
+                             "deployment", "config"],
+                            stdout=open(self.DEPLOYMENT_FILE, "w"))
+        super(RallyWithSpecifiedDeployment, self).__init__(
+            force_new_db=force_new_db)
+
+
 def get_global(global_key, env):
     home_dir = env.get("HOME")
     with open("%s/.rally/globals" % home_dir) as f:

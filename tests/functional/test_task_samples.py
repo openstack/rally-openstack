@@ -24,13 +24,12 @@ import unittest
 
 import six
 
-import rally as rally_module
 from rally import api
 from rally.common import broker
 from rally.common import yamlutils as yaml
 from rally import plugins
-from rally_openstack.contexts.keystone import users
-from tests.check_samples import utils
+import rally_openstack as rally_openstack_module
+from tests.functional import utils
 
 
 class TestTaskSamples(unittest.TestCase):
@@ -56,8 +55,8 @@ class TestTaskSamples(unittest.TestCase):
 
     @plugins.ensure_plugins_are_loaded
     def test_task_samples_are_valid(self):
-        rally = utils.Rally(force_new_db=True)
-
+        from rally_openstack.contexts.keystone import users
+        rally = utils.RallyWithSpecifiedDeployment(force_new_db=True)
         # let's use pre-created users to make TestTaskSamples quicker
         rapi = api.API(config_file=rally.config_filename)
         deployment = rapi.deployment._get("MAIN")
@@ -120,7 +119,7 @@ class TestTaskSamples(unittest.TestCase):
         def publisher(queue):
             """List all samples and render task configs"""
             samples_path = os.path.join(
-                os.path.dirname(rally_module.__file__), os.pardir,
+                os.path.dirname(rally_openstack_module.__file__), os.pardir,
                 "samples", "tasks")
 
             for dirname, dirnames, filenames in os.walk(samples_path):

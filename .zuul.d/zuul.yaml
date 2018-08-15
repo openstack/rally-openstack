@@ -48,6 +48,7 @@
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-cover
+        - rally-dsvm-tox-functional
         - rally-docker-check
         - rally-task-simple-job
         - rally-task-basic-with-existing-users:
@@ -99,6 +100,7 @@
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-cover
+        - rally-dsvm-tox-functional
         - rally-docker-check
         - rally-task-simple-job
         #- rally-task-heat

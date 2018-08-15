@@ -1,0 +1,10 @@
+- name: Run tox command
+  become: True
+  become_user: stack
+  shell:
+    executable: /bin/sh
+    cmd: |
+      set -e
+      cd {{ zuul.project.src_dir }}
+      export REQUESTS_CA_BUNDLE=/opt/stack/data/ca-bundle.pem
+      tox -e {{ rally_tox_env }}

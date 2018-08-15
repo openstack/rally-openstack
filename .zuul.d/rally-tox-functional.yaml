@@ -1,0 +1,21 @@
+- job:
+    name: rally-dsvm-tox-functional
+    parent: devstack
+    description:
+      Run functional test for rally-openstack project.
+      Uses tox with the ``functional`` environment.
+    required-projects:
+      - name: openstack-dev/devstack
+      - name: openstack-infra/devstack-gate
+      - name: openstack/rally-openstack
+      # NOTE(andreykurilin): it is a required project to fetch the latest
+      #   version and test master of rally-openstack with master of rally
+      - name: openstack/rally
+    timeout: 7200
+    roles:
+      - zuul: openstack-dev/devstack
+    vars:
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+      rally_tox_env: "functional"
+    run: tests/ci/playbooks/run-rally-tox.yaml

@@ -175,10 +175,16 @@
           nova flavor-create m1.nano 42 64 0 1
       fi
 
+- name: Check the existence of rally_task
+  stat:
+    path: '{{ zuul.project.src_dir }}/{{ rally_task }}'
+  register: rally_task_file_stat
+
 - name: Copy task file
   become: True
   become_user: stack
   command: cp "{{ zuul.project.src_dir }}/{{ rally_task }}" "{{ rally_home_dir }}/task.yaml"
+  when: rally_task_file_stat.stat.exists == True
 
 - name: Check the existence of task_args_file
   stat:
