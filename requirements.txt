@@ -2,34 +2,33 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
-rally>=0.11.0
+rally>=0.11.0                                          # Apache License, Version 2.0
 
-# OpenStack related
-boto>=2.32.1                                           # MIT
-gnocchiclient>=3.3.1                                   # Apache Software License
-keystoneauth1>=3.3.0                                   # Apache Software License
+boto                                                   # MIT
+gnocchiclient                                          # Apache Software License
+keystoneauth1                                          # Apache Software License
 os-faults>=0.1.15                                      # Apache Software License
-osprofiler>=1.4.0                                      # Apache Software License
-python-ceilometerclient>=2.5.0                         # Apache Software License
-python-cinderclient>=3.3.0                             # Apache Software License
-python-designateclient>=2.7.0                          # Apache License, Version 2.0
-python-heatclient>=1.10.0                              # Apache Software License
-python-glanceclient>=2.8.0                             # Apache License, Version 2.0
-python-ironicclient>=2.2.0                             # Apache Software License
-python-keystoneclient>=3.8.0                           # Apache Software License
-python-magnumclient>=2.1.0                             # Apache Software License
-python-manilaclient>=1.16.0                            # Apache Software License
-python-mistralclient>=3.1.0                            # Apache Software License
-python-muranoclient>=0.8.2                             # Apache License, Version 2.0
-python-monascaclient>=1.7.0                            # Apache Software License
-python-neutronclient>=6.3.0                            # Apache Software License
-python-novaclient>=9.1.0                               # Apache License, Version 2.0
-python-octaviaclient>=1.4.0                            # Apache License, Version 2.0
-python-saharaclient>=1.4.0                             # Apache License, Version 2.0
-python-senlinclient>=1.1.0                             # Apache Software License
-python-swiftclient>=3.2.0                              # Apache Software License
-python-troveclient>=2.2.0                              # Apache Software License
-python-watcherclient>=1.1.0                            # Apache Software License
-python-zaqarclient>=1.0.0                              # Apache Software License
-requests>=2.14.2                                       # Apache License, Version 2.0
-kubernetes>1.0.0                                       # Apache License Version 2.0
+osprofiler                                             # Apache Software License
+python-ceilometerclient                                # Apache Software License
+python-cinderclient!=4.0.0                             # Apache Software License
+python-designateclient                                 # Apache License, Version 2.0
+python-heatclient                                      # Apache Software License
+python-glanceclient                                    # Apache License, Version 2.0
+python-ironicclient                                    # Apache Software License
+python-keystoneclient!=2.1.0                           # Apache Software License
+python-magnumclient                                    # Apache Software License
+python-manilaclient                                    # Apache Software License
+python-mistralclient!=3.2.0                            # Apache Software License
+python-muranoclient                                    # Apache License, Version 2.0
+python-monascaclient                                   # Apache Software License
+python-neutronclient                                   # Apache Software License
+python-novaclient                                      # Apache License, Version 2.0
+python-octaviaclient                                   # Apache Software License
+python-saharaclient                                    # Apache License, Version 2.0
+python-senlinclient                                    # Apache Software License
+python-swiftclient                                     # Apache Software License
+python-troveclient                                     # Apache Software License
+python-watcherclient                                   # Apache Software License
+python-zaqarclient                                     # Apache Software License
+requests                                               # Apache License, Version 2.0
+kubernetes                                             # Apache License Version 2.0

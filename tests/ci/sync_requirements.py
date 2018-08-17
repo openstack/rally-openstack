@@ -24,6 +24,7 @@ import re
 import sys
 import textwrap
 
+import pkg_resources
 import requests
 
 
@@ -254,6 +255,10 @@ class UpperConstraint(PYPIPackage):
     def update(self, version):
         self._version = version
 
+    def fetch_version(self):
+        self._version = None
+        return self.version
+
 
 def parse_data(raw_data, include_comments=True, dependency_cls=Requirement):
     # first elem is None to simplify checks of last elem in requirements
@@ -353,26 +358,21 @@ def update_upper_constraints():
     global_uc = parse_data(raw_g_uc,
                            include_comments=False,
                            dependency_cls=UpperConstraint)
-    with open("upper-constraints.txt") as f:
-        our_uc = parse_data(f.read(),
-                            dependency_cls=UpperConstraint)
-    with open("requirements.txt") as f:
-        our_requirements = parse_data(f.read(), include_comments=False)
 
-    for name, req in our_requirements.items():
-        if isinstance(req, Comment):
-            continue
-        if name not in our_uc:
-            our_uc[name] = UpperConstraint(name)
+    our_uc = [UpperConstraint(package_name=p.project_name, version=p.version)
+              for p in pkg_resources.working_set
+              # do not include the current package at u-c
+              if p.project_name != "rally-openstack"]
 
-        if name in global_uc:
+    for package in our_uc:
+        if package.package_name in global_uc:
             # we cannot use whatever we want versions in CI. OpenStack CI
             # ignores versions listed in requirements of
             # particular project and use versions from global u-c file.
             # It means that we need to suggest to use the same versions
-            our_uc[name].update(global_uc[name].version)
+            package.update(global_uc[package.package_name].version)
 
-    our_uc = sorted(our_uc.values(), key=lambda o: o.package_name.upper())
+    our_uc = sorted(our_uc, key=lambda o: o.package_name.upper())
     _write_requirements("upper-constraints.txt", our_uc)
 
 
