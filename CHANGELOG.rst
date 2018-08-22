@@ -23,6 +23,10 @@ Added
 ~~~~~
 
 * Support Python 3.7 environment.
+* ``https_cert`` and ``https_key`` options of the spec for
+  ``existing@openstack`` platform to represent client certificate bundle and
+  key files. Also the support for appropriate system environment variables (
+  ``OS_CERT``, ``OS_KEY``) is added.
 
 Changed
 ~~~~~~~

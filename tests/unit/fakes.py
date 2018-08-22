@@ -33,6 +33,7 @@ import six
 from swiftclient import exceptions as swift_exceptions
 
 from rally_openstack import consts
+from rally_openstack import credential
 
 
 def generate_uuid():
@@ -83,12 +84,13 @@ def setup_dict(data, required=None, defaults=None):
     return defaults
 
 
-def fake_credential(**config):
-    m = mock.Mock()
-    m.to_dict.return_value = config
-    for key, value in config.items():
-        setattr(m, key, value)
-    return m
+class FakeCredential(credential.OpenStackCredential):
+    def __init__(self, **creds):
+        creds.setdefault("auth_url", "https://example.com")
+        creds.setdefault("username", "admin")
+        creds.setdefault("password", "pass")
+        super(FakeCredential, self).__init__(**creds)
+        self.clients = mock.Mock()
 
 
 class FakeResource(object):
@@ -1610,7 +1612,7 @@ class FakeClients(object):
         self._ec2 = None
         self._senlin = None
         self._watcher = None
-        self._credential = credential_ or fake_credential(
+        self._credential = credential_ or FakeCredential(
             auth_url="http://fake.example.org:5000/v2.0/",
             username="fake_username",
             password="fake_password",
@@ -1827,7 +1829,7 @@ class FakeUserContext(FakeContext):
 
     admin = {
         "id": "adminuuid",
-        "credential": fake_credential(
+        "credential": FakeCredential(
             auth_url="aurl",
             username="aname",
             password="apwd",
@@ -1835,7 +1837,7 @@ class FakeUserContext(FakeContext):
     }
     user = {
         "id": "uuid",
-        "credential": fake_credential(
+        "credential": FakeCredential(
             auth_url="url",
             username="name",
             password="pwd",

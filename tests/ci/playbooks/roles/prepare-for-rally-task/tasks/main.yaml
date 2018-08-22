@@ -153,7 +153,7 @@
 - name: Check Environment works
   become: True
   become_user: stack
-  command: "rally env check"
+  command: "rally --debug env check"
 
 - name: Print Environment info
   become: True

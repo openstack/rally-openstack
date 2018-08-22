@@ -48,7 +48,7 @@ class TempestConfigfileManagerTestCase(test.TestCase):
     def setUp(self):
         super(TempestConfigfileManagerTestCase, self).setUp()
         deployment = fakes.FakeDeployment(uuid="fake_deployment",
-                                          admin=fakes.fake_credential(**CRED))
+                                          admin=fakes.FakeCredential(**CRED))
         self.tempest = config.TempestConfigfileManager(deployment)
 
     def test__configure_auth(self):

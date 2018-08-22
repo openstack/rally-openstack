@@ -14,7 +14,6 @@
 #    under the License.
 
 from rally.common import logging
-from rally_openstack import osclients
 
 LOG = logging.getLogger(__file__)
 
@@ -28,7 +27,7 @@ class OpenStackCredential(dict):
                  region_name=None, endpoint_type=None,
                  domain_name=None, endpoint=None, user_domain_name=None,
                  project_domain_name=None,
-                 https_insecure=False, https_cacert=None,
+                 https_insecure=False, https_cacert=None, https_cert=None,
                  profiler_hmac_key=None, profiler_conn_str=None, **kwargs):
         if kwargs:
             raise TypeError("%s" % kwargs)
@@ -49,6 +48,7 @@ class OpenStackCredential(dict):
             ("project_domain_name", project_domain_name),
             ("https_insecure", https_insecure),
             ("https_cacert", https_cacert),
+            ("https_cert", https_cert),
             ("profiler_hmac_key", profiler_hmac_key),
             ("profiler_conn_str", profiler_conn_str)
         ])
@@ -70,5 +70,7 @@ class OpenStackCredential(dict):
     # this method is mostly used by validation step. let's refactor it and
     # deprecated this
     def clients(self, api_info=None):
+        from rally_openstack import osclients
+
         return osclients.Clients(self, api_info=api_info,
                                  cache=self._clients_cache)

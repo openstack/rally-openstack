@@ -15,6 +15,7 @@
 
 import mock
 
+from rally_openstack import credential
 from rally_openstack.scenarios.cinder import utils
 from tests.unit import test
 
@@ -23,13 +24,17 @@ class CinderBasicTestCase(test.ScenarioTestCase):
 
     def _get_context(self):
         context = test.get_test_context()
+
+        cred = credential.OpenStackCredential(auth_url="url",
+                                              username="user",
+                                              password="pass")
         context.update({
             "admin": {
                 "id": "fake_user_id",
-                "credential": mock.MagicMock()
+                "credential": cred
             },
             "user": {"id": "fake_user_id",
-                     "credential": mock.MagicMock()},
+                     "credential": cred},
             "tenant": {"id": "fake", "name": "fake",
                        "volumes": [{"id": "uuid", "size": 1}],
                        "servers": [1]}})

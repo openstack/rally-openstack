@@ -55,7 +55,7 @@ class TempestContextTestCase(test.TestCase):
         self.mock_isfile = mock.patch("os.path.isfile",
                                       return_value=True).start()
 
-        self.cred = fakes.fake_credential(**CRED)
+        self.cred = fakes.FakeCredential(**CRED)
         self.deployment = fakes.FakeDeployment(
             uuid="fake_deployment", admin=self.cred)
         cfg = {"verifier": mock.Mock(deployment=self.deployment),

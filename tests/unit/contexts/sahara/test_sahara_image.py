@@ -16,6 +16,7 @@ import mock
 
 from rally import exceptions
 from rally_openstack.contexts.sahara import sahara_image
+from tests.unit import fakes
 from tests.unit import test
 
 
@@ -42,7 +43,7 @@ class SaharaImageTestCase(test.ScenarioTestCase):
             for j in range(self.users_per_tenant):
                 self.users_key.append({"id": "%s_%s" % (str(i), str(j)),
                                        "tenant_id": str(i),
-                                       "credential": mock.MagicMock()})
+                                       "credential": fakes.FakeCredential()})
 
     @property
     def url_image_context(self):
@@ -59,7 +60,7 @@ class SaharaImageTestCase(test.ScenarioTestCase):
                     "username": "test_user"
                 }
             },
-            "admin": {"credential": mock.MagicMock()},
+            "admin": {"credential": fakes.FakeCredential()},
             "users": self.users_key,
             "tenants": self.tenants
         })
@@ -77,7 +78,7 @@ class SaharaImageTestCase(test.ScenarioTestCase):
                     "image_uuid": "some_id"
                 }
             },
-            "admin": {"credential": mock.MagicMock()},
+            "admin": {"credential": fakes.FakeCredential()},
             "users": self.users_key,
             "tenants": self.tenants,
         })

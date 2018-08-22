@@ -72,6 +72,8 @@ class OpenStack(platform.Platform):
             "endpoint_type": {"enum": ["public", "internal", "admin", None]},
             "https_insecure": {"type": "boolean"},
             "https_cacert": {"type": "string"},
+            "https_cert": {"type": "string"},
+            "https_key": {"type": "string"},
             "profiler_hmac_key": {"type": ["string", "null"]},
             "profiler_conn_str": {"type": ["string", "null"]},
             "admin": {"$ref": "#/definitions/user"},
@@ -113,6 +115,10 @@ class OpenStack(platform.Platform):
             del new_data["endpoint"]
         admin = new_data.pop("admin", None)
         users = new_data.pop("users", [])
+
+        if new_data.get("https_cert") and new_data.get("https_key"):
+            new_data["https_cert"] = (new_data["https_cert"],
+                                      new_data.pop("https_key"))
 
         if admin:
             if "project_name" in admin:
@@ -240,6 +246,8 @@ class OpenStack(platform.Platform):
             "endpoint_type": endpoint_type,
             "region_name": sys_environ.get("OS_REGION_NAME", ""),
             "https_cacert": sys_environ.get("OS_CACERT", ""),
+            "https_cert": sys_environ.get("OS_CERT", ""),
+            "https_key": sys_environ.get("OS_KEY", ""),
             "https_insecure": strutils.bool_from_string(
                 sys_environ.get("OS_INSECURE")),
             "profiler_hmac_key": sys_environ.get("OSPROFILER_HMAC_KEY"),

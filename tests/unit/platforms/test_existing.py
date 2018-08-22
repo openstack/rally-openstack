@@ -155,8 +155,10 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
             "OS_INTERFACE": "publicURL",
             "OS_REGION_NAME": "Region1",
             "OS_CACERT": "Cacert",
+            "OS_CERT": "cert",
+            "OS_KEY": "key",
             "OS_INSECURE": True,
-            "OSPROFILER_HMAC_KEY": "key",
+            "OSPROFILER_HMAC_KEY": "hmackey",
             "OSPROFILER_CONN_STR": "https://example2.com",
         }
 
@@ -173,8 +175,10 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 "endpoint_type": "public",
                 "region_name": "Region1",
                 "https_cacert": "Cacert",
+                "https_cert": "cert",
+                "https_key": "key",
                 "https_insecure": True,
-                "profiler_hmac_key": "key",
+                "profiler_hmac_key": "hmackey",
                 "profiler_conn_str": "https://example2.com"
             }, result["spec"])
 
@@ -182,7 +186,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         sys_env["OS_IDENTITY_API_VERSION"] = "3"
 
         result = existing.OpenStack.create_spec_from_sys_environ(sys_env)
-        print(json.dumps(result["spec"], indent=4))
+
         self.assertEqual(
             {
                 "admin": {
@@ -196,8 +200,10 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 "auth_url": "https://example.com",
                 "region_name": "Region1",
                 "https_cacert": "Cacert",
+                "https_cert": "cert",
+                "https_key": "key",
                 "https_insecure": True,
-                "profiler_hmac_key": "key",
+                "profiler_hmac_key": "hmackey",
                 "profiler_conn_str": "https://example2.com"
             }, result["spec"])
 

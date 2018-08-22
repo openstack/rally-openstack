@@ -85,12 +85,13 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
     def test_choose_service_type(self):
         default_service_type = "default_service_type"
 
-        @osclients.configure("test_choose_service_type",
+        @osclients.configure(self.id(),
                              default_service_type=default_service_type)
         class FakeClient(osclients.OSClient):
             create_client = mock.MagicMock()
 
-        fake_client = FakeClient(mock.MagicMock(), {}, {})
+        fake_client = FakeClient({"auth_url": "url", "username": "user",
+                                  "password": "pass"}, {}, {})
         self.assertEqual(default_service_type,
                          fake_client.choose_service_type())
         self.assertEqual("foo",
@@ -122,40 +123,33 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
         mock_url_for.assert_called_once_with(**call_args)
         mock_choose_service_type.assert_called_once_with(service_type)
 
-    @mock.patch("%s.Keystone.get_session" % PATH)
-    def test__get_session(self, mock_keystone_get_session):
-        osclient = osclients.OSClient(None, None, None)
-        auth_url = "auth_url"
-        version = "version"
-        import warnings
-        with mock.patch.object(warnings, "warn") as mock_warn:
-            self.assertEqual(mock_keystone_get_session.return_value,
-                             osclient._get_session(auth_url, version))
-            self.assertFalse(mock_warn.called)
-        mock_keystone_get_session.assert_called_once_with(version)
-
 
 class CachedTestCase(test.TestCase):
 
     def test_cached(self):
-        clients = osclients.Clients(mock.MagicMock())
-        client_name = "CachedTestCase.test_cached"
-        fake_client = osclients.configure(client_name)(osclients.OSClient)(
-            clients.credential, clients.api_info, clients.cache)
+        clients = osclients.Clients({"auth_url": "url", "username": "user",
+                                     "password": "pass"})
+
+        @osclients.configure(self.id())
+        class SomeClient(osclients.OSClient):
+            pass
+
+        fake_client = SomeClient(clients.credential, clients.api_info,
+                                 clients.cache)
         fake_client.create_client = mock.MagicMock()
 
         self.assertEqual({}, clients.cache)
         fake_client()
         self.assertEqual(
-            {client_name: fake_client.create_client.return_value},
+            {self.id(): fake_client.create_client.return_value},
             clients.cache)
         fake_client.create_client.assert_called_once_with()
         fake_client()
         fake_client.create_client.assert_called_once_with()
         fake_client("2")
         self.assertEqual(
-            {client_name: fake_client.create_client.return_value,
-             "%s('2',)" % client_name: fake_client.create_client.return_value},
+            {self.id(): fake_client.create_client.return_value,
+             "%s('2',)" % self.id(): fake_client.create_client.return_value},
             clients.cache)
         clients.clear()
         self.assertEqual({}, clients.cache)
@@ -258,12 +252,12 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
                 domain_name=None, project_domain_name=None,
                 user_domain_name=None)
         self.ksa_session.Session.assert_has_calls(
-            [mock.call(timeout=180.0, verify=True),
+            [mock.call(timeout=180.0, verify=True, cert=None),
              mock.call(auth=self.ksa_identity_plugin, timeout=180.0,
-                       verify=True)])
+                       verify=True, cert=None)])
 
     def test_keystone_property(self):
-        keystone = osclients.Keystone(None, None, None)
+        keystone = osclients.Keystone(self.credential, None, None)
         self.assertRaises(exceptions.RallyException, lambda: keystone.keystone)
 
     @mock.patch("%s.Keystone.get_session" % PATH)
@@ -272,7 +266,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         auth_plugin = mock.MagicMock()
         mock_keystone_get_session.return_value = (session, auth_plugin)
         cache = {}
-        keystone = osclients.Keystone(None, None, cache)
+        keystone = osclients.Keystone(self.credential, None, cache)
 
         self.assertEqual(auth_plugin.get_access.return_value,
                          keystone.auth_ref)

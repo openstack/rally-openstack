@@ -39,6 +39,7 @@ class OpenStackCredentialTestCase(test.TestCase):
                           "endpoint_type": None,
                           "https_insecure": False,
                           "https_cacert": None,
+                          "https_cert": None,
                           "project_domain_name": None,
                           "user_domain_name": None,
                           "profiler_hmac_key": None,

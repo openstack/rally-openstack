@@ -20,11 +20,11 @@ from rally.cli import envutils
 from rally.common import cfg
 from rally.common import logging
 from rally.common.plugin import plugin
-from rally.common import utils
 from rally import exceptions
 from six.moves.urllib import parse
 
 from rally_openstack import consts
+from rally_openstack import credential as oscred
 
 
 LOG = logging.getLogger(__name__)
@@ -105,12 +105,12 @@ def configure(name, default_version=None, default_service_type=None,
 
 @plugin.base()
 class OSClient(plugin.Plugin):
-    """Base class for openstack clients"""
+    """Base class for OpenStack clients"""
 
     def __init__(self, credential, api_info, cache_obj):
         self.credential = credential
-        if isinstance(self.credential, dict):
-            self.credential = utils.Struct(**self.credential)
+        if not isinstance(self.credential, oscred.OpenStackCredential):
+            self.credential = oscred.OpenStackCredential(**self.credential)
         self.api_info = api_info
         self.cache = cache_obj
 
@@ -186,13 +186,6 @@ class OSClient(plugin.Plugin):
     def keystone(self):
         return OSClient.get("keystone")(self.credential, self.api_info,
                                         self.cache)
-
-    def _get_session(self, auth_url=None, version=None):
-        LOG.warning(
-            "Method `rally.osclient.OSClient._get_session` is deprecated since"
-            " Rally 0.6.0. Use "
-            "`rally.osclient.OSClient.keystone.get_session` instead.")
-        return self.keystone.get_session(version)
 
     def _get_endpoint(self, service_type=None):
         kw = {"service_type": self.choose_service_type(service_type),
@@ -317,13 +310,13 @@ class Keystone(OSClient):
                 temp_session = session.Session(
                     verify=(self.credential.https_cacert or
                             not self.credential.https_insecure),
+                    cert=self.credential.https_cert,
                     timeout=CONF.openstack_client_http_timeout)
                 version = str(discover.Discover(
                     temp_session,
                     password_args["auth_url"]).version_data()[0]["version"][0])
 
-            if "v2.0" not in password_args["auth_url"] and (
-                    version != "2"):
+            if "v2.0" not in password_args["auth_url"] and version != "2":
                 password_args.update({
                     "user_domain_name": self.credential.user_domain_name,
                     "domain_name": self.credential.domain_name,
@@ -334,6 +327,7 @@ class Keystone(OSClient):
                 auth=identity_plugin,
                 verify=(self.credential.https_cacert or
                         not self.credential.https_insecure),
+                cert=self.credential.https_cert,
                 timeout=CONF.openstack_client_http_timeout)
             self.cache[key] = (sess, identity_plugin)
         return self.cache[key]
