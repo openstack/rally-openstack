@@ -39,6 +39,9 @@ Removed
   (see ``rally_openstack.services`` module for more details)
   while developing custom plugins. All the inner plugins used
   the new code for a long time.
+* Remove deprecated properties *insecure*, *cacert* (use *https_insecure* and
+  *https_cacert* properties instead) and method *list_services* (use
+  appropriate method of Clients object) of OpenStackCredentials object.
 
 Fixed
 ~~~~~

@@ -46,17 +46,6 @@ class OpenStackCredentialTestCase(test.TestCase):
                          self.credential.to_dict())
 
     @mock.patch("rally_openstack.osclients.Clients")
-    def test_list_services(self, mock_clients):
-        mock_clients.return_value.services.return_value = {"compute": "nova",
-                                                           "volume": "cinder"}
-        result = self.credential.list_services()
-        mock_clients.assert_called_once_with(
-            self.credential, api_info=None, cache={})
-        mock_clients.return_value.services.assert_called_once_with()
-        self.assertEqual([{"name": "cinder", "type": "volume"},
-                          {"name": "nova", "type": "compute"}], result)
-
-    @mock.patch("rally_openstack.osclients.Clients")
     def test_clients(self, mock_clients):
         clients = self.credential.clients(api_info="fake_info")
         mock_clients.assert_called_once_with(
