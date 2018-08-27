@@ -28,13 +28,3 @@ existing-with-predefined-users.json
 If you are using read-only backend in Keystone like LDAP, AD then
 you need this sample. If you don't specify "users" rally will use already
 existing users that you provide.
-
-
-existing-with-given-endpoint.json
----------------------------------
-
-Register existing OpenStack cluster, with parameter "endpoint" specified
-to explicitly set keystone management_url. Use this parameter if
-keystone fails to setup management_url correctly.
-For example, this parameter must be specified for FUEL cluster
-and has value "http://<identity-public-url-ip>:35357/v2.0/"
