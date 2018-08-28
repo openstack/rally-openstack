@@ -70,9 +70,17 @@ class Rally(object):
         output = rally("deployment list")
 
     """
-    _DEPLOYMENT_CREATE_ARGS = ""
 
-    def __init__(self, force_new_db=False, plugin_path=None):
+    ENV_FILE = "/tmp/rally_functests_main_env.json"
+
+    def __init__(self, force_new_db=False, plugin_path=None, config_opts=None):
+        if not os.path.exists(self.ENV_FILE):
+            subprocess.call(["rally", "--log-file", "/dev/null",
+                             "env", "show", "--only-spec"],
+                            stdout=open(self.ENV_FILE, "w"))
+        with open(self.ENV_FILE) as f:
+            self.env_spec = json.loads(f.read())
+            print(self.env_spec)
 
         # NOTE(sskripnick): we should change home dir to avoid races
         # and do not touch any user files in ~/.rally
@@ -80,6 +88,7 @@ class Rally(object):
         self.env = copy.deepcopy(os.environ)
         self.env["HOME"] = self.tmp_dir
         self.config_filename = None
+        self.config_opts = copy.deepcopy(config_opts) if config_opts else {}
         self.method_name = None
         self.class_name = None
 
@@ -96,27 +105,33 @@ class Rally(object):
         self.class_name = test_object.__class__.__name__
 
         if force_new_db or ("RCI_KEEP_DB" not in os.environ):
-            config_filename = os.path.join(self.tmp_dir, "conf")
+            self.config_opts.setdefault("database", {})
+            conn = "sqlite:///%s/db" % self.tmp_dir
+            self.config_opts["database"]["connection"] = conn
+
+        if self.config_opts:
+            self.config_filename = os.path.join(self.tmp_dir, "conf")
             config = configparser.RawConfigParser()
-            config.add_section("database")
-            config.set("database", "connection",
-                       "sqlite:///%s/db" % self.tmp_dir)
-            with open(config_filename, "w") as conf:
+            for section, opts in self.config_opts.items():
+                if section.lower() != "default":
+                    config.add_section(section)
+                for opt_name, opt_value in opts.items():
+                    config.set(section, opt_name, opt_value)
+
+            with open(self.config_filename, "w") as conf:
                 config.write(conf)
-            self.args = ["rally", "--config-file", config_filename]
-            subprocess.call(["rally", "--config-file", config_filename,
-                             "db", "recreate"], env=self.env)
-            self.config_filename = config_filename
+            self.args = ["rally", "--config-file", self.config_filename]
         else:
             self.args = ["rally"]
-            subprocess.call(["rally", "db", "recreate"], env=self.env)
+
+        subprocess.call(self.args + ["db", "recreate"], env=self.env)
 
         if plugin_path:
             self.args.extend(["--plugin-paths", os.path.abspath(plugin_path)])
         self.reports_root = os.environ.get("REPORTS_ROOT",
                                            "rally-cli-output-files")
         self._created_files = []
-        self("deployment create --name MAIN%s" % self._DEPLOYMENT_CREATE_ARGS,
+        self("env create --name MAIN --spec %s" % self.ENV_FILE,
              write_report=False)
 
     def __del__(self):
@@ -213,20 +228,6 @@ class Rally(object):
                     if not raw:
                         rep.write("\n%s:\n" % " ".join(cmd))
                     rep.write("%s\n" % output)
-
-
-class RallyWithSpecifiedDeployment(Rally):
-
-    DEPLOYMENT_FILE = "/tmp/rally_functests_main_deployment.json"
-
-    def __init__(self, force_new_db=False):
-        self._DEPLOYMENT_CREATE_ARGS = " --file %s" % self.DEPLOYMENT_FILE
-        if not os.path.exists(self.DEPLOYMENT_FILE):
-            subprocess.call(["rally", "--log-file", "/dev/null",
-                             "deployment", "config"],
-                            stdout=open(self.DEPLOYMENT_FILE, "w"))
-        super(RallyWithSpecifiedDeployment, self).__init__(
-            force_new_db=force_new_db)
 
 
 def get_global(global_key, env):
