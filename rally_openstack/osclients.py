@@ -31,6 +31,50 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
+class AuthenticationFailed(exceptions.AuthenticationFailed):
+    error_code = 220
+
+    msg_fmt = ("Failed to authenticate to %(url)s for user '%(username)s'"
+               " in project '%(project)s': %(message)s")
+    msg_fmt_2 = "%(message)s"
+
+    def __init__(self, error, url, username, project):
+        kwargs = {
+            "error": error,
+            "url": url,
+            "username": username,
+            "project": project
+        }
+        self._helpful_trace = False
+
+        from keystoneauth1 import exceptions as ks_exc
+
+        if isinstance(error, ks_exc.ConnectionError):
+            # this type of errors is general for all users no need to include
+            # username, project name. The original error message should be
+            # self-sufficient
+            self.msg_fmt = self.msg_fmt_2
+            message = error.message
+            if message.startswith("Unable to establish connection to"):
+                # this message contains too much info.
+                if "Max retries exceeded with url" in message:
+                    if "HTTPConnectionPool" in message:
+                        splitter = ": HTTPConnectionPool"
+                    else:
+                        splitter = ": HTTPSConnectionPool"
+                    message = message.split(splitter, 1)[0]
+        elif isinstance(error, ks_exc.Unauthorized):
+            message = error.message.split(" (HTTP 401)", 1)[0]
+        else:
+            # something unexpected. include exception class as well.
+            self._helpful_trace = True
+            message = "[%s] %s" % (error.__class__.__name__, str(error))
+        super(AuthenticationFailed, self).__init__(message=message, **kwargs)
+
+    def is_trace_helpful(self):
+        return self._helpful_trace
+
+
 def configure(name, default_version=None, default_service_type=None,
               supported_versions=None):
     """OpenStack client class wrapper.
@@ -230,19 +274,21 @@ class Keystone(OSClient):
             if "keystone_auth_ref" not in self.cache:
                 sess, plugin = self.get_session()
                 self.cache["keystone_auth_ref"] = plugin.get_access(sess)
-        except Exception as e:
-            if logging.is_debug():
+        except Exception as original_e:
+            e = AuthenticationFailed(
+                error=original_e,
+                username=self.credential.username,
+                project=self.credential.tenant_name,
+                url=self.credential.auth_url
+            )
+            if logging.is_debug() and e.is_trace_helpful():
                 LOG.exception("Unable to authenticate for user"
                               " %(username)s in project"
                               " %(tenant_name)s" %
                               {"username": self.credential.username,
                                "tenant_name": self.credential.tenant_name})
-            raise exceptions.AuthenticationFailed(
-                username=self.credential.username,
-                project=self.credential.tenant_name,
-                url=self.credential.auth_url,
-                etype=e.__class__.__name__,
-                error=str(e))
+
+            raise e
         return self.cache["keystone_auth_ref"]
 
     def get_session(self, version=None):
