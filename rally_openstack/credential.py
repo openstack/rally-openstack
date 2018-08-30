@@ -60,36 +60,15 @@ class OpenStackCredential(dict):
         #   object as raw dict as soon as we clean over code.
         return self.get(attr, default)
 
-    # backward compatibility
-    @property
-    def insecure(self):
-        LOG.warning("Property 'insecure' is deprecated since Rally 0.10.0. "
-                    "Use 'https_insecure' instead.")
-        return self["https_insecure"]
-
-    # backward compatibility
-    @property
-    def cacert(self):
-        LOG.warning("Property 'cacert' is deprecated since Rally 0.10.0. "
-                    "Use 'https_cacert' instead.")
-        return self["https_cacert"]
-
     def to_dict(self):
         return dict(self)
 
-    def list_services(self):
-        LOG.warning("Method `list_services` of OpenStackCredentials is "
-                    "deprecated since Rally 0.11.0. Use osclients instead.")
-        return sorted([{"type": stype, "name": sname}
-                       for stype, sname in self.clients().services().items()],
-                      key=lambda s: s["name"])
+    def __deepcopy__(self, memodict=None):
+        import copy
+        return self.__class__(**copy.deepcopy(self.to_dict()))
 
     # this method is mostly used by validation step. let's refactor it and
     # deprecated this
     def clients(self, api_info=None):
         return osclients.Clients(self, api_info=api_info,
                                  cache=self._clients_cache)
-
-    def __deepcopy__(self, memodict=None):
-        import copy
-        return self.__class__(**copy.deepcopy(self.to_dict()))

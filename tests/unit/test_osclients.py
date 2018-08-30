@@ -812,7 +812,7 @@ class OSClientsTestCase(test.TestCase):
                 "url": "http://fake.to:1/fake",
                 "aws_access_key_id": "fake_access",
                 "aws_secret_access_key": "fake_secret",
-                "is_secure": self.credential.insecure,
+                "is_secure": self.credential.https_insecure,
             }
             mock_boto.connect_ec2_endpoint.assert_called_once_with(**kw)
             self.assertEqual(fake_ec2, self.clients.cache["ec2"])
