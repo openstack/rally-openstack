@@ -38,25 +38,16 @@ class OpenStackScenario(scenario.Scenario):
     def __init__(self, context=None, admin_clients=None, clients=None):
         super(OpenStackScenario, self).__init__(context)
         if context:
-            api_info = {}
-            if "api_versions@openstack" in context.get("config", {}):
-                api_versions = context["config"]["api_versions@openstack"]
-                for service in api_versions:
-                    api_info[service] = {
-                        "version": api_versions[service].get("version"),
-                        "service_type": api_versions[service].get(
-                            "service_type")}
-
             if admin_clients is None and "admin" in context:
                 self._admin_clients = osclients.Clients(
-                    context["admin"]["credential"], api_info)
+                    context["admin"]["credential"])
             if clients is None:
                 if "users" in context and "user" not in context:
                     self._choose_user(context)
 
                 if "user" in context:
                     self._clients = osclients.Clients(
-                        context["user"]["credential"], api_info)
+                        context["user"]["credential"])
 
         if admin_clients:
             self._admin_clients = admin_clients

@@ -95,6 +95,7 @@ class OpenStackServicesTestCase(test.TestCase):
         self.service_catalog.get_endpoints.assert_called_once_with()
         self.mock_kc.services.list.assert_called_once_with()
 
+        versions = ctx.context["config"]["api_versions@openstack"]
         self.assertEqual(
             "computev21",
-            ctx.context["config"]["api_versions"]["nova"]["service_type"])
+            versions["nova"]["service_type"])

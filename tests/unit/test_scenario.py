@@ -52,10 +52,7 @@ class OpenStackScenarioTestCase(test.TestCase):
         scenario = base_scenario.OpenStackScenario(self.context)
         self.assertEqual(self.context, scenario.context)
         self.osclients.mock.assert_called_once_with(
-            self.context["admin"]["credential"], {})
-
-        scenario = base_scenario.OpenStackScenario(
-            self.context, admin_clients="foobar")
+            self.context["admin"]["credential"])
 
     def test_init_admin_clients(self):
         scenario = base_scenario.OpenStackScenario(
@@ -76,7 +73,7 @@ class OpenStackScenarioTestCase(test.TestCase):
         self.assertEqual(self.context["tenants"]["foo"],
                          scenario.context["tenant"])
 
-        self.osclients.mock.assert_called_once_with(user["credential"], {})
+        self.osclients.mock.assert_called_once_with(user["credential"])
 
     def test_init_clients(self):
         scenario = base_scenario.OpenStackScenario(self.context,

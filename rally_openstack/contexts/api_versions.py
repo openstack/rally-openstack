@@ -260,9 +260,15 @@ class OpenStackAPIVersions(context.Context):
                 self.context["config"]["api_versions@openstack"][client_name][
                     "service_type"] = services_from_admin[conf["service_name"]]
 
-        # NOTE(boris-42): Required to be backward compatible
-        self.context["config"]["api_versions"] = (
-            self.context["config"]["api_versions@openstack"])
+        admin_cred = self.context.get("admin", {}).get("credential")
+        if admin_cred:
+            admin_cred["api_info"].update(
+                self.context["config"]["api_versions@openstack"]
+            )
+        for user in self.context["users"]:
+            user["credential"]["api_info"].update(
+                self.context["config"]["api_versions@openstack"]
+            )
 
     def cleanup(self):
         # nothing to do here
