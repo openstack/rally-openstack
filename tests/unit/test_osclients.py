@@ -283,38 +283,123 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         keystone.auth_ref
         mock_keystone_get_session.assert_called_once_with()
 
-    @mock.patch("keystoneauth1.identity.base.BaseIdentityPlugin.get_access")
-    def test_auth_ref_fails(self, mock_get_access):
-        mock_get_access.side_effect = Exception
+    @mock.patch("%s.LOG.exception" % PATH)
+    @mock.patch("%s.logging.is_debug" % PATH)
+    def test_auth_ref_fails(self, mock_is_debug, mock_log_exception):
+        mock_is_debug.return_value = False
         keystone = osclients.Keystone(self.credential, {}, {})
+        session = mock.Mock()
+        auth_plugin = mock.Mock()
+        auth_plugin.get_access.side_effect = Exception
+        keystone.get_session = mock.Mock(return_value=(session, auth_plugin))
 
-        try:
-            keystone.auth_ref
-        except exceptions.AuthenticationFailed:
-            pass
-        else:
-            self.fail("keystone.auth_ref didn't raise"
-                      " exceptions.AuthenticationFailed")
+        self.assertRaises(osclients.AuthenticationFailed,
+                          lambda: keystone.auth_ref)
+
+        self.assertFalse(mock_log_exception.called)
+        mock_is_debug.assert_called_once_with()
+        auth_plugin.get_access.assert_called_once_with(session)
 
     @mock.patch("%s.LOG.exception" % PATH)
     @mock.patch("%s.logging.is_debug" % PATH)
-    @mock.patch("keystoneauth1.identity.base.BaseIdentityPlugin.get_access")
-    def test_auth_ref_debug(self, mock_get_access,
-                            mock_is_debug, mock_log_exception):
+    def test_auth_ref_fails_debug(self, mock_is_debug, mock_log_exception):
         mock_is_debug.return_value = True
-        mock_get_access.side_effect = Exception
         keystone = osclients.Keystone(self.credential, {}, {})
+        session = mock.Mock()
+        auth_plugin = mock.Mock()
+        auth_plugin.get_access.side_effect = Exception
+        keystone.get_session = mock.Mock(return_value=(session, auth_plugin))
 
-        try:
-            keystone.auth_ref
-        except exceptions.AuthenticationFailed:
-            pass
-        else:
-            self.fail("keystone.auth_ref didn't raise"
-                      " exceptions.AuthenticationFailed")
+        self.assertRaises(osclients.AuthenticationFailed,
+                          lambda: keystone.auth_ref)
 
         mock_log_exception.assert_called_once_with(mock.ANY)
         mock_is_debug.assert_called_once_with()
+        auth_plugin.get_access.assert_called_once_with(session)
+
+    @mock.patch("%s.LOG.exception" % PATH)
+    @mock.patch("%s.logging.is_debug" % PATH)
+    def test_auth_ref_fails_debug_with_native_keystone_error(
+            self, mock_is_debug, mock_log_exception):
+        from keystoneauth1 import exceptions as ks_exc
+
+        mock_is_debug.return_value = True
+        keystone = osclients.Keystone(self.credential, {}, {})
+        session = mock.Mock()
+        auth_plugin = mock.Mock()
+        auth_plugin.get_access.side_effect = ks_exc.ConnectFailure("foo")
+        keystone.get_session = mock.Mock(return_value=(session, auth_plugin))
+
+        self.assertRaises(osclients.AuthenticationFailed,
+                          lambda: keystone.auth_ref)
+
+        self.assertFalse(mock_log_exception.called)
+        mock_is_debug.assert_called_once_with()
+        auth_plugin.get_access.assert_called_once_with(session)
+
+    def test_authentication_failed_exception(self):
+        from keystoneauth1 import exceptions as ks_exc
+
+        original_e = KeyError("Oops")
+        e = osclients.AuthenticationFailed(
+            url="https://example.com", username="foo", project="project",
+            error=original_e
+        )
+        self.assertEqual(
+            "Failed to authenticate to https://example.com for user 'foo' in "
+            "project 'project': [KeyError] 'Oops'",
+            e.format_message())
+
+        original_e = ks_exc.Unauthorized("The request you have made requires "
+                                         "authentication.", request_id="ID")
+        e = osclients.AuthenticationFailed(
+            url="https://example.com", username="foo", project="project",
+            error=original_e
+        )
+        self.assertEqual(
+            "Failed to authenticate to https://example.com for user 'foo' in "
+            "project 'project': The request you have made requires "
+            "authentication.",
+            e.format_message())
+
+        original_e = ks_exc.ConnectionError("Some user-friendly native error")
+        e = osclients.AuthenticationFailed(
+            url="https://example.com", username="foo", project="project",
+            error=original_e
+        )
+        self.assertEqual("Some user-friendly native error",
+                         e.format_message())
+
+        original_e = ks_exc.ConnectionError(
+            "Unable to establish connection to https://example.com:500: "
+            "HTTPSConnectionPool(host='example.com', port=500): Max retries "
+            "exceeded with url: / (Caused by NewConnectionError('<urllib3."
+            "connection.VerifiedHTTPSConnection object at 0x7fb87a48e510>: "
+            "Failed to establish a new connection: [Errno 101] Network "
+            "is unreachable")
+        e = osclients.AuthenticationFailed(
+            url="https://example.com", username="foo", project="project",
+            error=original_e
+        )
+        self.assertEqual(
+            "Unable to establish connection to https://example.com:500",
+            e.format_message())
+
+        original_e = ks_exc.ConnectionError(
+            "Unable to establish connection to https://example.com:500: "
+            # another pool class
+            "HTTPConnectionPool(host='example.com', port=500): Max retries "
+            "exceeded with url: / (Caused by NewConnectionError('<urllib3."
+            "connection.VerifiedHTTPSConnection object at 0x7fb87a48e510>: "
+            "Failed to establish a new connection: [Errno 101] Network "
+            "is unreachable")
+        e = osclients.AuthenticationFailed(
+            url="https://example.com", username="foo", project="project",
+            error=original_e
+        )
+        self.assertEqual(
+            "Unable to establish connection to https://example.com:500",
+            e.format_message())
 
 
 @ddt.ddt

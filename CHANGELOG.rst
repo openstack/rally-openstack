@@ -29,6 +29,7 @@ Changed
 
 * Our requirements are updated as like upper-constraints (the list of
   suggested tested versions to use)
+* Error messages become more user-friendly in ``rally env check``.
 
 Removed
 ~~~~~~~

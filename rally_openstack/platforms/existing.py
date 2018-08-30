@@ -144,32 +144,42 @@ class OpenStack(platform.Platform):
 
     def check_health(self):
         """Check whatever platform is alive."""
-        if self.platform_data["admin"]:
-            try:
-                osclients.Clients(
-                    self.platform_data["admin"]).verified_keystone()
-            except Exception:
-                d = copy.deepcopy(self.platform_data["admin"])
-                d["password"] = "***"
-                return {
-                    "available": False,
-                    "message": (
-                        "Bad admin creds: \n%s"
-                        % json.dumps(d, indent=2, sort_keys=True)),
-                    "traceback": traceback.format_exc()
-                }
 
-        for user in self.platform_data["users"]:
+        users_to_check = self.platform_data["users"]
+        if self.platform_data["admin"]:
+            users_to_check.append(self.platform_data["admin"])
+
+        for user in users_to_check:
             try:
-                osclients.Clients(user).keystone()
+                if self.platform_data["admin"] == user:
+                    osclients.Clients(user).verified_keystone()
+                else:
+                    osclients.Clients(user).keystone()
+            except osclients.exceptions.RallyException as e:
+                # all rally native exceptions should provide user-friendly
+                # messages
+                return {"available": False, "message": e.format_message(),
+                        # traceback is redundant here. Remove as soon as min
+                        #   required rally version will be updated
+                        #   More details here:
+                        #       https://review.openstack.org/597197
+                        "traceback": traceback.format_exc()}
             except Exception:
                 d = copy.deepcopy(user)
                 d["password"] = "***"
+                if logging.is_debug():
+                    LOG.exception("Something unexpected had happened while "
+                                  "validating OpenStack credentials.")
+                if self.platform_data["admin"] == user:
+                    user_role = "admin"
+                else:
+                    user_role = "user"
                 return {
                     "available": False,
                     "message": (
-                        "Bad user creds: \n%s"
-                        % json.dumps(d, indent=2, sort_keys=True)),
+                        "Bad %s creds: \n%s"
+                        % (user_role,
+                           json.dumps(d, indent=2, sort_keys=True))),
                     "traceback": traceback.format_exc()
                 }
 

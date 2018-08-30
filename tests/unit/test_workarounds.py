@@ -38,6 +38,11 @@ class WorkaroundTestCase(test.TestCase):
             "'rally_openstack.validators' module has a check to do not "
             "register 'required_platforms@openstack' validator for old Rally "
             "releases."
+        ]),
+        ([1, 2], [
+            "'existing@openstack' platform puts 'traceback' in check method "
+            "in case of native keystone errors. It is redundant. "
+            "See https://review.openstack.org/597197"
         ])
     ]
 

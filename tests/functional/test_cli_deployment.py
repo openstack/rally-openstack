@@ -86,17 +86,8 @@ class DeploymentTestCase(unittest.TestCase):
             rally("--debug deployment check")
         except utils.RallyCliError as e:
             self.assertIn(
-                "[-] Unable to authenticate for user %(username)s in"
-                " project %(tenant_name)s" %
-                {"username": TEST_ENV["OS_USERNAME"],
-                 "tenant_name": TEST_ENV["OS_TENANT_NAME"]},
-                str(e))
-            self.assertIn(
-                "AuthenticationFailed: Failed to authenticate to %(auth_url)s"
-                " for user '%(username)s' in project '%(tenant_name)s'" %
-                {"auth_url": TEST_ENV["OS_AUTH_URL"],
-                 "username": TEST_ENV["OS_USERNAME"],
-                 "tenant_name": TEST_ENV["OS_TENANT_NAME"]},
+                "AuthenticationFailed: Unable to establish connection to "
+                "%s" % TEST_ENV["OS_AUTH_URL"],
                 str(e))
         else:
             self.fail("rally deployment fails to raise error for wrong"

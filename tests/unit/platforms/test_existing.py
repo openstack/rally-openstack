@@ -18,6 +18,7 @@ import jsonschema
 import mock
 from rally.env import env_mgr
 from rally.env import platform
+from rally import exceptions
 
 from rally_openstack.platforms import existing
 from tests.unit import test
@@ -245,14 +246,27 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         self._check_health_schema(result)
         self.assertEqual({"available": True}, result)
         mock_clients.assert_has_calls(
-            [mock.call(pdata["admin"]), mock.call().verified_keystone(),
-             mock.call(pdata["users"][0]), mock.call().keystone(),
-             mock.call(pdata["users"][1]), mock.call().keystone()])
+            [mock.call(pdata["users"][0]), mock.call().keystone(),
+             mock.call(pdata["users"][1]), mock.call().keystone(),
+             mock.call(pdata["admin"]), mock.call().verified_keystone()])
+
+    @mock.patch("rally_openstack.osclients.Clients")
+    def test_check_failed_with_native_rally_exc(self, mock_clients):
+        e = exceptions.RallyException("foo")
+        mock_clients.return_value.keystone.side_effect = e
+        pdata = {"admin": None,
+                 "users": [{"username": "balbab", "password": "12345"}]}
+        result = existing.OpenStack({}, platform_data=pdata).check_health()
+        self._check_health_schema(result)
+        self.assertEqual({"available": False, "message": e.format_message(),
+                          "traceback": mock.ANY},
+                         result)
 
     @mock.patch("rally_openstack.osclients.Clients")
     def test_check_failed_admin(self, mock_clients):
         mock_clients.return_value.verified_keystone.side_effect = Exception
-        pdata = {"admin": {"username": "balbab", "password": "12345"}}
+        pdata = {"admin": {"username": "balbab", "password": "12345"},
+                 "users": []}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual(
