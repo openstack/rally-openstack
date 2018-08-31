@@ -56,7 +56,7 @@ class TestTaskSamples(unittest.TestCase):
     @plugins.ensure_plugins_are_loaded
     def test_task_samples_are_valid(self):
         from rally_openstack.contexts.keystone import users
-        rally = utils.RallyWithSpecifiedDeployment(force_new_db=True)
+        rally = utils.Rally(force_new_db=True)
         # let's use pre-created users to make TestTaskSamples quicker
         rapi = api.API(config_file=rally.config_filename)
         deployment = rapi.deployment._get("MAIN")

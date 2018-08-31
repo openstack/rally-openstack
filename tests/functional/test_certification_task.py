@@ -26,7 +26,7 @@ class TestPreCreatedTasks(unittest.TestCase):
 
     def test_task_samples_is_valid(self):
 
-        rally = utils.RallyWithSpecifiedDeployment()
+        rally = utils.Rally()
         full_path = os.path.join(
             os.path.dirname(rally_openstack.__file__), os.pardir,
             "tasks", "openstack")
