@@ -49,10 +49,7 @@ class ProfilesGenerator(context.Context):
 
             senlin_scenario = senlin_utils.SenlinScenario({
                 "user": user,
-                "task": self.context["task"],
-                "config": {
-                    "api_versions": self.context["config"].get(
-                        "api_versions", [])}
+                "task": self.context["task"]
             })
             profile = senlin_scenario._create_profile(self.config)
 
@@ -65,10 +62,7 @@ class ProfilesGenerator(context.Context):
 
             senlin_scenario = senlin_utils.SenlinScenario({
                 "user": user,
-                "task": self.context["task"],
-                "config": {
-                    "api_versions": self.context["config"].get(
-                        "api_versions", [])}
+                "task": self.context["task"]
             })
             senlin_scenario._delete_profile(
                 self.context["tenants"][tenant_id]["profile"])

@@ -107,13 +107,16 @@ def configure(name, default_version=None, default_service_type=None,
 class OSClient(plugin.Plugin):
     """Base class for OpenStack clients"""
 
-    def __init__(self, credential, api_info, cache_obj):
+    def __init__(self, credential, api_info=None, cache_obj=None):
         self.credential = credential
         if not isinstance(self.credential, oscred.OpenStackCredential):
             self.credential = oscred.OpenStackCredential(**self.credential)
         if api_info:
+            LOG.warning("api_info argument of %s is deprecated. api"
+                        " information has been moved into credential"
+                        " argument." % self.__class__.__name__)
             self.credential.api_info.update(api_info)
-        self.cache = cache_obj
+        self.cache = cache_obj if cache_obj is not None else {}
 
     def choose_version(self, version=None):
         """Return version string.

@@ -111,7 +111,6 @@ class SecurityServicesTestCase(test.ScenarioTestCase):
             [mock.call({
                 "task": inst.task,
                 "owner_id": "foo_uuid",
-                "config": {"api_versions": []},
                 "user": user})
              for user in inst.context["users"] if user["id"] == 0]
         )

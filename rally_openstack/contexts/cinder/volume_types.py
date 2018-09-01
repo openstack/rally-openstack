@@ -39,8 +39,7 @@ class VolumeTypeGenerator(context.Context):
 
     def setup(self):
         admin_clients = osclients.Clients(
-            self.context.get("admin", {}).get("credential"),
-            api_info=self.context["config"].get("api_versions"))
+            self.context.get("admin", {}).get("credential"))
         cinder_service = block.BlockStorage(
             admin_clients,
             name_generator=self.generate_random_name,
@@ -57,6 +56,5 @@ class VolumeTypeGenerator(context.Context):
         resource_manager.cleanup(
             names=["cinder.volume_types"],
             admin=self.context["admin"],
-            api_versions=self.context["config"].get("api_versions"),
             superclass=mather,
             task_id=self.get_owner_id())

@@ -35,7 +35,6 @@ class UserCleanup(base.CleanupMixin, context.Context):
             names=self.config,
             admin_required=False,
             users=self.context.get("users", []),
-            api_versions=self.context["config"].get("api_versions"),
             superclass=scenario.OpenStackScenario,
             task_id=self.get_owner_id()
         )

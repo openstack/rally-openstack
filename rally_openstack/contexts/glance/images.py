@@ -162,9 +162,7 @@ class ImageGenerator(context.Context):
         for user, tenant_id in rutils.iterate_per_tenants(
                 self.context["users"]):
             current_images = []
-            clients = osclients.Clients(
-                user["credential"],
-                api_info=self.context["config"].get("api_versions"))
+            clients = osclients.Clients(user["credential"])
             image_service = image.Image(
                 clients, name_generator=self.generate_random_name)
 
@@ -206,7 +204,5 @@ class ImageGenerator(context.Context):
                                  admin=admin,
                                  admin_required=admin_required,
                                  users=self.context.get("users", []),
-                                 api_versions=self.context["config"].get(
-                                     "api_versions"),
                                  superclass=matcher,
                                  task_id=self.get_owner_id())

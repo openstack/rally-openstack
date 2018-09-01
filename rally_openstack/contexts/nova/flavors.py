@@ -106,7 +106,6 @@ class FlavorsGenerator(context.Context):
         resource_manager.cleanup(
             names=["nova.flavors"],
             admin=self.context["admin"],
-            api_versions=self.context["config"].get("api_versions"),
             superclass=mather,
             task_id=self.get_owner_id())
 

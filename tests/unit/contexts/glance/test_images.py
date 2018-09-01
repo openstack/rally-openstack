@@ -62,8 +62,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
         {},
         {"min_disk": 1, "min_ram": 2},
         {"image_name": "foo"},
-        {"tenants": 3, "users_per_tenant": 2, "images_per_tenant": 5},
-        {"api_versions": {"glance": {"version": 2, "service_type": "image"}}})
+        {"tenants": 3, "users_per_tenant": 2, "images_per_tenant": 5})
     @ddt.unpack
     @mock.patch("rally_openstack.osclients.Clients")
     def test_setup(self, mock_clients,
@@ -71,7 +70,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
                    image_url="http://example.com/fake/url",
                    tenants=1, users_per_tenant=1, images_per_tenant=1,
                    image_name=None, min_ram=None, min_disk=None,
-                   api_versions=None, visibility="public"):
+                   visibility="public"):
         image_service = self.mock_image.return_value
 
         tenant_data = self._gen_tenants(tenants)
@@ -102,8 +101,6 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
             "users": users,
             "tenants": tenant_data
         })
-        if api_versions:
-            self.context["config"]["api_versions"] = api_versions
 
         expected_image_args = {}
         if image_name is not None:
@@ -134,8 +131,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
                 name=mock.ANY, **expected_image_args)] *
             tenants * images_per_tenant)
 
-        mock_clients.assert_has_calls(
-            [mock.call(mock.ANY, api_info=api_versions)] * tenants)
+        mock_clients.assert_has_calls([mock.call(mock.ANY)] * tenants)
 
     @mock.patch("%s.image.Image" % CTX)
     @mock.patch("%s.LOG" % CTX)
@@ -214,12 +210,10 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
         # specified, warning message should be printed.
         self.assertEqual(expected_warns, mock_log.warning.call_args_list)
 
-    @ddt.data(
-        {"admin": True},
-        {"api_versions": {"glance": {"version": 2, "service_type": "image"}}})
+    @ddt.data({"admin": True})
     @ddt.unpack
     @mock.patch("%s.resource_manager.cleanup" % CTX)
-    def test_cleanup(self, mock_cleanup, admin=None, api_versions=None):
+    def test_cleanup(self, mock_cleanup, admin=None):
         images_per_tenant = 5
 
         tenants = self._gen_tenants(self.tenants_num)
@@ -242,8 +236,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
                     "users_per_tenant": self.users_per_tenant,
                     "concurrent": 10,
                 },
-                "images": {},
-                "api_versions": api_versions
+                "images": {}
             },
             "users": mock.Mock()
         })
@@ -261,7 +254,6 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
             admin=self.context.get("admin"),
             admin_required=None if admin else False,
             users=self.context["users"],
-            api_versions=api_versions,
             superclass=images_ctx.__class__,
             task_id=self.context["owner_id"])
 
@@ -283,6 +275,5 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
             admin=self.context.get("admin"),
             admin_required=None,
             users=self.context["users"],
-            api_versions=None,
             superclass=mock_make_name_matcher.return_value,
             task_id=self.context["owner_id"])

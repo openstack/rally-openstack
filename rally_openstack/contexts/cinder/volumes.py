@@ -62,9 +62,7 @@ class VolumeGenerator(context.Context):
         for user, tenant_id in rutils.iterate_per_tenants(
                 self.context["users"]):
             self.context["tenants"][tenant_id].setdefault("volumes", [])
-            clients = osclients.Clients(
-                user["credential"],
-                api_info=self.context["config"].get("api_versions"))
+            clients = osclients.Clients(user["credential"])
             cinder_service = block.BlockStorage(
                 clients,
                 name_generator=self.generate_random_name,
@@ -79,6 +77,5 @@ class VolumeGenerator(context.Context):
         resource_manager.cleanup(
             names=["cinder.volumes"],
             users=self.context.get("users", []),
-            api_versions=self.context["config"].get("api_versions"),
             superclass=self.__class__,
             task_id=self.get_owner_id())

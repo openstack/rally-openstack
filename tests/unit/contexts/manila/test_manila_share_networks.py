@@ -399,5 +399,4 @@ class ShareNetworksTestCase(test.TestCase):
             names=["manila.share_networks"],
             users=ctxt["users"],
             superclass=manila_share_networks.ShareNetworks,
-            api_versions=None,
             task_id=task_id)

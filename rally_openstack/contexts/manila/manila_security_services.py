@@ -74,10 +74,7 @@ class SecurityServices(context.Context):
                 manila_scenario = manila_utils.ManilaScenario({
                     "task": self.task,
                     "owner_id": self.context["owner_id"],
-                    "user": user,
-                    "config": {
-                        "api_versions": self.context["config"].get(
-                            "api_versions", [])}
+                    "user": user
                 })
                 for ss in self.config["security_services"]:
                     inst = manila_scenario._create_security_service(

@@ -83,10 +83,7 @@ class Shares(context.Context):
             manila_scenario = manila_utils.ManilaScenario({
                 "task": self.task,
                 "owner_id": self.context["owner_id"],
-                "user": user,
-                "config": {
-                    "api_versions": self.context["config"].get(
-                        "api_versions", [])}
+                "user": user
             })
             self._create_shares(
                 manila_scenario,

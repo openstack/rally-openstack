@@ -46,10 +46,7 @@ class VolumeTypeGeneratorTestCase(test.ContextTestCase):
     @mock.patch("%s.resource_manager.cleanup" % CTX)
     def test_cleanup(self, mock_cleanup, mock_make_name_matcher):
         self.context.update({
-            "config": {"volume_types": ["foo", "bar"],
-                       "api_versions": {
-                           "cinder": {"version": 2,
-                                      "service_type": "volumev2"}}}})
+            "config": {"volume_types": ["foo", "bar"]}})
 
         vtype_ctx = volume_types.VolumeTypeGenerator(self.context)
 
@@ -58,7 +55,6 @@ class VolumeTypeGeneratorTestCase(test.ContextTestCase):
         mock_cleanup.assert_called_once_with(
             names=["cinder.volume_types"],
             admin=self.context["admin"],
-            api_versions=self.context["config"]["api_versions"],
             superclass=mock_make_name_matcher.return_value,
             task_id=vtype_ctx.get_owner_id())
 

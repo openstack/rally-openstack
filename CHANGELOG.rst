@@ -35,6 +35,9 @@ Changed
 * Our requirements are updated as like upper-constraints (the list of
   suggested tested versions to use)
 * Error messages become more user-friendly in ``rally env check``.
+* Deprecate api_info argument of all clients which inherits from OSClient
+  and deprecate api_version argument of cleanup.manager.cleanup, because
+  api information has been moved into credentails object.
 
 Removed
 ~~~~~~~

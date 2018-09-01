@@ -270,6 +270,11 @@ def cleanup(names=None, admin_required=None, admin=None, users=None,
                        Scenario resources.
     :param task_id: The UUID of task
     """
+    if api_versions:
+        LOG.warning("'api_version' argument of 'cleanup' method is deprecated"
+                    " since rally-openstack 1.3.0 . API information should be"
+                    " included into credentials object, you can directly"
+                    " remove passed api_versions argument.")
     resource_classes = [cls for cls in discover.itersubclasses(superclass)
                         if issubclass(cls, rutils.RandomNameGeneratorMixin)]
     if not resource_classes and issubclass(superclass,

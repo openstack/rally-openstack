@@ -61,9 +61,7 @@ class SaharaImage(context.Context):
 
     def _create_image(self, hadoop_version, image_url, plugin_name, user,
                       user_name):
-        clients = osclients.Clients(
-            user["credential"],
-            api_info=self.context["config"].get("api_versions"))
+        clients = osclients.Clients(user["credential"])
         image_service = image_services.Image(
             clients, name_generator=self.generate_random_name)
         image = image_service.create_image(container_format="bare",

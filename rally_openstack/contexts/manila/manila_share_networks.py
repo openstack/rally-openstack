@@ -118,10 +118,7 @@ class ShareNetworks(context.Context):
                 "share_networks"] = []
 
             manila_scenario = manila_utils.ManilaScenario({
-                "user": existing_user,
-                "config": {
-                    "api_versions": self.context["config"].get(
-                        "api_versions", [])}
+                "user": existing_user
             })
             existing_sns = manila_scenario._list_share_networks(
                 detailed=False, search_opts={"project_id": tenant_id})
@@ -150,10 +147,7 @@ class ShareNetworks(context.Context):
             manila_scenario = manila_utils.ManilaScenario({
                 "task": self.task,
                 "owner_id": self.get_owner_id(),
-                "user": user,
-                "config": {
-                    "api_versions": self.context["config"].get(
-                        "api_versions", [])}
+                "user": user
             })
             manila_scenario.RESOURCE_NAME_FORMAT = self.RESOURCE_NAME_FORMAT
             self.context["tenants"][tenant_id][CONTEXT_NAME] = {
@@ -201,7 +195,6 @@ class ShareNetworks(context.Context):
                 names=["manila.share_networks"],
                 users=self.context.get("users", []),
                 superclass=self.__class__,
-                api_versions=self.context["config"].get("api_versions"),
                 task_id=self.get_owner_id())
         else:
             # NOTE(vponomaryov): assume that share networks were not created
