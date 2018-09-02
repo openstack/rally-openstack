@@ -16,7 +16,6 @@
 
 import copy
 import json
-import mock
 import os
 import re
 import traceback
@@ -92,26 +91,6 @@ class TestTaskSamples(unittest.TestCase):
             f.write(json.dumps({"openstack": os_creds}))
         rally("deployment create --name MAIN --filename %s" % deployment_cfg,
               write_report=False)
-
-        # NOTE(andreykurilin): mock building credential to share one cache of
-        #   clients(it will allow to avoid hundreds of redundant
-        #   authentications) between validations of different samples
-        deployment = rapi.deployment._get("MAIN")
-        original_get_credentials_for = deployment.get_credentials_for
-        creds_cache = {}
-
-        def get_credentials_for(platform):
-            if platform not in creds_cache:
-                creds_cache[platform] = original_get_credentials_for(
-                    platform)
-            return creds_cache[platform]
-
-        deployment.get_credentials_for = get_credentials_for
-
-        deployment_patcher = mock.patch("rally.api.objects.Deployment.get")
-        m_deployment = deployment_patcher.start()
-        m_deployment.return_value = deployment
-        self.addCleanup(deployment_patcher.stop)
 
         # store all failures and print them at once
         failed_samples = {}
