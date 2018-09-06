@@ -485,6 +485,7 @@ class Glance(OSClient):
            supported_versions=["1"])
 class Heat(OSClient):
     """Wrapper for HeatClient which returns an authenticated native client."""
+
     def create_client(self, version=None, service_type=None):
         """Return heat client."""
         from heatclient import client as heat
@@ -553,6 +554,7 @@ class Ceilometer(OSClient):
     """Wrapper for CeilometerClient which returns authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return ceilometer client."""
         from ceilometerclient import client as ceilometer
@@ -640,6 +642,7 @@ class Zaqar(OSClient):
     """Wrapper for ZaqarClient which returns an authenticated native client.
 
     """
+
     def choose_version(self, version=None):
         # zaqarclient accepts only int or float obj as version
         return float(super(Zaqar, self).choose_version(version))
@@ -660,6 +663,7 @@ class Murano(OSClient):
     """Wrapper for MuranoClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return Murano client."""
         from muranoclient import client as murano
@@ -677,6 +681,7 @@ class Designate(OSClient):
     """Wrapper for DesignateClient which returns authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return designate client."""
         from designateclient import client
@@ -700,6 +705,7 @@ class Trove(OSClient):
     """Wrapper for TroveClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Returns trove client."""
         from troveclient import client as trove
@@ -715,6 +721,7 @@ class Mistral(OSClient):
     """Wrapper for MistralClient which returns an authenticated native client.
 
     """
+
     def create_client(self, service_type=None):
         """Return Mistral client."""
         from mistralclient.api import client as mistral
@@ -731,6 +738,7 @@ class Swift(OSClient):
     """Wrapper for SwiftClient which returns an authenticated native client.
 
     """
+
     def create_client(self, service_type=None):
         """Return swift client."""
         from swiftclient import client as swift
@@ -752,6 +760,7 @@ class EC2(OSClient):
     """Wrapper for EC2Client which returns an authenticated native client.
 
     """
+
     def create_client(self):
         """Return ec2 client."""
         LOG.warning("rally.osclient.EC2 is deprecated since Rally 0.10.0.")
@@ -779,6 +788,7 @@ class Monasca(OSClient):
     """Wrapper for MonascaClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return monasca client."""
         from monascaclient import client as monasca
@@ -800,6 +810,7 @@ class Senlin(OSClient):
     """Wrapper for SenlinClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return senlin client."""
         from senlinclient import client as senlin
@@ -817,6 +828,7 @@ class Magnum(OSClient):
     """Wrapper for MagnumClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return magnum client."""
         from magnumclient import client as magnum
@@ -836,6 +848,7 @@ class Watcher(OSClient):
     """Wrapper for WatcherClient which returns an authenticated native client.
 
     """
+
     def create_client(self, version=None, service_type=None):
         """Return watcher client."""
         from watcherclient import client as watcher_client
@@ -845,6 +858,25 @@ class Watcher(OSClient):
             self.choose_version(version),
             endpoint=watcher_api_url,
             session=self.keystone.get_session()[0])
+        return client
+
+
+@configure("barbican", default_version="1", default_service_type="key-manager")
+class Barbican(OSClient):
+    """Wrapper for BarbicanClient which returns an authenticated native client.
+
+    """
+
+    def create_client(self, version=None, service_type=None):
+        """Return Barbican client."""
+        from barbicanclient import client as barbican_client
+
+        version = "v%s" % self.choose_version(version)
+
+        client = barbican_client.Client(
+            version=self.choose_version(version),
+            session=self.keystone.get_session()[0])
+
         return client
 
 
