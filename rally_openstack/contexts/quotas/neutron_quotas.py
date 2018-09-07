@@ -59,6 +59,10 @@ class NeutronQuotas(object):
             "health_monitor": {
                 "type": "integer",
                 "minimum": -1
+            },
+            "trunk": {
+                "type": "integer",
+                "minimum": -1
             }
         }
     }

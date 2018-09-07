@@ -1292,6 +1292,47 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.list_bgpvpn_router_assocs")
 
+    def test__delete_trunk(self):
+        trunk_port = {"trunk": {"port_id": "fake-id"}}
+        self.scenario._delete_trunk(trunk_port["trunk"])
+        self.clients("neutron").delete_trunk.assert_called_once_with(
+            trunk_port["trunk"]["port_id"])
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.delete_trunk")
+
+    def test__create_trunk(self):
+        port_id = "port-id"
+        subport_payload = [{"port_id": "subport-port-id",
+                            "segmentation_type": "vlan",
+                            "segmentation_id": 1}]
+        trunk_payload = {
+            "port_id": port_id,
+            "name": self.scenario.generate_random_name.return_value,
+            "sub_ports": subport_payload
+        }
+        expected_trunk_args = {
+            "trunk": trunk_payload
+        }
+
+        self.scenario._create_trunk(trunk_payload)
+        self.clients("neutron").create_trunk.assert_called_once_with(
+            expected_trunk_args)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.create_trunk")
+
+    def test__list_trunks(self):
+        trunks = [{"name": "trunk1"}, {"name": "trunk2"}]
+        self.clients("neutron").list_trunks.return_value = {"trunks": trunks}
+        self.assertEqual(trunks, self.scenario._list_trunks())
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.list_trunks")
+
+    def test__list_ports_by_device_id(self):
+        device_id = "device-id"
+        self.scenario._list_ports_by_device_id(device_id)
+        self.clients("neutron").list_ports.assert_called_once_with(
+            device_id=device_id)
+
 
 class NeutronScenarioFunctionalTestCase(test.FakeClientsScenarioTestCase):
 

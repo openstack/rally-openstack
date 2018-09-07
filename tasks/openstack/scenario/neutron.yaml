@@ -260,3 +260,21 @@
           subnets_per_network: 15
           dualstack: True
           router: {}
+
+  NeutronTrunks.create_and_list_trunks:
+    -
+      args:
+        network_create_args: {}
+        subport_count: 10
+      context:
+        {% call user_context(tenants_amount, users_amount, use_existing_users) %}
+        quotas:
+          neutron:
+            network: -1
+            port: -1
+            trunk: -1
+        {% endcall %}
+      runner:
+        {{ constant_runner(concurrency=2*controllers_amount, times=8*controllers_amount, is_smoke=smoke) }}
+      sla:
+        {{ no_failures_sla() }}

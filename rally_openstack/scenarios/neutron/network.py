@@ -604,3 +604,34 @@ class DeleteSubnets(utils.NeutronScenario):
             # delete one of subnets based on the user sequential number
             subnet_id = network["subnets"][number]
             self._delete_subnet({"subnet": {"id": subnet_id}})
+
+
+@validation.add("number", param_name="subport_count", minval=1,
+                integer_only=True)
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(context={"cleanup@openstack": ["neutron"]},
+                    name="NeutronTrunks.create_and_list_trunks")
+class CreateAndListTrunks(utils.NeutronScenario):
+
+    def run(self, network_create_args=None, subport_count=10):
+        """Create and a given number of trunks with subports and list all trunks
+
+        :param network_create_args: dict, POST /v2.0/networks request
+                                    options. Deprecated.
+        :param trunk_count: int, number of trunk ports
+        :param subport_count: int, number of subports per trunk
+        """
+        net = self._create_network(network_create_args or {})
+        ports = [self._create_port(net, {}) for _ in range(subport_count)]
+        parent, subports = ports[0], ports[1:]
+        subport_payload = [{"port_id": p["port"]["id"],
+                            "segmentation_type": "vlan",
+                            "segmentation_id": seg_id}
+                           for seg_id, p in enumerate(subports, start=1)]
+        trunk_payload = {"port_id": parent["port"]["id"],
+                         "sub_ports": subport_payload}
+        self._create_trunk(trunk_payload)
+        self._update_port(parent, {"device_id": "sometrunk"})
+        self._list_trunks()
+        self._list_ports_by_device_id("sometrunk")
