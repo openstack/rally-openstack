@@ -108,10 +108,7 @@ class PushMetricsInstance(scenario.OpenStackScenario):
 
         self._metric_from_instance(seed, image, flavor, monitor_vip,
                                    pushgateway_port, job_name)
-        checked = grafana_svc.check_metric(seed, monitor_vip=monitor_vip,
-                                           grafana=grafana,
-                                           datasource_id=datasource_id,
-                                           sleep_time=sleep_time,
+        checked = grafana_svc.check_metric(seed, sleep_time=sleep_time,
                                            retries_total=retries_total)
         self.assertTrue(checked)
 
@@ -143,13 +140,8 @@ class PushMetricLocal(scenario.OpenStackScenario):
             name_generator=self.generate_random_name,
             atomic_inst=self.atomic_actions())
 
-        pushed = grafana_svc.push_metric(seed, monitor_vip=monitor_vip,
-                                         pushgateway_port=pushgateway_port,
-                                         job_name=job_name)
+        pushed = grafana_svc.push_metric(seed)
         self.assertTrue(pushed)
-        checked = grafana_svc.check_metric(seed, monitor_vip=monitor_vip,
-                                           grafana=grafana,
-                                           datasource_id=datasource_id,
-                                           sleep_time=sleep_time,
+        checked = grafana_svc.check_metric(seed, sleep_time=sleep_time,
                                            retries_total=retries_total)
         self.assertTrue(checked)
