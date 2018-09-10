@@ -644,7 +644,7 @@ class OSClientsTestCase(test.TestCase):
                 "session": mock_keystoneauth1.session.Session(),
                 "endpoint_override": mock_cinder__get_endpoint.return_value}
             mock_cinder.client.Client.assert_called_once_with(
-                "2", **kw)
+                "3", **kw)
             self.assertEqual(fake_cinder, self.clients.cache["cinder"])
 
     @mock.patch("%s.Manila._get_endpoint" % PATH)

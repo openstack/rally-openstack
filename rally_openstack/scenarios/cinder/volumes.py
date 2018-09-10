@@ -635,7 +635,8 @@ class CreateAndUploadVolumeToImage(cinder_utils.CinderBasic,
         volume = self.cinder.create_volume(size, **kwargs)
         image = self.cinder.upload_volume_to_image(
             volume, force=force, container_format=container_format,
-            disk_format=disk_format)
+            disk_format=disk_format
+        )
 
         if do_delete:
             self.cinder.delete_volume(volume)

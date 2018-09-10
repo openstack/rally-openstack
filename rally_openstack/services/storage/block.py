@@ -44,7 +44,7 @@ class BlockStorage(service.UnifiedService):
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      source_replica=None, multiattach=False):
+                      source_replica=None, multiattach=False, backup_id=None):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -65,6 +65,7 @@ class BlockStorage(service.UnifiedService):
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
                             one instance
+        :param backup_id: ID of the backup
 
         :returns: Return a new volume.
         """
@@ -78,7 +79,7 @@ class BlockStorage(service.UnifiedService):
             user_id=user_id, project_id=project_id,
             availability_zone=availability_zone, metadata=metadata,
             imageRef=imageRef, scheduler_hints=scheduler_hints,
-            multiattach=multiattach)
+            multiattach=multiattach, backup_id=backup_id)
 
     @service.should_be_overridden
     def list_volumes(self, detailed=True):

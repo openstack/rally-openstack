@@ -40,7 +40,7 @@ class BlockTestCase(test.TestCase):
             description=None, group_id=None, imageRef=None, metadata=None,
             multiattach=False, name=None, project_id=None,
             scheduler_hints=None, snapshot_id=None,
-            source_volid=None, user_id=None, volume_type=None)
+            source_volid=None, user_id=None, volume_type=None, backup_id=None)
 
     def test_list_volumes(self):
         self.assertEqual(self.service._impl.list_volumes.return_value,

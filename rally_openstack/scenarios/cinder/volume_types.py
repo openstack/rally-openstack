@@ -66,7 +66,8 @@ class CreateAndGetVolumeType(cinder_utils.CinderBasic):
 
 
 @validation.add("required_services", services=[consts.Service.CINDER])
-@validation.add("required_api_versions", component="cinder", versions=["2"])
+@validation.add("required_api_versions", component="cinder",
+                versions=["2", "3"])
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["cinder"]},
                     name="CinderVolumeTypes.create_and_update_volume_type",
@@ -380,7 +381,8 @@ class CreateAndUpdateEncryptionType(cinder_utils.CinderBasic):
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
-@validation.add("required_api_versions", component="cinder", versions=["2"])
+@validation.add("required_api_versions", component="cinder",
+                versions=["2", "3"])
 @validation.add("required_services", services=consts.Service.CINDER)
 @scenario.configure(
     context={"admin_cleanup@openstack": ["cinder"]},

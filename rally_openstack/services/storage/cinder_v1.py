@@ -177,7 +177,7 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      multiattach=False):
+                      multiattach=False, backup_id=None):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -197,6 +197,7 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
                             specified by the client to help boot an instance
         :param multiattach: Allow the volume to be attached to more than
                             one instance
+        :param backup_id: ID of the backup(IGNORED)
 
         :returns: Return a new volume.
         """
