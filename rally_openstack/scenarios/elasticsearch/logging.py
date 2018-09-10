@@ -18,12 +18,13 @@ import requests
 from rally.common import cfg
 from rally.common import logging
 from rally.common import utils as commonutils
+from rally.task import atomic
 from rally.task import types
-from rally.task import utils
 from rally.task import validation
 
 from rally_openstack import consts
 from rally_openstack import scenario
+from rally_openstack.scenarios.nova import utils as nova_utils
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ LOG = logging.getLogger(__name__)
 @scenario.configure(context={"cleanup@openstack": ["nova"]},
                     name="ElasticsearchLogging.log_instance",
                     platform="openstack")
-class ElasticsearchLogInstanceName(scenario.OpenStackScenario):
+class ElasticsearchLogInstanceName(nova_utils.NovaScenario):
     """Test logging instance in conjunction with Elasticsearch system.
 
     Let OpenStack platform already has logging agent (for example, Filebeat),
@@ -48,27 +49,20 @@ class ElasticsearchLogInstanceName(scenario.OpenStackScenario):
     becomes available, checks it's name in Elasticsearch indices by querying.
     """
 
-    def _create_server(self, image, flavor, seed):
-        server = self.clients("nova").servers.create(seed, image, flavor)
-        LOG.info("Server %s create started" % seed)
-        self.sleep_between(CONF.openstack.nova_server_boot_prepoll_delay)
-        utils.wait_for_status(
-            server,
-            ready_statuses=["ACTIVE"],
-            update_resource=utils.get_from_manager(),
-            timeout=CONF.openstack.nova_server_boot_timeout,
-            check_interval=CONF.openstack.nova_server_boot_poll_interval
-        )
-        LOG.info("Server %s is active" % seed)
+    @atomic.action_timer("elasticsearch.check_server_log_indexed")
+    def _check_server_name(self, server_id, logging_vip, elasticsearch_port,
+                           sleep_time, retries_total, additional_query=None):
+        request_data = {
+            "query": {
+                "bool": {
+                    "must": [{"match_phrase": {"Payload": server_id}}]
+                }
+            }
+        }
+        if additional_query:
+            request_data["query"]["bool"].update(additional_query)
 
-    def _check_server_name(self, name, logging_vip, elasticsearch_port,
-                           sleep_time, retries_total):
-        request_data = {"query": {
-            "bool": {"must": [{"match_phrase": {"Payload": name}}],
-                     "should": [{"range": {"Timestamp": {"gte": "now-2m",
-                                                         "lte": "now"}}}],
-                     "minimum_should_match": 1}}}
-        LOG.info("Check server name %s in elasticsearch" % name)
+        LOG.info("Check server ID %s in elasticsearch" % server_id)
         i = 0
         while i < retries_total:
             LOG.debug("Attempt number %s" % (i + 1))
@@ -87,20 +81,31 @@ class ElasticsearchLogInstanceName(scenario.OpenStackScenario):
                 self.assertGreater(result["hits"]["total"], 0)
                 break
 
-    def run(self, image, flavor, logging_vip, elasticsearch_port,
-            sleep_time=5, retries_total=30):
+    def run(self, image, flavor, logging_vip, elasticsearch_port, sleep_time=5,
+            retries_total=30, boot_server_kwargs=None, force_delete=False,
+            query_by_name=False, additional_query=None):
         """Create nova instance and check it indexed in elasticsearch.
 
         :param image: image for server
         :param flavor: flavor for server
         :param logging_vip: logging system IP to check server name in
                             elasticsearch index
+        :param boot_server_kwargs: special server kwargs for boot
+        :param force_delete: force delete server or not
         :param elasticsearch_port: elasticsearch port to use for check server
+        :param additional_query: map of additional arguments for scenario
+               elasticsearch query to check nova info in els index.
+        :param query_by_name: query nova server by name if True otherwise by id
         :param sleep_time: sleep time in seconds between elasticsearch request
         :param retries_total: total number of retries to check server name in
                               elasticsearch
         """
-        seed = self.generate_random_name()
-        self._create_server(image, flavor, seed)
-        self._check_server_name(seed, logging_vip, elasticsearch_port,
-                                sleep_time, retries_total)
+        server = self._boot_server(image, flavor, **(boot_server_kwargs or {}))
+        if query_by_name:
+            server_id = server.name
+        else:
+            server_id = server.id
+        self._check_server_name(server_id, logging_vip, elasticsearch_port,
+                                sleep_time, retries_total,
+                                additional_query=additional_query)
+        self._delete_server(server, force=force_delete)

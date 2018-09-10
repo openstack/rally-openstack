@@ -13,7 +13,32 @@
                 "logging_vip": "10.0.0.5",
                 "elasticsearch_port": 5601,
                 "sleep_time": 5,
-                "retries_total": 30
+                "retries_total": 30,
+                "additional_query": {
+                    "must_not": [
+                        {
+                            "match_phrase": {
+                                "Payload": "GET"
+                            }
+                        },
+                        {
+                            "match_phrase": {
+                                "http_method": "GET"
+                            }
+                        }
+                    ],
+                    "should": [
+                        {
+                            "range": {
+                                "Timestamp": {
+                                    "gte": "now-2m",
+                                    "lte": "now"
+                                }
+                            }
+                        }
+                    ],
+                    "minimum_should_match": 1
+                }
             },
             "runner": {
                 "type": "constant",
