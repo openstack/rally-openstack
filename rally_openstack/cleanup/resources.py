@@ -524,6 +524,7 @@ class CinderQos(base.ResourceManager):
 
 # MANILA
 
+
 _manila_order = get_order(450)
 
 
@@ -814,6 +815,7 @@ class MistralExecutions(SynchronizedDeletion, base.ResourceManager):
 
 # MURANO
 
+
 _murano_order = get_order(1200)
 
 
@@ -1041,3 +1043,21 @@ class KeystoneEc2(SynchronizedDeletion, base.ResourceManager):
     def delete(self):
         self._manager().delete_ec2credential(
             self.user_id, access=self.raw_resource.access)
+
+# BARBICAN
+
+
+@base.resource("barbican", "secrets", order=1500, admin_required=True,
+               perform_for_admin_only=True)
+class BarbicanSecrets(base.ResourceManager):
+
+    def id(self):
+        return self.raw_resource.secret_ref
+
+    def is_deleted(self):
+        try:
+            self._manager().get(self.id())
+        except Exception:
+            return True
+
+        return False

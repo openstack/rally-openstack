@@ -13,6 +13,7 @@ keystoneauth1>=3.3.0                                   # Apache Software License
 kubernetes>1.0.0                                       # Apache License Version 2.0
 os-faults>=0.1.15                                      # Apache Software License
 osprofiler>=1.4.0                                      # Apache Software License
+python-barbicanclient>=4.5.2                           # Apache Software License
 python-ceilometerclient>=2.5.0                         # Apache Software License
 python-cinderclient>=3.3.0                             # Apache Software License
 python-designateclient>=2.7.0                          # Apache License, Version 2.0

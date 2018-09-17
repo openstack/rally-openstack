@@ -23,6 +23,7 @@ Added
 ~~~~~
 
 * Added neutron trunk scenarios
+* Added barbican scenarios.
 
 [1.3.0] - 2018-10-08
 --------------------

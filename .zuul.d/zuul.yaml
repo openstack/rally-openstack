@@ -54,6 +54,8 @@
         - rally-task-basic-with-existing-users:
             # use_existing_users key did not trigger proper ansible tasks
             voting: false
+        - rally-task-barbican:
+            voting: false
         - rally-task-cinder
         # NOTE(andreykurilin): this requires more thing to configure before
         #   launching.

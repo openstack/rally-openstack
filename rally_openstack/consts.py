@@ -67,6 +67,7 @@ class _Service(utils.ImmutableMixin, utils.EnumMixin):
     GNOCCHI = "gnocchi"
     MAGNUM = "magnum"
     WATCHER = "watcher"
+    BARBICAN = "barbican"
 
 
 class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
@@ -98,6 +99,7 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     METRIC = "metric"
     CONTAINER_INFRA = "container-infra"
     INFRA_OPTIM = "infra-optim"
+    KEY_MANAGER = "key-manager"
 
     def __init__(self):
         self.__names = {
@@ -127,6 +129,7 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
             self.METRIC: _Service.GNOCCHI,
             self.CONTAINER_INFRA: _Service.MAGNUM,
             self.INFRA_OPTIM: _Service.WATCHER,
+            self.KEY_MANAGER: _Service.BARBICAN
         }
 
     def __getitem__(self, service_type):
