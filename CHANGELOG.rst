@@ -41,13 +41,15 @@ Changed
 * Deprecate api_info argument of all clients which inherits from OSClient
   and deprecate api_version argument of cleanup.manager.cleanup, because
   api information has been moved into credentails object.
+* `Docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ now supports
+  mysql and postgres as db backends.
 
 Removed
 ~~~~~~~
 
-* Remove deprecated wrappers (rally_openstack.wrappers) and 
-  helpers (scenario utils) for keystone, cinder, glance 
-  services. The new service model should be used instead 
+* Remove deprecated wrappers (rally_openstack.wrappers) and
+  helpers (scenario utils) for keystone, cinder, glance
+  services. The new service model should be used instead
   (see ``rally_openstack.services`` module for more details)
   while developing custom plugins. All the inner plugins used
   the new code for a long time.
