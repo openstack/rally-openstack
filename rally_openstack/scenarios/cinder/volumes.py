@@ -817,8 +817,8 @@ class CreateVolumeFromSnapshot(cinder_utils.CinderBasic):
                                            **kwargs)
 
         if do_delete:
-            self.cinder.delete_snapshot(snapshot)
             self.cinder.delete_volume(volume)
+            self.cinder.delete_snapshot(snapshot)
 
 
 @types.convert(image={"type": "glance_image"})
