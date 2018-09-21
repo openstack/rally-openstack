@@ -27,54 +27,6 @@ from rally.common import utils
 JSON_SCHEMA = "http://json-schema.org/draft-04/schema"
 
 
-class _TaskStatus(utils.ImmutableMixin, utils.EnumMixin):
-
-    """Consts that represents task possible states."""
-    INIT = "init"
-    VALIDATING = "validating"
-    VALIDATED = "validated"
-    VALIDATION_FAILED = "validation_failed"
-    RUNNING = "running"
-    FINISHED = "finished"
-    CRASHED = "crashed"
-    ABORTING = "aborting"
-    SLA_FAILED = "sla_failed"
-    SOFT_ABORTING = "soft_aborting"
-    ABORTED = "aborted"
-    PAUSED = "paused"
-
-
-class _SubtaskStatus(utils.ImmutableMixin, utils.EnumMixin):
-
-    """Consts that represents task possible states."""
-    INIT = "init"
-    VALIDATING = "validating"
-    VALIDATED = "validated"
-    VALIDATION_FAILED = "validation_failed"
-    RUNNING = "running"
-    FINISHED = "finished"
-    CRASHED = "crashed"
-    ABORTING = "aborting"
-    SLA_FAILED = "sla_failed"
-    SOFT_ABORTING = "soft_aborting"
-    ABORTED = "aborted"
-    PAUSED = "paused"
-
-
-class _DeployStatus(utils.ImmutableMixin, utils.EnumMixin):
-    DEPLOY_INIT = "deploy->init"
-    DEPLOY_STARTED = "deploy->started"
-    DEPLOY_SUBDEPLOY = "deploy->subdeploy"
-    DEPLOY_FINISHED = "deploy->finished"
-    DEPLOY_FAILED = "deploy->failed"
-
-    DEPLOY_INCONSISTENT = "deploy->inconsistent"
-
-    CLEANUP_STARTED = "cleanup->started"
-    CLEANUP_FINISHED = "cleanup->finished"
-    CLEANUP_FAILED = "cleanup->failed"
-
-
 class _EndpointPermission(utils.ImmutableMixin, utils.EnumMixin):
     ADMIN = "admin"
     USER = "user"
@@ -186,54 +138,7 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
         return self.__names[service_type]
 
 
-class _HookStatus(utils.ImmutableMixin, utils.EnumMixin):
-    """Hook result statuses."""
-    SUCCESS = "success"
-    FAILED = "failed"
-    VALIDATION_FAILED = "validation_failed"
-
-
-class _TagType(utils.ImmutableMixin, utils.EnumMixin):
-    TASK = "task"
-    SUBTASK = "subtask"
-    VERIFICATION = "verification"
-
-
-class _VerifierStatus(utils.ImmutableMixin, utils.EnumMixin):
-    """Verifier statuses."""
-    INIT = "init"
-    INSTALLING = "installing"
-    INSTALLED = "installed"
-    UPDATING = "updating"
-    EXTENDING = "extending"
-    FAILED = "failed"
-
-
-# NOTE(andreykurilin): In case of updating these statuses, please do not forget
-#   to update doc reference too
-class _VerificationStatus(utils.ImmutableMixin, utils.EnumMixin):
-    """Verification statuses."""
-    INIT = "init"
-    RUNNING = "running"
-    FINISHED = "finished"
-    FAILED = "failed"
-    CRASHED = "crashed"
-
-
-class _TimeFormat(utils.ImmutableMixin, utils.EnumMixin):
-    """International time formats"""
-    ISO8601 = "%Y-%m-%dT%H:%M:%S%z"
-
-
-TaskStatus = _TaskStatus()
-SubtaskStatus = _SubtaskStatus()
-DeployStatus = _DeployStatus()
 EndpointPermission = _EndpointPermission()
 ServiceType = _ServiceType()
 Service = _Service()
 EndpointType = _EndpointType()
-HookStatus = _HookStatus()
-TagType = _TagType()
-VerifierStatus = _VerifierStatus()
-VerificationStatus = _VerificationStatus()
-TimeFormat = _TimeFormat()
