@@ -31,6 +31,9 @@ Added
 * Added Cinder V3 support and make it as the default version. You could use
   api_versions context or api_info option of the spec to choose the proper
   version.
+* Extended documentation for ``existing@openstack`` plugin which includes
+  accepted system environment variables for ``rally env create --from-sysenv``
+  action.
 
 Changed
 ~~~~~~~
