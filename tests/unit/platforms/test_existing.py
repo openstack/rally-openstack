@@ -198,7 +198,13 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 "https_key": "key",
                 "https_insecure": True,
                 "profiler_hmac_key": "hmackey",
-                "profiler_conn_str": "https://example2.com"
+                "profiler_conn_str": "https://example2.com",
+                "api_info": {
+                    "keystone": {
+                        "version": 2,
+                        "service_type": "identity"
+                    }
+                }
             }, result["spec"])
 
         # keystone v3
@@ -223,7 +229,13 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 "https_key": "key",
                 "https_insecure": True,
                 "profiler_hmac_key": "hmackey",
-                "profiler_conn_str": "https://example2.com"
+                "profiler_conn_str": "https://example2.com",
+                "api_info": {
+                    "keystone": {
+                        "version": 3,
+                        "service_type": "identityv3"
+                    }
+                }
             }, result["spec"])
 
     def test_create_spec_from_sys_environ_fails_with_missing_vars(self):

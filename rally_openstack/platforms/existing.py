@@ -362,7 +362,13 @@ class OpenStack(platform.Platform):
             "https_insecure": strutils.bool_from_string(
                 sys_environ.get("OS_INSECURE")),
             "profiler_hmac_key": sys_environ.get("OSPROFILER_HMAC_KEY"),
-            "profiler_conn_str": sys_environ.get("OSPROFILER_CONN_STR")
+            "profiler_conn_str": sys_environ.get("OSPROFILER_CONN_STR"),
+            "api_info": {
+                "keystone": {
+                    "version": 2,
+                    "service_type": "identity"
+                }
+            }
         }
 
         user_domain_name = sys_environ.get("OS_USER_DOMAIN_NAME")
@@ -377,6 +383,12 @@ class OpenStack(platform.Platform):
             spec["admin"]["user_domain_name"] = user_domain_name or "Default"
             project_domain_name = project_domain_name or "Default"
             spec["admin"]["project_domain_name"] = project_domain_name
+            spec["api_info"] = {
+                "keystone": {
+                    "version": 3,
+                    "service_type": "identityv3"
+                }
+            }
 
         return {"spec": spec, "available": True, "message": "Available"}
 
