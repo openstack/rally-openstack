@@ -46,6 +46,8 @@ Changed
   api information has been moved into credentials object.
 * `Docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ now
   supports mysql and postgres as db backends.
+* Rename an action ``nova.create_image`` to ``nova.snapshot_server`` for better
+  understanding for what is actually done.
 
 Removed
 ~~~~~~~

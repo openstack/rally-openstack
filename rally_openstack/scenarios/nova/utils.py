@@ -483,7 +483,7 @@ class NovaScenario(scenario.OpenStackScenario):
                 check_interval=check_interval
             )
 
-    @atomic.action_timer("nova.create_image")
+    @atomic.action_timer("nova.snapshot_server")
     def _create_image(self, server):
         """Create an image from the given server
 
