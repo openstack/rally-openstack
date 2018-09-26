@@ -935,13 +935,6 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.list_interfaces")
 
-    @mock.patch("rally_openstack.scenarios.nova.utils.image_service")
-    def test__list_images(self, mock_image_service):
-        result = utils.NovaScenario(clients=mock.Mock())._list_images()
-        glance = mock_image_service.Image.return_value
-        self.assertEqual(glance.list_images.return_value, result)
-        glance.list_images.assert_called_once_with()
-
     def test__lock_server(self):
         server = mock.Mock()
         nova_scenario = utils.NovaScenario(context=self.context)

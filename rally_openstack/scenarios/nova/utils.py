@@ -510,22 +510,6 @@ class NovaScenario(scenario.OpenStackScenario):
             )
         return image
 
-    @atomic.action_timer("nova.list_images")
-    def _list_images(self, detailed=False, **kwargs):
-        """List all images.
-
-        :param detailed: True if the image listing
-                         should contain detailed information
-        :param kwargs: Optional additional arguments for image listing
-
-        :returns: Image list
-        """
-        LOG.warning("Method '_delete_image' of NovaScenario class is "
-                    "deprecated since Rally 0.10.0. Use GlanceUtils instead.")
-        glance = image_service.Image(self._clients,
-                                     atomic_inst=self.atomic_actions())
-        return glance.list_images()
-
     @atomic.action_timer("nova.get_keypair")
     def _get_keypair(self, keypair):
         """Get a keypair.

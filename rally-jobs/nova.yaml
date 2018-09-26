@@ -750,19 +750,6 @@
           tenants: 2
           users_per_tenant: 2
     -
-      title: NovaImages.list_images tests
-      scenario:
-        NovaImages.list_images:
-          detailed: True
-      runner:
-        constant:
-          times: 4
-          concurrency: 4
-      contexts:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-    -
       title: NovaKeypair.create_and_delete_keypair tests
       workloads:
         -

@@ -43,9 +43,9 @@ Changed
 * Error messages become more user-friendly in ``rally env check``.
 * Deprecate api_info argument of all clients which inherits from OSClient
   and deprecate api_version argument of cleanup.manager.cleanup, because
-  api information has been moved into credentails object.
-* `Docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ now supports
-  mysql and postgres as db backends.
+  api information has been moved into credentials object.
+* `Docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ now
+  supports mysql and postgres as db backends.
 
 Removed
 ~~~~~~~
@@ -59,6 +59,7 @@ Removed
 * Remove deprecated properties *insecure*, *cacert* (use *https_insecure* and
   *https_cacert* properties instead) and method *list_services* (use
   appropriate method of Clients object) of OpenStackCredentials object.
+* Remove deprecated in Rally 0.10.0 ``NovaImages.list_images`` scenario.
 
 Fixed
 ~~~~~
