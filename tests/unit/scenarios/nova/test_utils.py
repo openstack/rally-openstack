@@ -246,7 +246,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         self.assertEqual(self.mock_wait_for_status.mock.return_value,
                          return_image)
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
-                                       "nova.create_image")
+                                       "nova.snapshot_server")
 
     def test__default_delete_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
