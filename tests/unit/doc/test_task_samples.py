@@ -23,6 +23,7 @@ from rally import api
 from rally.task import context
 from rally.task import engine
 from rally.task import scenario
+from rally.task import task_cfg
 import yaml
 
 import rally_openstack
@@ -86,7 +87,7 @@ class TaskSampleTestCase(test.TestCase):
                     except Exception:
                         print(traceback.format_exc())
                         self.fail("Invalid JSON file: %s" % path)
-                    eng = engine.TaskEngine(engine.TaskConfig(task_config),
+                    eng = engine.TaskEngine(task_cfg.TaskConfig(task_config),
                                             mock.MagicMock(), mock.Mock())
                     eng.validate(only_syntax=True)
                 except Exception:

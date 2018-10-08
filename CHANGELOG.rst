@@ -16,24 +16,28 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-unreleased
-----------
+[1.3.0] - 2018-10-08
+--------------------
 
 Added
 ~~~~~
 
 * Support Python 3.7 environment.
-* ``https_cert`` and ``https_key`` options of the spec for
+* New options ``https_cert`` and ``https_key`` are added to the spec for
   ``existing@openstack`` platform to represent client certificate bundle and
   key files. Also the support for appropriate system environment variables (
   ``OS_CERT``, ``OS_KEY``) is added.
-* Support client api option while deploying platform.
-* Added Cinder V3 support and make it as the default version. You could use
+* ``existing@openstack`` plugin now supports a new field ``api_info`` for
+  specifying not default API version/service_type to use. The format and
+  purpose is similar to `api_versions
+  <https://xrally.org/plugins/openstack/plugins/#api_versions-context>`_ task
+  context.
+* Added Cinder V3 support and use it as the default version. You could use
   api_versions context or api_info option of the spec to choose the proper
   version.
-* Extended documentation for ``existing@openstack`` plugin which includes
-  accepted system environment variables for ``rally env create --from-sysenv``
-  action.
+* The documentation for ``existing@openstack`` plugin is extended with
+  information about accepted system environment variables via
+  ``rally env create --from-sysenv`` command.
 
 Changed
 ~~~~~~~
@@ -41,11 +45,13 @@ Changed
 * Our requirements are updated as like upper-constraints (the list of
   suggested tested versions to use)
 * Error messages become more user-friendly in ``rally env check``.
-* Deprecate api_info argument of all clients which inherits from OSClient
-  and deprecate api_version argument of cleanup.manager.cleanup, because
-  api information has been moved into credentials object.
-* `Docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ now
-  supports mysql and postgres as db backends.
+* Deprecate api_info argument of all clients plugins which inherits from
+  OSClient and deprecate api_version argument of
+  ``rally_openstack.cleanup.manager.cleanup``. API information (not default
+  version/service_type to use) has been included into credentials dictionary.
+* The proper packages are added to `docker image
+  <https://hub.docker.com/r/xrally/xrally-openstack>`_ to support MySQL and
+  PostgreSQL as DB backends.
 * Rename an action ``nova.create_image`` to ``nova.snapshot_server`` for better
   understanding for what is actually done.
 
@@ -53,21 +59,22 @@ Removed
 ~~~~~~~
 
 * Remove deprecated wrappers (rally_openstack.wrappers) and
-  helpers (scenario utils) for keystone, cinder, glance
+  helpers (scenario utils) for Keystone, Cinder, Glance
   services. The new service model should be used instead
   (see ``rally_openstack.services`` module for more details)
-  while developing custom plugins. All the inner plugins used
+  while developing custom plugins. All the inner plugins have been using
   the new code for a long time.
 * Remove deprecated properties *insecure*, *cacert* (use *https_insecure* and
   *https_cacert* properties instead) and method *list_services* (use
-  appropriate method of Clients object) of OpenStackCredentials object.
+  appropriate method of Clients object) from
+  *rally_openstack.credentials.OpenStackCredentials* object.
 * Remove deprecated in Rally 0.10.0 ``NovaImages.list_images`` scenario.
 
 Fixed
 ~~~~~
 
 * Keypairs are now properly cleaned up after the execution of Magnum
-  tests.
+  workloads.
 
 
 [1.2.0] - 2018-06-25

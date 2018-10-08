@@ -22,6 +22,7 @@ from rally import api
 from rally.common.plugin import discover
 from rally.common import yamlutils as yaml
 from rally.task import engine
+from rally.task import task_cfg
 from tests.unit import fakes
 from tests.unit import test
 
@@ -79,7 +80,7 @@ class RallyJobsTestCase(test.TestCase):
                     task_inst = api._Task(api.API(skip_db_check=True))
                     task = task_inst.render_template(
                         task_template=task_file.read(), **args)
-                    task = engine.TaskConfig(yaml.safe_load(task))
+                    task = task_cfg.TaskConfig(yaml.safe_load(task))
                     task_obj = fakes.FakeTask({"uuid": full_path})
 
                     eng = engine.TaskEngine(task, task_obj, mock.Mock())
