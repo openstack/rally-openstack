@@ -877,3 +877,19 @@ class NeutronScenario(scenario.OpenStackScenario):
         """
         self.clients("neutron").delete_security_group_rule(
             security_group_rule)
+
+    @atomic.action_timer("neutron.delete_trunk")
+    def _delete_trunk(self, trunk_port):
+        self.clients("neutron").delete_trunk(trunk_port["port_id"])
+
+    @atomic.action_timer("neutron.create_trunk")
+    def _create_trunk(self, trunk_payload):
+        return self.clients("neutron").create_trunk({"trunk": trunk_payload})
+
+    @atomic.optional_action_timer("neutron.list_trunks")
+    def _list_trunks(self, **kwargs):
+        return self.clients("neutron").list_trunks(**kwargs)["trunks"]
+
+    @atomic.optional_action_timer("neutron.list_ports_by_device_id")
+    def _list_ports_by_device_id(self, device_id):
+        return self.clients("neutron").list_ports(device_id=device_id)

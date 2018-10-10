@@ -16,6 +16,14 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+unreleased
+----------
+
+Added
+~~~~~
+
+* Added neutron trunk scenarios
+
 [1.3.0] - 2018-10-08
 --------------------
 
