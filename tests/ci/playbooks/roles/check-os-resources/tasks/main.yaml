@@ -5,7 +5,6 @@
   args:
     chdir: "{{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}"
   register: command_result
-  ignore_errors: True
 
 - name: Check results of listing resources
   shell:

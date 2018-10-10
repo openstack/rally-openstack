@@ -604,7 +604,8 @@ def main():
             #     projects, which have rally job, should not be affected by
             #     this check, since in most cases resources are left due
             #     to wrong cleanup of a particular scenario.
-            if os.environ.get("ZUUL_PROJECT") == "openstack/rally":
+            print(os.environ.get("ZUUL_PROJECT"))
+            if os.environ.get("ZUUL_PROJECT") == "openstack/rally-openstack":
                 return 1
             return 0
     return 0
