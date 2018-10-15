@@ -66,7 +66,9 @@ class CinderServersTestCase(test.ScenarioTestCase):
         mock_service = self.mock_cinder.return_value
         scenario = volumes.ListVolumes(self._get_context())
         scenario.run(True)
-        mock_service.list_volumes.assert_called_once_with(True)
+        mock_service.list_volumes.assert_called_once_with(
+            True, limit=None, marker=None, search_opts=None, sort=None,
+            sort_dir=None, sort_key=None)
 
     def test_list_types(self):
         mock_service = self.mock_cinder.return_value

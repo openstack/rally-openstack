@@ -45,7 +45,9 @@ class BlockTestCase(test.TestCase):
     def test_list_volumes(self):
         self.assertEqual(self.service._impl.list_volumes.return_value,
                          self.service.list_volumes(detailed=True))
-        self.service._impl.list_volumes.assert_called_once_with(detailed=True)
+        self.service._impl.list_volumes.assert_called_once_with(
+            detailed=True, limit=None, marker=None, search_opts=None,
+            sort=None, sort_dir=None, sort_key=None)
 
     def test_get_volume(self):
         self.assertTrue(self.service._impl.get_volume.return_value,

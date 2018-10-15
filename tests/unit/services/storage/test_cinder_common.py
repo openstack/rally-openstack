@@ -111,11 +111,6 @@ class CinderMixinTestCase(test.ScenarioTestCase):
             check_interval=CONF.openstack.cinder_volume_create_poll_interval
         )
 
-    def test_list_volumes(self):
-        self.assertEqual(self.cinder.volumes.list.return_value,
-                         self.service.list_volumes())
-        self.cinder.volumes.list.assert_called_once_with(True)
-
     def test_get_volume(self):
         self.assertEqual(self.cinder.volumes.get.return_value,
                          self.service.get_volume(1))

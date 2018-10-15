@@ -98,6 +98,14 @@ class CinderV3Service(service.Service, cinder_common.CinderMixin):
             volume_id, **kwargs)
         return updated_volume["volume"]
 
+    @atomic.action_timer("cinder_v3.list_volumes")
+    def list_volumes(self, detailed=True, search_opts=None, marker=None,
+                     limit=None, sort_key=None, sort_dir=None, sort=None):
+        """List all volumes."""
+        return self._get_client().volumes.list(
+            detailed=detailed, search_opts=search_opts, marker=marker,
+            limit=limit, sort_key=sort_key, sort_dir=sort_dir, sort=sort)
+
     @atomic.action_timer("cinder_v3.list_types")
     def list_types(self, search_opts=None, is_public=None):
         """Lists all volume types."""
@@ -271,14 +279,25 @@ class UnifiedCinderV3Service(cinder_common.UnifiedCinderMixin,
             imageRef=imageRef, scheduler_hints=scheduler_hints,
             multiattach=multiattach, backup_id=backup_id))
 
-    def list_volumes(self, detailed=True):
+    def list_volumes(self, detailed=True, search_opts=None, marker=None,
+                     limit=None, sort_key=None, sort_dir=None, sort=None):
         """Lists all volumes.
 
         :param detailed: Whether to return detailed volume info.
+        :param search_opts: Search options to filter out volumes.
+        :param marker: Begin returning volumes that appear later in the volume
+                       list than that represented by this volume id.
+        :param limit: Maximum number of volumes to return.
+        :param sort_key: Key to be sorted; deprecated in kilo
+        :param sort_dir: Sort direction, should be 'desc' or 'asc'; deprecated
+                         in kilo
+        :param sort: Sort information
         :returns: Return volumes list.
         """
         return [self._unify_volume(volume)
-                for volume in self._impl.list_volumes(detailed=detailed)]
+                for volume in self._impl.list_volumes(
+                detailed=detailed, search_opts=search_opts, marker=marker,
+                limit=limit, sort_key=sort_key, sort_dir=sort_dir, sort=sort)]
 
     def get_volume(self, volume_id):
         """Get a volume.

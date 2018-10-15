@@ -58,12 +58,6 @@ class CinderMixin(object):
             check_interval=CONF.openstack.cinder_volume_create_poll_interval
         )
 
-    def list_volumes(self, detailed=True):
-        """List all volumes."""
-        aname = "cinder_v%s.list_volumes" % self.version
-        with atomic.ActionTimer(self, aname):
-            return self._get_client().volumes.list(detailed)
-
     def get_volume(self, volume_id):
         """Get target volume information."""
         aname = "cinder_v%s.get_volume" % self.version

@@ -93,6 +93,13 @@ class CinderV1Service(service.Service, cinder_common.CinderMixin):
             volume_id, **kwargs)
         return updated_volume["volume"]
 
+    @atomic.action_timer("cinder_v1.list_volumes")
+    def list_volumes(self, detailed=True, search_opts=None, limit=None):
+        """List all volumes."""
+        return self._get_client().volumes.list(detailed=detailed,
+                                               search_opts=search_opts,
+                                               limit=limit)
+
     @atomic.action_timer("cinder_v1.list_types")
     def list_types(self, search_opts=None):
         """Lists all volume types."""
@@ -209,14 +216,25 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
             project_id=project_id, availability_zone=availability_zone,
             metadata=metadata, imageRef=imageRef))
 
-    def list_volumes(self, detailed=True):
+    def list_volumes(self, detailed=True, search_opts=None, marker=None,
+                     limit=None, sort_key=None, sort_dir=None, sort=None):
         """Lists all volumes.
 
         :param detailed: Whether to return detailed volume info.
+        :param search_opts: Search options to filter out volumes.
+        :param marker: Begin returning volumes that appear later in the volume
+                       list than that represented by this volume id.(IGNORED)
+        :param limit: Maximum number of volumes to return.
+        :param sort_key: Key to be sorted; deprecated in kilo(IGNORED)
+        :param sort_dir: Sort direction, should be 'desc' or 'asc'; deprecated
+                         in kilo(IGNORED)
+        :param sort: Sort information(IGNORED)
         :returns: Return volumes list.
         """
         return [self._unify_volume(volume)
-                for volume in self._impl.list_volumes(detailed=detailed)]
+                for volume in self._impl.list_volumes(detailed=detailed,
+                                                      search_opts=search_opts,
+                                                      limit=limit)]
 
     def get_volume(self, volume_id):
         """Get a volume.

@@ -24,6 +24,11 @@ Added
 
 * Added neutron trunk scenarios
 
+Changed
+~~~~~~~
+
+* Extend CinderVolumes.list_volumes scenario arguments.
+
 [1.3.0] - 2018-10-08
 --------------------
 

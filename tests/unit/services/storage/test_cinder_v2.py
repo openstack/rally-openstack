@@ -112,6 +112,21 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "cinder_v2.update_volume")
 
+    def test_list_volumes(self):
+        self.assertEqual(self.cinder.volumes.list.return_value,
+                         self.service.list_volumes(
+                             detailed=False, search_opts=None, limit=1,
+                             marker=None, sort_key=None, sort_dir=None,
+                             sort=None
+                         ))
+        self.cinder.volumes.list.assert_called_once_with(
+            detailed=False, search_opts=None, limit=1,
+            marker=None, sort_key=None, sort_dir=None,
+            sort=None
+        )
+        self._test_atomic_action_timer(self.atomic_actions(),
+                                       "cinder_v2.list_volumes")
+
     def test_list_types(self):
         self.assertEqual(self.cinder.volume_types.list.return_value,
                          self.service.list_types(search_opts=None,
@@ -314,7 +329,9 @@ class UnifiedCinderV2ServiceTestCase(test.TestCase):
         self.service._impl.list_volumes.return_value = ["vol"]
         self.assertEqual([self.service._unify_volume.return_value],
                          self.service.list_volumes(detailed=True))
-        self.service._impl.list_volumes.assert_called_once_with(detailed=True)
+        self.service._impl.list_volumes.assert_called_once_with(
+            detailed=True, limit=None, marker=None, search_opts=None,
+            sort=None, sort_dir=None, sort_key=None)
         self.service._unify_volume.assert_called_once_with("vol")
 
     def test_get_volume(self):
