@@ -1,0 +1,18 @@
+{
+    "openstack": {
+        "auth_url": "http://example.net:5000/v3/",
+        "region_name": "RegionOne",
+        "endpoint_type": "public",
+        "users": [
+            {
+                "username": "normal_user",
+                "password": "password",
+                "user_domain_name": "Default",
+                "project_name": "normal_project",
+                "project_domain_name": "Default"
+            }
+        ],
+        "https_insecure": false,
+        "https_cacert": ""
+    }
+}

@@ -23,14 +23,19 @@ existing-keystone-v3.json
 Register existing OpenStack cluster that uses Keystone v3.
 
 existing-with-predefined-users.json
---------------------------------------
+------------------------------------
 
 If you are using read-only backend in Keystone like LDAP, AD then
 you need this sample. If you don't specify "users" rally will use already
 existing users that you provide.
 
+existing-keystone-v3-user.json
+------------------------------
+
+Register an exisitng OpenStack cluster that uses Keystone v3 and a non-privileged user. The use of an admin account is optional because most tests can use a normal account.
+
 existing-api.json
---------------------------------
+-----------------
 
 If you expect to specify version of some clients, you could register existing
 Openstack cluster like this sample.
