@@ -23,6 +23,7 @@ Added
 ~~~~~
 
 * Added neutron trunk scenarios
+* Added barbican scenarios.
 
 Changed
 ~~~~~~~

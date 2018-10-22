@@ -87,6 +87,7 @@ pyOpenSSL===18.0.0
 pyparsing===2.2.2
 pyperclip===1.7.0
 Python===2.7.15rc1
+python-barbicanclient===4.5.2 
 python-ceilometerclient===2.9.0
 python-cinderclient===4.0.1
 python-dateutil===2.7.3

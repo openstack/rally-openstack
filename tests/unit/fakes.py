@@ -187,6 +187,14 @@ class FakeFlavor(FakeResource):
         self.name = name
 
 
+class FakeSecret(FakeResource):
+
+    def __init__(self, id="secret-id-0", manager=None, secret_ref="secret_ref",
+                 name="secret-name-0"):
+        super(FakeSecret, self).__init__(manager, id=id)
+        self.secret_ref = secret_ref
+
+
 class FakeKeypair(FakeResource):
     pass
 

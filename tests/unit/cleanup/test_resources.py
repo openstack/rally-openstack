@@ -1170,3 +1170,32 @@ class GnocchiResourceTestCase(test.TestCase):
             [mock.call(marker=None), mock.call(marker=res[1]["id"]),
              mock.call(marker=res[3]["id"])],
             gnocchi._manager.return_value.list.call_args_list)
+
+
+class BarbicanSecretsTestCase(test.TestCase):
+
+    def test_id(self):
+        barbican = resources.BarbicanSecrets()
+        barbican.raw_resource = mock.MagicMock(secret_ref="fake_uuid")
+        self.assertEqual("fake_uuid", barbican.id())
+
+    def test_list(self):
+        barbican = resources.BarbicanSecrets()
+        barbican._manager = mock.MagicMock()
+
+        barbican.list()
+        barbican._manager.assert_called_once_with()
+
+    def test_delete(self):
+        barbican = resources.BarbicanSecrets()
+        barbican._manager = mock.MagicMock()
+        barbican.raw_resource = mock.MagicMock(uuid="fake_uuid")
+
+        barbican.delete()
+        barbican._manager.assert_called_once_with()
+
+    def test_is_deleted(self):
+        barbican = resources.BarbicanSecrets()
+        barbican._manager = mock.MagicMock()
+        barbican.raw_resource = mock.MagicMock(uuid="fake_uuid")
+        self.assertFalse(barbican.is_deleted())
