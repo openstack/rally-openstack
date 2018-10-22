@@ -10,15 +10,18 @@
         cmd: |
           set -e
 
-          apt-get update
+          apt update
 
-          apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-          apt-add-repository 'deb https://apt.dockerproject.org/repo ubuntu-xenial main'
+          apt install --yes apt-transport-https ca-certificates curl software-properties-common
 
-          apt-get update
-          apt-cache policy docker-engine
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 
-          apt-get install -y docker-engine
+          add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+
+          apt update
+          apt-cache policy docker-ce
+
+          apt install --yes docker-ce
 
     - name: Check docker service status
       become: True
