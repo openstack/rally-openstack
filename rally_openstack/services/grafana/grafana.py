@@ -60,10 +60,11 @@ class GrafanaService(service.Service):
                                       self._spec["grafana"]["password"]))
             result = resp.json()
             LOG.debug("Grafana response code: %s" % resp.status_code)
-            if len(result["data"]["result"]) < 1 and i + 1 >= retries_total:
+            is_result = result.get("data") or len(result["data"]["result"]) < 1
+            if is_result and i + 1 >= retries_total:
                 LOG.debug("No instance metrics found in Grafana")
                 return False
-            elif len(result["data"]["result"]) < 1:
+            elif is_result:
                 i += 1
                 commonutils.interruptable_sleep(sleep_time)
             else:
