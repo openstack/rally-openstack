@@ -368,10 +368,14 @@ class Keystone(OSClient):
         # keystoneclient chooses).
         version = self.choose_version(version)
 
-        sess = self.get_session(version=version)[0]
+        sess, auth_plugin = self.get_session(version=version)
 
         kw = {"version": version, "session": sess,
               "timeout": CONF.openstack_client_http_timeout}
+        # check for keystone version
+        if auth_plugin._user_domain_name and self.credential.region_name:
+            kw["region_name"] = self.credential.region_name
+
         if keystoneclient.__version__[0] == "1":
             # NOTE(andreykurilin): let's leave this hack for envs which uses
             #  old(<2.0.0) keystoneclient version. Upstream fix:
