@@ -12,6 +12,9 @@
 - project:
     check:
       jobs:
+        - rally-tox-pep8
+        - rally-tox-py27
+        - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-cover
@@ -64,6 +67,9 @@
         - rally-task-zaqar
     gate:
       jobs:
+        - rally-tox-pep8
+        - rally-tox-py27
+        - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-cover
