@@ -1,34 +1,4 @@
 - job:
-    name: rally-tox-pep8
-    parent: tox
-    description: |
-      Run test for rally project.
-
-      Uses tox with the ``pep8`` environment.
-    vars:
-      tox_envlist: pep8
-
-- job:
-    name: rally-tox-py27
-    parent: tox
-    description: |
-      Run test for rally project.
-
-      Uses tox with the ``py27`` environment.
-    vars:
-      tox_envlist: py27
-
-- job:
-    name: rally-tox-py35
-    parent: tox
-    description: |
-      Run test for rally project.
-
-      Uses tox with the ``py35`` environment.
-    vars:
-      tox_envlist: py35
-
-- job:
     name: rally-tox-cover
     parent: tox-cover
     description: |
@@ -42,9 +12,6 @@
 - project:
     check:
       jobs:
-        - rally-tox-pep8
-        - rally-tox-py27
-        - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-cover
@@ -97,9 +64,6 @@
         - rally-task-zaqar
     gate:
       jobs:
-        - rally-tox-pep8
-        - rally-tox-py27
-        - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-cover
