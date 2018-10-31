@@ -1199,3 +1199,53 @@ class BarbicanSecretsTestCase(test.TestCase):
         barbican._manager = mock.MagicMock()
         barbican.raw_resource = mock.MagicMock(uuid="fake_uuid")
         self.assertFalse(barbican.is_deleted())
+
+
+class OctaviaResourceTestCase(test.TestCase):
+
+    def get_octavia(self):
+        octavia = resources.OctaviaLoadbalancer()
+        octavia._service = "octavia"
+        octavia._manager = mock.Mock()
+        return octavia
+
+    def test_name(self):
+        octavia = self.get_octavia()
+        octavia.raw_resource = {"name": "test_name"}
+        self.assertEqual("test_name", octavia.name())
+
+    def test_id(self):
+        octavia = self.get_octavia()
+        octavia.raw_resource = {"id": "test_id"}
+        self.assertEqual("test_id", octavia.id())
+
+    def test_delete(self):
+        octavia = self.get_octavia()
+        octavia.raw_resource = {"id": "test_id"}
+        octavia._client = mock.MagicMock()
+
+        octavia.delete()
+        octavia._client().load_balancer_delete.assert_called_once_with(
+            "test_id")
+
+    def test_is_deleted_false(self):
+        octavia = self.get_octavia()
+        octavia.raw_resource = {"id": "test_id"}
+        octavia._client = mock.MagicMock()
+        self.assertFalse(octavia.is_deleted())
+
+    def test_is_deleted_true(self):
+        octavia = self.get_octavia()
+        octavia.raw_resource = {"id": "test_id"}
+        octavia._client = mock.MagicMock()
+        ex = Exception()
+        octavia._client().load_balancer_show.side_effect = ex
+        self.assertTrue(octavia.is_deleted())
+
+    def test_list(self):
+        octavia = self.get_octavia()
+        octavia.raw_resource = {"id": "test_id"}
+        octavia._client = mock.MagicMock()
+
+        octavia.list()
+        octavia._client().load_balancer_list.assert_called_once_with()

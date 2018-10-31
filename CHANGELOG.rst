@@ -24,6 +24,7 @@ Added
 
 * Added neutron trunk scenarios
 * Added barbican scenarios.
+* Added octavia scenarios.
 
 Changed
 ~~~~~~~
