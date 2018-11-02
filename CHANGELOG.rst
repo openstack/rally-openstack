@@ -25,6 +25,7 @@ Added
 * Added neutron trunk scenarios
 * Added barbican scenarios.
 * Added octavia scenarios.
+* Support for osprofiler config in Devstack plugin.
 
 Changed
 ~~~~~~~

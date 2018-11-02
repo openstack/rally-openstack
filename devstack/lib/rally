@@ -33,6 +33,9 @@ RALLY_DEBUG=${RALLY_DEBUG:-False}
 RALLY_ADD_DEPLOYMENT=${RALLY_ADD_DEPLOYMENT:-"True"}
 RALLY_ADD_DEPLOYMENT=$(trueorfalse True $RALLY_ADD_DEPLOYMENT)
 
+# Integration with OSprofiler
+OSPROFILER_HMAC_KEYS=${OSPROFILER_HMAC_KEYS:-""}
+
 # Functions
 # ---------
 
@@ -42,6 +45,7 @@ RALLY_ADD_DEPLOYMENT=$(trueorfalse True $RALLY_ADD_DEPLOYMENT)
 # - ``ADMIN_PASSWORD``, ``KEYSTONE_SERVICE_PROTOCOL``,
 #   ``KEYSTONE_SERVICE_HOST``, ``KEYSTONE_SERVICE_PORT``,
 #   ``IDENTITY_API_VERSION`` - must be defined
+#   ``OSPROFILER_HMAC_KEYS`` - optional, for integration with osprofiler
 #
 # _create_deployment_config filename
 function _create_deployment_config() {
@@ -57,8 +61,6 @@ then
             "password": "$ADMIN_PASSWORD",
             "tenant_name": "admin",
         }
-    }
-}
 EOF
 fi
 if [[ "$IDENTITY_API_VERSION" == 3 ]]
@@ -74,11 +76,22 @@ then
             "project_name": "admin",
             "user_domain_name": "Default",
             "project_domain_name": "Default"
-        }
+        },
+EOF
+fi
+
+# Now add osprofiler config if necessary
+if [[ ! -z "$OSPROFILER_HMAC_KEYS" ]]; then
+    cat >>$1 <<EOF
+        "profiler_hmac_key": $OSPROFILER_HMAC_KEYS,
+EOF
+fi
+
+# And finish file
+cat >>$1 <<EOF
     }
 }
 EOF
-fi
 }
 
 # install_rally() - Collect source and prepare
