@@ -37,6 +37,7 @@ Fixed
 
 * Do not ignore ``region_name`` from environment specification while
   initializing keystone client.
+* Fetching OSProfiler trace-info for some drivers.
 
 [1.3.0] - 2018-10-08
 --------------------

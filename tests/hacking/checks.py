@@ -591,7 +591,8 @@ def check_opts_import_path(logical_line, physical_line, filename):
 
      N342
      """
-    excluded_files = ["./rally_openstack/__init__.py"]
+    excluded_files = ["./rally_openstack/__init__.py",
+                      "./rally_openstack/embedcharts/osprofilerchart.py"]
     forbidden_methods = [".register_opts("]
 
     if filename not in excluded_files:

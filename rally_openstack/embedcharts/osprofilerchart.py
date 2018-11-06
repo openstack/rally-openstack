@@ -14,7 +14,9 @@
 
 import json
 import os
+
 from rally.common import logging
+from rally.common import opts
 from rally.common.plugin import plugin
 from rally.task.processing.charts import OutputTextArea
 
@@ -30,10 +32,9 @@ def _datetime_json_serialize(obj):
 
 @plugin.configure(name="OSProfiler")
 class OSProfilerChart(OutputTextArea):
-    """osprofiler content
+    """OSProfiler content
 
     This plugin complete data of osprofiler
-
     """
 
     widget = "OSProfiler"
@@ -43,12 +44,18 @@ class OSProfilerChart(OutputTextArea):
 
         from osprofiler import cmd
         from osprofiler.drivers import base
+        from osprofiler import opts as osprofiler_opts
+
+        opts.register_opts(osprofiler_opts.list_opts())
 
         try:
             engine = base.get_driver(data["data"]["conn_str"])
         except Exception:
+            msg = "Error while fetching OSProfiler results."
             if logging.is_debug():
-                LOG.exception("Error while fetching OSProfiler results.")
+                LOG.exception(msg)
+            else:
+                LOG.error(msg)
             return None
 
         data["widget"] = "EmbedChart"
