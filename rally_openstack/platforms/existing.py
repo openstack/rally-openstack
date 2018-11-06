@@ -45,31 +45,26 @@ class OpenStack(platform.Platform):
         "definitions": {
             "user": {
                 "type": "object",
-                "oneOf": [
+                "properties": {
+                    "username": {"type": "string"},
+                    "password": {"type": "string"},
+                    "project_name": {"type": "string"},
+                    "tenant_name": {"type": "string"},
+                    "domain_name": {"type": "string"},
+                    "user_domain_name": {"type": "string"},
+                    "project_domain_name": {"type": "string"},
+                },
+                "additionalProperties": False,
+                "anyOf": [
                     {
-                        "description": "Keystone V2.0",
-                        "properties": {
-                            "username": {"type": "string"},
-                            "password": {"type": "string"},
-                            "tenant_name": {"type": "string"},
-                        },
-                        "required": ["username", "password", "tenant_name"],
-                        "additionalProperties": False
+                        "description": "Keystone V2.0 (old-style)",
+                        "required": ["username", "password", "tenant_name"]
                     },
                     {
-                        "description": "Keystone V3.0",
-                        "properties": {
-                            "username": {"type": "string"},
-                            "password": {"type": "string"},
-                            "project_name": {"type": "string"},
-                            "domain_name": {"type": "string"},
-                            "user_domain_name": {"type": "string"},
-                            "project_domain_name": {"type": "string"},
-                        },
-                        "required": ["username", "password", "project_name"],
-                        "additionalProperties": False
+                        "description": "Keystone V3.0 (modern terms)",
+                        "required": ["username", "password", "project_name"]
                     }
-                ],
+                ]
             },
             "api_info": {
                 "type": "object",
