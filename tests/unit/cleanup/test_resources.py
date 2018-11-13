@@ -576,6 +576,24 @@ class NeutronSecurityGroupTestCase(test.TestCase):
         neut.user.neutron().list_security_groups.assert_called_once_with(
             tenant_id=neut.tenant_uuid)
 
+    def test_list_with_not_found(self):
+
+        class NotFound(Exception):
+            status_code = 404
+
+        neut = resources.NeutronSecurityGroup()
+        neut.user = mock.MagicMock()
+        neut._resource = "security_group"
+        neut.tenant_uuid = "user_tenant"
+
+        neut.user.neutron().list_security_groups.side_effect = NotFound()
+
+        expected_result = []
+        self.assertEqual(expected_result, list(neut.list()))
+
+        neut.user.neutron().list_security_groups.assert_called_once_with(
+            tenant_id=neut.tenant_uuid)
+
 
 class NeutronQuotaTestCase(test.TestCase):
 

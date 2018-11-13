@@ -466,11 +466,16 @@ class NeutronRouter(NeutronMixin):
                tenant_resource=True)
 class NeutronSecurityGroup(NeutronMixin):
     def list(self):
-        tenant_sgs = super(NeutronSecurityGroup, self).list()
-        # NOTE(pirsriva): Filter out "default" security group deletion
-        # by non-admin role user
-        return filter(lambda r: r["name"] != "default",
-                      tenant_sgs)
+        try:
+            tenant_sgs = super(NeutronSecurityGroup, self).list()
+            # NOTE(pirsriva): Filter out "default" security group deletion
+            # by non-admin role user
+            return filter(lambda r: r["name"] != "default",
+                          tenant_sgs)
+        except Exception as e:
+            if getattr(e, "status_code", 400) == 404:
+                return []
+            raise
 
 
 @base.resource("neutron", "quota", order=next(_neutron_order),
