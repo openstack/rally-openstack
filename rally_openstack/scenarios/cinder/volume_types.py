@@ -118,7 +118,7 @@ class CreateAndListVolumeTypes(cinder_utils.CinderBasic):
             is_public=is_public)
 
         pool_list = self.admin_cinder.list_types()
-        msg = ("type not included into list of available types"
+        msg = ("type not included into list of available types "
                "created type: {}\n"
                "pool of types: {}\n").format(volume_type, pool_list)
         self.assertIn(volume_type.id,

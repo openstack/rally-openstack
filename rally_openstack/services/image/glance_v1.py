@@ -175,8 +175,8 @@ class UnifiedGlanceV1Service(glance_common.UnifiedGlanceMixin, image.Image):
         :param remove_props: List of property names to remove
         """
         if remove_props is not None:
-            raise image.RemovePropsException("Remove prop: %s is not"
-                                             "supported in"
+            raise image.RemovePropsException("Remove prop: %s is not "
+                                             "supported in "
                                              "glance_v1" % remove_props)
         image_obj = self._impl.update_image(
             image_id=image_id,

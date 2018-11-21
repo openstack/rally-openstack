@@ -536,7 +536,7 @@ class BootServerAttachVolumeAndListAttachments(utils.NovaScenario,
         list_attachments = self._list_attachments(server.id)
 
         for attachment in attachments:
-            msg = ("attachment not included into list of available"
+            msg = ("attachment not included into list of available "
                    "attachments\n attachment: {}\n"
                    "list attachments: {}").format(attachment, list_attachments)
             self.assertIn(attachment, list_attachments, err_msg=msg)

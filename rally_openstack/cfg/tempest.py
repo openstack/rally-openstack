@@ -65,7 +65,7 @@ OPTS = {"openstack": [
     cfg.IntOpt("flavor_ref_alt_ram",
                default="128",
                deprecated_group="tempest",
-               help="Alternate reference flavor RAM size used by test that"
+               help="Alternate reference flavor RAM size used by test that "
                "need two flavors, like those that resize an instance"),
     cfg.IntOpt("heat_instance_type_ram",
                default="64",

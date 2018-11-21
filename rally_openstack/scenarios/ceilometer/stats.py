@@ -30,7 +30,7 @@ from rally_openstack.scenarios.ceilometer import utils
                     platform="openstack")
 class CreateMeterAndGetStats(utils.CeilometerScenario):
 
-    @logging.log_deprecated("Use 'get_stats' method, now samples are created"
+    @logging.log_deprecated("Use 'get_stats' method, now samples are created "
                             "in context", "0.1.2")
     def run(self, **kwargs):
         """Create a meter and fetch its statistics.
