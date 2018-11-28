@@ -338,12 +338,13 @@ class OctaviaLoadbalancer(base.ResourceManager):
         return self.raw_resource["name"]
 
     def delete(self):
-        return self._client().load_balancer_delete(self.id())
+        return self._client().load_balancer_delete(
+            self.id(), cascade=True)
 
     def is_deleted(self):
         try:
             self._client().load_balancer_show(self.id())
-        except Exception as e:
+        except Exception:
             return True
 
         return False

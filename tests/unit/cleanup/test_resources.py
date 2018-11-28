@@ -1244,7 +1244,7 @@ class OctaviaResourceTestCase(test.TestCase):
 
         octavia.delete()
         octavia._client().load_balancer_delete.assert_called_once_with(
-            "test_id")
+            "test_id", cascade=True)
 
     def test_is_deleted_false(self):
         octavia = self.get_octavia()
