@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 import random
 
 from rally.common import cfg
@@ -34,7 +35,6 @@ LOG = logging.getLogger(__name__)
 class NeutronScenario(scenario.OpenStackScenario):
     """Base class for Neutron scenarios with basic atomic actions."""
 
-    SUBNET_IP_VERSION = 4
     # TODO(rkiran): modify in case LBaaS-v2 requires
     LB_METHOD = "ROUND_ROBIN"
     LB_PROTOCOL = "HTTP"
@@ -147,7 +147,8 @@ class NeutronScenario(scenario.OpenStackScenario):
 
         subnet_create_args["network_id"] = network_id
         subnet_create_args["name"] = self.generate_random_name()
-        subnet_create_args.setdefault("ip_version", self.SUBNET_IP_VERSION)
+        subnet_create_args["ip_version"] = netaddr.IPNetwork(
+            subnet_create_args["cidr"]).version
 
         return self.clients("neutron").create_subnet(
             {"subnet": subnet_create_args})

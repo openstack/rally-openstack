@@ -15,6 +15,7 @@
 
 import ddt
 import mock
+import netaddr
 
 from rally import exceptions
 from rally_openstack.scenarios.neutron import utils
@@ -160,7 +161,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
             "subnet": {
                 "network_id": network_id,
                 "cidr": start_cidr,
-                "ip_version": self.scenario.SUBNET_IP_VERSION,
+                "ip_version": netaddr.IPNetwork(start_cidr).version,
                 "name": self.scenario.generate_random_name.return_value
             }
         }
@@ -176,8 +177,9 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self.clients("neutron").create_subnet.reset_mock()
 
         # Custom options
-        extras = {"cidr": "192.168.16.0/24", "allocation_pools": []}
-        mock_network_wrapper.generate_cidr.return_value = "192.168.16.0/24"
+        extras = {"cidr": "2001::/64", "allocation_pools": []}
+        extras["ip_version"] = netaddr.IPNetwork(extras["cidr"]).version
+        mock_network_wrapper.generate_cidr.return_value = "2001::/64"
         subnet_data.update(extras)
         expected_subnet_data["subnet"].update(extras)
         self.scenario._create_subnet(network, subnet_data)
@@ -447,10 +449,6 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
             router["router"]["id"])
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.remove_gateway_router")
-
-    def test_SUBNET_IP_VERSION(self):
-        """Curent NeutronScenario implementation supports only IPv4."""
-        self.assertEqual(4, utils.NeutronScenario.SUBNET_IP_VERSION)
 
     def test_create_port(self):
         net_id = "network-id"
