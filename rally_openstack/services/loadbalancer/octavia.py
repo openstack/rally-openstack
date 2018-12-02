@@ -196,16 +196,53 @@ class Octavia(service.Service):
         """
         return self._clients.octavia().pool_list(**kwargs)
 
+    def update_pool_resource(self, pool):
+        try:
+            new_pool = self._clients.octavia().pool_show(pool["id"])
+        except Exception as e:
+            if getattr(e, "status_code", 400) == 404:
+                raise exceptions.GetResourceNotFound(resource=pool)
+            raise exceptions.GetResourceFailure(resource=pool, err=e)
+        return new_pool
+
     @atomic.action_timer("octavia.pool_create")
-    def pool_create(self, **kwargs):
+    def pool_create(self, lb_id, protocol, lb_algorithm,
+                    description=None, admin_state_up=True,
+                    session_persistence=None):
         """Create a pool
 
-        :param kwargs:
-            Parameters to create a listener with (expects json=)
+        :param lb_id: ID of the loadbalancer
+        :param protocol: protocol of the resource
+        :param lb_algorithm: loadbalancing algorithm of the pool
+        :param description: a human readable description of the pool
+        :param admin_state_up: administrative state of the resource
+        :param session_persistence: a json object specifiying the session
+            persistence of the pool
         :return:
             A dict of the created pool's settings
         """
-        return self._clients.octavia().pool_create(**kwargs)
+        args = {
+            "name": self.generate_random_name(),
+            "loadbalancer_id": lb_id,
+            "protocol": protocol,
+            "lb_algorithm": lb_algorithm,
+            "description": description,
+            "admin_state_up": admin_state_up,
+            "session_persistence": session_persistence
+        }
+        pool = self._clients.octavia().pool_create(
+            json={"pool": args})
+        pool = pool["pool"]
+        pool = utils.wait_for_status(
+            pool,
+            ready_statuses=["ACTIVE"],
+            status_attr="provisioning_status",
+            update_resource=self.update_pool_resource,
+            timeout=CONF.openstack.octavia_create_loadbalancer_timeout,
+            check_interval=(
+                CONF.openstack.octavia_create_loadbalancer_poll_interval)
+        )
+        return pool
 
     @atomic.action_timer("octavia.pool_delete")
     def pool_delete(self, pool_id):
@@ -230,17 +267,18 @@ class Octavia(service.Service):
         return self._clients.octavia().pool_show(pool_id)
 
     @atomic.action_timer("octavia.pool_set")
-    def pool_set(self, pool_id, **kwargs):
+    def pool_set(self, pool_id, pool_update_args):
         """Update a pool's settings
 
         :param pool_id:
             ID of the pool to update
-        :param kwargs:
+        :param pool_update_args:
             A dict of arguments to update a pool
         :return:
             Response Code from the API
         """
-        return self._clients.octavia().pool_set(pool_id, **kwargs)
+        return self._clients.octavia().pool_set(
+            pool_id, json={"pool": pool_update_args})
 
     @atomic.action_timer("octavia.member_list")
     def member_list(self, pool_id, **kwargs):

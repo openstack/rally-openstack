@@ -1222,7 +1222,7 @@ class BarbicanSecretsTestCase(test.TestCase):
 class OctaviaResourceTestCase(test.TestCase):
 
     def get_octavia(self):
-        octavia = resources.OctaviaLoadbalancer()
+        octavia = resources.OctaviaMixIn()
         octavia._service = "octavia"
         octavia._manager = mock.Mock()
         return octavia

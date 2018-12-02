@@ -110,3 +110,83 @@
         sla:
           failure_rate:
             max: 0
+    -
+      title: Octavia.create_and_list_pools
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_list_pools:
+            protocol: "HTTP"
+            lb_algorithm: "ROUND_ROBIN"
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_delete_pools
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_delete_pools:
+            protocol: "HTTP"
+            lb_algorithm: "ROUND_ROBIN"
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_update_pools
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_update_pools:
+            protocol: "HTTP"
+            lb_algorithm: "ROUND_ROBIN"
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_show_pools
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_show_pools:
+            protocol: "HTTP"
+            lb_algorithm: "ROUND_ROBIN"
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0

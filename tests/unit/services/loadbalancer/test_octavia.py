@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import fixtures
 import mock
 
 from rally.common import cfg
@@ -31,6 +32,9 @@ class LoadBalancerServiceTestCase(test.TestCase):
         self.name_generator = mock.MagicMock()
         self.service = octavia.Octavia(self.clients,
                                        name_generator=self.name_generator)
+        self.mock_wait_for_status = fixtures.MockPatch(
+            "rally.task.utils.wait_for_status")
+        self.useFixture(self.mock_wait_for_status)
 
     def _get_context(self):
         context = test.get_test_context()
@@ -164,11 +168,47 @@ class LoadBalancerServiceTestCase(test.TestCase):
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.pool_list")
 
+    def test_update_pool_resource(self):
+        fake_pool = {"id": "pool-id"}
+        self.service.update_pool_resource(fake_pool)
+        self.service._clients.octavia().pool_show \
+            .assert_called_once_with("pool-id")
+
+    def test_update_pool_resource_fail_404(self):
+        fake_pool = {"id": "pool-id"}
+        ex = Exception()
+        ex.status_code = 404
+        self.service._clients.octavia().pool_show.side_effect = ex
+        self.assertRaises(
+            exceptions.GetResourceNotFound,
+            self.service.update_pool_resource, fake_pool)
+
+    def test_update_pool_resource_fail(self):
+        fake_pool = {"id": "pool-id"}
+        ex = Exception()
+        self.service._clients.octavia().pool_show.side_effect = ex
+        self.assertRaises(
+            exceptions.GetResourceFailure,
+            self.service.update_pool_resource, fake_pool)
+
     def test_pool_create(self):
-        self.service.pool_create()
-        self.assertEqual(
-            1, self.service._clients.octavia().pool_create.call_count)
-        self.service._clients.octavia().pool_create.assert_called_once_with()
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="pool")
+        self.service.pool_create(
+            lb_id="loadbalancer-id",
+            protocol="HTTP",
+            lb_algorithm="ROUND_ROBIN")
+        self.service._clients.octavia().pool_create \
+            .assert_called_once_with(
+                json={"pool": {
+                    "lb_algorithm": "ROUND_ROBIN",
+                    "protocol": "HTTP",
+                    "description": None,
+                    "admin_state_up": True,
+                    "session_persistence": None,
+                    "loadbalancer_id": "loadbalancer-id",
+                    "name": "pool"}})
+
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.pool_create")
 
@@ -187,9 +227,14 @@ class LoadBalancerServiceTestCase(test.TestCase):
                                        "octavia.pool_show")
 
     def test_pool_set(self):
-        self.service.pool_set(pool_id="fake_pool")
+        pool_update_args = {"name": "new-pool-name"}
+        self.service.pool_set(
+            pool_id="fake_pool",
+            pool_update_args=pool_update_args)
         self.service._clients.octavia().pool_set \
-            .assert_called_once_with("fake_pool")
+            .assert_called_once_with(
+                "fake_pool",
+                json={"pool": {"name": "new-pool-name"}})
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.pool_set")
 
@@ -338,14 +383,14 @@ class LoadBalancerServiceTestCase(test.TestCase):
 
     def test_quota_list(self):
         self.service.quota_list(params="fake_params")
-        self.service._clients.octavia().quota_list\
+        self.service._clients.octavia().quota_list \
             .assert_called_once_with("fake_params")
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.quota_list")
 
     def test_quota_show(self):
         self.service.quota_show(project_id="fake_project")
-        self.service._clients.octavia().quota_show\
+        self.service._clients.octavia().quota_show \
             .assert_called_once_with("fake_project")
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.quota_show")
@@ -389,15 +434,14 @@ class LoadBalancerServiceTestCase(test.TestCase):
     def test_update_loadbalancer_resource(self):
         fake_lb = {"id": "fake_lb"}
         self.service.update_loadbalancer_resource(lb=fake_lb)
-        self.service._clients.octavia().load_balancer_show. \
-            assert_called_once_with("fake_lb")
+        self.service._clients.octavia().load_balancer_show \
+            .assert_called_once_with("fake_lb")
 
     def test_update_loadbalancer_resource_fail_404(self):
         fake_lb = {"id": "fake_lb"}
         ex = Exception()
         ex.status_code = 404
-        self.service._clients.octavia().load_balancer_show.side_effect = \
-            ex
+        self.service._clients.octavia().load_balancer_show.side_effect = ex
         self.assertRaises(
             exceptions.GetResourceNotFound,
             self.service.update_loadbalancer_resource, fake_lb)
@@ -405,8 +449,7 @@ class LoadBalancerServiceTestCase(test.TestCase):
     def test_update_loadbalancer_resource_fail(self):
         fake_lb = {"id": "fake_lb"}
         ex = Exception()
-        self.service._clients.octavia().load_balancer_show.side_effect = \
-            ex
+        self.service._clients.octavia().load_balancer_show.side_effect = ex
         self.assertRaises(
             exceptions.GetResourceFailure,
             self.service.update_loadbalancer_resource, fake_lb)

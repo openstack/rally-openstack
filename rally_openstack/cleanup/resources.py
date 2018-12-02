@@ -323,10 +323,12 @@ class NeutronV2Loadbalancer(NeutronLbaasV2Mixin):
 
         return False
 
+# OCTAVIA
+
 
 @base.resource("octavia", "loadbalancer", order=next(_neutron_order),
                tenant_resource=True)
-class OctaviaLoadbalancer(base.ResourceManager):
+class OctaviaMixIn(base.ResourceManager):
 
     def _client(self):
         return octavia.Octavia(self.admin or self.user)
@@ -351,6 +353,12 @@ class OctaviaLoadbalancer(base.ResourceManager):
 
     def list(self):
         return self._client().load_balancer_list()["loadbalancers"]
+
+
+@base.resource("octavia", "pools", order=next(_neutron_order),
+               tenant_resource=True)
+class OctaviaPools(OctaviaMixIn):
+    pass
 
 
 @base.resource("neutron", "bgpvpn", order=next(_neutron_order),
@@ -406,8 +414,8 @@ class NeutronPort(NeutronMixin):
         for port in ports:
             if not port.get("name"):
                 parent_name = None
-                if (port["device_owner"] in self.ROUTER_INTERFACE_OWNERS or
-                        port["device_owner"] == self.ROUTER_GATEWAY_OWNER):
+                if (port["device_owner"] in self.ROUTER_INTERFACE_OWNERS
+                        or port["device_owner"] == self.ROUTER_GATEWAY_OWNER):
                     # first case is a port created while adding an interface to
                     #   the subnet
                     # second case is a port created while adding gateway for
@@ -426,8 +434,8 @@ class NeutronPort(NeutronMixin):
 
     def delete(self):
         device_owner = self.raw_resource["device_owner"]
-        if (device_owner in self.ROUTER_INTERFACE_OWNERS or
-                device_owner == self.ROUTER_GATEWAY_OWNER):
+        if (device_owner in self.ROUTER_INTERFACE_OWNERS
+                or device_owner == self.ROUTER_GATEWAY_OWNER):
             if device_owner == self.ROUTER_GATEWAY_OWNER:
                 self._manager().remove_gateway_router(
                     self.raw_resource["device_id"])
@@ -590,9 +598,9 @@ class GlanceImage(base.ResourceManager):
         return image.Image(self.admin or self.user)
 
     def list(self):
-        images = (self._client().list_images(owner=self.tenant_uuid) +
-                  self._client().list_images(status="deactivated",
-                                             owner=self.tenant_uuid))
+        images = (self._client().list_images(owner=self.tenant_uuid)
+                  + self._client().list_images(status="deactivated",
+                                               owner=self.tenant_uuid))
         return images
 
     def delete(self):
