@@ -364,7 +364,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
                                                      volume_type=None)
         scenario._boot_server.assert_called_once_with(
             None, 0, auto_assign_nic=False,
-            block_device_mapping={"vda": "volume_id:::1"},
+            block_device_mapping={"vda": "volume_id:::0"},
             fakearg="f")
 
     @mock.patch("rally_openstack.services.storage.block.BlockStorage")
@@ -387,7 +387,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
                                                      volume_type=None)
         scenario._boot_server.assert_called_once_with(
             None, 0,
-            block_device_mapping={"vda": "volume_id:::1"},
+            block_device_mapping={"vda": "volume_id:::0"},
             fakearg="f")
         scenario.sleep_between.assert_called_once_with(10, 20)
         scenario._delete_server.assert_called_once_with(fake_server,
@@ -685,7 +685,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
         cinder.create_volume.assert_called_once_with(10, imageRef="img")
         scenario._boot_server.assert_called_once_with(
             None, flavor,
-            block_device_mapping={"vda": "volume_id:::1"})
+            block_device_mapping={"vda": "volume_id:::0"})
         scenario.sleep_between.assert_called_once_with(10, 20)
         scenario._resize.assert_called_once_with(fake_server, to_flavor)
 
@@ -745,7 +745,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
 
         scenario._boot_server.assert_called_once_with(
             None, 0,
-            block_device_mapping={"vda": "volume_id:::1"},
+            block_device_mapping={"vda": "volume_id:::0"},
             fakearg="f")
 
         scenario.sleep_between.assert_called_once_with(10, 20)
