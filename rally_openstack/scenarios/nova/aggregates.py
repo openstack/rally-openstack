@@ -175,7 +175,15 @@ class CreateAggregateAddHostAndBootServer(utils.NovaScenario):
 
         aggregate = self._create_aggregate(availability_zone)
         hosts = self._list_hypervisors()
-        host_name = hosts[0].service["host"]
+
+        host_name = None
+        for i in range(len(hosts)):
+            if hosts[i].state == "up" and hosts[i].status == "enabled":
+                host_name = hosts[i].service["host"]
+                break
+        if not host_name:
+            raise exceptions.RallyException("Could not find an available host")
+
         self._aggregate_set_metadata(aggregate, metadata)
         self._aggregate_add_host(aggregate, host_name)
         flavor = self._create_flavor(ram, vcpus, disk)
