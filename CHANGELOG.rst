@@ -26,6 +26,7 @@ Added
 * Added barbican scenarios.
 * Added octavia scenarios.
 * Support for osprofiler config in Devstack plugin.
+* Added property 'floating_ip_enabled' in magnum cluster_templates context.
 
 Changed
 ~~~~~~~
