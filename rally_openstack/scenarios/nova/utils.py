@@ -795,12 +795,13 @@ class NovaScenario(scenario.OpenStackScenario):
             check_interval=(
                 CONF.openstack.nova_server_live_migrate_poll_interval)
         )
-        server_admin = self.admin_clients("nova").servers.get(server.id)
-        if (host_pre_migrate == getattr(server_admin, "OS-EXT-SRV-ATTR:host")
-                and not skip_host_check):
-            raise exceptions.RallyException(
-                "Live Migration failed: Migration complete "
-                "but instance did not change host: %s" % host_pre_migrate)
+        if not skip_host_check:
+            server_admin = self.admin_clients("nova").servers.get(server.id)
+            host_after_migrate = getattr(server_admin, "OS-EXT-SRV-ATTR:host")
+            if host_pre_migrate == host_after_migrate:
+                raise exceptions.RallyException(
+                    "Live Migration failed: Migration complete "
+                    "but instance did not change host: %s" % host_pre_migrate)
 
     @atomic.action_timer("nova.migrate")
     def _migrate(self, server, skip_host_check=False):
