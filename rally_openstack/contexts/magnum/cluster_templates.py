@@ -92,6 +92,9 @@ class ClusterTemplateGenerator(context.Context):
             },
             "master_lb_enabled": {
                 "type": "boolean"
+            },
+            "floating_ip_enabled": {
+                "type": "boolean"
             }
         },
         "required": ["image_id", "external_network_id", "coe"],
