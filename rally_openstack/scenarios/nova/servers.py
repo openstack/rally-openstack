@@ -187,7 +187,7 @@ class BootServerFromVolumeAndDelete(utils.NovaScenario,
         """
         volume = self.cinder.create_volume(volume_size, imageRef=image,
                                            volume_type=volume_type)
-        block_device_mapping = {"vda": "%s:::1" % volume.id}
+        block_device_mapping = {"vda": "%s:::0" % volume.id}
         server = self._boot_server(None, flavor,
                                    block_device_mapping=block_device_mapping,
                                    **kwargs)
@@ -356,7 +356,7 @@ class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
         """
         volume = self.cinder.create_volume(volume_size, imageRef=image,
                                            volume_type=volume_type)
-        block_device_mapping = {"vda": "%s:::1" % volume.id}
+        block_device_mapping = {"vda": "%s:::0" % volume.id}
         self._boot_server(None, flavor, auto_assign_nic=auto_assign_nic,
                           block_device_mapping=block_device_mapping,
                           **kwargs)
@@ -591,7 +591,7 @@ class BootServerFromVolumeAndResize(utils.NovaScenario,
         volume = self.cinder.create_volume(volume_size, imageRef=image,
                                            **create_volume_kwargs)
         boot_server_kwargs["block_device_mapping"] = {
-            "vda": "%s:::1" % volume.id}
+            "vda": "%s:::0" % volume.id}
 
         server = self._boot_server(None, flavor, **boot_server_kwargs)
         self.sleep_between(min_sleep, max_sleep)
@@ -766,7 +766,7 @@ class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
         """
         volume = self.cinder.create_volume(volume_size, imageRef=image,
                                            volume_type=volume_type)
-        block_device_mapping = {"vda": "%s:::1" % volume.id}
+        block_device_mapping = {"vda": "%s:::0" % volume.id}
         server = self._boot_server(None, flavor,
                                    block_device_mapping=block_device_mapping,
                                    **kwargs)
