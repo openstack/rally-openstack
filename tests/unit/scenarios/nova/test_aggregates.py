@@ -97,7 +97,8 @@ class NovaAggregatesTestCase(test.ScenarioTestCase):
 
     def test_create_aggregate_add_host_and_boot_server(self):
         fake_aggregate = mock.Mock()
-        fake_hosts = [mock.Mock(service={"host": "fake_host_name"})]
+        fake_hosts = [mock.Mock(service={"host": "fake_host_name"}, state="up",
+                                status="enabled")]
         fake_flavor = mock.MagicMock(id="flavor-id-0", ram=512, disk=1,
                                      vcpus=1)
         fake_metadata = {"test_metadata": "true"}
