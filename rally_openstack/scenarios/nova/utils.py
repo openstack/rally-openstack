@@ -773,16 +773,25 @@ class NovaScenario(scenario.OpenStackScenario):
 
     @atomic.action_timer("nova.live_migrate")
     def _live_migrate(self, server, block_migration=False,
-                      disk_over_commit=False, skip_host_check=False):
+                      disk_over_commit=False, skip_compute_nodes_check=False,
+                      skip_host_check=False):
         """Run live migration of the given server.
 
         :param server: Server object
         :param block_migration: Specifies the migration type
         :param disk_over_commit: Specifies whether to overcommit migrated
                                  instance or not
+        :param skip_compute_nodes_check: Specifies whether to verify the number
+                                         of compute nodes
         :param skip_host_check: Specifies whether to verify the targeted host
                                 availability
         """
+        if not skip_compute_nodes_check:
+            compute_nodes = len(self._list_hypervisors())
+            if compute_nodes < 2:
+                raise exceptions.RallyException("Less than 2 compute nodes,"
+                                                " skipping Live Migration")
+
         server_admin = self.admin_clients("nova").servers.get(server.id)
         host_pre_migrate = getattr(server_admin, "OS-EXT-SRV-ATTR:host")
         server_admin.live_migrate(block_migration=block_migration,
@@ -804,13 +813,22 @@ class NovaScenario(scenario.OpenStackScenario):
                     "but instance did not change host: %s" % host_pre_migrate)
 
     @atomic.action_timer("nova.migrate")
-    def _migrate(self, server, skip_host_check=False):
+    def _migrate(self, server, skip_compute_nodes_check=False,
+                 skip_host_check=False):
         """Run migration of the given server.
 
         :param server: Server object
+        :param skip_compute_nodes_check: Specifies whether to verify the number
+                                         of compute nodes
         :param skip_host_check: Specifies whether to verify the targeted host
                                 availability
         """
+        if not skip_compute_nodes_check:
+            compute_nodes = len(self._list_hypervisors())
+            if compute_nodes < 2:
+                raise exceptions.RallyException("Less than 2 compute nodes,"
+                                                " skipping Migration")
+
         server_admin = self.admin_clients("nova").servers.get(server.id)
         host_pre_migrate = getattr(server_admin, "OS-EXT-SRV-ATTR:host")
         server_admin.migrate()
