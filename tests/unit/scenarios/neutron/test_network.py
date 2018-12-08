@@ -550,6 +550,33 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
         scenario._delete_floating_ip.assert_called_once_with(
             scenario._create_floatingip.return_value["floatingip"])
 
+    def test_associate_and_dissociate_floating_ips(self):
+        scenario = network.AssociateAndDissociateFloatingIps(self.context)
+
+        fip = {"floatingip": {"id": "floating-ip-id"}}
+        subnet = {"subnet": {}}
+        port = {"port": {"id": "port-id"}}
+        router = {"router": {}}
+
+        scenario._create_floatingip = mock.Mock(return_value=fip)
+        scenario._create_network = mock.Mock()
+        scenario._create_subnet = mock.Mock(return_value=subnet)
+        scenario._create_port = mock.Mock(return_value=port)
+        scenario._create_router = mock.Mock(return_value=router)
+        scenario._get_network_id = mock.Mock()
+        scenario._add_gateway_router = mock.Mock()
+        scenario._add_interface_router = mock.Mock()
+
+        scenario._associate_floating_ip = mock.Mock()
+        scenario._dissociate_floating_ip = mock.Mock()
+
+        scenario.run(floating_network="public")
+
+        scenario._associate_floating_ip.assert_called_once_with(
+            floatingip=fip["floatingip"], port=port["port"])
+        scenario._dissociate_floating_ip.assert_called_once_with(
+            floatingip=fip["floatingip"])
+
     @mock.patch("%s.DeleteSubnets._delete_subnet" % BASE)
     def test_delete_subnets(self, mock__delete_subnet):
         # do not guess what user will be used

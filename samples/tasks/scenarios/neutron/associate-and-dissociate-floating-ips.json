@@ -1,0 +1,34 @@
+{
+    "NeutronNetworks.associate_and_dissociate_floating_ips": [
+        {
+            "args": {
+                "floating_network": "public"
+            },
+            "runner": {
+                "type": "constant",
+                "times": 10,
+                "concurrency": 5
+            },
+            "context": {
+                "users": {
+                    "tenants": 2,
+                    "users_per_tenant": 3
+                },
+                "quotas": {
+                    "neutron": {
+                        "floatingip": -1,
+                        "network": -1,
+                        "port": -1,
+                        "router": -1,
+                        "subnet": -1
+                    }
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
+        }
+    ]
+}

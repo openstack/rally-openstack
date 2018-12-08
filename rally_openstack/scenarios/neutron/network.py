@@ -560,6 +560,61 @@ class CreateAndDeleteFloatingIps(utils.NeutronScenario):
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", users=True)
+@validation.add("external_network_exists", param_name="floating_network")
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronNetworks.associate_and_dissociate_floating_ips",
+    platform="openstack")
+class AssociateAndDissociateFloatingIps(utils.NeutronScenario):
+
+    def run(self, floating_network=None):
+        """Associate and dissociate floating IPs.
+
+        Measure the "openstack floating ip set" and
+        "openstack floating ip unset" commands performance.
+        Because of the prerequisites for "floating ip set/unset" we also
+        measure the performance of the following commands:
+          * "openstack network create"
+          * "openstack subnet create"
+          * "openstack port create"
+          * "openstack router create"
+          * "openstack router set --external-gateway"
+          * "openstack router add subnet"
+
+        :param floating_network: str, external network for floating IP creation
+        """
+        floating_ip = self._create_floatingip(
+            floating_network)
+
+        private_network = self._create_network(
+            network_create_args={})
+        subnet = self._create_subnet(
+            network=private_network,
+            subnet_create_args={})
+        port = self._create_port(
+            network=private_network,
+            port_create_args={})
+
+        router = self._create_router(
+            router_create_args={})
+        floating_network_id = self._get_network_id(floating_network)
+        self._add_gateway_router(
+            router,
+            {"network": {"id": floating_network_id}})
+        self._add_interface_router(
+            subnet["subnet"],
+            router["router"])
+
+        self._associate_floating_ip(
+            floatingip=floating_ip["floatingip"],
+            port=port["port"])
+        self._dissociate_floating_ip(
+            floatingip=floating_ip["floatingip"])
+
+
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(name="NeutronNetworks.list_agents", platform="openstack")
 class ListAgents(utils.NeutronScenario):
 

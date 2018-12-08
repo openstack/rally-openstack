@@ -290,6 +290,29 @@
         failure_rate:
           max: 0
 
+  NeutronNetworks.associate_and_dissociate_floating_ips:
+    -
+      args:
+        floating_network: "public"
+      runner:
+        type: "constant"
+        times: {{smoke or 8}}
+        concurrency: {{smoke or 4}}
+      context:
+        users:
+          tenants: {{smoke or 2}}
+          users_per_tenant: {{smoke or 1}}
+        quotas:
+          neutron:
+             floatingip: -1
+             network: -1
+             port: -1
+             router: -1
+             subnet: -1
+      sla:
+        failure_rate:
+          max: 0
+
   NeutronNetworks.create_and_list_routers:
     -
       args:

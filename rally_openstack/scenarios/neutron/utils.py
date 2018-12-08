@@ -410,16 +410,17 @@ class NeutronScenario(scenario.OpenStackScenario):
             router["id"], {"subnet_id": subnet["id"]})
 
     @atomic.action_timer("neutron.add_gateway_router")
-    def _add_gateway_router(self, router, ext_net, enable_snat):
+    def _add_gateway_router(self, router, ext_net, enable_snat=None):
         """Set the external network gateway for a router.
 
         :param router: dict, neutron router
         :param ext_net: external network for the gateway
-        :param enable_snat: True if enable snat
+        :param enable_snat: True if enable snat, None to avoid update
         """
         gw_info = {"network_id": ext_net["network"]["id"]}
-        if self._ext_gw_mode_enabled:
-            gw_info["enable_snat"] = enable_snat
+        if enable_snat is not None:
+            if self._ext_gw_mode_enabled:
+                gw_info["enable_snat"] = enable_snat
         self.clients("neutron").add_gateway_router(
             router["router"]["id"], gw_info)
 
@@ -572,6 +573,29 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param: dict, floating IP object
         """
         return self.clients("neutron").delete_floatingip(floating_ip["id"])
+
+    @atomic.action_timer("neutron.associate_floating_ip")
+    def _associate_floating_ip(self, floatingip, port):
+        """Associate floating IP with port.
+
+        :param floatingip: floating IP dict
+        :param port: port dict
+        :returns: updated floating IP dict
+        """
+        return self.clients("neutron").update_floatingip(
+            floatingip["id"],
+            {"floatingip": {"port_id": port["id"]}})["floatingip"]
+
+    @atomic.action_timer("neutron.dissociate_floating_ip")
+    def _dissociate_floating_ip(self, floatingip):
+        """Dissociate floating IP from ports.
+
+        :param floatingip: floating IP dict
+        :returns: updated floating IP dict
+        """
+        return self.clients("neutron").update_floatingip(
+            floatingip["id"],
+            {"floatingip": {"port_id": None}})["floatingip"]
 
     @atomic.action_timer("neutron.create_healthmonitor")
     def _create_v1_healthmonitor(self, **healthmonitor_create_args):

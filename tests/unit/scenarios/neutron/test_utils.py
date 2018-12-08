@@ -413,6 +413,29 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.add_gateway_router")
 
+    def test_add_gateway_router_no_snat_update(self):
+        ext_net = {
+            "network": {
+                "name": "extnet-name",
+                "id": "extnet-id"
+            }
+        }
+        router = {
+            "router": {
+                "name": "router-name",
+                "id": "router-id"
+            }
+        }
+        gw_info = {"network_id": ext_net["network"]["id"]}
+        self.clients("neutron").list_extensions.return_value = {
+            "extensions": [{"alias": "ext-gw-mode"}]}
+
+        self.scenario._add_gateway_router(router, ext_net)
+        self.clients("neutron").add_gateway_router.assert_called_once_with(
+            router["router"]["id"], gw_info)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.add_gateway_router")
+
     def test_add_gateway_router_without_ext_gw_mode_extension(self):
         ext_net = {
             "network": {
@@ -626,6 +649,23 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
             fip["floatingip"]["id"])
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.delete_floating_ip")
+
+    def test_associate_floating_ip(self):
+        fip = {"id": "fip-id"}
+        port = {"id": "port-id"}
+        self.scenario._associate_floating_ip(fip, port)
+        self.clients("neutron").update_floatingip.assert_called_once_with(
+            "fip-id", {"floatingip": {"port_id": "port-id"}})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.associate_floating_ip")
+
+    def test_dissociate_floating_ip(self):
+        fip = {"id": "fip-id"}
+        self.scenario._dissociate_floating_ip(fip)
+        self.clients("neutron").update_floatingip.assert_called_once_with(
+            "fip-id", {"floatingip": {"port_id": None}})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.dissociate_floating_ip")
 
     @ddt.data(
         {},
