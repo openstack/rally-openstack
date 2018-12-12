@@ -223,13 +223,47 @@ class HeatScenarioTestCase(test.ScenarioTestCase):
 
     @mock.patch("requests.post")
     def test_stack_webhook(self, mock_post):
-        scenario = utils.HeatScenario(self.context)
+        env_context = {
+            "env": {
+                "spec": {
+                    "existing@openstack": {
+                        "https_cacert": "cacert.crt",
+                        "https_insecure": False
+                    }
+                }
+            }
+        }
+        env_context.update(self.context)
+        scenario = utils.HeatScenario(env_context)
         stack = mock.Mock(outputs=[
             {"output_key": "output1", "output_value": "url1"},
             {"output_key": "output2", "output_value": "url2"}])
 
         scenario._stack_webhook(stack, "output1")
-        mock_post.assert_called_with("url1")
+        mock_post.assert_called_with("url1", verify="cacert.crt")
+        self._test_atomic_action_timer(scenario.atomic_actions(),
+                                       "heat.output1_webhook")
+
+    @mock.patch("requests.post")
+    def test_stack_webhook_insecure(self, mock_post):
+        env_context = {
+            "env": {
+                "spec": {
+                    "existing@openstack": {
+                        "https_cacert": "cacert.crt",
+                        "https_insecure": True
+                    }
+                }
+            }
+        }
+        env_context.update(self.context)
+        scenario = utils.HeatScenario(env_context)
+        stack = mock.Mock(outputs=[
+            {"output_key": "output1", "output_value": "url1"},
+            {"output_key": "output2", "output_value": "url2"}])
+
+        scenario._stack_webhook(stack, "output1")
+        mock_post.assert_called_with("url1", verify=False)
         self._test_atomic_action_timer(scenario.atomic_actions(),
                                        "heat.output1_webhook")
 

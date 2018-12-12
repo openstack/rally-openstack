@@ -324,5 +324,9 @@ class HeatScenario(scenario.OpenStackScenario):
                 "No output key %(key)s found in stack %(id)s" %
                 {"key": output_key, "id": stack.id})
 
+        platform_params = self.context["env"]["spec"]["existing@openstack"]
+        verify = (platform_params["https_cacert"]
+                  if not platform_params["https_insecure"]
+                  else False)
         with atomic.ActionTimer(self, "heat.%s_webhook" % output_key):
-            requests.post(url).raise_for_status()
+            requests.post(url, verify=verify).raise_for_status()
