@@ -598,6 +598,7 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
             mock__delete_subnet.call_args_list)
 
     def test_create_and_list_trunks(self):
+        trunk_count = 1
         subport_count = 10
         network_create_args = {}
         net = mock.MagicMock()
@@ -613,7 +614,7 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
             network_create_args)
         scenario._create_port.assert_has_calls(
             [mock.call(net, {})
-             for _ in range(subport_count)])
+             for _ in range(trunk_count + (trunk_count * subport_count))])
         self.assertEqual(1, scenario._create_trunk.call_count)
         self.assertEqual(1, scenario._update_port.call_count)
         self.assertEqual(1, scenario._list_ports_by_device_id.call_count)

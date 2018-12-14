@@ -621,6 +621,7 @@
     -
       args:
         network_create_args: {}
+        trunk_count: 1
         subport_count: 10
       runner:
         type: "constant"

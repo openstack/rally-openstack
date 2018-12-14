@@ -265,6 +265,7 @@
     -
       args:
         network_create_args: {}
+        trunk_count: 1
         subport_count: 10
       context:
         {% call user_context(tenants_amount, users_amount, use_existing_users) %}

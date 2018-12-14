@@ -1331,6 +1331,14 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self.clients("neutron").list_ports.assert_called_once_with(
             device_id=device_id)
 
+    def test__list_subports_by_trunk(self):
+        trunk_id = "trunk-id"
+        self.scenario._list_subports_by_trunk(trunk_id)
+        self.clients("neutron").trunk_get_subports.assert_called_once_with(
+            trunk_id)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.list_subports_by_trunk")
+
 
 class NeutronScenarioFunctionalTestCase(test.FakeClientsScenarioTestCase):
 

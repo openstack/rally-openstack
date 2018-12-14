@@ -894,3 +894,7 @@ class NeutronScenario(scenario.OpenStackScenario):
     @atomic.optional_action_timer("neutron.list_ports_by_device_id")
     def _list_ports_by_device_id(self, device_id):
         return self.clients("neutron").list_ports(device_id=device_id)
+
+    @atomic.optional_action_timer("neutron.list_subports_by_trunk")
+    def _list_subports_by_trunk(self, trunk_id):
+        return self.clients("neutron").trunk_get_subports(trunk_id)

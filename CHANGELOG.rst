@@ -35,6 +35,7 @@ Added
 * [scenario plugin] Octavia.create_and_show_pools
 * Support for osprofiler config in Devstack plugin.
 * Added property 'floating_ip_enabled' in magnum cluster_templates context.
+* Enhanced neutron trunk port scenario to create multiple trunks
 
 Changed
 ~~~~~~~
