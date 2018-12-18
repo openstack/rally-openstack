@@ -21,11 +21,83 @@
         failure_rate:
           max: 0
     -
-      title: Test base Octavia actions
+      title: Octavia.create_and_list_loadbalancers
       workloads:
       -
         scenario:
           Octavia.create_and_list_loadbalancers: {}
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_delete_loadbalancers
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_delete_loadbalancers: {}
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_update_loadbalanacers
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_update_loadbalancers: {}
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_stats_loadbalanacers
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_stats_loadbalancers: {}
+        runner:
+          constant:
+            times: 2
+            concurrency: 2
+        contexts:
+          users:
+            tenants: 2
+          roles: ["load-balancer_member"]
+          network: {}
+        sla:
+          failure_rate:
+            max: 0
+    -
+      title: Octavia.create_and_show_loadbalanacers
+      workloads:
+      -
+        scenario:
+          Octavia.create_and_show_loadbalancers: {}
         runner:
           constant:
             times: 2

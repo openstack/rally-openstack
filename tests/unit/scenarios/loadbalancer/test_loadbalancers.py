@@ -21,7 +21,14 @@ from tests.unit import test
 
 class LoadBalancersTestCase(test.ScenarioTestCase):
 
-    def get_test_context(self):
+    def setUp(self):
+        super(LoadBalancersTestCase, self).setUp()
+        patch = mock.patch(
+            "rally_openstack.services.loadbalancer.octavia.Octavia")
+        self.addCleanup(patch.stop)
+        self.mock_loadbalancers = patch.start()
+
+    def _get_context(self):
         context = super(LoadBalancersTestCase, self).get_test_context()
         context.update({
             "user": {
@@ -34,25 +41,84 @@ class LoadBalancersTestCase(test.ScenarioTestCase):
                                      "subnets": ["fake_subnet"]}]}})
         return context
 
-    def setUp(self):
-        super(LoadBalancersTestCase, self).setUp()
-        patch = mock.patch(
-            "rally_openstack.services.loadbalancer.octavia.Octavia")
-        self.addCleanup(patch.stop)
-        self.mock_loadbalancers = patch.start()
-
-    def test_loadbalancers(self):
+    def test_create_and_list_loadbalancers(self):
         loadbalancer_service = self.mock_loadbalancers.return_value
-        scenario = loadbalancers.CreateAndListLoadbalancers(self.context)
+        scenario = loadbalancers.CreateAndListLoadbalancers(
+            self._get_context())
         scenario.run()
 
-        networks = self.context["tenant"]["networks"]
-        subnets = []
-        mock_has_calls = []
-        for network in networks:
-            subnets.extend(network.get("subnets", []))
-        for subnet_id in subnets:
-            mock_has_calls.append(mock.call(subnet_id))
-        loadbalancer_service.load_balancer_create.assert_called_once_with(
-            subnet_id)
-        self.assertEqual(1, loadbalancer_service.load_balancer_list.call_count)
+        loadbalancer_service.load_balancer_list.assert_called_once_with()
+
+    def test_create_and_delete_loadbalancers(self):
+        loadbalancer_service = self.mock_loadbalancers.return_value
+        scenario = loadbalancers.CreateAndDeleteLoadbalancers(
+            self._get_context())
+        scenario.run()
+        lb = [{
+            "loadbalancer": {
+                "id": "loadbalancer-id"
+            }
+        }]
+        loadbalancer_service.load_balancer_create.return_value = lb
+        loadbalancer_service.load_balancer_create(
+            admin_state=True, description=None, flavor_id=None,
+            listeners=None, provider=None,
+            subnet_id="fake_subnet", vip_qos_policy_id=None)
+        self.assertEqual(1,
+                         loadbalancer_service.load_balancer_delete.call_count)
+
+    def test_create_and_update_loadbalancers(self):
+        loadbalancer_service = self.mock_loadbalancers.return_value
+        scenario = loadbalancers.CreateAndUpdateLoadBalancers(
+            self._get_context())
+        scenario.run()
+        lb = [{
+            "loadbalancer": {
+                "id": "loadbalancer-id"
+            }
+        }]
+        loadbalancer_service.load_balancer_create.return_value = lb
+        loadbalancer_service.load_balancer_create(
+            admin_state=True, description=None, flavor_id=None,
+            listeners=None, provider=None,
+            subnet_id="fake_subnet", vip_qos_policy_id=None)
+        self.assertEqual(1,
+                         loadbalancer_service.load_balancer_set.call_count)
+
+    def test_create_and_show_stats(self):
+        loadbalancer_service = self.mock_loadbalancers.return_value
+        scenario = loadbalancers.CreateAndShowStatsLoadBalancers(
+            self._get_context())
+        scenario.run()
+        lb = [{
+            "loadbalancer": {
+                "id": "loadbalancer-id"
+            }
+        }]
+        loadbalancer_service.load_balancer_create.return_value = lb
+        loadbalancer_service.load_balancer_create(
+            admin_state=True, description=None, flavor_id=None,
+            listeners=None, provider=None,
+            subnet_id="fake_subnet", vip_qos_policy_id=None)
+        self.assertEqual(
+            1, loadbalancer_service.load_balancer_stats_show.call_count)
+
+    def test_create_and_show_loadbalancers(self):
+        loadbalancer_service = self.mock_loadbalancers.return_value
+        scenario = loadbalancers.CreateAndShowLoadBalancers(
+            self._get_context())
+        scenario.run()
+        lb = [{
+            "loadbalancer": {
+                "id": "loadbalancer-id"
+            }
+        }]
+        lb_show = {"id": "loadbalancer-id"}
+        loadbalancer_service.load_balancer_create.return_value = lb
+        loadbalancer_service.load_balancer_show.return_value = lb_show
+        loadbalancer_service.load_balancer_create(
+            admin_state=True, description=None, flavor_id=None,
+            listeners=None, provider=None,
+            subnet_id="fake_subnet", vip_qos_policy_id=None)
+        self.assertEqual(1,
+                         loadbalancer_service.load_balancer_show.call_count)

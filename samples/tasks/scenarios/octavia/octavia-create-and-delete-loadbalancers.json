@@ -1,5 +1,5 @@
 {
-    "Octavia.create_and_list_loadbalancers": [
+    "Octavia.create_and_delete_loadbalancers": [
         {
              "args": {},
              "runner": {

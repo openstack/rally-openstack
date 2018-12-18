@@ -36,83 +36,85 @@ class Octavia(service.Service):
         return self._clients.octavia().load_balancer_list()
 
     @atomic.action_timer("octavia.load_balancer_show")
-    def load_balancer_show(self, lb_id):
+    def load_balancer_show(self, lb):
         """Show a load balancer
 
-        :param string lb_id:
-            ID of the load balancer to show
+        :param string lb:
+            dict of the load balancer to show
         :return:
             A dict of the specified load balancer's settings
         """
-        return self._clients.octavia().load_balancer_show(lb_id)
+        return self._clients.octavia().load_balancer_show(lb["id"])
 
     @atomic.action_timer("octavia.load_balancer_create")
-    def load_balancer_create(self, subnet_id, params=None):
+    def load_balancer_create(self, subnet_id, description=None,
+                             admin_state=None, listeners=None, flavor_id=None,
+                             provider=None, vip_qos_policy_id=None):
         """Create a load balancer
 
-        :param subnet_id:
-            The ID of the subnet for the Virtual IP (VIP)
-        :param params:
-            Paramaters to create the load balancer with (expects json=)
         :return:
             A dict of the created load balancer's settings
         """
-        lb_create_args = {
+        args = {
             "name": self.generate_random_name(),
+            "description": description,
+            "listeners": listeners,
+            "provider": provider,
+            "admin_state_up": admin_state or True,
             "vip_subnet_id": subnet_id,
-            "admin_state_up": True
+            "vip_qos_policy_id": vip_qos_policy_id,
         }
-        if params:
-            lb_create_args.update(params)
         return self._clients.octavia().load_balancer_create(
-            json={"loadbalancer": lb_create_args})
+            json={"loadbalancer": args})
 
     @atomic.action_timer("octavia.load_balancer_delete")
-    def load_balancer_delete(self, lb_id):
+    def load_balancer_delete(self, lb_id, cascade=False):
         """Delete a load balancer
 
-        :param string lb_id:
-            The ID of the load balancer to zdelete
+        :param string lb:
+            The dict of the load balancer to delete
         :return:
             Response Code from the API
         """
-        return self._clients.octavia().load_balancer_delete(lb_id)
+        return self._clients.octavia().load_balancer_delete(
+            lb_id, cascade=cascade)
 
     @atomic.action_timer("octavia.load_balancer_set")
-    def load_balancer_set(self, lb_id, params):
+    def load_balancer_set(self, lb_id, lb_update_args):
         """Update a load balancer's settings
 
         :param string lb_id:
-            The ID of the load balancer to update
-        :param params:
+            The dict of the load balancer to update
+        :param lb_update_args:
             A dict of arguments to update a loadbalancer
         :return:
             Response Code from API
         """
-        return self._clients.octavia().load_balancer_set(lb_id, params)
+        return self._clients.octavia().load_balancer_set(
+            lb_id, json={"loadbalancer": lb_update_args})
 
     @atomic.action_timer("octavia.load_balancer_stats_show")
-    def load_balancer_stats_show(self, lb_id, **kwargs):
+    def load_balancer_stats_show(self, lb, **kwargs):
         """Shows the current statistics for a load balancer.
 
-        :param string lb_id:
-            ID of the load balancer
+        :param string lb:
+            dict of the load balancer
         :return:
             A dict of the specified load balancer's statistics
         """
         return self._clients.octavia().load_balancer_stats_show(
-            lb_id, **kwargs)
+            lb["id"], **kwargs)
 
     @atomic.action_timer("octavia.load_balancer_failover")
-    def load_balancer_failover(self, lb_id):
+    def load_balancer_failover(self, lb):
         """Trigger load balancer failover
 
-        :param string lb_id:
-            ID of the load balancer to failover
+        :param string lb:
+            dict of the load balancer to failover
         :return:
             Response Code from the API
         """
-        return self._clients.octavia().load_balancer_failover(lb_id)
+        return self._clients.octavia().load_balancer_failover(lb["id"])
 
     @atomic.action_timer("octavia.listener_list")
     def listener_list(self, **kwargs):

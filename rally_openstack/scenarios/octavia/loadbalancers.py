@@ -40,20 +40,212 @@ class OctaviaBase(scenario.OpenStackScenario):
                     platform="openstack")
 class CreateAndListLoadbalancers(OctaviaBase):
 
-    def run(self):
+    def run(self, description=None, admin_state=True,
+            listeners=None, flavor_id=None, provider=None,
+            vip_qos_policy_id=None):
         """Create a loadbalancer per each subnet and then list loadbalancers.
 
-        Measure the "Octavia loadbalancer list" command performance.
-        The scenario creates a loadbalancer for every subnet and then lists
-        loadbalancers.
+        :param description: Human-readable description of the loadbalancer
+        :param admin_state: The administrative state of the loadbalancer,
+            which is up(true) or down(false)
+        :param listeners: The associated listener id, if any
+        :param flavor_id: The ID of the flavor
+        :param provider: Provider name for the loadbalancer
+        :param vip_qos_policy_id: The ID of the QoS policy
         """
+        subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
         for network in networks:
-            for subnet_id in network.get("subnets", []):
-                lb = self.octavia.load_balancer_create(subnet_id)
-                loadbalancers.append(lb)
+            subnets.extend(network.get("subnets", []))
+        for subnet_id in subnets:
+            lb = self.octavia.load_balancer_create(
+                subnet_id=subnet_id,
+                description=description,
+                admin_state=admin_state,
+                listeners=listeners,
+                flavor_id=flavor_id,
+                provider=provider,
+                vip_qos_policy_id=vip_qos_policy_id)
+            loadbalancers.append(lb)
 
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
         self.octavia.load_balancer_list()
+
+
+@validation.add("required_services", services=[consts.Service.OCTAVIA])
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_contexts", contexts=["network"])
+@scenario.configure(context={"cleanup@openstack": ["octavia"]},
+                    name="Octavia.create_and_delete_loadbalancers",
+                    platform="openstack")
+class CreateAndDeleteLoadbalancers(OctaviaBase):
+
+    def run(self, description=None, admin_state=True,
+            listeners=None, flavor_id=None, provider=None,
+            vip_qos_policy_id=None):
+        """Create a loadbalancer per each subnet and then delete loadbalancer
+
+        :param description: Human-readable description of the loadbalancer
+        :param admin_state: The administrative state of the loadbalancer,
+            which is up(true) or down(false)
+        :param listeners: The associated listener id, if any
+        :param flavor_id: The ID of the flavor
+        :param provider: Provider name for the loadbalancer
+        :param vip_qos_policy_id: The ID of the QoS policy
+        """
+        subnets = []
+        loadbalancers = []
+        networks = self.context.get("tenant", {}).get("networks", [])
+        for network in networks:
+            subnets.extend(network.get("subnets", []))
+        for subnet_id in subnets:
+            lb = self.octavia.load_balancer_create(
+                subnet_id=subnet_id,
+                description=description,
+                admin_state=admin_state,
+                listeners=listeners,
+                flavor_id=flavor_id,
+                provider=provider,
+                vip_qos_policy_id=vip_qos_policy_id)
+            loadbalancers.append(lb)
+
+        for loadbalancer in loadbalancers:
+            self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
+            self.octavia.load_balancer_delete(
+                loadbalancer["loadbalancer"]["id"])
+
+
+@validation.add("required_services", services=[consts.Service.OCTAVIA])
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_contexts", contexts=["network"])
+@scenario.configure(context={"cleanup@openstack": ["octavia"]},
+                    name="Octavia.create_and_update_loadbalancers",
+                    platform="openstack")
+class CreateAndUpdateLoadBalancers(OctaviaBase):
+
+    def run(self, description=None, admin_state=True,
+            listeners=None, flavor_id=None, provider=None,
+            vip_qos_policy_id=None):
+        """Create a loadbalancer per each subnet and then update
+
+        :param description: Human-readable description of the loadbalancer
+        :param admin_state: The administrative state of the loadbalancer,
+            which is up(true) or down(false)
+        :param listeners: The associated listener id, if any
+        :param flavor_id: The ID of the flavor
+        :param provider: Provider name for the loadbalancer
+        :param vip_qos_policy_id: The ID of the QoS policy
+        """
+        subnets = []
+        loadbalancers = []
+        networks = self.context.get("tenant", {}).get("networks", [])
+        for network in networks:
+            subnets.extend(network.get("subnets", []))
+        for subnet_id in subnets:
+            lb = self.octavia.load_balancer_create(
+                subnet_id=subnet_id,
+                description=description,
+                admin_state=admin_state,
+                listeners=listeners,
+                flavor_id=flavor_id,
+                provider=provider,
+                vip_qos_policy_id=vip_qos_policy_id)
+            loadbalancers.append(lb)
+
+            update_loadbalancer = {
+                "name": self.generate_random_name()
+            }
+
+        for loadbalancer in loadbalancers:
+            self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
+            self.octavia.load_balancer_set(
+                lb_id=loadbalancer["loadbalancer"]["id"],
+                lb_update_args=update_loadbalancer)
+
+
+@validation.add("required_services", services=[consts.Service.OCTAVIA])
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_contexts", contexts=["network"])
+@scenario.configure(context={"cleanup@openstack": ["octavia"]},
+                    name="Octavia.create_and_stats_loadbalancers",
+                    platform="openstack")
+class CreateAndShowStatsLoadBalancers(OctaviaBase):
+
+    def run(self, description=None, admin_state=True,
+            listeners=None, flavor_id=None, provider=None,
+            vip_qos_policy_id=None):
+        """Create a loadbalancer per each subnet and stats
+
+        :param description: Human-readable description of the loadbalancer
+        :param admin_state: The administrative state of the loadbalancer,
+            which is up(true) or down(false)
+        :param listeners: The associated listener id, if any
+        :param flavor_id: The ID of the flavor
+        :param provider: Provider name for the loadbalancer
+        :param vip_qos_policy_id: The ID of the QoS policy
+        """
+        subnets = []
+        loadbalancers = []
+        networks = self.context.get("tenant", {}).get("networks", [])
+        for network in networks:
+            subnets.extend(network.get("subnets", []))
+        for subnet_id in subnets:
+            lb = self.octavia.load_balancer_create(
+                subnet_id=subnet_id,
+                description=description,
+                admin_state=admin_state,
+                listeners=listeners,
+                flavor_id=flavor_id,
+                provider=provider,
+                vip_qos_policy_id=vip_qos_policy_id)
+            loadbalancers.append(lb)
+
+        for loadbalancer in loadbalancers:
+            self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
+            self.octavia.load_balancer_stats_show(
+                loadbalancer["loadbalancer"])
+
+
+@validation.add("required_services", services=[consts.Service.OCTAVIA])
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_contexts", contexts=["network"])
+@scenario.configure(context={"cleanup@openstack": ["octavia"]},
+                    name="Octavia.create_and_show_loadbalancers",
+                    platform="openstack")
+class CreateAndShowLoadBalancers(OctaviaBase):
+
+    def run(self, description=None, admin_state=True,
+            listeners=None, flavor_id=None, provider=None,
+            vip_qos_policy_id=None):
+        """Create a loadbalancer per each subnet and then compare
+
+        :param description: Human-readable description of the loadbalancer
+        :param admin_state: The administrative state of the loadbalancer,
+            which is up(true) or down(false)
+        :param listeners: The associated listener id, if any
+        :param flavor_id: The ID of the flavor
+        :param provider: Provider name for the loadbalancer
+        :param vip_qos_policy_id: The ID of the QoS policy
+        """
+        subnets = []
+        loadbalancers = []
+        networks = self.context.get("tenant", {}).get("networks", [])
+        for network in networks:
+            subnets.extend(network.get("subnets", []))
+        for subnet_id in subnets:
+            lb = self.octavia.load_balancer_create(
+                subnet_id=subnet_id,
+                description=description,
+                admin_state=admin_state,
+                listeners=listeners,
+                flavor_id=flavor_id,
+                provider=provider,
+                vip_qos_policy_id=vip_qos_policy_id)
+            loadbalancers.append(lb)
+
+        for loadbalancer in loadbalancers:
+            self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
+            self.octavia.load_balancer_show(
+                loadbalancer["loadbalancer"])

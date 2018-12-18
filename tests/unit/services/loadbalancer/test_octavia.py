@@ -32,6 +32,19 @@ class LoadBalancerServiceTestCase(test.TestCase):
         self.service = octavia.Octavia(self.clients,
                                        name_generator=self.name_generator)
 
+    def _get_context(self):
+        context = test.get_test_context()
+        context.update({
+            "user": {
+                "id": "fake_user",
+                "tenant_id": "fake_tenant",
+                "credential": mock.MagicMock()
+            },
+            "tenant": {"id": "fake_tenant",
+                       "networks": [{"id": "fake_net",
+                                     "subnets": ["fake_subnet"]}]}})
+        return context
+
     def atomic_actions(self):
         return self.service._atomic_actions
 
@@ -43,55 +56,62 @@ class LoadBalancerServiceTestCase(test.TestCase):
                                        "octavia.load_balancer_list")
 
     def test_load_balancer_show(self):
-        self.service.load_balancer_show("fake_lb")
+        lb = {"id": "loadbalancer-id"}
+        self.service.load_balancer_show(lb)
         self.service._clients.octavia().load_balancer_show \
-            .assert_called_once_with("fake_lb")
+            .assert_called_once_with(lb["id"])
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_show")
 
     def test_load_balancer_create(self):
         self.service.generate_random_name = mock.MagicMock(
             return_value="lb")
-        self.service.load_balancer_create("fake_subnet")
-        self.assertEqual(
-            1, self.service._clients.octavia().load_balancer_create.call_count)
+        self.service.load_balancer_create("subnet_id")
         self.service._clients.octavia().load_balancer_create \
-            .assert_called_once_with(
-            json={"loadbalancer":
-                  {
-                      "vip_subnet_id": "fake_subnet",
-                      "name": "lb",
-                      "admin_state_up": True
-                  }})
+            .assert_called_once_with(json={
+                "loadbalancer": {"name": "lb",
+                                 "admin_state_up": True,
+                                 "vip_qos_policy_id": None,
+                                 "listeners": None,
+                                 "provider": None,
+                                 "vip_subnet_id": "subnet_id",
+                                 "description": None}})
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_create")
 
     def test_load_balancer_delete(self):
-        self.service.load_balancer_delete("fake_lb")
+        self.service.load_balancer_delete("lb-id")
         self.service._clients.octavia().load_balancer_delete \
-            .assert_called_once_with("fake_lb")
+            .assert_called_once_with("lb-id", cascade=False)
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_delete")
 
     def test_load_balancer_set(self):
-        self.service.load_balancer_set("fake_lb", params={})
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="new_lb")
+        lb_update_args = {"name": "new_lb_name"}
+        self.service.load_balancer_set(
+            "lb-id", lb_update_args=lb_update_args)
         self.service._clients.octavia().load_balancer_set \
-            .assert_called_once_with("fake_lb", {})
+            .assert_called_once_with(
+                "lb-id", json={"loadbalancer": {"name": "new_lb_name"}})
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_set")
 
     def test_load_balancer_stats_show(self):
+        lb = {"id": "new_lb"}
         self.assertEqual(
-            self.service.load_balancer_stats_show(lb_id="fake_lb", kwargs={}),
+            self.service.load_balancer_stats_show(lb, kwargs={}),
             self.service._clients.octavia()
                 .load_balancer_stats_show.return_value)
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_stats_show")
 
     def test_load_balancer_failover(self):
-        self.service.load_balancer_failover(lb_id="fake_lb")
+        lb = {"id": "new_lb"}
+        self.service.load_balancer_failover(lb)
         self.service._clients.octavia().load_balancer_failover \
-            .assert_called_once_with("fake_lb")
+            .assert_called_once_with(lb["id"])
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_failover")
 
