@@ -152,8 +152,19 @@ class TempestConfigfileManager(object):
                 if net["status"] == "ACTIVE" and net["router:external"] is True
             ]
             if public_nets:
+                rbac_list = neutronclient.list_rbac_policies()["rbac_policies"]
+                rbac_all_list = []
+                for rbac in rbac_list:
+                    if rbac["target_tenant"] == "*" and \
+                       rbac["object_type"] == "network":
+                        rbac_all_list.append(rbac["object_id"])
                 net_id = public_nets[0]["id"]
                 net_name = public_nets[0]["name"]
+                for public_net in public_nets:
+                    if public_net["id"] in rbac_all_list:
+                        net_id = public_net["id"]
+                        net_name = public_net["name"]
+                        break
                 self.conf.set(section_name, "public_network_id", net_id)
                 self.conf.set(section_name, "floating_network_name", net_name)
         else:

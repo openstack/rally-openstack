@@ -158,6 +158,17 @@ class TempestConfigfileManagerTestCase(test.TestCase):
     def test__configure_network_if_neutron(self):
         self.tempest.available_services = ["neutron"]
         client = self.tempest.clients.neutron()
+        client.list_rbac_policies.return_value = {
+            "rbac_policies": [
+                {
+                    "target_tenant": "*",
+                    "object_type": "network",
+                    "object_id": "test_id",
+                    "action": "access_as_shared",
+                    "id": "test_id"
+                }
+            ]
+        }
         client.list_networks.return_value = {
             "networks": [
                 {
