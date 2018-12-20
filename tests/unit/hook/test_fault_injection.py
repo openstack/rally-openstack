@@ -50,6 +50,7 @@ class FaultInjectionHookTestCase(test.TestCase):
     @mock.patch("rally.common.objects.Deployment.get")
     @mock.patch("rally.common.utils.Timer", side_effect=fakes.FakeTimer)
     def test_run(self, mock_timer, mock_deployment_get):
+        mock_deployment_get.return_value = {"config": {}}
         hook = fault_injection.FaultInjectionHook(
             self.task, {"action": "foo", "verify": True},
             {"iteration": 1})
@@ -102,6 +103,7 @@ class FaultInjectionHookTestCase(test.TestCase):
     @mock.patch("rally.common.utils.Timer", side_effect=fakes.FakeTimer)
     def test_run_error(self, mock_timer, mock_connect, mock_human_api,
                        mock_deployment_get):
+        mock_deployment_get.return_value = {"config": {}}
         injector_inst = mock_connect.return_value
         mock_human_api.side_effect = error.OSFException("foo error")
         hook = fault_injection.FaultInjectionHook(

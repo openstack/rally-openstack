@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 @hook.configure(name="fault_injection", platform="openstack")
-class FaultInjectionHook(hook.Hook):
+class FaultInjectionHook(hook.HookAction):
     """Performs fault injection using os-faults library.
 
     Configuration:
@@ -58,9 +58,6 @@ class FaultInjectionHook(hook.Hook):
     def get_cloud_config(self):
         deployment = objects.Deployment.get(self.task["deployment_uuid"])
         deployment_config = deployment["config"]
-        if deployment_config["type"] != "ExistingCloud":
-            return None
-
         extra_config = deployment_config.get("extra", {})
         return extra_config.get("cloud_config")
 
