@@ -15,7 +15,7 @@
 
 import mock
 
-from rally_openstack.scenarios.octavia import loadbalancers
+from rally_openstack.scenarios.octavia import utils
 from tests.unit import test
 
 
@@ -42,6 +42,6 @@ class LoadBalancerBaseTestCase(test.ScenarioTestCase):
         self.mock_service = patch.start()
 
     def test_octavia_base(self):
-        base = loadbalancers.OctaviaBase(self.context)
+        base = utils.OctaviaBase(self.context)
         self.assertEqual(base.octavia,
                          self.mock_service.return_value)

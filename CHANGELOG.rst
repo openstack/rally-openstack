@@ -24,12 +24,15 @@ Added
 
 * Added neutron trunk scenarios
 * Added barbican scenarios.
-* Added octavia scenarios.
 * [scenario plugin] Octavia.create_and_list_loadbalancers
 * [scenario plugin] Octavia.create_and_delete_loadbalancers
 * [scenario plugin] Octavia.create_and_update_loadbalancers
 * [scenario plugin] Octavia.create_and_stats_loadbalancers
 * [scenario plugin] Octavia.create_and_show_loadbalancers
+* [scenario plugin] Octavia.create_and_list_pools
+* [scenario plugin] Octavia.create_and_delete_pools
+* [scenario plugin] Octavia.create_and_update_pools
+* [scenario plugin] Octavia.create_and_show_pools
 * Support for osprofiler config in Devstack plugin.
 * Added property 'floating_ip_enabled' in magnum cluster_templates context.
 

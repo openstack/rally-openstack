@@ -1,0 +1,28 @@
+{
+    "Octavia.create_and_show_pools": [
+        {
+             "args": {
+                "protocol": "HTTP",
+                "lb_algorithm": "ROUND_ROBIN"
+            },
+             "runner": {
+                 "type": "constant",
+                 "times": 5,
+                 "concurrency": 2
+             },
+             "context": {
+                 "users": {
+                     "tenants": 2,
+                     "users_per_tenant": 2
+                 },
+                 "roles": ["load-balancer_member"],
+                 "network": {}
+             },
+             "sla": {
+                 "failure_rate": {
+                     "max": 0
+                 }
+             }
+        }
+    ]
+}
