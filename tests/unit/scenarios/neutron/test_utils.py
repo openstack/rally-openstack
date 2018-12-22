@@ -1330,6 +1330,8 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self.scenario._list_ports_by_device_id(device_id)
         self.clients("neutron").list_ports.assert_called_once_with(
             device_id=device_id)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.list_ports_by_device_id")
 
     def test__list_subports_by_trunk(self):
         trunk_id = "trunk-id"
