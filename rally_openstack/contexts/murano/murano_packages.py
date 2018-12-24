@@ -66,7 +66,7 @@ class PackageGenerator(context.Context):
             # TODO(astudenov): use self.generate_random_name()
             package = clients.murano().packages.create(
                 {"categories": ["Web"], "tags": ["tag"]},
-                {"file": open(zip_name)})
+                {"file": open(zip_name, "rb")})
 
             self.context["tenants"][tenant_id]["packages"].append(package)
 
