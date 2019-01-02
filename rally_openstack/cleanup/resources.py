@@ -386,6 +386,13 @@ class NeutronFloatingIP(NeutronMixin):
         return super(NeutronFloatingIP, self).list()
 
 
+@base.resource("neutron", "trunk", order=next(_neutron_order),
+               tenant_resource=True)
+class NeutronTrunk(NeutronMixin):
+    # Trunks must be deleted before the parent/subports are deleted
+    pass
+
+
 @base.resource("neutron", "port", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronPort(NeutronMixin):
@@ -444,7 +451,6 @@ class NeutronPort(NeutronMixin):
                 self.raw_resource["device_id"], {"port_id": self.id()})
         else:
             from neutronclient.common import exceptions as neutron_exceptions
-
             try:
                 self._manager().delete_port(self.id())
             except neutron_exceptions.PortNotFoundClient:

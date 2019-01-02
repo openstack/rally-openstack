@@ -1,0 +1,125 @@
+{% set image_name = "^(cirros.*-disk|TestVM)$" %}
+{% set flavor_name = "m1.tiny" %}
+---
+
+  NeutronTrunks.create_and_list_trunks:
+    -
+      args:
+        network_create_args: {}
+        subport_count: 10
+      runner:
+        type: "constant"
+        times: 100
+        concurrency: 10
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 3
+        quotas:
+          neutron:
+            network: -1
+            port: -1
+            trunk: -1
+      sla:
+        failure_rate:
+          max: 10
+
+  NeutronTrunks.boot_server_with_subports:
+    -
+      args:
+        network_create_args: {}
+        subport_count: 10
+        flavor:
+          name: "{{flavor_name}}"
+        image:
+          name: "{{image_name}}"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 1
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 3
+        roles:
+          - admin
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+            trunk: -1
+          nova:
+            instances: -1
+            cores: -1
+            ram: -1
+      sla:
+        failure_rate:
+          max: 10
+
+  NeutronTrunks.boot_server_and_add_subports:
+    -
+      args:
+        network_create_args: {}
+        subport_count: 10
+        flavor:
+          name: "{{flavor_name}}"
+        image:
+          name: "{{image_name}}"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 1
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 3
+        roles:
+          - admin
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+            trunk: -1
+          nova:
+            instances: -1
+            cores: -1
+            ram: -1
+      sla:
+        failure_rate:
+          max: 10
+
+  NeutronTrunks.boot_server_and_batch_add_subports:
+    -
+      args:
+        network_create_args: {}
+        subports_per_batch: 10
+        batches: 5
+        flavor:
+          name: "{{flavor_name}}"
+        image:
+          name: "{{image_name}}"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 1
+      context:
+        users:
+          tenants: 3
+          users_per_tenant: 3
+        roles:
+          - admin
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+            trunk: -1
+          nova:
+            instances: -1
+            cores: -1
+            ram: -1
+      sla:
+        failure_rate:
+          max: 10

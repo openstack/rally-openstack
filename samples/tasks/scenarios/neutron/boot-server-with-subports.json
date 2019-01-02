@@ -1,7 +1,14 @@
+{% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NeutronTrunks.create_and_list_trunks": [
+    "NeutronTrunks.boot_server_with_subports": [
         {
             "args": {
+                "flavor": {
+                    "name": "{{flavor_name}}"
+                },
+                "image": {
+                    "name": "^cirros.*-disk$"
+                },
                 "network_create_args": {},
                 "subport_count": 10
             },
@@ -18,8 +25,14 @@
                 "quotas": {
                     "neutron": {
                         "network": -1,
+                        "subnet": -1,
                         "port": -1,
                         "trunk": -1
+                    },
+                    "nova": {
+                        "instances": -1,
+                        "cores": -1,
+                        "ram": -1
                     }
                 }
             },

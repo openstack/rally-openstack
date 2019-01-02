@@ -265,7 +265,6 @@
     -
       args:
         network_create_args: {}
-        trunk_count: 1
         subport_count: 10
       context:
         {% call user_context(tenants_amount, users_amount, use_existing_users) %}
@@ -274,6 +273,79 @@
             network: -1
             port: -1
             trunk: -1
+        {% endcall %}
+      runner:
+        {{ constant_runner(concurrency=2*controllers_amount, times=8*controllers_amount, is_smoke=smoke) }}
+      sla:
+        {{ no_failures_sla() }}
+
+  NeutronTrunks.boot_server_with_subports:
+    -
+      args:
+        {{ vm_params(image_name, flavor_name) }}
+        network_create_args: {}
+        subport_count: 10
+      context:
+        {% call user_context(tenants_amount, users_amount, use_existing_users) %}
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+            trunk: -1
+          nova:
+            instances: -1
+            cores: -1
+            ram: -1
+        {% endcall %}
+      runner:
+        {{ constant_runner(concurrency=2*controllers_amount, times=8*controllers_amount, is_smoke=smoke) }}
+      sla:
+        {{ no_failures_sla() }}
+
+  NeutronTrunks.boot_server_and_add_subports:
+    -
+      args:
+        {{ vm_params(image_name, flavor_name) }}
+        network_create_args: {}
+        subport_count: 10
+      context:
+        {% call user_context(tenants_amount, users_amount, use_existing_users) %}
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+            trunk: -1
+          nova:
+            instances: -1
+            cores: -1
+            ram: -1
+        {% endcall %}
+      runner:
+        {{ constant_runner(concurrency=2*controllers_amount, times=8*controllers_amount, is_smoke=smoke) }}
+      sla:
+        {{ no_failures_sla() }}
+
+  NeutronTrunks.boot_server_and_batch_add_subports:
+    -
+      args:
+        {{ vm_params(image_name, flavor_name) }}
+        network_create_args: {}
+        subports_per_batch: 10
+        batches: 5
+      context:
+        {% call user_context(tenants_amount, users_amount, use_existing_users) %}
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+            trunk: -1
+          nova:
+            instances: -1
+            cores: -1
+            ram: -1
         {% endcall %}
       runner:
         {{ constant_runner(concurrency=2*controllers_amount, times=8*controllers_amount, is_smoke=smoke) }}

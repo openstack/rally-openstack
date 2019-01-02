@@ -1,0 +1,11 @@
+- job:
+    name: rally-task-neutron-trunk
+    parent: rally-task-at-devstack
+    vars:
+      rally_task: rally-jobs/neutron-trunk.yaml
+      devstack_plugins:
+        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+        neutron: https://git.openstack.org/openstack/neutron
+      devstack_services:
+        neutron-trunk: true
+

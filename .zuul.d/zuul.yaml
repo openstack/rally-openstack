@@ -54,6 +54,11 @@
         #- rally-task-monasca
         - rally-task-murano
         - rally-task-neutron
+        - rally-task-neutron-trunk:
+            files:
+              - rally-jobs/neutron-trunk.yaml
+              - rally_openstack/scenarios/neutron/trunk.py
+              - rally_openstack/scenarios/neutron/network.py
         - rally-task-neutron-with-extensions:
             voting: false
         - rally-task-nova:

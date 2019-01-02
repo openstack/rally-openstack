@@ -887,6 +887,7 @@ class NeutronScenario(scenario.OpenStackScenario):
 
     @atomic.action_timer("neutron.create_trunk")
     def _create_trunk(self, trunk_payload):
+        trunk_payload["name"] = self.generate_random_name()
         return self.clients("neutron").create_trunk({"trunk": trunk_payload})
 
     @atomic.action_timer("neutron.list_trunks")
