@@ -12,6 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import base64
+import datetime as dt
+import os
+
 from rally.task import validation
 
 from rally_openstack import consts
@@ -90,3 +94,35 @@ class BarbicanSecretsCreateAndList(utils.BarbicanBase):
         """Create and then list all secrets."""
         self.admin_barbican.create_secret()
         self.admin_barbican.list_secrets()
+
+
+@validation.add("required_services", services=[consts.Service.BARBICAN])
+@validation.add("required_platform", platform="openstack", admin=True)
+@scenario.configure(context={"admin_cleanup@openstack": ["barbican"]},
+                    name="BarbicanSecrets.create_symmetric_and_delete")
+class BarbicanSecretsCreateSymmetricAndDelete(utils.BarbicanBase):
+    def run(self, payload, algorithm, bit_length, mode):
+        """Create and delete symmetric secret
+
+        :param payload: The unecrypted data
+        :param algorithm: the algorithm associated with the secret key
+        :param bit_length: the big length of the secret key
+        :param mode: the algorithm mode used with the secret key
+        """
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+        payload = payload.encode("utf-8")
+        salt = os.urandom(16)
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(), length=32, salt=salt,
+            iterations=1000, backend=default_backend())
+        payload = base64.b64encode(kdf.derive(payload))
+        expire_time = (dt.datetime.utcnow() + dt.timedelta(days=5))
+        secret = self.admin_barbican.create_secret(
+            expiration=expire_time.isoformat(), algorithm=algorithm,
+            bit_length=bit_length, mode=mode, payload=payload,
+            payload_content_type="application/octet-stream",
+            payload_content_encoding="base64")
+        self.admin_barbican.delete_secret(secret.secret_ref)
