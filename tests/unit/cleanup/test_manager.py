@@ -81,7 +81,7 @@ class SeekAndDestroyTestCase(test.TestCase):
         self.assertEqual(1, mock_log.warning.call_count)
 
     @mock.patch("%s.LOG" % BASE)
-    def test__delete_single_resource_excpetion_in_is_deleted(self, mock_log):
+    def test__delete_single_resource_exception_in_is_deleted(self, mock_log):
         mock_resource = mock.MagicMock(_max_attempts=3, _timeout=10,
                                        _interval=0)
         mock_resource.delete.return_value = True
