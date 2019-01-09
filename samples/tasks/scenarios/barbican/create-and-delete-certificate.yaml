@@ -1,0 +1,17 @@
+---
+  BarbicanContainers.create_certificate_and_delete:
+    -
+      args:
+        passphrase: "my_passphrase"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 1
+      context:
+        users:
+          tenants: 1
+          users_per_tenant: 1
+      sla:
+        failure_rate:
+          max: 0
+

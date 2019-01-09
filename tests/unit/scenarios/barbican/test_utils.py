@@ -15,7 +15,7 @@
 
 import mock
 
-from rally_openstack.scenarios.barbican import secrets
+from rally_openstack.scenarios.barbican import utils
 from tests.unit import test
 
 
@@ -42,6 +42,6 @@ class BarbicanBaseTestCase(test.ScenarioTestCase):
         self.mock_service = patch.start()
 
     def test_barbican_base(self):
-        base = secrets.BarbicanBase(self.context)
+        base = utils.BarbicanBase(self.context)
         self.assertEqual(base.admin_barbican,
                          self.mock_service.return_value)
