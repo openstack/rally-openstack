@@ -898,3 +898,8 @@ class NeutronScenario(scenario.OpenStackScenario):
     @atomic.optional_action_timer("neutron.list_subports_by_trunk")
     def _list_subports_by_trunk(self, trunk_id):
         return self.clients("neutron").trunk_get_subports(trunk_id)
+
+    @atomic.action_timer("neutron._add_subports_to_trunk")
+    def _add_subports_to_trunk(self, trunk_id, subports):
+        return self.clients("neutron").trunk_add_subports(
+            trunk_id, {"sub_ports": subports})

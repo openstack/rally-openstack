@@ -1341,6 +1341,19 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.list_subports_by_trunk")
 
+    def test__add_subports_to_trunk(self):
+        trunk_id = "trunk-id"
+        port_id = "port-id"
+        subport_payload = [{"port_id": port_id}]
+        expected_subport_payload = {
+            "sub_ports": subport_payload
+        }
+        self.scenario._add_subports_to_trunk(trunk_id, subport_payload)
+        self.clients("neutron").trunk_add_subports.assert_called_once_with(
+            trunk_id, expected_subport_payload)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron._add_subports_to_trunk")
+
 
 class NeutronScenarioFunctionalTestCase(test.FakeClientsScenarioTestCase):
 
