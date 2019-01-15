@@ -147,3 +147,43 @@
             users:
               tenants: 1
               users_per_tenant: 1
+    -
+      title: BarbicanOrders.create_asymmetric_and_delete
+      workloads:
+        -
+          scenario:
+            BarbicanOrders.create_asymmetric_and_delete: {}
+          runner:
+            constant:
+              times: 4
+              concurrency: 2
+    -
+      title: BarbicanOrders.create_key_and_delete
+      workloads:
+        -
+          scenario:
+            BarbicanOrders.create_key_and_delete: {}
+          runner:
+            constant:
+              times: 4
+              concurrency: 2
+    -
+      title: BarbicanOrders.create_certificate_and_delete
+      workloads:
+        -
+          scenario:
+            BarbicanOrders.create_certificate_and_delete: {}
+          runner:
+            constant:
+              times: 4
+              concurrency: 2
+    -
+      title: BarbicanOrders.list
+      workloads:
+        -
+          scenario:
+            BarbicanOrders.list: {}
+          runner:
+            constant:
+              times: 4
+              concurrency: 2

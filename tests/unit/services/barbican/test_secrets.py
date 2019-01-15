@@ -100,3 +100,56 @@ class BarbicanServiceTestCase(test.TestCase):
                 certificate=None, intermediates=None,
                 name="container", private_key=None,
                 private_key_passphrase=None)
+
+    def test__list_orders(self):
+        self.assertEqual(
+            self.service.orders_list(),
+            self.service._clients.barbican().orders.list.return_value)
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.orders_list")
+
+    def test__orders_get(self):
+        self.service.orders_get("fake_order")
+        self.service._clients.barbican().orders.get \
+            .assert_called_once_with("fake_order")
+
+    def test__orders_delete(self):
+        self.service.orders_delete("fake_order")
+        self.service._clients.barbican().orders.delete \
+            .assert_called_once_with("fake_order")
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.orders_delete")
+
+    def test__create_key(self):
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="key")
+        self.service.create_key()
+        self.service._clients.barbican().orders.create_key \
+            .assert_called_once_with(
+                name="key", algorithm="aes", bit_length=256, mode=None,
+            payload_content_type=None, expiration=None)
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.create_key")
+
+    def test__create_asymmetric(self):
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="key")
+        self.service.create_asymmetric()
+        self.service._clients.barbican().orders.create_asymmetric \
+            .assert_called_once_with(
+                algorithm="aes", bit_length=256, expiration=None, name="key",
+                pass_phrase=None, payload_content_type=None)
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.create_asymmetric")
+
+    def test_create_certificate(self):
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="key")
+        self.service.create_certificate()
+        self.service._clients.barbican().orders.create_certificate \
+            .assert_called_once_with(
+                name="key", request_type=None, subject_dn=None,
+                source_container_ref=None, ca_id=None, profile=None,
+                request_data=None)
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.create_certificate")

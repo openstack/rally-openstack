@@ -1123,3 +1123,9 @@ class BarbicanSecrets(base.ResourceManager):
                perform_for_admin_only=True)
 class BarbicanContainers(base.ResourceManager):
     pass
+
+
+@base.resource("barbican", "orders", order=1500, admin_required=True,
+               perform_for_admin_only=True)
+class BarbicanOrders(base.ResourceManager):
+    pass
