@@ -887,15 +887,15 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _create_trunk(self, trunk_payload):
         return self.clients("neutron").create_trunk({"trunk": trunk_payload})
 
-    @atomic.optional_action_timer("neutron.list_trunks")
+    @atomic.action_timer("neutron.list_trunks")
     def _list_trunks(self, **kwargs):
         return self.clients("neutron").list_trunks(**kwargs)["trunks"]
 
-    @atomic.optional_action_timer("neutron.list_ports_by_device_id")
+    @atomic.action_timer("neutron.list_ports_by_device_id")
     def _list_ports_by_device_id(self, device_id):
         return self.clients("neutron").list_ports(device_id=device_id)
 
-    @atomic.optional_action_timer("neutron.list_subports_by_trunk")
+    @atomic.action_timer("neutron.list_subports_by_trunk")
     def _list_subports_by_trunk(self, trunk_id):
         return self.clients("neutron").trunk_get_subports(trunk_id)
 
