@@ -449,7 +449,7 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
         create_volume_params = create_volume_params or {}
 
         if kwargs and create_vm_params:
-            raise ValueError("You can not set both 'kwargs'"
+            raise ValueError("You can not set both 'kwargs' "
                              "and 'create_vm_params' attributes."
                              "Please use 'create_vm_params'.")
 
