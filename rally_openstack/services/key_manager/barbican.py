@@ -47,3 +47,69 @@ class BarbicanService(service.Service):
         :param secret_name: The name of the secret to delete
         """
         return self._clients.barbican().secrets.delete(secret_name)
+
+    @atomic.action_timer("barbican.list_container")
+    def list_container(self):
+        """List containers"""
+        return self._clients.barbican().containers.list()
+
+    @atomic.action_timer("barbican.container_delete")
+    def container_delete(self, container_href):
+        """Delete the container
+
+        :param container_href: the container reference
+        """
+        return self._clients.barbican().containers.delete(container_href)
+
+    @atomic.action_timer("barbican.container_create")
+    def container_create(self, name=None, secrets=None):
+        """Create a generic container
+
+        :param name: the name of the container
+        :param secrets: secrets to populate when creating a container
+        """
+        name = name or self.generate_random_name()
+        val = self._clients.barbican().containers.create(
+            name=name, secrets=secrets)
+        val.store()
+        return val
+
+    @atomic.action_timer("barbican.create_rsa_container")
+    def create_rsa_container(self, name=None, public_key=None,
+                             private_key=None, private_key_passphrase=None):
+        """Create a RSA container
+
+        :param name: a friendly name for the container
+        :param public_key: Secret object containing a Public Key
+        :param private_key: Secret object containing a Private Key
+        :param private_key_passphrase: Secret object containing
+            a passphrase
+        :returns: RSAContainer
+        """
+        name = name or self.generate_random_name()
+        val = self._clients.barbican().containers.create_rsa(
+            name=name, public_key=public_key, private_key=private_key,
+            private_key_passphrase=private_key_passphrase)
+        val.store()
+        return val
+
+    @atomic.action_timer("barbican.create_certificate_container")
+    def create_certificate_container(self, name=None, certificate=None,
+                                     intermediates=None, private_key=None,
+                                     private_key_passphrase=None):
+        """Create a certificate container
+
+        :param name: A friendly name for the CertificateContainer
+        :param certificate: Secret object containing a Certificate
+        :param intermediates: Secret object containing
+            Intermediate Certs
+        :param private_key: Secret object containing a Private Key
+        :param private_key_passphrase: Secret object containing a passphrase
+        :returns: CertificateContainer
+        """
+        name = name or self.generate_random_name()
+        val = self._clients.barbican().containers.create_certificate(
+            name=name, certificate=certificate, intermediates=intermediates,
+            private_key=private_key, private_key_passphrase=None)
+        val.store()
+        return val

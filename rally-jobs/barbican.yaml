@@ -73,3 +73,73 @@
             users:
               tenants: 1
               users_per_tenant: 1
+    -
+      title: BarbicanContainers.list
+      workloads:
+        -
+          scenario:
+            BarbicanContainers.list: {}
+          runner:
+            constant:
+              times: 2
+              concurrency: 1
+          contexts:
+            users:
+              tenants: 1
+              users_per_tenant: 1
+    -
+      title: BarbicanContainers.create_and_delete
+      workloads:
+        -
+          scenario:
+            BarbicanContainers.create_and_delete: {}
+          runner:
+            constant:
+              times: 2
+              concurrency: 1
+          contexts:
+            users:
+              tenants: 1
+              users_per_tenant: 1
+    -
+      title: BarbicanContainers.create_certificate_and_delete
+      workloads:
+        -
+          scenario:
+            BarbicanContainers.create_certificate_and_delete: {}
+          runner:
+            constant:
+              times: 2
+              concurrency: 1
+          contexts:
+            users:
+              tenants: 1
+              users_per_tenant: 1
+    -
+      title: BarbicanContainers.create_rsa_and_delete
+      workloads:
+        -
+          scenario:
+            BarbicanContainers.create_rsa_and_delete: {}
+          runner:
+            constant:
+              times: 2
+              concurrency: 1
+          contexts:
+            users:
+              tenants: 1
+              users_per_tenant: 1
+    -
+      title: BarbicanContainers.create_and_add
+      workloads:
+        -
+          scenario:
+            BarbicanContainers.create_and_add: {}
+          runner:
+            constant:
+              times: 2
+              concurrency: 1
+          contexts:
+            users:
+              tenants: 1
+              users_per_tenant: 1

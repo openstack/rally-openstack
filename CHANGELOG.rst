@@ -23,7 +23,12 @@ Added
 ~~~~~
 
 * Added neutron trunk scenarios
-* Added barbican scenarios.
+* Added barbican scenarios
+  * [scenario plugin] BarbicanContainers.list
+  * [scenario plugin] BarbicanContainers.create_and_delete
+  * [scenario plugin] BarbicanContainers.create_and_add
+  * [scenario plugin] BarbicanContainers.create_certificate_and_delete
+  * [scenario plugin] BarbicanContainers.create_rsa_and_delete
 * [scenario plugin] Octavia.create_and_list_loadbalancers
 * [scenario plugin] Octavia.create_and_delete_loadbalancers
 * [scenario plugin] Octavia.create_and_update_loadbalancers

@@ -16,26 +16,15 @@ from rally.task import validation
 
 from rally_openstack import consts
 from rally_openstack import scenario
-from rally_openstack.services.key_manager import barbican
+from rally_openstack.scenarios.barbican import utils
 
 """Scenarios for Barbican secrets."""
-
-
-class BarbicanBase(scenario.OpenStackScenario):
-    """Base class for Barbican scenarios with basic atomic actions."""
-
-    def __init__(self, context=None, admin_context=None, clients=None):
-        super(BarbicanBase, self).__init__(context, admin_context, clients)
-        if hasattr(self, "_admin_clients"):
-            self.admin_barbican = barbican.BarbicanService(
-                self._admin_clients, name_generator=self.generate_random_name,
-                atomic_inst=self.atomic_actions())
 
 
 @validation.add("required_services", services=[consts.Service.BARBICAN])
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(name="BarbicanSecrets.list")
-class BarbicanSecretsList(BarbicanBase):
+class BarbicanSecretsList(utils.BarbicanBase):
     def run(self):
         """List secrets."""
         self.admin_barbican.list_secrets()
@@ -45,7 +34,7 @@ class BarbicanSecretsList(BarbicanBase):
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["barbican"]},
                     name="BarbicanSecrets.create")
-class BarbicanSecretsCreate(BarbicanBase):
+class BarbicanSecretsCreate(utils.BarbicanBase):
     def run(self):
         """Create secret."""
         self.admin_barbican.create_secret()
@@ -55,7 +44,7 @@ class BarbicanSecretsCreate(BarbicanBase):
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["barbican"]},
                     name="BarbicanSecrets.create_and_delete")
-class BarbicanSecretsCreateAndDelete(BarbicanBase):
+class BarbicanSecretsCreateAndDelete(utils.BarbicanBase):
     def run(self):
         """Create and Delete secret."""
         secret = self.admin_barbican.create_secret()
@@ -66,11 +55,9 @@ class BarbicanSecretsCreateAndDelete(BarbicanBase):
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["barbican"]},
                     name="BarbicanSecrets.create_and_get")
-class BarbicanSecretsCreateAndGet(BarbicanBase):
+class BarbicanSecretsCreateAndGet(utils.BarbicanBase):
     def run(self):
-        """Create and Get Secret.
-
-        """
+        """Create and Get Secret."""
         secret = self.admin_barbican.create_secret()
         self.assertTrue(secret)
         secret_info = self.admin_barbican.get_secret(secret.secret_ref)
@@ -81,7 +68,7 @@ class BarbicanSecretsCreateAndGet(BarbicanBase):
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["barbican"]},
                     name="BarbicanSecrets.get")
-class BarbicanSecretsGet(BarbicanBase):
+class BarbicanSecretsGet(utils.BarbicanBase):
     def run(self, secret_ref=None):
         """Create and Get Secret.
 
@@ -98,7 +85,7 @@ class BarbicanSecretsGet(BarbicanBase):
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["barbican"]},
                     name="BarbicanSecrets.create_and_list")
-class BarbicanSecretsCreateAndList(BarbicanBase):
+class BarbicanSecretsCreateAndList(utils.BarbicanBase):
     def run(self):
         """Create and then list all secrets."""
         self.admin_barbican.create_secret()

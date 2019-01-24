@@ -60,3 +60,43 @@ class BarbicanServiceTestCase(test.TestCase):
             .assert_called_once_with("fake_secret")
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "barbican.delete_secret")
+
+    def test__list_containers(self):
+        self.assertEqual(
+            self.service.list_container(),
+            self.service._clients.barbican().containers.list.return_value)
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.list_container")
+
+    def test__container_delete(self):
+        self.service.container_delete("fake_container")
+        self.service._clients.barbican().containers.delete \
+            .assert_called_once_with("fake_container")
+        self._test_atomic_action_timer(
+            self.atomic_actions(), "barbican.container_delete")
+
+    def test__container_create(self):
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="container")
+        self.service.container_create()
+        self.service._clients.barbican().containers.create \
+            .assert_called_once_with(name="container", secrets=None)
+
+    def test__create_rsa_container(self):
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="container")
+        self.service.create_rsa_container()
+        self.service._clients.barbican().containers.create_rsa \
+            .assert_called_once_with(
+                name="container", private_key=None,
+                private_key_passphrase=None, public_key=None)
+
+    def test__create_generate_container(self):
+        self.service.generate_random_name = mock.MagicMock(
+            return_value="container")
+        self.service.create_certificate_container()
+        self.service._clients.barbican().containers \
+            .create_certificate.assert_called_once_with(
+                certificate=None, intermediates=None,
+                name="container", private_key=None,
+                private_key_passphrase=None)
