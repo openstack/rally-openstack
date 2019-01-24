@@ -51,9 +51,10 @@ Changed
 Fixed
 ~~~~~
 
-* Do not ignore ``region_name`` from environment specification while
+* Ignoring ``region_name`` from environment specification while
   initializing keystone client.
 * Fetching OSProfiler trace-info for some drivers.
+* ``https_insecure`` is not passed to manilaclient
 
 [1.3.0] - 2018-10-08
 --------------------
