@@ -10,6 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import ddt
 import mock
 
@@ -129,37 +130,53 @@ class NeutronSecurityGroup(test.TestCase):
         {"security_group_args": {"description": "fake-description"}},
         {"security_group_rule_args": {}},
         {"security_group_rule_args": {"description": "fake-rule-descr"}},
+        {"security_group_rules_count": 2},
     )
     @ddt.unpack
     def test_create_and_list_security_group_rules(
-            self, security_group_args=None,
+            self, security_group_rules_count=1,
+            security_group_args=None,
             security_group_rule_args=None):
         scenario = security_groups.CreateAndListSecurityGroupRules()
-
         security_group_data = security_group_args or {}
         security_group_rule_data = security_group_rule_args or {}
 
         security_group = mock.MagicMock()
-        security_group_rule = {"security_group_rule": {"id": 1, "name": "f1"}}
         scenario._create_security_group = mock.MagicMock()
         scenario._create_security_group_rule = mock.MagicMock()
         scenario._list_security_group_rules = mock.MagicMock()
 
         # Positive case
         scenario._create_security_group.return_value = security_group
-        scenario._create_security_group_rule.return_value = security_group_rule
+        scenario._create_security_group_rule.side_effect = [
+            {"security_group_rule": {"id": 1, "name": "f1",
+                                     "port_range_min": 1,
+                                     "port_range_max": 1}},
+            {"security_group_rule": {"id": 2, "name": "f2",
+                                     "port_range_min": 2,
+                                     "port_range_max": 2}}]
         scenario._list_security_group_rules.return_value = {
-            "security_group_rules": [{"id": 1, "name": "f1"},
-                                     {"id": 2, "name": "f2"},
-                                     {"id": 3, "name": "f3"}]}
-        scenario.run(security_group_args=security_group_data,
+            "security_group_rules": [{"id": 1, "name": "f1",
+                                      "port_range_min": 1,
+                                      "port_range_max": 1},
+                                     {"id": 2, "name": "f2",
+                                      "port_range_min": 2,
+                                      "port_range_max": 2},
+                                     {"id": 3, "name": "f3",
+                                      "port_range_min": 3,
+                                      "port_range_max": 3}]}
+        scenario.run(security_group_rules_count,
+                     security_group_args=security_group_data,
                      security_group_rule_args=security_group_rule_data)
-
         scenario._create_security_group.assert_called_once_with(
             **security_group_data)
-        scenario._create_security_group_rule.assert_called_once_with(
-            security_group["security_group"]["id"],
-            **security_group_rule_data)
+        calls = []
+        for i in range(security_group_rules_count):
+            security_group_rule_data["port_range_min"] = i + 1
+            security_group_rule_data["port_range_max"] = i + 1
+            calls.append(mock.call(security_group["security_group"]["id"],
+                                   **security_group_rule_data))
+        scenario._create_security_group_rule.assert_has_calls(calls)
         scenario._list_security_group_rules.assert_called_once_with()
 
     @ddt.data(
@@ -168,20 +185,22 @@ class NeutronSecurityGroup(test.TestCase):
         {"security_group_args": {"description": "fake-description"}},
         {"security_group_rule_args": {}},
         {"security_group_rule_args": {"description": "fake-rule-descr"}},
+        {"security_group_rules_count": 2},
     )
     @ddt.unpack
     def test_create_and_list_security_group_rules_with_fails(
-            self, security_group_args=None,
-            security_group_rule_args=None):
+            self, security_group_rules_count=1,
+            security_group_args=None, security_group_rule_args=None):
         scenario = security_groups.CreateAndListSecurityGroupRules()
-
         security_group_data = security_group_args or {}
         security_group_rule_data = security_group_rule_args or {}
+        rule_expected = copy.deepcopy(security_group_rule_data)
 
         security_group = mock.MagicMock()
         security_group_rule = {"security_group_rule": {"id": 1, "name": "f1"}}
         scenario._create_security_group = mock.MagicMock()
         scenario._create_security_group_rule = mock.MagicMock()
+
         scenario._list_security_group_rules = mock.MagicMock()
         scenario._create_security_group_rule.return_value = security_group_rule
         scenario._list_security_group_rules.return_value = {
@@ -193,6 +212,7 @@ class NeutronSecurityGroup(test.TestCase):
         scenario._create_security_group.return_value = None
         self.assertRaises(rally_exceptions.RallyAssertionError,
                           scenario.run,
+                          security_group_rules_count,
                           security_group_data,
                           security_group_rule_data)
         scenario._create_security_group.assert_called_with(
@@ -203,27 +223,36 @@ class NeutronSecurityGroup(test.TestCase):
         scenario._create_security_group_rule.return_value = None
         self.assertRaises(rally_exceptions.RallyAssertionError,
                           scenario.run,
+                          security_group_rules_count,
                           security_group_data,
                           security_group_rule_data)
         scenario._create_security_group.assert_called_with(
             **security_group_data)
+        rule_expected["port_range_min"] = 1
+        rule_expected["port_range_max"] = 1
         scenario._create_security_group_rule.assert_called_with(
             security_group["security_group"]["id"],
-            **security_group_rule_data)
+            **rule_expected)
 
         # Negative case3: security_group_rule isn't listed
         scenario._create_security_group.return_value = security_group
+        scenario._create_security_group_rule.reset_mock()
         scenario._create_security_group_rule.return_value = mock.MagicMock()
         self.assertRaises(rally_exceptions.RallyAssertionError,
                           scenario.run,
+                          security_group_rules_count,
                           security_group_data,
                           security_group_rule_data)
-
         scenario._create_security_group.assert_called_with(
             **security_group_data)
-        scenario._create_security_group_rule.assert_called_with(
-            security_group["security_group"]["id"],
-            **security_group_rule_data)
+        calls = []
+        for i in range(security_group_rules_count):
+            rule_expected["port_range_min"] = i + 1
+            rule_expected["port_range_max"] = i + 1
+            calls.append(mock.call(security_group["security_group"]["id"],
+                                   **rule_expected))
+        scenario._create_security_group_rule.assert_has_calls(calls,
+                                                              any_order=True)
         scenario._list_security_group_rules.assert_called_with()
 
     @ddt.data(

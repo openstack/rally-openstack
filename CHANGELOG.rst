@@ -36,6 +36,7 @@ Added
 * Support for osprofiler config in Devstack plugin.
 * Added property 'floating_ip_enabled' in magnum cluster_templates context.
 * Enhanced neutron trunk port scenario to create multiple trunks
+* Enhanced NeutronSecurityGroup.create_and_list_security_group_rules
 
 Changed
 ~~~~~~~

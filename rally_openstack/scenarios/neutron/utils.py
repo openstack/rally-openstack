@@ -846,6 +846,8 @@ class NeutronScenario(scenario.OpenStackScenario):
         security_group_rule_args["security_group_id"] = security_group_id
         if "direction" not in security_group_rule_args:
             security_group_rule_args["direction"] = "ingress"
+        if "protocol" not in security_group_rule_args:
+            security_group_rule_args["protocol"] = "tcp"
 
         return self.clients("neutron").create_security_group_rule(
             {"security_group_rule": security_group_rule_args})

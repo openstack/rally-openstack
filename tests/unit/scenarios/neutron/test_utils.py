@@ -845,6 +845,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
                 "id": "fake-id",
                 "security_group_id": "security-group-id",
                 "direction": "ingress",
+                "protocol": "tcp",
                 "description": "Fake Rule"
             }
         }
@@ -856,6 +857,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
             "security_group_rule":
                 {"security_group_id": "security-group-id",
                  "direction": "ingress",
+                 "protocol": "tcp",
                  "description": "Fake Rule"}
         }
         result_security_group_rule = self.scenario._create_security_group_rule(

@@ -132,34 +132,41 @@ class CreateAndUpdateSecurityGroups(utils.NeutronScenario):
     platform="openstack")
 class CreateAndListSecurityGroupRules(utils.NeutronScenario):
 
-    def run(self, security_group_args=None,
+    def run(self, security_group_rules_count=1,
+            security_group_args=None,
             security_group_rule_args=None):
         """Create and list Neutron security-group-rules.
 
         Measure the "neutron security-group-rule-create" and "neutron
         security-group-rule-list" command performance.
 
+         :param security_group_rules_count: int, number of rules per
+            security group
         :param security_group_args: dict, POST /v2.0/security-groups
             request options
         :param security_group_rule_args: dict,
             POST /v2.0/security-group-rules request options
         """
         security_group_args = security_group_args or {}
-        security_group_rule_args = security_group_rule_args or {}
-
         security_group = self._create_security_group(**security_group_args)
         msg = "security_group isn't created"
         self.assertTrue(security_group, err_msg=msg)
-
-        security_group_rule = self._create_security_group_rule(
-            security_group["security_group"]["id"], **security_group_rule_args)
-        msg = "security_group_rule isn't created"
-        self.assertTrue(security_group_rule, err_msg=msg)
-
+        rules = []
+        for rule in range(security_group_rules_count):
+            security_group_rule_args = security_group_rule_args or {}
+            security_group_rule_args["port_range_min"] = rule + 1
+            security_group_rule_args["port_range_max"] = rule + 1
+            security_group_rule = self._create_security_group_rule(
+                security_group["security_group"]["id"],
+                **security_group_rule_args)
+            rules.append(security_group_rule)
+            msg = "security_group_rule isn't created"
+            self.assertTrue(security_group_rule, err_msg=msg)
         security_group_rules = self._list_security_group_rules()
-        self.assertIn(security_group_rule["security_group_rule"]["id"],
-                      [sgr["id"] for sgr
-                       in security_group_rules["security_group_rules"]])
+        for rule in rules:
+            self.assertIn(rule["security_group_rule"]["id"],
+                          [sgr["id"] for sgr in security_group_rules[
+                              "security_group_rules"]])
 
 
 @validation.add("required_services",
