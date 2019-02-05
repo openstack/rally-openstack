@@ -4,6 +4,7 @@
       args:
         security_group_args: {}
         security_group_rule_args: {}
+        security_group_rules_count: 5
       runner:
         type: "constant"
         times: 20
@@ -15,6 +16,7 @@
         quotas:
           neutron:
             security_group: -1
+            security_group_rule: -1
       sla:
         failure_rate:
           max: 0
