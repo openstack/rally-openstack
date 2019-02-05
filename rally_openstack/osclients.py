@@ -547,6 +547,7 @@ class Manila(OSClient):
         from manilaclient import client as manila
         manila_client = manila.Client(
             self.choose_version(version),
+            insecure=self.credential.https_insecure,
             session=self.keystone.get_session()[0],
             service_catalog_url=self._get_endpoint(service_type))
         return manila_client

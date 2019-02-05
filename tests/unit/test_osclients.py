@@ -659,6 +659,7 @@ class OSClientsTestCase(test.TestCase):
             client = self.clients.manila()
             self.assertEqual(mock_manila.client.Client.return_value, client)
             kw = {
+                "insecure": False,
                 "session": mock_keystoneauth1.session.Session(),
                 "service_catalog_url": mock_manila__get_endpoint.return_value
             }
