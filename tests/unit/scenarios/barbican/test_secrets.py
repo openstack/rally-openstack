@@ -97,3 +97,12 @@ class BarbicanSecretsTestCase(test.ScenarioTestCase):
         scenario.run()
         secrets_service.create_secret.assert_called_once_with()
         secrets_service.list_secrets.assert_called_once_with()
+
+    def test_create_and_delete_symmetric_secret(self):
+        secrets_service = self.mock_secrets.return_value
+        scenario = secrets.BarbicanSecretsCreateSymmetricAndDelete(
+            self.context)
+        scenario.run(
+            payload="rally_data", algorithm="aes", bit_length=256,
+            mode="cbc")
+        self.assertEqual(1, secrets_service.create_secret.call_count)

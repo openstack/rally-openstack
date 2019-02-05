@@ -29,15 +29,23 @@ Added
   * [scenario plugin] BarbicanContainers.create_and_add
   * [scenario plugin] BarbicanContainers.create_certificate_and_delete
   * [scenario plugin] BarbicanContainers.create_rsa_and_delete
-* [scenario plugin] Octavia.create_and_list_loadbalancers
-* [scenario plugin] Octavia.create_and_delete_loadbalancers
-* [scenario plugin] Octavia.create_and_update_loadbalancers
-* [scenario plugin] Octavia.create_and_stats_loadbalancers
-* [scenario plugin] Octavia.create_and_show_loadbalancers
-* [scenario plugin] Octavia.create_and_list_pools
-* [scenario plugin] Octavia.create_and_delete_pools
-* [scenario plugin] Octavia.create_and_update_pools
-* [scenario plugin] Octavia.create_and_show_pools
+  * [scenario plugin] BarbicanSecrets.list
+  * [scenario plugin] BarbicanSecrets.create
+  * [scenario plugin] BarbicanSecrets.create_and_delete
+  * [scenario plugin] BarbicanSecrets.create_and_get
+  * [scenario plugin] BarbicanSecrets.get
+  * [scenario plugin] BarbicanSecrets.create_and_list
+  * [scenario plugin] BarbicanSecrets.create_symmetric_and_delete 
+* Added octavia scenarios
+  * [scenario plugin] Octavia.create_and_list_loadbalancers
+  * [scenario plugin] Octavia.create_and_delete_loadbalancers
+  * [scenario plugin] Octavia.create_and_update_loadbalancers
+  * [scenario plugin] Octavia.create_and_stats_loadbalancers
+  * [scenario plugin] Octavia.create_and_show_loadbalancers
+  * [scenario plugin] Octavia.create_and_list_pools
+  * [scenario plugin] Octavia.create_and_delete_pools
+  * [scenario plugin] Octavia.create_and_update_pools
+  * [scenario plugin] Octavia.create_and_show_pools
 * Support for osprofiler config in Devstack plugin.
 * Added property 'floating_ip_enabled' in magnum cluster_templates context.
 * Enhanced neutron trunk port scenario to create multiple trunks

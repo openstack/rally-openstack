@@ -24,11 +24,31 @@ class BarbicanService(service.Service):
         return self._clients.barbican().secrets.list()
 
     @atomic.action_timer("barbican.create_secret")
-    def create_secret(self):
-        """Create Secret"""
-        secret_name = self.generate_random_name()
-        val = self._clients.barbican().secrets.create(name=secret_name,
-                                                      payload="rally_data")
+    def create_secret(self, name=None, payload=None,
+                      payload_content_type=None, payload_content_encoding=None,
+                      algorithm=None, bit_length=None, secret_type=None,
+                      mode=None, expiration=None):
+        """Create Secret
+
+        :param name: A friendly name for the secret
+        :param payload: The unecrypted secret data
+        :param payload_content_type: the format/type of the secret data
+        :param payload_content_encoding: the encoding of the secret data
+        :param algorithm: the algorithm associated with this secret key
+        :param bit_length: The bit length of this secret key
+        :param mode: the algorigthm mode used with this secret key
+        :param secret_type: The secret type for this secret key
+        :param exipration: the expiration time of the secret in ISO8601
+           format
+        :returns: a new secret object
+        """
+        name = name or self.generate_random_name()
+        val = self._clients.barbican().secrets.create(
+            name=name, payload=payload,
+            payload_content_type=payload_content_type,
+            payload_content_encoding=payload_content_encoding,
+            algorithm=algorithm, bit_length=bit_length, mode=mode,
+            secret_type=secret_type, expiration=expiration)
         val.store()
         return val
 
