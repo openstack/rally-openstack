@@ -22,6 +22,11 @@ class OctaviaBase(scenario.OpenStackScenario):
 
     def __init__(self, context=None, admin_clients=None, clients=None):
         super(OctaviaBase, self).__init__(context, admin_clients, clients)
-        self.octavia = octavia.Octavia(
-            self._clients, name_generator=self.generate_random_name,
-            atomic_inst=self.atomic_actions())
+        if hasattr(self, "_admin_clients"):
+            self.admin_octavia = octavia.Octavia(
+                self._admin_clients, name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions())
+        if hasattr(self, "_clients"):
+            self.octavia = octavia.Octavia(
+                self._clients, name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions())
