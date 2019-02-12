@@ -17,19 +17,9 @@ from rally.task import validation
 
 from rally_openstack import consts
 from rally_openstack import scenario
-from rally_openstack.services.loadbalancer import octavia
+from rally_openstack.scenarios.octavia import utils as octavia_utils
 
 """Scenarios for Octavia Loadbalancer."""
-
-
-class OctaviaBase(scenario.OpenStackScenario):
-    """Base class for Octavia scenarios with basic atomic actions."""
-
-    def __init__(self, context=None, admin_clients=None, clients=None):
-        super(OctaviaBase, self).__init__(context, admin_clients, clients)
-        self.octavia = octavia.Octavia(
-            self._clients, name_generator=self.generate_random_name,
-            atomic_inst=self.atomic_actions())
 
 
 @validation.add("required_services", services=[consts.Service.OCTAVIA])
@@ -38,7 +28,7 @@ class OctaviaBase(scenario.OpenStackScenario):
 @scenario.configure(context={"cleanup@openstack": ["octavia"]},
                     name="Octavia.create_and_list_loadbalancers",
                     platform="openstack")
-class CreateAndListLoadbalancers(OctaviaBase):
+class CreateAndListLoadbalancers(octavia_utils.OctaviaBase):
 
     def run(self, description=None, admin_state=True,
             listeners=None, flavor_id=None, provider=None,
@@ -80,7 +70,7 @@ class CreateAndListLoadbalancers(OctaviaBase):
 @scenario.configure(context={"cleanup@openstack": ["octavia"]},
                     name="Octavia.create_and_delete_loadbalancers",
                     platform="openstack")
-class CreateAndDeleteLoadbalancers(OctaviaBase):
+class CreateAndDeleteLoadbalancers(octavia_utils.OctaviaBase):
 
     def run(self, description=None, admin_state=True,
             listeners=None, flavor_id=None, provider=None,
@@ -123,7 +113,7 @@ class CreateAndDeleteLoadbalancers(OctaviaBase):
 @scenario.configure(context={"cleanup@openstack": ["octavia"]},
                     name="Octavia.create_and_update_loadbalancers",
                     platform="openstack")
-class CreateAndUpdateLoadBalancers(OctaviaBase):
+class CreateAndUpdateLoadBalancers(octavia_utils.OctaviaBase):
 
     def run(self, description=None, admin_state=True,
             listeners=None, flavor_id=None, provider=None,
@@ -171,7 +161,7 @@ class CreateAndUpdateLoadBalancers(OctaviaBase):
 @scenario.configure(context={"cleanup@openstack": ["octavia"]},
                     name="Octavia.create_and_stats_loadbalancers",
                     platform="openstack")
-class CreateAndShowStatsLoadBalancers(OctaviaBase):
+class CreateAndShowStatsLoadBalancers(octavia_utils.OctaviaBase):
 
     def run(self, description=None, admin_state=True,
             listeners=None, flavor_id=None, provider=None,
@@ -214,7 +204,7 @@ class CreateAndShowStatsLoadBalancers(OctaviaBase):
 @scenario.configure(context={"cleanup@openstack": ["octavia"]},
                     name="Octavia.create_and_show_loadbalancers",
                     platform="openstack")
-class CreateAndShowLoadBalancers(OctaviaBase):
+class CreateAndShowLoadBalancers(octavia_utils.OctaviaBase):
 
     def run(self, description=None, admin_state=True,
             listeners=None, flavor_id=None, provider=None,
