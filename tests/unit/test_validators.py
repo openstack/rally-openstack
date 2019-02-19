@@ -655,8 +655,7 @@ class RequiredServicesValidatorTestCase(test.TestCase):
         super(RequiredServicesValidatorTestCase, self).setUp()
         self.validator = validators.RequiredServicesValidator([
             consts.Service.KEYSTONE,
-            consts.Service.NOVA,
-            consts.Service.NOVA_NET])
+            consts.Service.NOVA])
         self.config = config
         self.context = context
 
@@ -707,7 +706,8 @@ class RequiredServicesValidatorTestCase(test.TestCase):
             validator.validate, self.context, {}, None, None)
         expected_msg = ("'{0}' service is not available. Hint: If '{0}'"
                         " service has non-default service_type, try to setup"
-                        " it via 'api_versions' context.").format("lol")
+                        " it via 'api_versions@openstack' context."
+                        ).format("lol")
         self.assertEqual(expected_msg, e.message)
 
 

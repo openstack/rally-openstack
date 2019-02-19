@@ -455,14 +455,16 @@ class RequiredServicesValidator(validation.Validator):
             self.services.extend(args)
 
     def validate(self, context, config, plugin_cls, plugin_cfg):
+        if consts.Service.NOVA_NET in self.services:
+            self.fail("We are sorry, but Nova-network was deprecated for a "
+                      "long time and latest novaclient doesn't support it, so "
+                      "we too.")
+
         creds = (context.get("admin", {}).get("credential", None)
                  or context["users"][0]["credential"])
 
-        available_services = creds.clients().services().values()
-        if consts.Service.NOVA_NET in self.services:
-            LOG.warning("We are sorry, but Nova-network was deprecated for "
-                        "a long time and latest novaclient doesn't support "
-                        "it, so we too.")
+        clients = creds.clients()
+        available_services = clients.services().values()
 
         if "api_versions" in config.get("contexts", {}):
             api_versions = config["contexts"]["api_versions"]
@@ -471,18 +473,24 @@ class RequiredServicesValidator(validation.Validator):
                 "api_versions@openstack", {})
 
         for service in self.services:
-            # NOTE(andreykurilin): validator should ignore services configured
-            # via context(a proper validation should be in context)
             service_config = api_versions.get(service, {})
+            if ("service_type" in service_config
+                    or "service_name" in service_config):
+                # NOTE(andreykurilin): validator should ignore services
+                #   configured via api_versions@openstack since the context
+                #   plugin itself should perform a proper validation
+                continue
 
-            if (service not in available_services and
-                    not ("service_type" in service_config or
-                         "service_name" in service_config)):
-                self.fail(
-                    ("'{0}' service is not available. Hint: If '{0}' "
-                     "service has non-default service_type, try to"
-                     " setup it via 'api_versions'"
-                     " context.").format(service))
+            if service not in available_services:
+                service_client = getattr(clients, service)
+                default_st = service_client._meta_get("default_service_type")
+
+                if default_st not in clients.services():
+                    self.fail(
+                        ("'{0}' service is not available. Hint: If '{0}' "
+                         "service has non-default service_type, try to setup "
+                         "it via 'api_versions@openstack' context."
+                         ).format(service))
 
 
 @validation.add("required_platform", platform="openstack", users=True)
