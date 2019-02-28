@@ -51,9 +51,11 @@ Added
 * Enhanced neutron trunk port scenario to create multiple trunks
 * Enhanced NeutronSecurityGroup.create_and_list_security_group_rules
 * Added three new trunk port related scenarios
-* [scenario plugin] NeutronTrunks.boot_server_with_subports
-* [scenario plugin] NeutronTrunks.boot_server_and_add_subports
-* [scenario plugin] NeutronTrunks.boot_server_and_batch_add_subports
+  * [scenario plugin] NeutronTrunks.boot_server_with_subports
+  * [scenario plugin] NeutronTrunks.boot_server_and_add_subports
+  * [scenario plugin] NeutronTrunks.boot_server_and_batch_add_subports
+* Added neutron scenarios
+  [scenario plugin] NeutronNetworks.associate_and_dissociate_floating_ips
 
 Changed
 ~~~~~~~
