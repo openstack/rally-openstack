@@ -422,6 +422,31 @@ class NeutronFloatingIPTestCase(test.TestCase):
             tenant_id="foo")
 
 
+class NeutronTrunkTestcase(test.TestCase):
+
+    def test_list(self):
+        user = mock.MagicMock()
+        trunk = resources.NeutronTrunk(user=user)
+        user.neutron().list_trunks.return_value = {
+            "trunks": ["trunk"]}
+        self.assertEqual(["trunk"], trunk.list())
+        user.neutron().list_trunks.assert_called_once_with(
+            tenant_id=None)
+
+    def test_list_with_not_found(self):
+
+        class NotFound(Exception):
+            status_code = 404
+
+        user = mock.MagicMock()
+        trunk = resources.NeutronTrunk(user=user)
+        user.neutron().list_trunks.side_effect = NotFound()
+
+        self.assertEqual([], trunk.list())
+        user.neutron().list_trunks.assert_called_once_with(
+            tenant_id=None)
+
+
 class NeutronPortTestCase(test.TestCase):
 
     def test_delete(self):

@@ -390,7 +390,14 @@ class NeutronFloatingIP(NeutronMixin):
                tenant_resource=True)
 class NeutronTrunk(NeutronMixin):
     # Trunks must be deleted before the parent/subports are deleted
-    pass
+
+    def list(self):
+        try:
+            return super(NeutronTrunk, self).list()
+        except Exception as e:
+            if getattr(e, "status_code", 400) == 404:
+                return []
+            raise
 
 
 @base.resource("neutron", "port", order=next(_neutron_order),
