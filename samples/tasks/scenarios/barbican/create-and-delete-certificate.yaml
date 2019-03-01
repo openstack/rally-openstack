@@ -1,8 +1,6 @@
 ---
   BarbicanContainers.create_certificate_and_delete:
     -
-      args:
-        passphrase: "my_passphrase"
       runner:
         type: "constant"
         times: 2

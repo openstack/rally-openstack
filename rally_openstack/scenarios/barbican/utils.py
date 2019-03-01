@@ -26,3 +26,7 @@ class BarbicanBase(scenario.OpenStackScenario):
             self.admin_barbican = barbican.BarbicanService(
                 self._admin_clients, name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions())
+        if hasattr(self, "_clients"):
+            self.barbican = barbican.BarbicanService(
+                self._clients, name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions())
