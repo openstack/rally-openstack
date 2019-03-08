@@ -51,7 +51,7 @@ class GlanceV2ServiceTestCase(test.TestCase):
         self.service.upload_data(image_id, image_location=location)
 
         if location.startswith("/"):
-            mock_open.assert_called_once_with(location)
+            mock_open.assert_called_once_with(location, "rb")
             mock_open.return_value.close.assert_called_once_with()
             self.gc.images.upload.assert_called_once_with(
                 image_id, mock_open.return_value)

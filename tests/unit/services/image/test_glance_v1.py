@@ -70,7 +70,7 @@ class GlanceV1ServiceTestCase(test.TestCase):
 
         if location.startswith("/"):
             call_args["data"] = mock_open.return_value
-            mock_open.assert_called_once_with(location)
+            mock_open.assert_called_once_with(location, "rb")
             mock_open.return_value.close.assert_called_once_with()
         else:
             call_args["copy_from"] = location

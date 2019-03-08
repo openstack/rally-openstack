@@ -44,7 +44,7 @@ class GlanceV2Service(service.Service, glance_common.GlanceMixin):
         response = None
         try:
             if os.path.isfile(image_location):
-                image_data = open(image_location)
+                image_data = open(image_location, "rb")
             else:
                 response = requests.get(image_location, stream=True)
                 image_data = response.raw

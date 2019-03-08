@@ -52,7 +52,7 @@ class GlanceV1Service(service.Service, glance_common.GlanceMixin):
 
         try:
             if os.path.isfile(image_location):
-                kwargs["data"] = open(image_location)
+                kwargs["data"] = open(image_location, "rb")
             else:
                 kwargs["copy_from"] = image_location
 
