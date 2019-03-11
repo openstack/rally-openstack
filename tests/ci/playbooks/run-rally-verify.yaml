@@ -1,0 +1,16 @@
+- hosts: all
+  roles:
+    - run-devstack
+
+- hosts: controller
+  tasks:
+    - name: Run Rally verify
+      shell:
+        cmd: |
+          cd {{ zuul.project.src_dir }}
+          . /opt/stack/.rally/openrc admin admin
+          export OS_CACERT=/opt/stack/data/ca-bundle.pem
+          rally deployment create --fromenv --name tempest
+          rally deployment config
+          python tests/ci/rally_verify.py
+        executable: /bin/bash

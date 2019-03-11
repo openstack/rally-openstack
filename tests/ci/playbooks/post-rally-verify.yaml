@@ -1,0 +1,27 @@
+- hosts: controller
+  tasks:
+    - name: Copy the html report
+      synchronize:
+        src: '{{ zuul.project.src_dir }}/rally-verify'
+        dest: '{{ zuul.executor.log_root }}'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts:
+          - --include=/**
+          - --include=*/
+          - --exclude=*
+          - --prune-empty-dirs
+
+    - name: Put index.html in the right place
+      synchronize:
+        src: '{{ zuul.project.src_dir }}/rally-verify/extra/index.html'
+        dest: '{{ zuul.executor.log_root }}/index.html'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts:
+          - --include=/**
+          - --include=*/
+          - --exclude=*
+          - --prune-empty-dirs

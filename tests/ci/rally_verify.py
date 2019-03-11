@@ -23,8 +23,9 @@ import subprocess
 import sys
 import uuid
 
+import jinja2
+
 from rally import api
-from rally.ui import utils
 
 LOG = logging.getLogger("verify-job")
 LOG.setLevel(logging.DEBUG)
@@ -55,7 +56,8 @@ class Step(object):
         self.args = args
         self.rapi = rapi
         self.result = {"status": Status.PASS,
-                       "doc": self.__doc__}
+                       "doc": self.__doc__,
+                       "cmd": "None command found"}
 
     @property
     def name(self):
@@ -141,7 +143,7 @@ class Step(object):
 class SetUpStep(Step):
     """Validate deployment, create required resources and directories."""
 
-    DEPLOYMENT_NAME = "devstack"
+    DEPLOYMENT_NAME = "tempest"
 
     def run(self):
         if not os.path.exists("%s/extra" % self.BASE_DIR):
@@ -493,6 +495,16 @@ def run(args):
     return results.values()
 
 
+def create_report(results):
+    template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                "pages")
+    loader = jinja2.FileSystemLoader(template_dir)
+    env = jinja2.Environment(loader=loader)
+    template = env.get_template("verify-index.html")
+    with open(os.path.join(Step.BASE_DIR, "extra/index.html"), "w") as f:
+        f.write(template.render(steps=results))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Launch rally-verify job.")
     parser.add_argument("--mode", type=str, default="light",
@@ -514,9 +526,7 @@ def main():
     steps = run(args)
     results = [step.to_html() for step in steps]
 
-    template = utils.get_template("ci/index_verify.html")
-    with open(os.path.join(Step.BASE_DIR, "extra/index.html"), "w") as f:
-        f.write(template.render(steps=results))
+    create_report(results)
 
     if len([None for step in steps
             if step.result["status"] == Status.PASS]) == len(steps):

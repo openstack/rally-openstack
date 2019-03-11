@@ -70,6 +70,7 @@
             # watcher-api did not start last time
             voting: false
         - rally-task-zaqar
+        - rally-verify-tempest
     gate:
       jobs:
         - rally-tox-pep8
@@ -90,3 +91,4 @@
         - rally-task-neutron
         - rally-task-telemetry
         - rally-task-zaqar
+        - rally-verify-tempest
