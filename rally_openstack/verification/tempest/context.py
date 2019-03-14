@@ -125,10 +125,11 @@ class TempestContext(context.VerifierContext):
                  conf.CONF.openstack.swift_reseller_admin_role,
                  conf.CONF.openstack.heat_stack_owner_role,
                  conf.CONF.openstack.heat_stack_user_role]
-        existing_roles = set(role.name for role in keystoneclient.roles.list())
+        existing_roles = set(role.name.lower()
+                             for role in keystoneclient.roles.list())
 
         for role in roles:
-            if role not in existing_roles:
+            if role.lower() not in existing_roles:
                 LOG.debug("Creating role '%s'." % role)
                 self._created_roles.append(keystoneclient.roles.create(role))
 
