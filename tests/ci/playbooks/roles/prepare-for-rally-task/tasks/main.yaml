@@ -73,7 +73,7 @@
   become: True
   become_user: stack
   shell:
-    executable: /bin/sh
+    executable: /bin/bash
     cmd: |
       set -e
 
