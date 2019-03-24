@@ -12,7 +12,7 @@
     vars:
       devstack_plugins:
         rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        neutron-lbaas: git://git.openstack.org/openstack/neutron-lbaas
+        neutron-lbaas: https://git.openstack.org/openstack/neutron-lbaas
         octavia: https://git.openstack.org/openstack/octavia
       devstack_services:
         neutron-lbaas: true
