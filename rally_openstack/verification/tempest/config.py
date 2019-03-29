@@ -34,6 +34,12 @@ class TempestConfigfileManager(object):
 
     def __init__(self, deployment):
         self.credential = deployment.get_credentials_for("openstack")["admin"]
+        if not self.credential:
+            raise exceptions.ValidationError(
+                "Failed to configure 'tempest' for '%s' environment since "
+                "admin credentials for OpenStack platform is missed there." %
+                deployment["name"]
+            )
         self.clients = self.credential.clients()
         self.available_services = self.clients.services().values()
 
