@@ -132,6 +132,11 @@ class TempestConfigfileManager(object):
         self.conf.set(section_name, "auth_version", "v%s" % target_version)
         self.conf.set(section_name, "uri", uri)
         self.conf.set(section_name, "uri_v3", uri_v3)
+        if self.credential.endpoint_type:
+            self.conf.set(section_name, "v2_endpoint_type",
+                          self.credential.endpoint_type)
+            self.conf.set(section_name, "v3_endpoint_type",
+                          self.credential.endpoint_type)
 
         self.conf.set(section_name, "disable_ssl_certificate_validation",
                       str(self.credential.https_insecure))
