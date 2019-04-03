@@ -135,10 +135,6 @@ class OpenStack(platform.Platform):
         users = new_data.pop("users", [])
         api_info = new_data.pop("api_info", None)
 
-        if new_data.get("https_cert") and new_data.get("https_key"):
-            new_data["https_cert"] = (new_data["https_cert"],
-                                      new_data.pop("https_key"))
-
         if admin:
             if "project_name" in admin:
                 admin["tenant_name"] = admin.pop("project_name")
