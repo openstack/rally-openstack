@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 
 RUN sed -i s/^deb-src.*// /etc/apt/sources.list
 
-RUN apt-get update && apt-get install --yes sudo python python-pip libpq-dev vim git-core && \
+RUN apt-get update && apt-get install --yes sudo python python-pip vim git-core && \
     pip install --upgrade pip && \
     useradd -u 65500 -m rally && \
     usermod -aG sudo rally && \
@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install --yes sudo python python-pip libpq-dev vim
 COPY . /home/rally/source
 COPY etc/motd /etc/motd
 WORKDIR /home/rally/source
+
+# ensure that we have all system packages installed
+RUN pip install bindep &&  apt-get install --yes $(bindep -b | tr '\n' ' ')
 
 RUN pip install . --constraint upper-constraints.txt && \
     pip install pymysql && \
