@@ -27,13 +27,17 @@ class OpenStackCredential(dict):
                  region_name=None, endpoint_type=None,
                  domain_name=None, endpoint=None, user_domain_name=None,
                  project_domain_name=None,
-                 https_insecure=False, https_cacert=None, https_cert=None,
+                 https_insecure=False, https_cacert=None,
+                 https_cert=None, https_key=None,
                  profiler_hmac_key=None, profiler_conn_str=None,
                  api_info=None, **kwargs):
         if kwargs:
             raise TypeError("%s" % kwargs)
 
         # TODO(andreykurilin): deprecate permission and endpoint
+
+        if https_cert and https_key:
+            https_cert = (https_cert, https_key)
 
         super(OpenStackCredential, self).__init__([
             ("auth_url", auth_url),

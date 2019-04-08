@@ -192,3 +192,16 @@ class EnvTestCase(unittest.TestCase):
         except utils.RallyCliError as e:
             self.assertIn("Can not create 'faileddummy' with 2 version",
                           e.output)
+
+    def test_create_env_with_https_cert_https_key(self):
+        rally = utils.Rally()
+        fake_spec = copy.deepcopy(rally.env_spec)
+        fake_spec["existing@openstack"]["https_cert"] = ""
+        fake_spec["existing@openstack"]["https_key"] = ""
+        spec = utils.JsonTempFile(fake_spec)
+        rally("env create --name t_create_env --spec %s" % spec.filename)
+        config = rally("env show --only-spec", getjson=True)
+        self.assertIn("https_cert", config["existing@openstack"].keys())
+        self.assertIn("https_key", config["existing@openstack"].keys())
+        rally("env check")
+        rally("env info")
