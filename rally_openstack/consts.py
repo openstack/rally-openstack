@@ -74,6 +74,7 @@ class _Service(utils.ImmutableMixin, utils.EnumMixin):
 class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     """OpenStack services types, mapped to service names."""
 
+    BLOCK_STORAGE = "block-storage"
     VOLUME = "volume"
     VOLUMEV2 = "volumev2"
     VOLUMEV3 = "volumev3"
@@ -107,9 +108,12 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
         self.__names = {
             self.CLUSTERING: _Service.SENLIN,
             self.COMPUTE: _Service.NOVA,
+            # unversioned endpoint of Cinder
+            self.BLOCK_STORAGE: _Service.CINDER,
+            # legacy versioned endpoints of Cinder
             self.VOLUME: _Service.CINDER,
-            self.VOLUMEV2: _Service.CINDERV2,
-            self.VOLUMEV3: _Service.CINDERV3,
+            self.VOLUMEV2: _Service.CINDER,
+            self.VOLUMEV3: _Service.CINDER,
             self.SHARE: _Service.MANILA,
             self.EC2: _Service.EC2,
             self.IMAGE: _Service.GLANCE,

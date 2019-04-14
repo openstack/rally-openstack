@@ -16,6 +16,16 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+Unreleased
+----------
+
+Changed
+~~~~~~~
+
+* A new unversioned service type **block-storage** is used as a default for
+  Cinder service. To use another service type, use ``api_versions@openstack``
+  context or ``api_info`` property of environment configuration.
+
 [1.4.0] - 2019-03-07
 --------------------
 
@@ -35,7 +45,7 @@ Added
   * [scenario plugin] BarbicanSecrets.create_and_get
   * [scenario plugin] BarbicanSecrets.get
   * [scenario plugin] BarbicanSecrets.create_and_list
-  * [scenario plugin] BarbicanSecrets.create_symmetric_and_delete 
+  * [scenario plugin] BarbicanSecrets.create_symmetric_and_delete
 * Added octavia scenarios
   * [scenario plugin] Octavia.create_and_list_loadbalancers
   * [scenario plugin] Octavia.create_and_delete_loadbalancers

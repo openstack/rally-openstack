@@ -463,14 +463,13 @@ class RequiredServicesValidator(validation.Validator):
         creds = (context.get("admin", {}).get("credential", None)
                  or context["users"][0]["credential"])
 
-        clients = creds.clients()
-        available_services = clients.services().values()
-
         if "api_versions" in config.get("contexts", {}):
             api_versions = config["contexts"]["api_versions"]
         else:
             api_versions = config.get("contexts", {}).get(
                 "api_versions@openstack", {})
+
+        available_services = creds.clients().services().values()
 
         for service in self.services:
             service_config = api_versions.get(service, {})
@@ -482,15 +481,11 @@ class RequiredServicesValidator(validation.Validator):
                 continue
 
             if service not in available_services:
-                service_client = getattr(clients, service)
-                default_st = service_client._meta_get("default_service_type")
-
-                if default_st not in clients.services():
-                    self.fail(
-                        ("'{0}' service is not available. Hint: If '{0}' "
-                         "service has non-default service_type, try to setup "
-                         "it via 'api_versions@openstack' context."
-                         ).format(service))
+                self.fail(
+                    ("'{0}' service is not available. Hint: If '{0}' "
+                     "service has non-default service_type, try to setup "
+                     "it via 'api_versions@openstack' context."
+                     ).format(service))
 
 
 @validation.add("required_platform", platform="openstack", users=True)
