@@ -325,8 +325,8 @@ class HeatScenario(scenario.OpenStackScenario):
                 {"key": output_key, "id": stack.id})
 
         platform_params = self.context["env"]["spec"]["existing@openstack"]
-        verify = (platform_params["https_cacert"]
-                  if not platform_params["https_insecure"]
+        verify = (platform_params.get("https_cacert")
+                  if not platform_params.get("https_insecure")
                   else False)
         with atomic.ActionTimer(self, "heat.%s_webhook" % output_key):
             requests.post(url, verify=verify).raise_for_status()
