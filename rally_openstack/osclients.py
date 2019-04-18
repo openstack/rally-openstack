@@ -508,7 +508,7 @@ class Heat(OSClient):
         return client
 
 
-@configure("cinder", default_version="3", default_service_type="volumev3",
+@configure("cinder", default_version="3", default_service_type="block-storage",
            supported_versions=["1", "2", "3"])
 class Cinder(OSClient):
     """Wrapper for CinderClient which returns an authenticated native client.
