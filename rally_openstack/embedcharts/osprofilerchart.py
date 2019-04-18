@@ -15,12 +15,42 @@
 import json
 import os
 
+from rally.common import cfg
 from rally.common import logging
 from rally.common import opts
 from rally.common.plugin import plugin
-from rally.task.processing.charts import OutputTextArea
+from rally.task.processing import charts
+
+import rally_openstack
+
+
+if rally_openstack.__rally_version__ < (1, 5, 0):
+    # NOTE(andreykurilin): this is a workaround to make inheritance of
+    #   OSProfilerChart clear.
+    OutputEmbeddedChart = type("OutputEmbeddedChart", (object, ), {})
+    OutputEmbeddedExternalChart = type("OutputEmbeddedExternalChart",
+                                       (object, ), {})
+else:
+    OutputEmbeddedChart = charts.OutputEmbeddedChart
+    OutputEmbeddedExternalChart = charts.OutputEmbeddedExternalChart
+
+
+OPTS = {
+    "openstack": [
+        cfg.StrOpt(
+            "osprofiler_chart_mode",
+            default=None,
+            help="Mode of embedding OSProfiler's chart. Can be 'text' "
+                 "(embed only trace id), 'raw' (embed raw osprofiler's native "
+                 "report) or a path to directory (raw osprofiler's native "
+                 "reports for each iteration will be saved separately there "
+                 "to decrease the size of rally report itself)")
+    ]
+}
+
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 def _datetime_json_serialize(obj):
@@ -31,25 +61,20 @@ def _datetime_json_serialize(obj):
 
 
 @plugin.configure(name="OSProfiler")
-class OSProfilerChart(OutputTextArea):
-    """OSProfiler content
-
-    This plugin complete data of osprofiler
-    """
-
-    widget = "OSProfiler"
+class OSProfilerChart(OutputEmbeddedChart,
+                      OutputEmbeddedExternalChart,
+                      charts.OutputTextArea):
+    """Chart for embedding OSProfiler data."""
 
     @classmethod
-    def get_osprofiler_data(cls, data):
-
-        from osprofiler import cmd
+    def _fetch_osprofiler_data(cls, connection_str, trace_id):
         from osprofiler.drivers import base
         from osprofiler import opts as osprofiler_opts
 
         opts.register_opts(osprofiler_opts.list_opts())
 
         try:
-            engine = base.get_driver(data["data"]["conn_str"])
+            engine = base.get_driver(connection_str)
         except Exception:
             msg = "Error while fetching OSProfiler results."
             if logging.is_debug():
@@ -58,38 +83,80 @@ class OSProfilerChart(OutputTextArea):
                 LOG.error(msg)
             return None
 
-        data["widget"] = "EmbedChart"
-        data["title"] = "{0} : {1}".format(data["title"],
-                                           data["data"]["trace_id"][0])
+        return engine.get_report(trace_id)
+
+    @classmethod
+    def _generate_osprofiler_report(cls, osp_data):
+        from osprofiler import cmd
 
         path = "%s/template.html" % os.path.dirname(cmd.__file__)
         with open(path) as f:
             html_obj = f.read()
 
-        osp_data = engine.get_report(data["data"]["trace_id"][0])
         osp_data = json.dumps(osp_data,
                               indent=4,
                               separators=(",", ": "),
                               default=_datetime_json_serialize)
-        data["data"] = html_obj.replace("$DATA", osp_data)
-        data["data"] = data["data"].replace("$LOCAL", "false")
+        return html_obj.replace("$DATA", osp_data).replace("$LOCAL", "false")
 
-        # NOTE(chenxu): self._data will be passed to
-        # ["complete_output"]["data"] as a whole string and
-        # tag </script> will be parsed incorrectly in javascript string
-        # so we turn it to <\/script> and turn it back in javascript.
-        data["data"] = data["data"].replace("/script>", "\/script>")
-
-        return {"title": data["title"],
-                "widget": data["widget"],
-                "data": data["data"]}
+    @classmethod
+    def _return_raw_response_for_complete_data(cls, data):
+        return charts.OutputTextArea.render_complete_data({
+            "title": data["title"],
+            "widget": "TextArea",
+            "data": [data["data"]["trace_id"]]
+        })
 
     @classmethod
     def render_complete_data(cls, data):
-        if data["data"].get("conn_str"):
-            result = cls.get_osprofiler_data(data)
-            if result:
-                return result
-        return {"title": data["title"],
-                "widget": "TextArea",
-                "data": data["data"]["trace_id"]}
+        mode = CONF.openstack.osprofiler_chart_mode
+
+        if isinstance(data["data"]["trace_id"], list):
+            # NOTE(andreykurilin): it is an adoption for the format that we
+            #   used  before rally-openstack 1.5.0 .
+            data["data"]["trace_id"] = data["data"]["trace_id"][0]
+
+        if data["data"].get("conn_str") and mode != "text":
+            osp_data = cls._fetch_osprofiler_data(
+                data["data"]["conn_str"],
+                trace_id=data["data"]["trace_id"]
+            )
+            if not osp_data:
+                # for some reasons we failed to fetch data from OSProfiler's
+                # backend. in this case we can display just trace ID
+                return cls._return_raw_response_for_complete_data(data)
+
+            osp_report = cls._generate_osprofiler_report(osp_data)
+            title = "{0} : {1}".format(data["title"],
+                                       data["data"]["trace_id"])
+
+            if rally_openstack.__rally_version__ < (1, 5, 0):
+                return {
+                    "title": title,
+                    "widget": "EmbeddedChart",
+                    "data": osp_report.replace("/script>", "\\/script>")
+                }
+            elif (mode and mode != "raw") and "workload_uuid" in data["data"]:
+                # NOTE(andreykurilin): we need to rework our charts plugin
+                #   mechanism so it is available out of box
+                workload_uuid = data["data"]["workload_uuid"]
+                iteration = data["data"]["iteration"]
+                file_name = "w_%s-%s.html" % (workload_uuid, iteration)
+                path = os.path.join(mode, file_name)
+                with open(path, "w") as f:
+                    f.write(osp_report)
+                return OutputEmbeddedExternalChart.render_complete_data(
+                    {
+                        "title": title,
+                        "widget": "EmbeddedChart",
+                        "data": path
+                    }
+                )
+            else:
+                return OutputEmbeddedChart.render_complete_data(
+                    {"title": title,
+                     "widget": "EmbeddedChart",
+                     "data": osp_report}
+                )
+
+        return cls._return_raw_response_for_complete_data(data)

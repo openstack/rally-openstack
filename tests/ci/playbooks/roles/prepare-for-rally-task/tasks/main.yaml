@@ -16,6 +16,24 @@
     owner: stack
     group: stack
 
+- name: Create directory for OSProfiler reports
+  become: True
+  become_user: stack
+  file:
+    path: '{{ rally_home_dir }}/results/{{ RALLY_OSPROFILER_CHART }}'
+    state: directory
+    owner: stack
+    group: stack
+
+- name: Extend Rally config with
+  become: True
+  become_user: stack
+  shell:
+    executable: /bin/bash
+    cmd: |
+      echo "[openstack]" >> /etc/rally/rally.conf
+      echo "osprofiler_chart_mode={{ RALLY_OSPROFILER_CHART }}" >> /etc/rally/rally.conf
+
 - name: Create a directory for custom plugins
   become: True
   become_user: stack
@@ -145,15 +163,15 @@
   shell: rally env create --name devstask-with-users --spec "{{ rally_existing_users_config }}"
   when: rally_use_existing_users == True
 
-- name: Print Rally deployment config
-  become: True
-  become_user: stack
-  command: "rally deployment config"
-
 - name: Check Environment works
   become: True
   become_user: stack
   command: "rally --debug env check"
+
+- name: Print Rally deployment config
+  become: True
+  become_user: stack
+  command: "rally deployment config"
 
 - name: Print Environment info
   become: True

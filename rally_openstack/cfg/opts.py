@@ -40,6 +40,8 @@ from rally_openstack.cfg import keystone_users
 
 from rally_openstack.cfg import cleanup
 
+from rally_openstack.embedcharts import osprofilerchart
+
 
 def list_opts():
 
@@ -49,7 +51,8 @@ def list_opts():
                    nova.OPTS, osclients.OPTS, profiler.OPTS, sahara.OPTS,
                    vm.OPTS, glance.OPTS, watcher.OPTS, tempest.OPTS,
                    keystone_roles.OPTS, keystone_users.OPTS, cleanup.OPTS,
-                   senlin.OPTS, neutron.OPTS, octavia.OPTS):
+                   senlin.OPTS, neutron.OPTS, octavia.OPTS,
+                   osprofilerchart.OPTS):
         for category, opt in l_opts.items():
             opts.setdefault(category, [])
             opts[category].extend(opt)

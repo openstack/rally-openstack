@@ -110,12 +110,17 @@ class OpenStackScenarioTestCase(test.TestCase):
                            mock_profiler_get,
                            mock_profiler_init):
         for user, credential in users_credentials:
-            self.context.update({user: {"credential": credential}})
+            self.context.update({user: {"credential": credential},
+                                 "iteration": 0})
         base_scenario.OpenStackScenario(self.context)
-        self.assertEqual(expected_call_count,
-                         mock_profiler_init.call_count)
-        self.assertEqual([mock.call()] * expected_call_count,
-                         mock_profiler_get.call_args_list)
+
+        if expected_call_count:
+            mock_profiler_init.assert_called_once_with(
+                CREDENTIAL_WITH_HMAC["profiler_hmac_key"])
+            mock_profiler_get.assert_called_once_with()
+        else:
+            self.assertFalse(mock_profiler_init.called)
+            self.assertFalse(mock_profiler_get.called)
 
     def test__choose_user_random(self):
         users = [{"credential": mock.Mock(), "tenant_id": "foo"}

@@ -1,7 +1,12 @@
 - name: Generate a HTML report
   become: True
   become_user: stack
-  command: rally task report --html-static --out {{ rally_results_dir }}/report.html
+  shell:
+    executable: /bin/bash
+    cmd: |
+      set -e
+      cd {{ rally_results_dir }}
+      rally task report --html-static --out report.html
 
 - name: Show detailed info about task
   become: True

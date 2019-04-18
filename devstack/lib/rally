@@ -51,7 +51,9 @@ OSPROFILER_CONNECTION_STRING=${OSPROFILER_CONNECTION_STRING:-""}
 #       OSPROFILER_HMAC_KEYS rally html report will use osprofiler api to
 #       generate html report for each trace and embed it as iframe to our
 #       native html repor
+#   ``RALLY_OSPROFILER_CHART`` - optional, a path to store osprofiler's reports
 #
+
 # _create_deployment_config filename
 function _create_deployment_config() {
 if [[ "$IDENTITY_API_VERSION" == 2.0 ]]

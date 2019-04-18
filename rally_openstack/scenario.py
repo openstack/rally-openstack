@@ -112,7 +112,9 @@ class OpenStackScenario(scenario.Scenario):
         if not CONF.openstack.enable_profiler:
             return
 
-        if context is not None:
+        # False statement here means that Scenario class is used outside the
+        # runner as some kind of utils
+        if context is not None and "iteration" in context:
 
             profiler_hmac_key = None
             profiler_conn_str = None
@@ -132,6 +134,9 @@ class OpenStackScenario(scenario.Scenario):
             trace_id = profiler.get().get_base_id()
             complete_data = {"title": "OSProfiler Trace-ID",
                              "chart_plugin": "OSProfiler",
-                             "data": {"trace_id": [trace_id],
-                                      "conn_str": profiler_conn_str}}
+                             "data": {"trace_id": trace_id,
+                                      "conn_str": profiler_conn_str,
+                                      "taskID": context["task"]["uuid"],
+                                      "workload_uuid": context["owner_id"],
+                                      "iteration": context["iteration"]}}
             self.add_output(complete=complete_data)
