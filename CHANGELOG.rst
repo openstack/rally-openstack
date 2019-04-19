@@ -26,6 +26,13 @@ Changed
   Cinder service. To use another service type, use ``api_versions@openstack``
   context or ``api_info`` property of environment configuration.
 
+Fixed
+~~~~~~~
+
+* Close bug LP #1819284. Because secret class is lazy in barbican client,
+  secret would really access the api to get secret properties while calling
+  some property.
+
 [1.4.0] - 2019-03-07
 --------------------
 

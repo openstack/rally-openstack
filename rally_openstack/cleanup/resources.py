@@ -1112,7 +1112,7 @@ class BarbicanSecrets(base.ResourceManager):
 
     def is_deleted(self):
         try:
-            self._manager().get(self.id())
+            self._manager().get(self.id()).status
         except Exception:
             return True
 
