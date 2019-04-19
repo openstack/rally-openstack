@@ -2,16 +2,16 @@
     name: rally-task-barbican
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/barbican
       - name: openstack/python-barbicanclient
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        barbican: https://git.openstack.org/openstack/barbican
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        barbican: https://opendev.org/openstack/barbican
       devstack_services:
         barbican: true
         # disable redundant services for the job

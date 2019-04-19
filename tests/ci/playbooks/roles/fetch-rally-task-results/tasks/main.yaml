@@ -10,7 +10,7 @@
       fi
 
       if [ "$MSG" != "OK" ]; then
-        sed -i -- "s/var errorMessage = null\;/var errorMessage = \'$MSG\';/g" {{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html
+        sed -i -- "s/var errorMessage = null\;/var errorMessage = \'$MSG\';/g" {{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html
       fi
 
 - name: Check the existence of results dir
@@ -52,7 +52,7 @@
 - name: Put index.html in the right place
   become: yes
   synchronize:
-    src: "{{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html"
+    src: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html"
     dest: '{{ zuul.executor.log_root }}/index.html'
     mode: pull
     copy_links: true

@@ -11,4 +11,4 @@
       fi
       $PYTHON ./tests/ci/osresources.py --dump-list {{ rally_resources_at_start }}
   args:
-    chdir: "{{ zuul.projects['git.openstack.org/openstack/rally-openstack'].src_dir }}"
+    chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"

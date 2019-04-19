@@ -4,8 +4,8 @@
     vars:
       rally_task: rally-jobs/neutron-trunk.yaml
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        neutron: https://git.openstack.org/openstack/neutron
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        neutron: https://opendev.org/openstack/neutron
       devstack_services:
         neutron-trunk: true
 

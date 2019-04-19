@@ -2,15 +2,15 @@
     name: rally-verify-tempest
     parent: devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally-openstack
       - name: openstack/rally
     timeout: 7200
     roles:
-      - zuul: openstack-dev/devstack
+      - zuul: openstack/devstack
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
+        rally-openstack: https://opendev.org/openstack/rally-openstack
     run: tests/ci/playbooks/run-rally-verify.yaml
     post-run: tests/ci/playbooks/post-rally-verify.yaml

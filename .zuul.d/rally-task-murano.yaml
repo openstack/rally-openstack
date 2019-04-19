@@ -2,17 +2,17 @@
     name: rally-task-murano
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/heat
       - name: openstack/murano
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        murano: https://git.openstack.org/openstack/murano
-        heat: https://git.openstack.org/openstack/heat
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        murano: https://opendev.org/openstack/murano
+        heat: https://opendev.org/openstack/heat
       devstack_services:
         murano: true
         # disable redundant services for the job

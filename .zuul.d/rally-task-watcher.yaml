@@ -2,16 +2,16 @@
     name: rally-task-watcher
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/watcher
       - name: openstack/python-watcherclient
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        watcher: https://git.openstack.org/openstack/watcher
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        watcher: https://opendev.org/openstack/watcher
       devstack_services:
         watcher-api: true
         watcher-decision-engine: true

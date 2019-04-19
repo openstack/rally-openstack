@@ -2,8 +2,8 @@
     name: rally-task-magnum
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/magnum
@@ -11,9 +11,9 @@
       - name: openstack/heat
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        magnum: https://git.openstack.org/openstack/magnum
-        heat: https://git.openstack.org/openstack/heat
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        magnum: https://opendev.org/openstack/magnum
+        heat: https://opendev.org/openstack/heat
       devstack_services:
         magnum: true
         # disable redundant services for the job

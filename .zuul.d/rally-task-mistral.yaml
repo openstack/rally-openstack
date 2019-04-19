@@ -2,8 +2,8 @@
     name: rally-task-mistral
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/heat
@@ -11,8 +11,8 @@
       - name: openstack/python-mistralclient
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        mistral: https://git.openstack.org/openstack/mistral
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        mistral: https://opendev.org/openstack/mistral
       devstack_services:
         mistral: true
         # disable redundant services for the job

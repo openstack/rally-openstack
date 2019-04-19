@@ -2,8 +2,8 @@
     name: rally-task-neutron-with-extensions
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/networking-bgpvpn
@@ -15,10 +15,10 @@
       - name: openstack/neutron-vpnaas
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        networking-bgpvpn: https://git.openstack.org/openstack/networking-bgpvpn
-        #neutron-fwaas: https://git.openstack.org/openstack/neutron-fwaas
-        neutron-vpnaas: https://git.openstack.org/openstack/neutron-vpnaas
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        networking-bgpvpn: https://opendev.org/openstack/networking-bgpvpn
+        #neutron-fwaas: https://opendev.org/openstack/neutron-fwaas
+        neutron-vpnaas: https://opendev.org/openstack/neutron-vpnaas
       devstack_services:
         networking-bgpvpn: true
         #neutron-fwaas: true

@@ -2,16 +2,16 @@
     name: rally-task-telemetry
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack-dev/devstack
-      - name: openstack-infra/devstack-gate
+      - name: openstack/devstack
+      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/heat
       - name: openstack/ceilometer
     vars:
       devstack_plugins:
-        rally-openstack: https://git.openstack.org/openstack/rally-openstack
-        ceilometer: https://git.openstack.org/openstack/ceilometer
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        ceilometer: https://opendev.org/openstack/ceilometer
       devstack_services:
         ceilometer-acentral: true
         ceilometer-acompute: true
