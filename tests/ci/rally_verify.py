@@ -116,10 +116,12 @@ class Step(object):
     def _write_file(cls, path, data, compress=False):
         """Create a file and write some data to it."""
         if compress:
-            with gzip.open(path, "wb") as f:
+            with gzip.open(path, "w") as f:
+                if not isinstance(data, bytes):
+                    data = data.encode()
                 f.write(data)
         else:
-            with open(path, "wb") as f:
+            with open(path, "w") as f:
                 f.write(data)
         return path
 
@@ -129,7 +131,7 @@ class Step(object):
         try:
             LOG.info("Start `%s` command." % command)
             stdout = subprocess.check_output(command.split(),
-                                             stderr=subprocess.STDOUT)
+                                             stderr=subprocess.STDOUT).decode()
         except subprocess.CalledProcessError as e:
             LOG.error("Command `%s` failed." % command)
             return Status.ERROR, e.output
@@ -231,7 +233,7 @@ class CreateVerifier(Step):
     DEPENDS_ON = ListPlugins
     CALL_ARGS = {"type": "tempest",
                  "name": "my-verifier",
-                 "source": "https://git.openstack.org/openstack/tempest"}
+                 "source": "https://opendev.org/openstack/tempest"}
 
 
 class ShowVerifier(Step):
@@ -263,7 +265,7 @@ class UpdateVerifier(Step):
         # Get the penultimate verifier commit ID
         p_commit_id = subprocess.check_output(
             ["git", "log", "-n", "1", "--pretty=format:%H"],
-            cwd=verifications_dir).strip()
+            cwd=verifications_dir).decode().strip()
         self.CALL_ARGS = {"version": p_commit_id}
 
 
@@ -279,7 +281,7 @@ class ExtendVerifier(Step):
 
     COMMAND = "verify add-verifier-ext --source %(source)s"
     DEPENDS_ON = CreateVerifier
-    CALL_ARGS = {"source": "https://git.openstack.org/openstack/"
+    CALL_ARGS = {"source": "https://opendev.org/openstack/"
                            "keystone-tempest-plugin"}
 
 

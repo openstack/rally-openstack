@@ -17,5 +17,5 @@
       shell:
         cmd: |
           cd {{ zuul.project.src_dir }}
-          python tests/ci/rally_verify.py
+          python3 tests/ci/rally_verify.py
         executable: /bin/bash

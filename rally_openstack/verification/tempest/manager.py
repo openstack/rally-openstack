@@ -33,7 +33,7 @@ AVAILABLE_SETS = (list(consts.TempestTestSets) +
 
 
 @manager.configure(name="tempest", platform="openstack",
-                   default_repo="https://git.openstack.org/openstack/tempest",
+                   default_repo="https://opendev.org/openstack/tempest",
                    context={"tempest": {}, "testr": {}})
 class TempestManager(testr.TestrLauncher):
     """Tempest verifier.

@@ -347,7 +347,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
             [mock.call(pdata["admin"]), mock.call().verified_keystone(),
              mock.call().fakeclient.choose_version(),
              mock.call().fakeclient.validate_version(
-                 mock.call().fakeclient.choose_version.return_value),
+                 mock_clients.return_value.fakeclient.choose_version
+                 .return_value),
              mock.call().fakeclient.create_client()])
 
     @mock.patch("rally_openstack.osclients.Clients")
