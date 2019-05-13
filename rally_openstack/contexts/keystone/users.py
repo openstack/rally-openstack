@@ -63,6 +63,11 @@ class UserGenerator(context.Context):
                      "minimum": 1,
                      "description": "The number of users to create per one "
                                     "tenant."},
+                 "user_password": {
+                     "type": "string",
+                     "description": "Specify custom user password instead of "
+                                    "randomly generated in case of password "
+                                    "requirements."},
                  "resource_management_workers": {
                      "type": "integer",
                      "minimum": 1,
@@ -196,7 +201,9 @@ class UserGenerator(context.Context):
             for tenant_id in self.context["tenants"]:
                 for user_id in range(users_per_tenant):
                     username = self.generate_random_name()
-                    password = str(uuid.uuid4())
+                    password = (str(uuid.uuid4())
+                                if self.config.get("user_password") is None
+                                else self.config["user_password"])
                     args = (username, password, self.config["project_domain"],
                             self.config["user_domain"], tenant_id)
                     queue.append(args)

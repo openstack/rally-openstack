@@ -363,6 +363,20 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
             self.assertIn("credential", user)
 
     @mock.patch("%s.identity" % CTX)
+    def test__create_users_user_password(self, mock_identity):
+        self.context["config"]["users"]["users_per_tenant"] = 2
+        self.context["config"]["users"]["user_password"] = "TrustMe"
+        user_generator = users.UserGenerator(self.context)
+        user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
+                                             "t2": {"id": "t2", "name": "t2"}}
+        users_ = user_generator._create_users()
+        self.assertEqual(4, len(users_))
+        for user in users_:
+            self.assertIn("id", user)
+            self.assertIn("credential", user)
+            self.assertEqual("TrustMe", user["credential"]["password"])
+
+    @mock.patch("%s.identity" % CTX)
     def test__delete_tenants(self, mock_identity):
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
