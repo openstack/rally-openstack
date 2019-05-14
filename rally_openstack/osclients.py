@@ -16,7 +16,6 @@
 import abc
 import os
 
-from rally.cli import envutils
 from rally.common import cfg
 from rally.common import logging
 from rally.common.plugin import plugin
@@ -49,14 +48,15 @@ class AuthenticationFailed(exceptions.AuthenticationFailed):
 
         from keystoneauth1 import exceptions as ks_exc
 
-        if isinstance(error, ks_exc.ConnectionError):
+        if isinstance(error, (ks_exc.ConnectionError,
+                              ks_exc.DiscoveryFailure)):
             # this type of errors is general for all users no need to include
             # username, project name. The original error message should be
             # self-sufficient
             self.msg_fmt = self.msg_fmt_2
             message = error.message
-            if message.startswith("Unable to establish connection to"):
-                # this message contains too much info.
+            if (message.startswith("Unable to establish connection to") or
+                    isinstance(error, ks_exc.DiscoveryFailure)):
                 if "Max retries exceeded with url" in message:
                     if "HTTPConnectionPool" in message:
                         splitter = ": HTTPConnectionPool"
@@ -900,17 +900,23 @@ class Clients(object):
 
     @classmethod
     def create_from_env(cls):
-        creds = envutils.get_creds_from_env_vars()
         from rally_openstack import credential
+        from rally_openstack.platforms import existing
+
+        spec = existing.OpenStack.create_spec_from_sys_environ(os.environ)
+        if not spec["available"]:
+            raise ValueError(spec["message"])
+
+        creds = spec["spec"]
         oscred = credential.OpenStackCredential(
             auth_url=creds["auth_url"],
             username=creds["admin"]["username"],
             password=creds["admin"]["password"],
-            tenant_name=creds["admin"]["tenant_name"],
+            tenant_name=creds["admin"].get(
+                "tenant_name", creds["admin"].get("project_name")),
             endpoint_type=creds["endpoint_type"],
             user_domain_name=creds["admin"].get("user_domain_name"),
             project_domain_name=creds["admin"].get("project_domain_name"),
-            endpoint=creds["endpoint"],
             region_name=creds["region_name"],
             https_cacert=creds["https_cacert"],
             https_insecure=creds["https_insecure"])
