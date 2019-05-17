@@ -58,7 +58,15 @@ class BarbicanService(service.Service):
 
         :param secret_name: The name of the secret.
         """
-        return self._clients.barbican().secrets.get(secret_ref)
+        secret = self._clients.barbican().secrets.get(secret_ref)
+        # secret is lazy, its properties would be filled with real
+        # values while getting some property.
+        try:
+            secret.status
+        except Exception as e:
+            from rally import exceptions
+            raise exceptions.GetResourceFailure(resource=secret, err=e)
+        return secret
 
     @atomic.action_timer("barbican.delete_secret")
     def delete_secret(self, secret_name):
