@@ -14,7 +14,8 @@
 #    under the License.
 
 import re
-import unittest
+
+import testtools
 
 from tests.functional import utils
 
@@ -27,7 +28,7 @@ TEST_ENV = {
 }
 
 
-class DeploymentTestCase(unittest.TestCase):
+class DeploymentTestCase(testtools.TestCase):
 
     def test_create_fromenv_list_show(self):
         # NOTE(andreykurilin): `rally deployment create --fromenv` is
@@ -80,18 +81,12 @@ class DeploymentTestCase(unittest.TestCase):
               "--filename %s" % file.filename)
         self.assertIn("t_create_file_debug", rally("deployment list"))
         self.assertEqual(config, rally("deployment config", getjson=True))
-        self.assertRaises(utils.RallyCliError, rally, "deployment check")
-
-        try:
-            rally("--debug deployment check")
-        except utils.RallyCliError as e:
-            self.assertIn(
-                "AuthenticationFailed: Unable to establish connection to "
-                "%s" % TEST_ENV["OS_AUTH_URL"],
-                str(e))
-        else:
-            self.fail("rally deployment fails to raise error for wrong"
-                      " authentication info")
+        e = self.assertRaises(utils.RallyCliError, rally,
+                              "--debug deployment check")
+        self.assertIn(
+            "AuthenticationFailed: Could not find versioned identity "
+            "endpoints when attempting to authenticate.",
+            e.output)
 
     def test_use(self):
         rally = utils.Rally()

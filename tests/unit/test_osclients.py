@@ -1063,3 +1063,44 @@ class OSClientsTestCase(test.TestCase):
             }
             mock_barbican.client.Client.assert_called_once_with(**kw)
             self.assertEqual(fake_barbican, self.clients.cache["barbican"])
+
+
+class AuthenticationFailedTestCase(test.TestCase):
+    def test_init(self):
+        from keystoneauth1 import exceptions as ks_exc
+
+        actual_exc = ks_exc.ConnectionError("Something")
+        exc = osclients.AuthenticationFailed(
+            error=actual_exc, url="https://example.com", username="user",
+            project="project")
+        # only original exc should be used
+        self.assertEqual("Something", exc.format_message())
+
+        actual_exc = Exception("Something")
+        exc = osclients.AuthenticationFailed(
+            error=actual_exc, url="https://example.com", username="user",
+            project="project")
+        # additional info should be added
+        self.assertEqual("Failed to authenticate to https://example.com for "
+                         "user 'user' in project 'project': "
+                         "[Exception] Something", exc.format_message())
+
+        # check cutting message
+        actual_exc = ks_exc.DiscoveryFailure(
+            "Could not find versioned identity endpoints when attempting to "
+            "authenticate. Please check that your auth_url is correct. "
+            "Unable to establish connection to https://example.com: "
+            "HTTPConnectionPool(host='example.com', port=80): Max retries "
+            "exceeded with url: / (Caused by NewConnectionError('"
+            "<urllib3.connection.HTTPConnection object at 0x7f32ab9809d0>: "
+            "Failed to establish a new connection: [Errno -2] Name or service"
+            " not known',))")
+        exc = osclients.AuthenticationFailed(
+            error=actual_exc, url="https://example.com", username="user",
+            project="project")
+        # original message should be simplified
+        self.assertEqual(
+            "Could not find versioned identity endpoints when attempting to "
+            "authenticate. Please check that your auth_url is correct. "
+            "Unable to establish connection to https://example.com",
+            exc.format_message())
