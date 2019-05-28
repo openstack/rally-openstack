@@ -16,22 +16,48 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-Unreleased
-----------
+[1.5.0] - 2019-05-28
+--------------------
+
+Added
+~~~~~
+
+* libpq-dev dependency to docker image for supporting external PostgreSQL
+  backend
+
+* Extend configuration of identity section for tempest with endpoint type
+
+* A new option *user_password* is added to users context for specifying certain
+  password for new users.
 
 Changed
 ~~~~~~~
 
-* A new unversioned service type **block-storage** is used as a default for
-  Cinder service. To use another service type, use ``api_versions@openstack``
-  context or ``api_info`` property of environment configuration.
+* Default Cinder service type is switched to **block-storage** as it is
+  new unversioned endpoint. ``api_versions@openstack`` context or ``api_info``
+  property of environment configuration should be used for selecting another
+  service type.
+
+* Rally 1.5.1 is used by default. Minimum required version is not changed.
+
+* Default source of tempest is switched from git.openstack.org to
+  git.opendev.org due to recent infrastructure changes.
 
 Fixed
 ~~~~~~~
 
-* Close bug LP #1819284. Because secret class is lazy in barbican client,
-  secret would really access the api to get secret properties while calling
-  some property.
+* For performance optimization some calls from python-barbicanclient to
+  Barbican API are lazy. In case of secret representation, until any property
+  is invoked on it, no real call to API is made which affects timings of
+  obtaining the resource and slows down cleanup process.
+
+  `Launchpad-bug #1819284 <https://launchpad.net/bugs/1819284>`_
+
+* Tempest configurator was case sensitive while filtering roles by name.
+
+* python 3 incompatibility while uploading glance images
+
+  `Launchpad-bug #1819274 <https://launchpad.net/bugs/1819274>`_
 
 [1.4.0] - 2019-03-07
 --------------------

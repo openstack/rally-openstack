@@ -42,7 +42,12 @@ class WorkaroundTestCase(test.TestCase):
         ([1, 2], [
             "'existing@openstack' platform puts 'traceback' in check method "
             "in case of native keystone errors. It is redundant. "
-            "See https://review.openstack.org/597197"
+            "See https://review.opendev.org/597197"
+        ]),
+        ([1, 5], [
+            "New chart classes exist anyway at Rally side, so no need for "
+            "backward compatibility layer at rally_openstack.embecharts. "
+            "See https://review.opendev.org/#/c/653500/"
         ])
     ]
 
