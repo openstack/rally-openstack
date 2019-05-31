@@ -426,6 +426,45 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
         scenario._update_port.assert_has_calls(
             [mock.call(p, port_update_args) for p in ports])
 
+    def test_create_and_bind_ports(self):
+        ports_per_network = 2
+        ports = [mock.Mock() for _ in range(ports_per_network)]
+        port_update_args = {
+            "device_owner": "compute:nova",
+            "device_id": "ba805478-85ff-11e9-a2e4-2b8dea218fc8",
+            "binding:host_id": "fake-host",
+        }
+
+        context = {
+            "tenant": {"id": "fake-tenant-id"},
+            "tenants": {
+                "fake-tenant-id": {
+                    "networks": [
+                        mock.Mock()
+                    ],
+                },
+            },
+            "networking_agents": [{
+                "host": "fake-host",
+                "alive": True,
+                "admin_state_up": True,
+                "agent_type": "Open vSwitch agent",
+            }],
+        }
+        scenario = network.CreateAndBindPorts(context)
+
+        scenario._create_network = mock.Mock()
+        scenario._create_subnet = mock.Mock()
+        scenario._create_port = mock.Mock(
+            side_effect=ports)
+        scenario._update_port = mock.Mock()
+
+        scenario.run(
+            ports_per_network=ports_per_network)
+
+        scenario._update_port.assert_has_calls(
+            [mock.call(p, port_update_args=port_update_args) for p in ports])
+
     def test_create_and_show_ports_positive(self):
         port_create_args = {"allocation_pools": []}
         ports_per_network = 1
