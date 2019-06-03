@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import tempfile
-
 import ddt
 import fixtures
 import mock
@@ -29,8 +27,6 @@ PATH = ("rally_openstack.services.image.glance_common."
 
 @ddt.ddt
 class GlanceV1ServiceTestCase(test.TestCase):
-    _tempfile = tempfile.NamedTemporaryFile()
-
     def setUp(self):
         super(GlanceV1ServiceTestCase, self).setUp()
         self.clients = mock.MagicMock()
@@ -42,15 +38,23 @@ class GlanceV1ServiceTestCase(test.TestCase):
             "rally.task.utils.wait_for_status")
         self.useFixture(self.mock_wait_for_status)
 
-    @ddt.data({"location": "image_location", "is_public": True},
-              {"location": _tempfile.name, "is_public": False})
+    def _get_temp_file_name(self):
+        # return a temp file that will be cleaned automatically
+        temp_dir = self.useFixture(fixtures.TempDir())
+        return temp_dir.join("temp-file-name")
+
+    @ddt.data({"location": "image_location", "is_public": True, "temp": False},
+              {"location": "image_location", "is_public": False, "temp": True})
     @ddt.unpack
-    @mock.patch("six.moves.builtins.open")
-    def test_create_image(self, mock_open, location, is_public):
+    def test_create_image(self, location, is_public, temp):
         image_name = "image_name"
         container_format = "container_format"
         disk_format = "disk_format"
         properties = {"fakeprop": "fake"}
+
+        # override the location with a private temp file
+        if temp:
+            location = self._get_temp_file_name()
 
         image = self.service.create_image(
             image_name=image_name,
@@ -66,14 +70,8 @@ class GlanceV1ServiceTestCase(test.TestCase):
                      "name": image_name,
                      "min_disk": 0,
                      "min_ram": 0,
-                     "properties": properties}
-
-        if location.startswith("/"):
-            call_args["data"] = mock_open.return_value
-            mock_open.assert_called_once_with(location, "rb")
-            mock_open.return_value.close.assert_called_once_with()
-        else:
-            call_args["copy_from"] = location
+                     "properties": properties,
+                     "copy_from": location}
 
         self.gc.images.create.assert_called_once_with(**call_args)
         self.assertEqual(image, self.mock_wait_for_status.mock.return_value)

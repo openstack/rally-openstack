@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import tempfile
-
 import ddt
 import fixtures
 import mock
@@ -27,8 +25,6 @@ PATH = "rally_openstack.services.image"
 
 @ddt.ddt
 class GlanceV2ServiceTestCase(test.TestCase):
-    _tempfile = tempfile.NamedTemporaryFile()
-
     def setUp(self):
         super(GlanceV2ServiceTestCase, self).setUp()
         self.clients = mock.MagicMock()
@@ -40,25 +36,27 @@ class GlanceV2ServiceTestCase(test.TestCase):
             "rally.task.utils.wait_for_status")
         self.useFixture(self.mock_wait_for_status)
 
-    @ddt.data({"location": "image_location"},
-              {"location": _tempfile.name})
+    def _get_temp_file_name(self):
+        # return a temp file that will be cleaned automatically
+        temp_dir = self.useFixture(fixtures.TempDir())
+        return temp_dir.join("temp-file-name")
+
+    @ddt.data({"location": "image_location", "temp": False},
+              {"location": "image location", "temp": True})
     @ddt.unpack
     @mock.patch("requests.get")
-    @mock.patch("six.moves.builtins.open")
-    def test_upload(self, mock_open, mock_requests_get, location):
+    def test_upload(self, mock_requests_get, location, temp):
         image_id = "foo"
+
+        # override the location with a private temp file
+        if temp:
+            location = self._get_temp_file_name()
 
         self.service.upload_data(image_id, image_location=location)
 
-        if location.startswith("/"):
-            mock_open.assert_called_once_with(location, "rb")
-            mock_open.return_value.close.assert_called_once_with()
-            self.gc.images.upload.assert_called_once_with(
-                image_id, mock_open.return_value)
-        else:
-            mock_requests_get.assert_called_once_with(location, stream=True)
-            self.gc.images.upload.assert_called_once_with(
-                image_id, mock_requests_get.return_value.raw)
+        mock_requests_get.assert_called_once_with(location, stream=True)
+        self.gc.images.upload.assert_called_once_with(
+            image_id, mock_requests_get.return_value.raw)
 
     @mock.patch("%s.glance_v2.GlanceV2Service.upload_data" % PATH)
     def test_create_image(self, mock_upload_data):
