@@ -278,9 +278,6 @@ class NeutronWrapperTestCase(test.TestCase):
              "lb_pools": []})
 
         self.assertEqual("foo_deleted", result)
-        self.assertEqual(
-            service.client.remove_network_from_dhcp_agent.mock_calls,
-            [mock.call(agent_id, "foo_id") for agent_id in agents])
         self.assertEqual(service.client.remove_gateway_router.mock_calls,
                          [mock.call("foo_router")])
         service.client.delete_port.assert_called_once_with(ports[1]["id"])
@@ -289,9 +286,6 @@ class NeutronWrapperTestCase(test.TestCase):
         self.assertEqual(service.client.delete_subnet.mock_calls,
                          [mock.call(subnet_id) for subnet_id in subnets])
         service.client.delete_network.assert_called_once_with("foo_id")
-
-        mock_neutron_wrapper_supports_extension.assert_called_once_with(
-            "dhcp_agent_scheduler")
 
     @ddt.data({"exception_type": neutron_exceptions.NotFound,
                "should_raise": False},
@@ -344,13 +338,8 @@ class NeutronWrapperTestCase(test.TestCase):
                              [mock.call(subnet_id) for subnet_id in subnets])
             service.client.delete_network.assert_called_once_with("foo_id")
 
-        self.assertEqual(
-            service.client.remove_network_from_dhcp_agent.mock_calls,
-            [mock.call(agent_id, "foo_id") for agent_id in agents])
         self.assertEqual(service.client.remove_gateway_router.mock_calls,
                          [mock.call("foo_router")])
-        mock_neutron_wrapper_supports_extension.assert_called_once_with(
-            "dhcp_agent_scheduler")
 
     def test_list_networks(self):
         service = self.get_wrapper()
