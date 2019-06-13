@@ -1,0 +1,31 @@
+- job:
+    name: rally-task-octavia
+    description: A Rally job for checking Octavia Plugin
+    parent: rally-task-at-devstack
+    required-projects:
+      - name: openstack/devstack-gate
+      - name: openstack/diskimage-builder
+      - name: openstack/octavia
+      - name: openstack/octavia-lib
+      - name: openstack/python-octaviaclient
+      - name: openstack/barbican
+      - name: openstack/python-barbicanclient
+    vars:
+      devstack_plugins:
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        octavia: https://opendev.org/openstack/octavia
+        neutron: https://opendev.org/openstack/neutron
+        barbican: https://opendev.org/openstack/barbican
+      devstack_services:
+        nova: true
+        glance: true
+        placement: true
+        octavia: true
+        barvican: true
+        o-api: true
+        o-cw: true
+        o-hk: true
+        o-hm: true
+        o-da: true
+
+      rally_task: rally-jobs/octavia.yaml

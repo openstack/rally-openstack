@@ -34,8 +34,7 @@
             voting: false
         - rally-task-ironic
         - rally-task-keystone-glance-swift
-        - rally-task-load-balancing:
-            voting: false
+        - rally-task-octavia
         - rally-task-magnum:
             voting: false
             files:
@@ -86,6 +85,7 @@
         #- rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift
+        - rally-task-octavia
         - rally-task-mistral
         - rally-task-murano
         - rally-task-neutron
