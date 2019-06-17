@@ -47,9 +47,9 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _get_network_id(self, network, **kwargs):
         """Get Neutron network ID for the network name.
 
-        param network: str, network name/id
-        param kwargs: dict, network options
-        returns: str, Neutron network-id
+        :param network: str, network name/id
+        :param kwargs: dict, network options
+        :returns: str, Neutron network-id
         """
         networks = self._list_networks()
         for net in networks:
@@ -162,8 +162,8 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _show_subnet(self, subnet, **kwargs):
         """show subnet details.
 
-        :param: subnet: Subnet object
-        :param: kwargs: Optional additional arguments for subnet show
+        :param subnet: Subnet object
+        :param kwargs: Optional additional arguments for subnet show
         :returns: details of the subnet
         """
         return self.clients("neutron").show_subnet(subnet["subnet"]["id"],
@@ -537,9 +537,9 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _create_floatingip(self, floating_network, **floating_ip_args):
         """Create floating IP with floating_network.
 
-        param: floating_network: str, external network to create floating IP
-        param: floating_ip_args: dict, POST /floatingips create options
-        returns: dict, neutron floating IP
+        :param floating_network: str, external network to create floating IP
+        :param floating_ip_args: dict, POST /floatingips create options
+        :returns: dict, neutron floating IP
         """
         from neutronclient.common import exceptions as ne
         floating_network_id = self._get_network_id(
@@ -570,7 +570,7 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _delete_floating_ip(self, floating_ip):
         """Delete floating IP.
 
-        :param: dict, floating IP object
+        :param dict, floating IP object
         """
         return self.clients("neutron").delete_floatingip(floating_ip["id"])
 
@@ -652,9 +652,9 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _create_security_group(self, **security_group_create_args):
         """Create Neutron security-group.
 
-        param: security_group_create_args: dict, POST /v2.0/security-groups
+        :param security_group_create_args: dict, POST /v2.0/security-groups
                                           request options
-        return: dict, neutron security-group
+        :returns: dict, neutron security-group
         """
         security_group_create_args["name"] = self.generate_random_name()
         return self.clients("neutron").create_security_group(
@@ -664,7 +664,7 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _delete_security_group(self, security_group):
         """Delete Neutron security group.
 
-        param: security_group: dict, neutron security_group
+        :param security_group: dict, neutron security_group
         """
         return self.clients("neutron").delete_security_group(
             security_group["security_group"]["id"])
@@ -678,8 +678,8 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _show_security_group(self, security_group, **kwargs):
         """Show security group details.
 
-        :param: security_group: dict, neutron security_group
-        :param: kwargs: Optional additional arguments for security_group show
+        :param security_group: dict, neutron security_group
+        :param kwargs: Optional additional arguments for security_group show
         :returns: security_group details
         """
         return self.clients("neutron").show_security_group(
@@ -690,10 +690,10 @@ class NeutronScenario(scenario.OpenStackScenario):
                                **security_group_update_args):
         """Update Neutron security-group.
 
-        param: security_group: dict, neutron security_group
-        param: security_group_update_args: dict, POST /v2.0/security-groups
+        :param security_group: dict, neutron security_group
+        :param security_group_update_args: dict, POST /v2.0/security-groups
                                            update options
-        return: dict, updated neutron security-group
+        :returns: dict, updated neutron security-group
         """
         security_group_update_args["name"] = self.generate_random_name()
         body = {"security_group": security_group_update_args}
@@ -862,10 +862,10 @@ class NeutronScenario(scenario.OpenStackScenario):
                                     **security_group_rule_args):
         """Create Neutron security-group-rule.
 
-        param: security_group_id: id of neutron security_group
-        param: security_group_rule_args: dict, POST
-               /v2.0/security-group-rules request options
-        return: dict, neutron security-group-rule
+        :param security_group_id: id of neutron security_group
+        :param security_group_rule_args: dict, POST
+              /v2.0/security-group-rules request options
+        :returns: dict, neutron security-group-rule
         """
         security_group_rule_args["security_group_id"] = security_group_id
         if "direction" not in security_group_rule_args:
