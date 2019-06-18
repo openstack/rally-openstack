@@ -134,12 +134,15 @@ class Step(object):
                                              stderr=subprocess.STDOUT).decode()
         except subprocess.CalledProcessError as e:
             LOG.error("Command `%s` failed." % command)
-            return Status.ERROR, e.output
+            return Status.ERROR, e.output.decode()
         else:
             return Status.PASS, stdout
 
     def to_html(self):
-        return self.HTML_TEMPLATE % self.result
+        if self.result["status"] == Status.SKIPPED:
+            return ""
+        else:
+            return self.HTML_TEMPLATE % self.result
 
 
 class SetUpStep(Step):
@@ -386,6 +389,7 @@ class ReportVerificationMixin(Step):
         self.CALL_ARGS["uuids"] = " ".join(
             [v["uuid"] for v in self.rapi.verification.list()])
         print(self.COMMAND % self.CALL_ARGS)
+        self.result["out"] = "<None>"
 
     def run(self):
         super(ReportVerificationMixin, self).run()
