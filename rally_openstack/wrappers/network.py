@@ -282,12 +282,6 @@ class NeutronWrapper(NetworkWrapper):
         self.client.delete_pool(pool_id)
 
     def delete_network(self, network):
-        if self.supports_extension("dhcp_agent_scheduler")[0]:
-            net_dhcps = self.client.list_dhcp_agent_hosting_networks(
-                network["id"])["agents"]
-            for net_dhcp in net_dhcps:
-                self.client.remove_network_from_dhcp_agent(net_dhcp["id"],
-                                                           network["id"])
 
         if network["router_id"]:
             self.client.remove_gateway_router(network["router_id"])
