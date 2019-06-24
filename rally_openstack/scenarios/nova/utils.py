@@ -76,6 +76,12 @@ class NovaScenario(scenario.OpenStackScenario):
             if nic:
                 kwargs["nics"] = nic
 
+        if "nics" not in kwargs and\
+                "tenant" in self.context and\
+                "networks" in self.context["tenant"]:
+            kwargs["nics"] = [
+                {"net-id": self.context["tenant"]["networks"][0]["id"]}]
+
         server = self.clients("nova").servers.create(
             server_name, image, flavor, **kwargs)
 
