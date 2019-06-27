@@ -203,6 +203,7 @@ class LoadBalancerServiceTestCase(test.TestCase):
                 json={"pool": {
                     "lb_algorithm": "ROUND_ROBIN",
                     "protocol": "HTTP",
+                    "listener_id": None,
                     "description": None,
                     "admin_state_up": True,
                     "session_persistence": None,

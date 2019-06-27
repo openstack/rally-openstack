@@ -207,13 +207,14 @@ class Octavia(service.Service):
 
     @atomic.action_timer("octavia.pool_create")
     def pool_create(self, lb_id, protocol, lb_algorithm,
-                    description=None, admin_state_up=True,
-                    session_persistence=None):
+                    listener_id=None, description=None,
+                    admin_state_up=True, session_persistence=None):
         """Create a pool
 
         :param lb_id: ID of the loadbalancer
         :param protocol: protocol of the resource
         :param lb_algorithm: loadbalancing algorithm of the pool
+        :param listener_id: ID of the listener
         :param description: a human readable description of the pool
         :param admin_state_up: administrative state of the resource
         :param session_persistence: a json object specifiying the session
@@ -226,6 +227,7 @@ class Octavia(service.Service):
             "loadbalancer_id": lb_id,
             "protocol": protocol,
             "lb_algorithm": lb_algorithm,
+            "listener_id": listener_id,
             "description": description,
             "admin_state_up": admin_state_up,
             "session_persistence": session_persistence
