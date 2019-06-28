@@ -5,6 +5,6 @@
     executable: /bin/sh
     cmd: |
       set -e
-      cd {{ zuul.project.src_dir }}
+      cd /opt/stack/rally-openstack
       export REQUESTS_CA_BUNDLE=/opt/stack/data/ca-bundle.pem
       tox -e {{ rally_tox_env }}
