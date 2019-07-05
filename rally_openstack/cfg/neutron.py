@@ -28,5 +28,12 @@ OPTS = {"openstack": [
                 default=False,
                 help="Whether Neutron API is older then OpenStack Newton or "
                      "not. Based in this option, some external fields for "
-                     "identifying resources can be applied.")
+                     "identifying resources can be applied."),
+    cfg.ListOpt("neutron_bind_l2_agent_types",
+                # default to agent types used in gate jobs
+                default=[
+                    "Open vSwitch agent",
+                    "Linux bridge agent",
+                ],
+                help="Neutron L2 agent types to find hosts to bind"),
 ]}

@@ -13,11 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally.common import cfg
+from rally.common import logging
 from rally.task import validation
 
 from rally_openstack import consts
 from rally_openstack import scenario
 from rally_openstack.scenarios.neutron import utils
+
+
+LOG = logging.getLogger(__name__)
 
 
 """Scenarios for Neutron."""
@@ -508,6 +513,75 @@ class CreateAndDeletePorts(utils.NeutronScenario):
             for i in range(ports_per_network):
                 port = self._create_port(network, port_create_args)
                 self._delete_port(port)
+
+
+@validation.add("number", param_name="ports_per_network", minval=1,
+                integer_only=True)
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_contexts", contexts=["network", "networking_agents"])
+@validation.add("required_platform", platform="openstack",
+                users=True, admin=True)
+@scenario.configure(context={"cleanup@openstack": ["neutron"],
+                             "networking_agents": {},
+                             "network": {}},
+                    name="NeutronNetworks.create_and_bind_ports",
+                    platform="openstack")
+class CreateAndBindPorts(utils.NeutronScenario):
+
+    def run(self, ports_per_network=1):
+        """Bind a given number of ports.
+
+        Measure the performance of port binding and all of its pre-requisites:
+        * openstack network create
+        * openstack subnet create --ip-version 4
+        * openstack subnet create --ip-version 6
+        * openstack port create
+        * openstack port update (binding)
+
+        :param ports_per_network: int, number of ports for one network
+        """
+
+        # NOTE(bence romsics): Find a host where we can expect to bind
+        # successfully. Look at agent types used in the gate.
+        host_to_bind = None
+        for agent in self.context["networking_agents"]:
+            if (agent["admin_state_up"] and
+                    agent["alive"] and
+                    agent["agent_type"] in
+                    cfg.CONF.openstack.neutron_bind_l2_agent_types):
+                host_to_bind = agent["host"]
+        if host_to_bind is None:
+            raise Exception(
+                "No live agent of type(s) to bind was found: %s" %
+                ", ".join(cfg.CONF.openstack.neutron_bind_l2_agent_types))
+
+        tenant_id = self.context["tenant"]["id"]
+        for network in self.context["tenants"][tenant_id]["networks"]:
+            wrapped_network = {"network": network}
+
+            self._create_subnet(
+                wrapped_network,
+                start_cidr="10.2.0.0/24",
+                subnet_create_args={},
+            )
+            self._create_subnet(
+                wrapped_network,
+                start_cidr="2001:db8:1:1::/64",
+                subnet_create_args={},
+            )
+
+            for i in range(ports_per_network):
+                port = self._create_port(wrapped_network, port_create_args={})
+                # port bind needs admin role
+                self._update_port(
+                    port,
+                    port_update_args={
+                        "device_owner": "compute:nova",
+                        "device_id": "ba805478-85ff-11e9-a2e4-2b8dea218fc8",
+                        "binding:host_id": host_to_bind,
+                    },
+                )
 
 
 @validation.add("required_services",

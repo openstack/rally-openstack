@@ -1,0 +1,25 @@
+---
+  NeutronNetworks.create_and_bind_ports:
+    -
+      args:
+        ports_per_network: 2
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 5
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 3
+        roles:
+          - admin
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+        network: {}
+        networking_agents: {}
+      sla:
+        failure_rate:
+          max: 0

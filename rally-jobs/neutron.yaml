@@ -642,6 +642,31 @@
         failure_rate:
           max: 20
 
+  NeutronNetworks.create_and_bind_ports:
+    -
+      args:
+        ports_per_network: 5
+      runner:
+        type: "constant"
+        times: {{smoke or 10}}
+        concurrency: {{smoke or 5}}
+      context:
+        users:
+          tenants: {{smoke or 2}}
+          users_per_tenant: {{smoke or 1}}
+        roles:
+          - admin
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1
+            port: -1
+        network: {}
+        networking_agents: {}
+      sla:
+        failure_rate:
+          max: 0
+
   NeutronSubnets.delete_subnets:
     -
       runner:
