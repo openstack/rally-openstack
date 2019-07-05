@@ -50,7 +50,6 @@ config:
     features: [cinder-mn-grenade-sub-bak]
   neutron_dvr:
     features: [neutron-dvr]
-
 branches:
   # The value of ""default" is the name of the "trunk" branch
   default: master
