@@ -21,7 +21,6 @@ from rally_openstack.cleanup import base
 from rally_openstack.services.identity import identity
 from rally_openstack.services.image import glance_v2
 from rally_openstack.services.image import image
-from rally_openstack.services.loadbalancer import octavia
 
 
 CONF = cfg.CONF
@@ -264,13 +263,16 @@ class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
         delete_method = getattr(self._manager(), "delete_%s" % self._resource)
         delete_method(self.id())
 
-    def list(self):
+    @property
+    def _plural_key(self):
         if self._resource.endswith("y"):
-            resources = self._resource[:-1] + "ies"
+            return self._resource[:-1] + "ies"
         else:
-            resources = self._resource + "s"
-        list_method = getattr(self._manager(), "list_%s" % resources)
-        result = list_method(tenant_id=self.tenant_uuid)[resources]
+            return self._resource + "s"
+
+    def list(self):
+        list_method = getattr(self._manager(), "list_%s" % self._plural_key)
+        result = list_method(tenant_id=self.tenant_uuid)[self._plural_key]
         if self.tenant_uuid:
             result = [r for r in result if r["tenant_id"] == self.tenant_uuid]
 
@@ -326,38 +328,84 @@ class NeutronV2Loadbalancer(NeutronLbaasV2Mixin):
 # OCTAVIA
 
 
-@base.resource("octavia", "loadbalancer", order=next(_neutron_order),
-               tenant_resource=True)
-class OctaviaMixIn(base.ResourceManager):
+class OctaviaMixIn(NeutronMixin):
 
+    @property
     def _client(self):
-        return octavia.Octavia(self.admin or self.user)
-
-    def id(self):
-        return self.raw_resource["id"]
-
-    def name(self):
-        return self.raw_resource["name"]
+        # TODO(andreykurilin): use proper helper class from
+        #     rally_openstack.services as soon as it will have unified style
+        #     of arguments across all methods
+        client = self.admin or self.user
+        return getattr(client, self._service)()
 
     def delete(self):
-        return self._client().load_balancer_delete(
-            self.id(), cascade=True)
+        from octaviaclient.api.v2 import octavia as octavia_exc
+
+        delete_method = getattr(self._client, "%s_delete" % self._resource)
+        try:
+            return delete_method(self.id())
+        except octavia_exc.OctaviaClientException as e:
+            if e.code == 409 and "Invalid state PENDING_DELETE" in e.message:
+                # NOTE(andreykurilin): it is not ok. Probably this resource
+                #    is not properly cleanup-ed (without wait-for loop)
+                #    during the workload. No need to fail, continue silently.
+                return
+            raise
 
     def is_deleted(self):
-        try:
-            self._client().load_balancer_show(self.id())
-        except Exception:
-            return True
+        from osc_lib import exceptions as osc_exc
 
+        show_method = getattr(self._client, "%s_show" % self._resource)
+        try:
+            show_method(self.id())
+        except osc_exc.NotFound:
+            return True
         return False
 
     def list(self):
-        return self._client().load_balancer_list()["loadbalancers"]
+        list_method = getattr(self._client, "%s_list" % self._resource)
+        return list_method()[self._plural_key.replace("_", "")]
 
 
-@base.resource("octavia", "pools", order=next(_neutron_order),
+@base.resource("octavia", "load_balancer", order=next(_neutron_order),
+               tenant_resource=True)
+class OctaviaLoadBalancers(OctaviaMixIn):
+    def delete(self):
+        from octaviaclient.api.v2 import octavia as octavia_exc
+
+        delete_method = getattr(self._client, "load_balancer_delete")
+        try:
+            return delete_method(self.id(), cascade=True)
+        except octavia_exc.OctaviaClientException as e:
+            if e.code == 409 and "Invalid state PENDING_DELETE" in e.message:
+                # NOTE(andreykurilin): it is not ok. Probably this resource
+                #    is not properly cleanup-ed (without wait-for loop)
+                #    during the workload. No need to fail, continue silently.
+                return
+            raise
+
+
+@base.resource("octavia", "pool", order=next(_neutron_order),
                tenant_resource=True)
 class OctaviaPools(OctaviaMixIn):
+    pass
+
+
+@base.resource("octavia", "listener", order=next(_neutron_order),
+               tenant_resource=True)
+class OctaviaListeners(OctaviaMixIn):
+    pass
+
+
+@base.resource("octavia", "l7policy", order=next(_neutron_order),
+               tenant_resource=True)
+class OctaviaL7Policies(OctaviaMixIn):
+    pass
+
+
+@base.resource("octavia", "health_monitor", order=next(_neutron_order),
+               tenant_resource=True)
+class OctaviaHealthMonitors(OctaviaMixIn):
     pass
 
 
