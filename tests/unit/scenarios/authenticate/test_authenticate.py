@@ -77,6 +77,14 @@ class AuthenticateTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
                                        "authenticate.validate_neutron")
 
+    def test_validate_octavia(self):
+        scenario_inst = authenticate.ValidateOctavia()
+        scenario_inst.run(5)
+        self.clients("octavia").load_balancer_list.assert_has_calls(
+            [mock.call()] * 5)
+        self._test_atomic_action_timer(scenario_inst.atomic_actions(),
+                                       "authenticate.validate_octavia")
+
     def test_validate_heat(self):
         scenario_inst = authenticate.ValidateHeat()
         scenario_inst.run(5)

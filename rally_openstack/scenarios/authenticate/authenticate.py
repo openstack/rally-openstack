@@ -133,6 +133,25 @@ class ValidateNeutron(scenario.OpenStackScenario):
 
 @validation.add("number", param_name="repetitions", minval=1)
 @validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(name="Authenticate.validate_octavia", platform="openstack")
+class ValidateOctavia(scenario.OpenStackScenario):
+
+    def run(self, repetitions):
+        """Check Octavia Client to ensure validation of token.
+
+        Creation of the client does not ensure validation of the token.
+        We have to do some minimal operation to make sure token gets validated.
+
+        :param repetitions: number of times to validate
+        """
+        octavia_client = self.clients("octavia")
+        with atomic.ActionTimer(self, "authenticate.validate_octavia"):
+            for i in range(repetitions):
+                octavia_client.load_balancer_list()
+
+
+@validation.add("number", param_name="repetitions", minval=1)
+@validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(name="Authenticate.validate_heat", platform="openstack")
 class ValidateHeat(scenario.OpenStackScenario):
 
