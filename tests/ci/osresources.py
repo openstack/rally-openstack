@@ -218,6 +218,10 @@ class Neutron(ResourceManager):
     def list_security_groups(self):
         return self.client.list_security_groups()["security_groups"]
 
+    def list_trunks(self):
+        if self.has_extension("trunks"):
+            return self.client.list_trunks()["trunks"]
+
     def list_health_monitors(self):
         if self.has_extension("lbaas"):
             return self.client.list_health_monitors()["health_monitors"]
@@ -455,6 +459,29 @@ class Watcher(ResourceManager):
 
     def list_action_plans(self):
         return self.client.action_plan.list()
+
+
+class Octavia(ResourceManager):
+
+    REQUIRED_SERVICE = consts.Service.OCTAVIA
+
+    def list_load_balancers(self):
+        return self.client.load_balancer_list()["loadbalancers"]
+
+    def list_listeners(self):
+        return self.client.listener_list()["listeners"]
+
+    def list_pools(self):
+        return self.client.pool_list()["pools"]
+
+    def list_l7policies(self):
+        return self.client.l7policy_list()["l7policies"]
+
+    def list_health_monitors(self):
+        return self.client.health_monitor_list()["healthmonitors"]
+
+    def list_amphoras(self):
+        return self.client.amphora_list()["amphorae"]
 
 
 class CloudResources(object):
