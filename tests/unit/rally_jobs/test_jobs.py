@@ -23,11 +23,10 @@ from rally.common.plugin import discover
 from rally.common import yamlutils as yaml
 from rally.task import engine
 from rally.task import task_cfg
-from tests.unit import fakes
-from tests.unit import test
-
 
 import rally_openstack
+from tests.unit import fakes
+from tests.unit import test
 
 
 class RallyJobsTestCase(test.TestCase):

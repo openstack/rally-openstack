@@ -12,18 +12,18 @@
 - project:
     check:
       jobs:
+        - rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
-        - rally-tox-cover
         - rally-dsvm-tox-functional
         - rally-docker-check
-        - rally-task-simple-job
         - rally-task-basic-with-existing-users:
             # use_existing_users key did not trigger proper ansible tasks
             voting: false
+        - rally-task-simple-job
         - rally-task-barbican:
             voting: false
         - rally-task-cinder
@@ -34,7 +34,6 @@
             voting: false
         - rally-task-ironic
         - rally-task-keystone-glance-swift
-        - rally-task-octavia
         - rally-task-magnum:
             voting: false
             files:
@@ -64,6 +63,7 @@
             voting: false
         # it did not work for a long time
         #- rally-task-senlin
+        - rally-task-octavia
         - rally-task-telemetry
         - rally-task-watcher:
             # watcher-api did not start last time
@@ -72,12 +72,12 @@
         - rally-verify-tempest
     gate:
       jobs:
+        - rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
-        - rally-tox-cover
         - rally-dsvm-tox-functional
         - rally-docker-check
         - rally-task-simple-job
@@ -85,10 +85,10 @@
         #- rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift
-        - rally-task-octavia
         - rally-task-mistral
         - rally-task-murano
         - rally-task-neutron
+        - rally-task-octavia
         - rally-task-telemetry
         - rally-task-zaqar
         - rally-verify-tempest
