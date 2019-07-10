@@ -1244,51 +1244,128 @@ class BarbicanSecretsTestCase(test.TestCase):
         self.assertFalse(barbican.is_deleted())
 
 
+@resources.base.resource("octavia", "some", order=3)
+class OctaviaSimpleResource(resources.OctaviaMixIn):
+    pass
+
+
 class OctaviaResourceTestCase(test.TestCase):
 
-    def get_octavia(self):
-        octavia = resources.OctaviaMixIn()
-        octavia._service = "octavia"
-        octavia._manager = mock.Mock()
-        return octavia
-
     def test_name(self):
-        octavia = self.get_octavia()
-        octavia.raw_resource = {"name": "test_name"}
-        self.assertEqual("test_name", octavia.name())
+        resource = OctaviaSimpleResource({"name": "test_name"})
+        self.assertEqual("test_name", resource.name())
 
     def test_id(self):
-        octavia = self.get_octavia()
-        octavia.raw_resource = {"id": "test_id"}
-        self.assertEqual("test_id", octavia.id())
+        resource = OctaviaSimpleResource({"id": "test_id"})
+        self.assertEqual("test_id", resource.id())
 
     def test_delete(self):
-        octavia = self.get_octavia()
-        octavia.raw_resource = {"id": "test_id"}
-        octavia._client = mock.MagicMock()
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        resource = OctaviaSimpleResource(
+            user=clients, resource={"id": "test_id"})
 
-        octavia.delete()
-        octavia._client().load_balancer_delete.assert_called_once_with(
+        resource.delete()
+
+        octavia_client.some_delete.assert_called_once_with("test_id")
+
+    def test_delete_load_balancers(self):
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        resource = resources.OctaviaLoadBalancers(
+            user=clients, resource={"id": "test_id"})
+
+        resource.delete()
+
+        octavia_client.load_balancer_delete.assert_called_once_with(
             "test_id", cascade=True)
 
+    def test_delete_with_exception(self):
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        resource = OctaviaSimpleResource(
+            user=clients, resource={"id": "test_id"})
+
+        # case #1: random exception is raised
+        octavia_client.some_delete.side_effect = ValueError("asd")
+
+        self.assertRaises(ValueError, resource.delete)
+
+        # case #2: octaviaclient inner exception with random message
+        from octaviaclient.api.v2 import octavia as octavia_exc
+
+        e = octavia_exc.OctaviaClientException(409, "bla bla bla")
+        octavia_client.some_delete.side_effect = e
+
+        self.assertRaises(octavia_exc.OctaviaClientException, resource.delete)
+
+        # case #3: octaviaclient inner exception with specific message
+        e = octavia_exc.OctaviaClientException(
+            409, "Invalid state PENDING_DELETE bla bla")
+        octavia_client.some_delete.side_effect = e
+
+        resource.delete()
+
+    def test_delete_load_balancer_with_exception(self):
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        resource = resources.OctaviaLoadBalancers(
+            user=clients, resource={"id": "test_id"})
+
+        # case #1: random exception is raised
+        octavia_client.load_balancer_delete.side_effect = ValueError("asd")
+
+        self.assertRaises(ValueError, resource.delete)
+
+        # case #2: octaviaclient inner exception with random message
+        from octaviaclient.api.v2 import octavia as octavia_exc
+
+        e = octavia_exc.OctaviaClientException(409, "bla bla bla")
+        octavia_client.load_balancer_delete.side_effect = e
+
+        self.assertRaises(octavia_exc.OctaviaClientException, resource.delete)
+
+        # case #3: octaviaclient inner exception with specific message
+        e = octavia_exc.OctaviaClientException(
+            409, "Invalid state PENDING_DELETE bla bla")
+        octavia_client.load_balancer_delete.side_effect = e
+
+        resource.delete()
+
     def test_is_deleted_false(self):
-        octavia = self.get_octavia()
-        octavia.raw_resource = {"id": "test_id"}
-        octavia._client = mock.MagicMock()
-        self.assertFalse(octavia.is_deleted())
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        resource = OctaviaSimpleResource(
+            user=clients, resource={"id": "test_id"})
+        self.assertFalse(resource.is_deleted())
+        octavia_client.some_show.assert_called_once_with("test_id")
 
     def test_is_deleted_true(self):
-        octavia = self.get_octavia()
-        octavia.raw_resource = {"id": "test_id"}
-        octavia._client = mock.MagicMock()
-        ex = Exception()
-        octavia._client().load_balancer_show.side_effect = ex
-        self.assertTrue(octavia.is_deleted())
+        from osc_lib import exceptions as osc_exc
+
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        octavia_client.some_show.side_effect = osc_exc.NotFound(404, "foo")
+        resource = OctaviaSimpleResource(
+            user=clients, resource={"id": "test_id"})
+
+        self.assertTrue(resource.is_deleted())
+
+        octavia_client.some_show.assert_called_once_with("test_id")
 
     def test_list(self):
-        octavia = self.get_octavia()
-        octavia.raw_resource = {"id": "test_id"}
-        octavia._client = mock.MagicMock()
+        clients = mock.MagicMock()
+        octavia_client = clients.octavia.return_value
+        octavia_client.some_list.return_value = {"somes": [1, 2]}
+        manager = OctaviaSimpleResource(user=clients)
 
-        octavia.list()
-        octavia._client().load_balancer_list.assert_called_once_with()
+        self.assertEqual([1, 2], manager.list())
+
+        octavia_client.some_list.assert_called_once_with()
+
+        octavia_client.l7policy_list.return_value = {"l7policies": [3, 4]}
+        manager = resources.OctaviaL7Policies(user=clients)
+
+        self.assertEqual([3, 4], manager.list())
+
+        octavia_client.l7policy_list.assert_called_once_with()
