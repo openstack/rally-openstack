@@ -161,9 +161,7 @@ class UserGenerator(context.Context):
                 if default:
                     clients.neutron().delete_security_group(default[0]["id"])
 
-    def _create_tenants(self):
-        threads = self.config["resource_management_workers"]
-
+    def _create_tenants(self, threads):
         tenants = collections.deque()
 
         def publish(queue):
@@ -189,9 +187,8 @@ class UserGenerator(context.Context):
 
         return tenants_dict
 
-    def _create_users(self):
+    def _create_users(self, threads):
         # NOTE(msdubov): This should be called after _create_tenants().
-        threads = self.config["resource_management_workers"]
         users_per_tenant = self.config["users_per_tenant"]
         default_role = cfg.CONF.openstack.keystone_default_role
 
@@ -274,11 +271,13 @@ class UserGenerator(context.Context):
 
     def create_users(self):
         """Create tenants and users, using the broker pattern."""
-        threads = self.config["resource_management_workers"]
+
+        threads = min(self.config["resource_management_workers"],
+                      self.config["tenants"])
 
         LOG.debug("Creating %(tenants)d tenants using %(threads)s threads"
                   % {"tenants": self.config["tenants"], "threads": threads})
-        self.context["tenants"] = self._create_tenants()
+        self.context["tenants"] = self._create_tenants(threads)
 
         if len(self.context["tenants"]) < self.config["tenants"]:
             raise exceptions.ContextSetupFailure(
@@ -286,9 +285,10 @@ class UserGenerator(context.Context):
                 msg="Failed to create the requested number of tenants.")
 
         users_num = self.config["users_per_tenant"] * self.config["tenants"]
+        threads = min(self.config["resource_management_workers"], users_num)
         LOG.debug("Creating %(users)d users using %(threads)s threads"
                   % {"users": users_num, "threads": threads})
-        self.context["users"] = self._create_users()
+        self.context["users"] = self._create_users(threads)
         for user in self.context["users"]:
             self.context["tenants"][user["tenant_id"]]["users"].append(user)
 
