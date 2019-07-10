@@ -16,6 +16,15 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+unreleased
+----------
+
+Changed
+~~~~~~~
+
+* Improved logging message for the number of used threads while creating
+  keystone users and projects/tenants at *users@openstack* context.
+
 [1.5.0] - 2019-05-29
 --------------------
 
@@ -243,8 +252,8 @@ Fixed
 
 [1.0.0] - 2018-03-28
 --------------------
-Start a fork of `rally/plugins/openstack module of original OpenStack Rally
-project
+A start of a fork from `rally/plugins/openstack module of original OpenStack
+Rally project
 <https://github.com/openstack/rally/tree/0.11.1/rally/plugins/openstack>`_
 
 Added
@@ -271,7 +280,7 @@ Changed
   <https://github.com/openstack/python-novaclient/blob/10.0.0/releasenotes/notes/remove-virt-interfaces-add-rm-fixed-floating-398c905d9c91cca8.yaml>`_.
   These actions should be performed via neutronclient now. It is not as simple
   as it was via Nova-API and you can find more neutron-related atomic actions
-  in results of scenarios.
+  in results of workloads.
 
 Removed
 ~~~~~~~

@@ -345,7 +345,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
     def test__create_tenants(self, mock_identity):
         self.context["config"]["users"]["tenants"] = 1
         user_generator = users.UserGenerator(self.context)
-        tenants = user_generator._create_tenants()
+        tenants = user_generator._create_tenants(1)
         self.assertEqual(1, len(tenants))
         id, tenant = tenants.popitem()
         self.assertIn("name", tenant)
@@ -356,7 +356,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
                                              "t2": {"id": "t2", "name": "t2"}}
-        users_ = user_generator._create_users()
+        users_ = user_generator._create_users(4)
         self.assertEqual(4, len(users_))
         for user in users_:
             self.assertIn("id", user)
@@ -369,7 +369,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
                                              "t2": {"id": "t2", "name": "t2"}}
-        users_ = user_generator._create_users()
+        users_ = user_generator._create_users(4)
         self.assertEqual(4, len(users_))
         for user in users_:
             self.assertIn("id", user)
@@ -517,7 +517,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         }
 
         user_generator = users.UserGenerator(config)
-        users_ = user_generator._create_users()
+        users_ = user_generator._create_users(2)
 
         for user in users_:
             self.assertEqual("internal", user["credential"].endpoint_type)
@@ -540,7 +540,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         }
 
         user_generator = users.UserGenerator(config)
-        users_ = user_generator._create_users()
+        users_ = user_generator._create_users(2)
 
         for user in users_:
             self.assertEqual("public", user["credential"].endpoint_type)
