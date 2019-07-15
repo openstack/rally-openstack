@@ -49,7 +49,7 @@ class CreateAndListPools(utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             self.octavia.pool_create(
-                lb_id=loadbalancer["loadbalancer"]["id"],
+                lb_id=loadbalancer["id"],
                 protocol=protocol, lb_algorithm=lb_algorithm)
         self.octavia.pool_list()
 
@@ -81,7 +81,7 @@ class CreateAndDeletePools(utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             pools = self.octavia.pool_create(
-                lb_id=loadbalancer["loadbalancer"]["id"],
+                lb_id=loadbalancer["id"],
                 protocol=protocol, lb_algorithm=lb_algorithm)
             self.octavia.pool_delete(pools["id"])
 
@@ -117,7 +117,7 @@ class CreateAndUpdatePools(utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             pools = self.octavia.pool_create(
-                lb_id=loadbalancer["loadbalancer"]["id"],
+                lb_id=loadbalancer["id"],
                 protocol=protocol, lb_algorithm=lb_algorithm)
             self.octavia.pool_set(
                 pool_id=pools["id"], pool_update_args=update_pool)
@@ -150,6 +150,6 @@ class CreateAndShowPools(utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             pools = self.octavia.pool_create(
-                lb_id=loadbalancer["loadbalancer"]["id"],
+                lb_id=loadbalancer["id"],
                 protocol=protocol, lb_algorithm=lb_algorithm)
             self.octavia.pool_show(pools["id"])

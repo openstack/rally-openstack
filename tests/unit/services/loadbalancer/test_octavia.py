@@ -61,11 +61,28 @@ class LoadBalancerServiceTestCase(test.TestCase):
 
     def test_load_balancer_show(self):
         lb = {"id": "loadbalancer-id"}
-        self.service.load_balancer_show(lb)
+        self.service.load_balancer_show(lb["id"])
         self.service._clients.octavia().load_balancer_show \
             .assert_called_once_with(lb["id"])
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.load_balancer_show")
+
+    def test_load_balancer_show_fail_404(self):
+        fake_lb = {"id": "fake_lb"}
+        ex = Exception()
+        ex.code = 404
+        self.service._clients.octavia().load_balancer_show.side_effect = ex
+        self.assertRaises(
+            exceptions.GetResourceNotFound,
+            self.service.load_balancer_show, fake_lb["id"])
+
+    def test_load_balancer_show_resource_fail(self):
+        fake_lb = {"id": "fake_lb"}
+        ex = Exception()
+        self.service._clients.octavia().load_balancer_show.side_effect = ex
+        self.assertRaises(
+            exceptions.GetResourceFailure,
+            self.service.load_balancer_show, fake_lb["id"])
 
     def test_load_balancer_create(self):
         self.service.generate_random_name = mock.MagicMock(
@@ -113,7 +130,7 @@ class LoadBalancerServiceTestCase(test.TestCase):
 
     def test_load_balancer_failover(self):
         lb = {"id": "new_lb"}
-        self.service.load_balancer_failover(lb)
+        self.service.load_balancer_failover(lb["id"])
         self.service._clients.octavia().load_balancer_failover \
             .assert_called_once_with(lb["id"])
         self._test_atomic_action_timer(self.atomic_actions(),
@@ -432,32 +449,9 @@ class LoadBalancerServiceTestCase(test.TestCase):
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "octavia.amphora_list")
 
-    def test_update_loadbalancer_resource(self):
-        fake_lb = {"id": "fake_lb"}
-        self.service.update_loadbalancer_resource(lb=fake_lb)
-        self.service._clients.octavia().load_balancer_show \
-            .assert_called_once_with("fake_lb")
-
-    def test_update_loadbalancer_resource_fail_404(self):
-        fake_lb = {"id": "fake_lb"}
-        ex = Exception()
-        ex.status_code = 404
-        self.service._clients.octavia().load_balancer_show.side_effect = ex
-        self.assertRaises(
-            exceptions.GetResourceNotFound,
-            self.service.update_loadbalancer_resource, fake_lb)
-
-    def test_update_loadbalancer_resource_fail(self):
-        fake_lb = {"id": "fake_lb"}
-        ex = Exception()
-        self.service._clients.octavia().load_balancer_show.side_effect = ex
-        self.assertRaises(
-            exceptions.GetResourceFailure,
-            self.service.update_loadbalancer_resource, fake_lb)
-
     @mock.patch("%s.Ocvita.wait_for_loadbalancer_prov_status" % BASE_PATH)
     def wait_for_loadbalancer_prov_status(self, mock_wait_for_status):
-        fake_lb = {"loadbalancer": {}}
+        fake_lb = {}
         self.service.wait_for_loadbalancer_prov_status(lb=fake_lb)
         self.assertTrue(mock_wait_for_status.called)
         self._test_atomic_action_timer(self.atomic_actions(),
