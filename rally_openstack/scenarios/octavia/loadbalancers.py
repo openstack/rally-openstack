@@ -104,7 +104,7 @@ class CreateAndDeleteLoadbalancers(octavia_utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             self.octavia.load_balancer_delete(
-                loadbalancer["loadbalancer"]["id"])
+                loadbalancer["id"])
 
 
 @validation.add("required_services", services=[consts.Service.OCTAVIA])
@@ -151,7 +151,7 @@ class CreateAndUpdateLoadBalancers(octavia_utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             self.octavia.load_balancer_set(
-                lb_id=loadbalancer["loadbalancer"]["id"],
+                lb_id=loadbalancer["id"],
                 lb_update_args=update_loadbalancer)
 
 
@@ -195,7 +195,7 @@ class CreateAndShowStatsLoadBalancers(octavia_utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             self.octavia.load_balancer_stats_show(
-                loadbalancer["loadbalancer"])
+                loadbalancer["id"])
 
 
 @validation.add("required_services", services=[consts.Service.OCTAVIA])
@@ -238,4 +238,4 @@ class CreateAndShowLoadBalancers(octavia_utils.OctaviaBase):
         for loadbalancer in loadbalancers:
             self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
             self.octavia.load_balancer_show(
-                loadbalancer["loadbalancer"])
+                loadbalancer["id"])
