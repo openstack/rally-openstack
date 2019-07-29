@@ -2,10 +2,100 @@
     name: rally-task-manila
     parent: rally-task-at-devstack
     vars:
-      rally_task: rally-jobs/rally-manila.yaml
+      rally_task: rally-jobs/manila.yaml
+      devstack_services:
+        # disable redundant services for the job
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        horizon: false
+        tempest: false
+      devstack_plugins:
+        manila: https://opendev.org/openstack/manila
+    required-projects:
+      - openstack/manila
+      - openstack/python-manilaclient
+
 
 - job:
     name: rally-task-manila-no-ss
-    parent: rally-task-at-devstack
+    parent: rally-task-manila
     vars:
       rally_task: rally-jobs/manila-no-ss.yaml
+      devstack_localrc:
+        USE_PYTHON3: true
+        LIBS_FROM_GIT: python-manilaclient
+        SHARE_DRIVER: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_ENABLED_BACKENDS: alpha,beta,gamma
+        MANILA_USE_UWSGI: false
+        MANILA_USE_MOD_WSGI: false
+        SUPPRESS_ERRORS_IN_CLEANUP: false
+        MANILA_SERVICE_IMAGE_ENABLED: false
+        MANILA_CONFIGURE_DEFAULT_TYPES: false
+        MANILA_REPLICA_STATE_UPDATE_INTERVAL: 10
+        MANILA_SHARE_MIGRATION_PERIOD_TASK_INTERVAL: 1
+        MANILA_CONFIGURE_GROUPS: alpha,beta,gamma
+        MANILA_OPTGROUP_alpha_share_driver: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_OPTGROUP_alpha_driver_handles_share_servers: false
+        MANILA_OPTGROUP_alpha_share_backend_name: ALPHA
+        MANILA_OPTGROUP_alpha_replication_domain: DUMMY_DOMAIN
+        MANILA_OPTGROUP_beta_share_driver: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_OPTGROUP_beta_driver_handles_share_servers: false
+        MANILA_OPTGROUP_beta_share_backend_name: BETA
+        MANILA_OPTGROUP_beta_replication_domain: DUMMY_DOMAIN
+        MANILA_OPTGROUP_gamma_share_driver: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_OPTGROUP_gamma_driver_handles_share_servers: false
+        MANILA_OPTGROUP_gamma_replication_domain: DUMMY_DOMAIN
+        MANILA_INSTALL_TEMPEST_PLUGIN_SYSTEMWIDE: False
+
+
+- job:
+    name: rally-task-manila-ss
+    parent: rally-task-manila
+    vars:
+      rally_task: rally-jobs/manila.yaml
+      devstack_localrc:
+        USE_PYTHON3: true
+        LIBS_FROM_GIT: python-manilaclient
+        SHARE_DRIVER: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_ENABLED_BACKENDS: alpha,beta,gamma
+        MANILA_USE_UWSGI: false
+        MANILA_USE_MOD_WSGI: false
+        SUPPRESS_ERRORS_IN_CLEANUP: false
+        MANILA_SERVICE_IMAGE_ENABLED: false
+        MANILA_CONFIGURE_DEFAULT_TYPES: false
+        MANILA_SHARE_MIGRATION_PERIOD_TASK_INTERVAL: 1
+        MANILA_CONFIGURE_GROUPS: alpha,beta,gamma,membernet,adminnet
+        MANILA_OPTGROUP_alpha_share_driver: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_OPTGROUP_alpha_driver_handles_share_servers: true
+        MANILA_OPTGROUP_alpha_share_backend_name: ALPHA
+        MANILA_OPTGROUP_alpha_network_config_group: membernet
+        MANILA_OPTGROUP_alpha_admin_network_config_group: adminnet
+        MANILA_OPTGROUP_beta_share_driver: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_OPTGROUP_beta_driver_handles_share_servers: true
+        MANILA_OPTGROUP_beta_share_backend_name: BETA
+        MANILA_OPTGROUP_beta_network_config_group: membernet
+        MANILA_OPTGROUP_beta_admin_network_config_group: adminnet
+        MANILA_OPTGROUP_gamma_share_driver: manila.tests.share.drivers.dummy.DummyDriver
+        MANILA_OPTGROUP_gamma_driver_handles_share_servers: true
+        MANILA_OPTGROUP_gamma_network_config_group: membernet
+        MANILA_OPTGROUP_gamma_admin_network_config_group: adminnet
+        MANILA_OPTGROUP_membernet_network_api_class: manila.network.standalone_network_plugin.StandaloneNetworkPlugin
+        MANILA_OPTGROUP_membernet_standalone_network_plugin_gateway: 10.0.0.1
+        MANILA_OPTGROUP_membernet_standalone_network_plugin_mask: 24
+        MANILA_OPTGROUP_membernet_standalone_network_plugin_network_type: vlan
+        MANILA_OPTGROUP_membernet_standalone_network_plugin_segmentation_id: 1010
+        MANILA_OPTGROUP_membernet_standalone_network_plugin_allowed_ip_ranges: 10.0.0.10-10.0.0.209
+        MANILA_OPTGROUP_membernet_network_plugin_ipv4_enabled: true
+        MANILA_OPTGROUP_adminnet_network_api_class: manila.network.standalone_network_plugin.StandaloneNetworkPlugin
+        MANILA_OPTGROUP_adminnet_standalone_network_plugin_gateway: 11.0.0.1
+        MANILA_OPTGROUP_adminnet_standalone_network_plugin_mask: 24
+        MANILA_OPTGROUP_adminnet_standalone_network_plugin_network_type: vlan
+        MANILA_OPTGROUP_adminnet_standalone_network_plugin_segmentation_id: 1011
+        MANILA_OPTGROUP_adminnet_standalone_network_plugin_allowed_ip_ranges: 11.0.0.10-11.0.0.19,11.0.0.30-11.0.0.39,11.0.0.50-11.0.0.199
+        MANILA_OPTGROUP_adminnet_network_plugin_ipv4_enabled: true
+        MANILA_INSTALL_TEMPEST_PLUGIN_SYSTEMWIDE: False
