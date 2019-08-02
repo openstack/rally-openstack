@@ -236,13 +236,23 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         glance.get_image.return_value = self.image
         nova_scenario = utils.NovaScenario(context=self.context)
         return_image = nova_scenario._create_image(self.server)
-        self.mock_wait_for_status.mock.assert_called_once_with(
-            self.image,
-            ready_statuses=["ACTIVE"],
-            update_resource=glance.get_image,
-            check_interval=CONF.openstack.
-            nova_server_image_create_poll_interval,
-            timeout=CONF.openstack.nova_server_image_create_timeout)
+        self.mock_wait_for_status.mock.assert_has_calls([
+            mock.call(
+                self.image,
+                ready_statuses=["ACTIVE"],
+                update_resource=glance.get_image,
+                check_interval=CONF.openstack.
+                nova_server_image_create_poll_interval,
+                timeout=CONF.openstack.nova_server_image_create_timeout),
+            mock.call(
+                self.server,
+                ready_statuses=["None"],
+                status_attr="OS-EXT-STS:task_state",
+                update_resource=self.mock_get_from_manager.mock.return_value,
+                check_interval=CONF.openstack.
+                nova_server_image_create_poll_interval,
+                timeout=CONF.openstack.nova_server_image_create_timeout)
+        ])
         self.assertEqual(self.mock_wait_for_status.mock.return_value,
                          return_image)
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),

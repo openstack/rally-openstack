@@ -514,6 +514,15 @@ class NovaScenario(scenario.OpenStackScenario):
                 timeout=CONF.openstack.nova_server_image_create_timeout,
                 check_interval=check_interval
             )
+        with atomic.ActionTimer(self, "nova.wait_for_server"):
+            utils.wait_for_status(
+                server,
+                ready_statuses=["None"],
+                status_attr="OS-EXT-STS:task_state",
+                update_resource=utils.get_from_manager(),
+                timeout=CONF.openstack.nova_server_image_create_timeout,
+                check_interval=check_interval
+            )
         return image
 
     @atomic.action_timer("nova.get_keypair")
