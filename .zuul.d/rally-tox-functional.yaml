@@ -17,5 +17,7 @@
     vars:
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
+      devstack_localrc:
+        USE_PYTHON3: true
       rally_tox_env: "functional"
     run: tests/ci/playbooks/run-rally-tox.yaml
