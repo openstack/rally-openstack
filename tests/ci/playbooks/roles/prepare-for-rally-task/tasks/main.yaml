@@ -198,6 +198,11 @@
     path: '{{ zuul.project.src_dir }}/{{ rally_task }}'
   register: rally_task_file_stat
 
+- name: Fail if Rally task file is missed.
+  fail:
+    msg: "'{{ rally_task }}' Rally task file is missed."
+  when: rally_task_file_stat.stat.exists != True
+
 - name: Copy task file
   become: True
   become_user: stack
