@@ -54,7 +54,8 @@ class GlanceV2ServiceTestCase(test.TestCase):
 
         self.service.upload_data(image_id, image_location=location)
 
-        mock_requests_get.assert_called_once_with(location, stream=True)
+        mock_requests_get.assert_called_once_with(location, stream=True,
+                                                  verify=False)
         self.gc.images.upload.assert_called_once_with(
             image_id, mock_requests_get.return_value.raw)
 

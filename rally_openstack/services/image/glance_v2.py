@@ -46,7 +46,8 @@ class GlanceV2Service(service.Service, glance_common.GlanceMixin):
             if os.path.isfile(image_location):
                 image_data = open(image_location, "rb")
             else:
-                response = requests.get(image_location, stream=True)
+                response = requests.get(image_location, stream=True,
+                                        verify=False)
                 image_data = response.raw
             self._clients.glance("2").images.upload(image_id, image_data)
         finally:
