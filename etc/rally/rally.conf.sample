@@ -59,6 +59,10 @@
 # log_config_append is set. (string value)
 #syslog_log_facility = LOG_USER
 
+# Use JSON formatting for logging. This option is ignored if
+# log_config_append is set. (boolean value)
+#use_json = false
+
 # Log output to standard error. This option is ignored if
 # log_config_append is set. (boolean value)
 #use_stderr = true
@@ -117,10 +121,6 @@
 # From rally
 #
 
-# HTTP timeout for any of OpenStack service in seconds (floating point
-# value)
-#openstack_client_http_timeout = 180.0
-
 # Print debugging output only for Rally. Off-site components stay
 # quiet. (boolean value)
 #rally_debug = false
@@ -128,6 +128,14 @@
 # Size of raw result chunk in iterations (integer value)
 # Minimum value: 1
 #raw_result_chunk_size = 1000
+
+#
+# From rally_openstack
+#
+
+# HTTP timeout for any of OpenStack service in seconds (floating point
+# value)
+#openstack_client_http_timeout = 180.0
 
 
 [database]
@@ -174,10 +182,14 @@
 # Deprecated group/name - [sql]/idle_timeout
 #connection_recycle_time = 3600
 
-# Minimum number of SQL connections to keep open in a pool. (integer
-# value)
+# DEPRECATED: Minimum number of SQL connections to keep open in a
+# pool. (integer value)
 # Deprecated group/name - [DEFAULT]/sql_min_pool_size
 # Deprecated group/name - [DATABASE]/sql_min_pool_size
+# This option is deprecated for removal.
+# Its value may be silently ignored in the future.
+# Reason: The option to set the minimum pool size is not supported by
+# sqlalchemy.
 #min_pool_size = 1
 
 # Maximum number of SQL connections to keep open in a pool. Setting a
@@ -240,11 +252,15 @@
 # (integer value)
 #db_max_retries = 20
 
+# Optional URL parameters to append onto the connection URL at connect
+# time; specify as param1=value1&param2=value2&... (string value)
+#connection_parameters =
+
 
 [openstack]
 
 #
-# From rally
+# From rally_openstack
 #
 
 # Time to sleep after creating a resource before polling for it status
@@ -752,9 +768,17 @@
 # value)
 #flavor_ref_ram = 64
 
-# Alternate reference flavor RAM size used by test thatneed two
+# Alternate reference flavor RAM size used by test that need two
 # flavors, like those that resize an instance (integer value)
 #flavor_ref_alt_ram = 128
+
+# Primary flavor disk size in GiB used by most of the test cases
+# (integer value)
+#flavor_ref_disk = 5
+
+# Alternate reference flavor disk size in GiB used by tests that need
+# two flavors, like those that resize an instance (integer value)
+#flavor_ref_alt_disk = 5
 
 # RAM size flavor used for orchestration test cases (integer value)
 #heat_instance_type_ram = 64
@@ -799,3 +823,22 @@
 # this option, some external fields for identifying resources can be
 # applied. (boolean value)
 #pre_newton_neutron = false
+
+# Neutron L2 agent types to find hosts to bind (list value)
+#neutron_bind_l2_agent_types = Open vSwitch agent,Linux bridge agent
+
+# Octavia create loadbalancer timeout (floating point value)
+#octavia_create_loadbalancer_timeout = 500.0
+
+# Octavia delete loadbalancer timeout (floating point value)
+#octavia_delete_loadbalancer_timeout = 50.0
+
+# Octavia create loadbalancer poll interval (floating point value)
+#octavia_create_loadbalancer_poll_interval = 2.0
+
+# Mode of embedding OSProfiler's chart. Can be 'text' (embed only
+# trace id), 'raw' (embed raw osprofiler's native report) or a path to
+# directory (raw osprofiler's native reports for each iteration will
+# be saved separately there to decrease the size of rally report
+# itself) (string value)
+#osprofiler_chart_mode = <None>

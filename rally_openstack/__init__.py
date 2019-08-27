@@ -28,7 +28,7 @@ if __rally_version__ < (0, 12):
 
     # ensure that rally options are registered.
     global_opts.register()
-    global_opts.register_opts(opts.list_opts().items())
+    global_opts.register_opts(opts.list_opts())
 
 __version_info__ = pbr.version.VersionInfo("rally-openstack")
 __version__ = __version_info__.version_string()

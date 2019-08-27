@@ -56,4 +56,4 @@ def list_opts():
         for category, opt in l_opts.items():
             opts.setdefault(category, [])
             opts[category].extend(opt)
-    return opts
+    return [(k, v) for k, v in opts.items()]
