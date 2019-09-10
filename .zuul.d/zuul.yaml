@@ -49,7 +49,8 @@
         - rally-task-mistral
         # it did not work for a long time. try to re-configure it
         #- rally-task-monasca
-        - rally-task-murano
+        - rally-task-murano:
+            voting: false
         - rally-task-neutron
         - rally-task-neutron-trunk:
             files:
@@ -62,7 +63,8 @@
             voting: false
         # it did not work for a long time
         #- rally-task-senlin
-        - rally-task-octavia
+        #- rally-task-octavia:
+        #    voting: false
         - rally-task-telemetry
         - rally-task-watcher:
             # watcher-api did not start last time
@@ -85,9 +87,7 @@
         - rally-task-ironic
         - rally-task-keystone-glance-swift
         - rally-task-mistral
-        - rally-task-murano
         - rally-task-neutron
-        - rally-task-octavia
         - rally-task-telemetry
         - rally-task-zaqar
         - rally-verify-tempest

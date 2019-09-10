@@ -55,7 +55,6 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
                   "metadata": None,
                   "imageRef": None,
                   "scheduler_hints": None,
-                  "multiattach": False,
                   "backup_id": None}
         self.cinder.volumes.create.assert_called_once_with(1, **kwargs)
         self.service._wait_available_volume.assert_called_once_with(
@@ -84,7 +83,6 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
                   "metadata": None,
                   "imageRef": None,
                   "scheduler_hints": None,
-                  "multiattach": False,
                   "backup_id": None}
         self.cinder.volumes.create.assert_called_once_with(
             3, **kwargs)
@@ -120,13 +118,11 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
         self.assertEqual(self.cinder.volumes.list.return_value,
                          self.service.list_volumes(
                              detailed=False, search_opts=None, limit=1,
-                             marker=None, sort_key=None, sort_dir=None,
-                             sort=None
+                             marker=None, sort=None
                          ))
         self.cinder.volumes.list.assert_called_once_with(
             detailed=False, search_opts=None, limit=1,
-            marker=None, sort_key=None, sort_dir=None,
-            sort=None
+            marker=None, sort=None
         )
         self._test_atomic_action_timer(self.atomic_actions(),
                                        "cinder_v3.list_volumes")
@@ -322,7 +318,7 @@ class UnifiedCinderV3ServiceTestCase(test.TestCase):
         self.service._impl.create_volume.assert_called_once_with(
             1, availability_zone=None, consistencygroup_id=None,
             description=None, imageRef=None,
-            metadata=None, multiattach=False, name=None,
+            metadata=None, name=None,
             scheduler_hints=None, snapshot_id=None,
             source_volid=None, volume_type=None, backup_id=None)
         self.service._unify_volume.assert_called_once_with(
@@ -335,7 +331,7 @@ class UnifiedCinderV3ServiceTestCase(test.TestCase):
                          self.service.list_volumes(detailed=True))
         self.service._impl.list_volumes.assert_called_once_with(
             detailed=True, limit=None, marker=None, search_opts=None,
-            sort=None, sort_dir=None, sort_key=None)
+            sort=None)
         self.service._unify_volume.assert_called_once_with("vol")
 
     def test_get_volume(self):

@@ -106,7 +106,7 @@ class CreateAndGetVolume(cinder_utils.CinderBasic):
 class ListVolumes(cinder_utils.CinderBasic):
 
     def run(self, detailed=True, search_opts=None, marker=None,
-            limit=None, sort_key=None, sort_dir=None, sort=None):
+            limit=None, sort=None):
         """List all volumes.
 
         This simple scenario tests the cinder list command by listing
@@ -119,17 +119,11 @@ class ListVolumes(cinder_utils.CinderBasic):
                        list than that represented by this volume id.(For V2 or
                        higher)
         :param limit: Maximum number of volumes to return.
-        :param sort_key: Key to be sorted; deprecated in kilo.(For V2 or
-                         higher)
-        :param sort_dir: Sort direction, should be 'desc' or 'asc'; deprecated
-                         in kilo. (For V2 or higher)
         :param sort: Sort information
         """
 
         self.cinder.list_volumes(detailed, search_opts=search_opts,
-                                 marker=marker, limit=limit,
-                                 sort_key=sort_key, sort_dir=sort_dir,
-                                 sort=sort)
+                                 marker=marker, limit=limit, sort=sort)
 
 
 @validation.add("required_services", services=[consts.Service.CINDER])

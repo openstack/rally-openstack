@@ -44,7 +44,7 @@ class BlockStorage(service.UnifiedService):
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      source_replica=None, multiattach=False, backup_id=None):
+                      source_replica=None, backup_id=None):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -63,8 +63,6 @@ class BlockStorage(service.UnifiedService):
         :param source_replica: ID of source volume to clone replica(IGNORED)
         :param scheduler_hints: (optional extension) arbitrary key-value pairs
                             specified by the client to help boot an instance
-        :param multiattach: Allow the volume to be attached to more than
-                            one instance
         :param backup_id: ID of the backup
 
         :returns: Return a new volume.
@@ -79,11 +77,11 @@ class BlockStorage(service.UnifiedService):
             user_id=user_id, project_id=project_id,
             availability_zone=availability_zone, metadata=metadata,
             imageRef=imageRef, scheduler_hints=scheduler_hints,
-            multiattach=multiattach, backup_id=backup_id)
+            backup_id=backup_id)
 
     @service.should_be_overridden
     def list_volumes(self, detailed=True, search_opts=None, marker=None,
-                     limit=None, sort_key=None, sort_dir=None, sort=None):
+                     limit=None, sort=None):
         """Lists all volumes.
 
         :param detailed: Whether to return detailed volume info.
@@ -91,15 +89,12 @@ class BlockStorage(service.UnifiedService):
         :param marker: Begin returning volumes that appear later in the volume
                        list than that represented by this volume id.
         :param limit: Maximum number of volumes to return.
-        :param sort_key: Key to be sorted; deprecated in kilo
-        :param sort_dir: Sort direction, should be 'desc' or 'asc'; deprecated
-                         in kilo
         :param sort: Sort information
         :returns: Return volumes list.
         """
         return self._impl.list_volumes(
             detailed=detailed, search_opts=search_opts, marker=marker,
-            limit=limit, sort_key=sort_key, sort_dir=sort_dir, sort=sort)
+            limit=limit, sort=sort)
 
     @service.should_be_overridden
     def get_volume(self, volume_id):

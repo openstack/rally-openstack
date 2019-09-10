@@ -184,7 +184,7 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
                       metadata=None, imageRef=None, scheduler_hints=None,
-                      multiattach=False, backup_id=None):
+                      backup_id=None):
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -202,8 +202,6 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
         :param source_volid: ID of source volume to clone from
         :param scheduler_hints: (optional extension) arbitrary key-value pairs
                             specified by the client to help boot an instance
-        :param multiattach: Allow the volume to be attached to more than
-                            one instance
         :param backup_id: ID of the backup(IGNORED)
 
         :returns: Return a new volume.
@@ -217,7 +215,7 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
             metadata=metadata, imageRef=imageRef))
 
     def list_volumes(self, detailed=True, search_opts=None, marker=None,
-                     limit=None, sort_key=None, sort_dir=None, sort=None):
+                     limit=None, sort=None):
         """Lists all volumes.
 
         :param detailed: Whether to return detailed volume info.
@@ -225,9 +223,6 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
         :param marker: Begin returning volumes that appear later in the volume
                        list than that represented by this volume id.(IGNORED)
         :param limit: Maximum number of volumes to return.
-        :param sort_key: Key to be sorted; deprecated in kilo(IGNORED)
-        :param sort_dir: Sort direction, should be 'desc' or 'asc'; deprecated
-                         in kilo(IGNORED)
         :param sort: Sort information(IGNORED)
         :returns: Return volumes list.
         """

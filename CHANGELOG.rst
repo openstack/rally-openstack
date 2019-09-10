@@ -19,11 +19,21 @@ Changelog
 unreleased
 ----------
 
+Removed
+~~~~~~~
+
+* Removed the former multiattach support dropped in Cinder Train (5.0.0)
+
+* Removed the former ``sort_key`` and ``sort_dir`` support at listing cinder
+  volumes.
+
 Changed
 ~~~~~~~
 
 * Improved logging message for the number of used threads while creating
   keystone users and projects/tenants at *users@openstack* context.
+
+* Updated upper-constraints
 
 [1.5.0] - 2019-05-29
 --------------------

@@ -38,7 +38,7 @@ class BlockTestCase(test.TestCase):
         self.service._impl.create_volume.assert_called_once_with(
             "fake_volume", availability_zone=None, consistencygroup_id=None,
             description=None, group_id=None, imageRef=None, metadata=None,
-            multiattach=False, name=None, project_id=None,
+            name=None, project_id=None,
             scheduler_hints=None, snapshot_id=None,
             source_volid=None, user_id=None, volume_type=None, backup_id=None)
 
@@ -47,7 +47,7 @@ class BlockTestCase(test.TestCase):
                          self.service.list_volumes(detailed=True))
         self.service._impl.list_volumes.assert_called_once_with(
             detailed=True, limit=None, marker=None, search_opts=None,
-            sort=None, sort_dir=None, sort_key=None)
+            sort=None)
 
     def test_get_volume(self):
         self.assertTrue(self.service._impl.get_volume.return_value,
