@@ -641,7 +641,7 @@
           scenario:
             CinderVolumes.create_and_restore_volume_backup:
               size: 1
-              do_delete: True
+              do_delete: False
           runner:
             constant:
               times: 2
