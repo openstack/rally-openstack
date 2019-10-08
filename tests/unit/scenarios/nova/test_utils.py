@@ -76,6 +76,17 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         # balance again, get net 1
         self.assertEqual(nic3, [{"net-id": "net_id_1"}])
 
+    def test__get_network_id(self):
+        networks = {"networks": [{"name": "foo1", "id": 1},
+                                 {"name": "foo2", "id": 2}]}
+        self.clients("neutron").list_networks.return_value = networks
+        scenario = utils.NovaScenario(self.context)
+        self.assertEqual(1, scenario._get_network_id("foo1"))
+        self.assertEqual(2, scenario._get_network_id("foo2"))
+        self.clients("neutron").list_networks.assert_called_once_with()
+        self.assertRaises(rally_exceptions.NotFoundException,
+                          scenario._get_network_id, "foo")
+
     @ddt.data(
         {},
         {"kwargs": {"auto_assign_nic": True}},
@@ -85,6 +96,8 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
          "kwargs": {"security_groups": ["test8"]}},
         {"context": {"user": {"secgroup": {"name": "test1"}}},
          "kwargs": {"security_groups": ["test1"]}},
+        {"kwargs": {"auto_assign_nic": False,
+                    "nics": [{"net-name": "foo_name"}]}}
     )
     @ddt.unpack
     def test__boot_server(self, context=None, kwargs=None):
@@ -98,7 +111,10 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
         nova_scenario = utils.NovaScenario(context=context)
         nova_scenario.generate_random_name = mock.Mock()
-        nova_scenario._pick_random_nic = mock.Mock()
+        nova_scenario._pick_random_nic = mock.Mock(
+            return_value=[{"net-id": "foo"}])
+        nova_scenario._get_network_id = mock.Mock(return_value="foo")
+
         if kwargs is None:
             kwargs = {}
         kwargs["fakearg"] = "fakearg"
@@ -442,7 +458,8 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         {"requests": 2, "instances_amount": 100, "auto_assign_nic": True,
          "fakearg": "fake"},
         {"auto_assign_nic": True, "nics": [{"net-id": "foo"}]},
-        {"auto_assign_nic": False, "nics": [{"net-id": "foo"}]})
+        {"auto_assign_nic": False, "nics": [{"net-id": "foo"}]},
+        {"auto_assign_nic": False, "nics": [{"net-name": "foo_name"}]})
     @ddt.unpack
     def test__boot_servers(self, image_id="image", flavor_id="flavor",
                            requests=1, instances_amount=1,
@@ -451,7 +468,9 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         self.clients("nova").servers.list.return_value = servers
         scenario = utils.NovaScenario(context=self.context)
         scenario.generate_random_name = mock.Mock()
-        scenario._pick_random_nic = mock.Mock()
+        scenario._pick_random_nic = mock.Mock(
+            return_value=[{"net-id": "foo"}])
+        scenario._get_network_id = mock.Mock(return_value="foo")
 
         scenario._boot_servers(image_id, flavor_id, requests,
                                instances_amount=instances_amount,

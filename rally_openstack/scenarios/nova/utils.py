@@ -47,7 +47,18 @@ class NovaScenario(scenario.OpenStackScenario):
             net_idx = self.context["iteration"] % len(nets)
             return [{"net-id": nets[net_idx]}]
 
-    @atomic.action_timer("nova.boot_server")
+    def _get_network_id(self, net_name):
+        networks = getattr(self, "existed_networks", [])
+        if not networks:
+            networks = self.clients("neutron").list_networks()["networks"]
+            self.existed_networks = networks
+
+        for net in networks:
+            if net["name"] == net_name:
+                return net["id"]
+        raise exceptions.NotFoundException(
+            message="Network %s not found." % net_name)
+
     def _boot_server(self, image, flavor,
                      auto_assign_nic=False, **kwargs):
         """Boot a server.
@@ -82,17 +93,22 @@ class NovaScenario(scenario.OpenStackScenario):
             kwargs["nics"] = [
                 {"net-id": self.context["tenant"]["networks"][0]["id"]}]
 
-        server = self.clients("nova").servers.create(
-            server_name, image, flavor, **kwargs)
+        for nic in kwargs.get("nics", []):
+            if not nic.get("net-id") and nic.get("net-name"):
+                nic["net-id"] = self._get_network_id(nic["net-name"])
 
-        self.sleep_between(CONF.openstack.nova_server_boot_prepoll_delay)
-        server = utils.wait_for_status(
-            server,
-            ready_statuses=["ACTIVE"],
-            update_resource=utils.get_from_manager(),
-            timeout=CONF.openstack.nova_server_boot_timeout,
-            check_interval=CONF.openstack.nova_server_boot_poll_interval
-        )
+        with atomic.ActionTimer(self, "nova.boot_server"):
+            server = self.clients("nova").servers.create(
+                server_name, image, flavor, **kwargs)
+
+            self.sleep_between(CONF.openstack.nova_server_boot_prepoll_delay)
+            server = utils.wait_for_status(
+                server,
+                ready_statuses=["ACTIVE"],
+                update_resource=utils.get_from_manager(),
+                timeout=CONF.openstack.nova_server_boot_timeout,
+                check_interval=CONF.openstack.nova_server_boot_poll_interval
+            )
         return server
 
     def _do_server_reboot(self, server, reboottype):
@@ -557,7 +573,6 @@ class NovaScenario(scenario.OpenStackScenario):
         """
         self.clients("nova").keypairs.delete(keypair_name)
 
-    @atomic.action_timer("nova.boot_servers")
     def _boot_servers(self, image_id, flavor_id, requests, instances_amount=1,
                       auto_assign_nic=False, **kwargs):
         """Boot multiple servers.
@@ -579,27 +594,33 @@ class NovaScenario(scenario.OpenStackScenario):
             if nic:
                 kwargs["nics"] = nic
 
+        for nic in kwargs.get("nics", []):
+            if not nic.get("net-id") and nic.get("net-name"):
+                nic["net-id"] = self._get_network_id(nic["net-name"])
+
         name_prefix = self.generate_random_name()
-        for i in range(requests):
-            self.clients("nova").servers.create("%s_%d" % (name_prefix, i),
-                                                image_id, flavor_id,
-                                                min_count=instances_amount,
-                                                max_count=instances_amount,
-                                                **kwargs)
-        # NOTE(msdubov): Nova python client returns only one server even when
-        #                min_count > 1, so we have to rediscover all the
-        #                created servers manually.
-        servers = [s for s in self.clients("nova").servers.list()
-                   if s.name.startswith(name_prefix)]
-        self.sleep_between(CONF.openstack.nova_server_boot_prepoll_delay)
-        servers = [utils.wait_for_status(
-            server,
-            ready_statuses=["ACTIVE"],
-            update_resource=utils.
-            get_from_manager(),
-            timeout=CONF.openstack.nova_server_boot_timeout,
-            check_interval=CONF.openstack.nova_server_boot_poll_interval
-        ) for server in servers]
+        with atomic.ActionTimer(self, "nova.boot_servers"):
+            for i in range(requests):
+                self.clients("nova").servers.create(
+                    "%s_%d" % (name_prefix, i),
+                    image_id, flavor_id,
+                    min_count=instances_amount,
+                    max_count=instances_amount,
+                    **kwargs)
+            # NOTE(msdubov): Nova python client returns only one server even
+            #                when min_count > 1, so we have to rediscover
+            #                all the created servers manually.
+            servers = [s for s in self.clients("nova").servers.list()
+                       if s.name.startswith(name_prefix)]
+            self.sleep_between(CONF.openstack.nova_server_boot_prepoll_delay)
+            servers = [utils.wait_for_status(
+                server,
+                ready_statuses=["ACTIVE"],
+                update_resource=utils.
+                get_from_manager(),
+                timeout=CONF.openstack.nova_server_boot_timeout,
+                check_interval=CONF.openstack.nova_server_boot_poll_interval
+            ) for server in servers]
         return servers
 
     @atomic.action_timer("nova.associate_floating_ip")
