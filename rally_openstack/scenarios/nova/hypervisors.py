@@ -97,7 +97,8 @@ class ListAndGetUptimeHypervisors(utils.NovaScenario):
         hypervisors = self._list_hypervisors(detailed)
 
         for hypervisor in hypervisors:
-            self._uptime_hypervisor(hypervisor)
+            if hypervisor.state == "up":
+                self._uptime_hypervisor(hypervisor)
 
 
 @validation.add("required_services", services=[consts.Service.NOVA])
