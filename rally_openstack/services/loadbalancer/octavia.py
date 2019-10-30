@@ -54,7 +54,8 @@ class Octavia(service.Service):
 
     @atomic.action_timer("octavia.load_balancer_create")
     def load_balancer_create(self, subnet_id, description=None,
-                             admin_state=None, listeners=None, flavor_id=None,
+                             admin_state=None, project_id=None,
+                             listeners=None, flavor_id=None,
                              provider=None, vip_qos_policy_id=None):
         """Create a load balancer
 
@@ -67,6 +68,7 @@ class Octavia(service.Service):
             "listeners": listeners,
             "provider": provider,
             "admin_state_up": admin_state or True,
+            "project_id": project_id,
             "vip_subnet_id": subnet_id,
             "vip_qos_policy_id": vip_qos_policy_id,
         }
@@ -215,7 +217,8 @@ class Octavia(service.Service):
     @atomic.action_timer("octavia.pool_create")
     def pool_create(self, lb_id, protocol, lb_algorithm,
                     listener_id=None, description=None,
-                    admin_state_up=True, session_persistence=None):
+                    admin_state_up=True, project_id=None,
+                    session_persistence=None):
         """Create a pool
 
         :param lb_id: ID of the loadbalancer
@@ -224,6 +227,7 @@ class Octavia(service.Service):
         :param listener_id: ID of the listener
         :param description: a human readable description of the pool
         :param admin_state_up: administrative state of the resource
+        :param project_id: project ID of the resource
         :param session_persistence: a json object specifiying the session
             persistence of the pool
         :return:
@@ -237,6 +241,7 @@ class Octavia(service.Service):
             "listener_id": listener_id,
             "description": description,
             "admin_state_up": admin_state_up,
+            "project_id": project_id,
             "session_persistence": session_persistence
         }
         pool = self._clients.octavia().pool_create(

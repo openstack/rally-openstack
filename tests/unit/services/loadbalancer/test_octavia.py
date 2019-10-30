@@ -94,6 +94,7 @@ class LoadBalancerServiceTestCase(test.TestCase):
                                  "admin_state_up": True,
                                  "vip_qos_policy_id": None,
                                  "listeners": None,
+                                 "project_id": None,
                                  "provider": None,
                                  "vip_subnet_id": "subnet_id",
                                  "description": None}})
@@ -219,6 +220,7 @@ class LoadBalancerServiceTestCase(test.TestCase):
             .assert_called_once_with(
                 json={"pool": {
                     "lb_algorithm": "ROUND_ROBIN",
+                    "project_id": None,
                     "protocol": "HTTP",
                     "listener_id": None,
                     "description": None,

@@ -46,6 +46,7 @@ class CreateAndListLoadbalancers(octavia_utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
@@ -53,6 +54,7 @@ class CreateAndListLoadbalancers(octavia_utils.OctaviaBase):
                 subnet_id=subnet_id,
                 description=description,
                 admin_state=admin_state,
+                project_id=project_id,
                 listeners=listeners,
                 flavor_id=flavor_id,
                 provider=provider,
@@ -88,6 +90,7 @@ class CreateAndDeleteLoadbalancers(octavia_utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
@@ -95,6 +98,7 @@ class CreateAndDeleteLoadbalancers(octavia_utils.OctaviaBase):
                 subnet_id=subnet_id,
                 description=description,
                 admin_state=admin_state,
+                project_id=project_id,
                 listeners=listeners,
                 flavor_id=flavor_id,
                 provider=provider,
@@ -131,6 +135,7 @@ class CreateAndUpdateLoadBalancers(octavia_utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
@@ -138,6 +143,7 @@ class CreateAndUpdateLoadBalancers(octavia_utils.OctaviaBase):
                 subnet_id=subnet_id,
                 description=description,
                 admin_state=admin_state,
+                project_id=project_id,
                 listeners=listeners,
                 flavor_id=flavor_id,
                 provider=provider,
@@ -179,6 +185,7 @@ class CreateAndShowStatsLoadBalancers(octavia_utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
@@ -186,6 +193,7 @@ class CreateAndShowStatsLoadBalancers(octavia_utils.OctaviaBase):
                 subnet_id=subnet_id,
                 description=description,
                 admin_state=admin_state,
+                project_id=project_id,
                 listeners=listeners,
                 flavor_id=flavor_id,
                 provider=provider,
@@ -222,6 +230,7 @@ class CreateAndShowLoadBalancers(octavia_utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
@@ -229,6 +238,7 @@ class CreateAndShowLoadBalancers(octavia_utils.OctaviaBase):
                 subnet_id=subnet_id,
                 description=description,
                 admin_state=admin_state,
+                project_id=project_id,
                 listeners=listeners,
                 flavor_id=flavor_id,
                 provider=provider,

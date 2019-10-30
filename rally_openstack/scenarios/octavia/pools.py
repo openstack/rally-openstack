@@ -39,10 +39,12 @@ class CreateAndListPools(utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
             lb = self.octavia.load_balancer_create(
+                project_id=project_id,
                 subnet_id=subnet_id)
             loadbalancers.append(lb)
 
@@ -71,10 +73,12 @@ class CreateAndDeletePools(utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
             lb = self.octavia.load_balancer_create(
+                project_id=project_id,
                 subnet_id=subnet_id)
             loadbalancers.append(lb)
 
@@ -103,10 +107,12 @@ class CreateAndUpdatePools(utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
             lb = self.octavia.load_balancer_create(
+                project_id=project_id,
                 subnet_id=subnet_id)
             loadbalancers.append(lb)
 
@@ -140,10 +146,12 @@ class CreateAndShowPools(utils.OctaviaBase):
         subnets = []
         loadbalancers = []
         networks = self.context.get("tenant", {}).get("networks", [])
+        project_id = self.context["tenant"]["id"]
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet_id in subnets:
             lb = self.octavia.load_balancer_create(
+                project_id=project_id,
                 subnet_id=subnet_id)
             loadbalancers.append(lb)
 

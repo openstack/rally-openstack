@@ -56,7 +56,8 @@ class PoolsTestCase(test.ScenarioTestCase):
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet in subnets:
-            mock_has_calls.append(mock.call(subnet_id="fake_subnet"))
+            mock_has_calls.append(mock.call(subnet_id="fake_subnet",
+                                            project_id="fake_tenant"))
         loadbalancer_service.load_balancer_create.assert_has_calls(
             mock_has_calls)
         for lb in loadbalancer:
@@ -82,7 +83,8 @@ class PoolsTestCase(test.ScenarioTestCase):
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet in subnets:
-            mock_has_calls.append(mock.call(subnet_id="fake_subnet"))
+            mock_has_calls.append(mock.call(subnet_id="fake_subnet",
+                                            project_id="fake_tenant"))
         loadbalancer_service.load_balancer_create.assert_has_calls(
             mock_has_calls)
         for lb in loadbalancer:
@@ -109,7 +111,8 @@ class PoolsTestCase(test.ScenarioTestCase):
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet in subnets:
-            mock_has_calls.append(mock.call(subnet_id="fake_subnet"))
+            mock_has_calls.append(mock.call(subnet_id="fake_subnet",
+                                            project_id="fake_tenant"))
         loadbalancer_service.load_balancer_create.assert_has_calls(
             mock_has_calls)
         for lb in loadbalancer:
@@ -136,7 +139,8 @@ class PoolsTestCase(test.ScenarioTestCase):
         for network in networks:
             subnets.extend(network.get("subnets", []))
         for subnet in subnets:
-            mock_has_calls.append(mock.call(subnet_id="fake_subnet"))
+            mock_has_calls.append(mock.call(subnet_id="fake_subnet",
+                                            project_id="fake_tenant"))
         loadbalancer_service.load_balancer_create.assert_has_calls(
             mock_has_calls)
         for lb in loadbalancer:
