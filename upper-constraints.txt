@@ -115,7 +115,7 @@ python-watcherclient===2.1.0
 python-zaqarclient===1.12.0
 pytz===2018.5
 PyYAML===3.13
-rally===2.0.0
+rally===2.1.0
 requests===2.22.0
 requests-oauthlib===1.0.0
 requestsexceptions===1.4.0
