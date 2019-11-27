@@ -35,6 +35,8 @@ Changed
 
 * Updated upper-constraints
 
+* Improved check for existing rules at *allow_ssh* context.
+
 [1.5.0] - 2019-05-29
 --------------------
 

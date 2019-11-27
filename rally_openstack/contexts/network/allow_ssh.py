@@ -25,6 +25,39 @@ from rally_openstack.wrappers import network
 LOG = logging.getLogger(__name__)
 
 
+# This method is simplified version to what neutron has
+def _rule_to_key(rule):
+    def _normalize_rule_value(key, value):
+        # This string is used as a placeholder for str(None), but shorter.
+        none_char = "+"
+
+        default = {
+            "port_range_min": "1",
+            "port_range_max": "65535"
+        }
+
+        if key == "remote_ip_prefix":
+            all_address = ["0.0.0.0/0", "::/0", None]
+            if value in all_address:
+                return none_char
+        elif value is None:
+            return default.get(key, none_char)
+        return str(value)
+
+    # NOTE(andreykurilin): there are more actual comparison keys, but this set
+    #   should be enough for us.
+    comparison_keys = [
+        "direction",
+        "port_range_max",
+        "port_range_min",
+        "protocol",
+        "remote_ip_prefix",
+        "security_group_id"
+    ]
+    return "_".join([_normalize_rule_value(x, rule.get(x))
+                     for x in comparison_keys])
+
+
 def _prepare_open_secgroup(credential, secgroup_name):
     """Generate secgroup allowing all tcp/udp/icmp access.
 
@@ -53,30 +86,29 @@ def _prepare_open_secgroup(credential, secgroup_name):
             "port_range_max": 65535,
             "port_range_min": 1,
             "remote_ip_prefix": "0.0.0.0/0",
-            "direction": "ingress"
+            "direction": "ingress",
+            "security_group_id": rally_open["id"]
         },
         {
             "protocol": "udp",
             "port_range_max": 65535,
             "port_range_min": 1,
             "remote_ip_prefix": "0.0.0.0/0",
-            "direction": "ingress"
+            "direction": "ingress",
+            "security_group_id": rally_open["id"]
         },
         {
             "protocol": "icmp",
             "remote_ip_prefix": "0.0.0.0/0",
-            "direction": "ingress"
+            "direction": "ingress",
+            "security_group_id": rally_open["id"]
         }
     ]
 
-    def rule_match(criteria, existing_rule):
-        return all(existing_rule[key] == value
-                   for key, value in criteria.items())
-
+    existing_rules = set(
+        _rule_to_key(r) for r in rally_open.get("security_group_rules", []))
     for new_rule in rules_to_add:
-        if not any(rule_match(new_rule, existing_rule) for existing_rule
-                   in rally_open.get("security_group_rules", [])):
-            new_rule["security_group_id"] = rally_open["id"]
+        if _rule_to_key(new_rule) not in existing_rules:
             neutron.create_security_group_rule(
                 {"security_group_rule": new_rule})
 
