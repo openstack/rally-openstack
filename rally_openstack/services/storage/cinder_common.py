@@ -475,10 +475,14 @@ class UnifiedCinderMixin(object):
 
     @staticmethod
     def _unify_transfer(transfer):
-        auth_key = transfer.auth_key if hasattr(transfer, "auth_key") else None
-        return block.VolumeTransfer(id=transfer.id, name=transfer.name,
-                                    volume_id=transfer.volume_id,
-                                    auth_key=auth_key)
+        return block.VolumeTransfer(
+            id=transfer.id,
+            name=transfer.name,
+            volume_id=transfer.volume_id,
+            # NOTE(andreykurilin): we need to access private field to avoid
+            #   calling extra GET request when the object is not not fully
+            #   loaded.
+            auth_key=transfer._info.get("auth_key"))
 
     @staticmethod
     def _unify_qos(qos):
