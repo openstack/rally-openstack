@@ -354,37 +354,6 @@
     {% endfor %}
 
     -
-      title: CinderVolumes.create_and_accept_transfer tests
-      workloads:
-        -
-          scenario:
-            CinderVolumes.create_and_accept_transfer:
-              size: 1
-          runner:
-            constant:
-              times: 2
-              concurrency: 2
-          contexts:
-            users:
-              tenants: 2
-              users_per_tenant: 2
-        -
-          description: "Create volume from image and accept transfer."
-          scenario:
-            CinderVolumes.create_and_accept_transfer:
-              size: 1
-              image:
-                name: {{image_name}}
-          runner:
-            constant:
-              times: 2
-              concurrency: 2
-          contexts:
-            users:
-              tenants: 2
-              users_per_tenant: 2
-
-    -
       title: CinderVolumes.create_and_extend_volume tests
       workloads:
         -
