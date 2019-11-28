@@ -16,14 +16,29 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-unreleased
-----------
+[1.6.0] - 2019-11-29
+--------------------
+
+Please note that Python 2.7 will reach the end of its life on
+January 1st, 2020. A future version of Rally will drop support for Python 2.7,
+it will happen soon. Also, the same will happen with support of Python 3.4 and
+Python 3.5
+
+Added
+~~~~~
+
+Scenarios:
+
+* NeutronNetworks.create_and_bind_ports
+* BarbicanOrders.list
+* BarbicanOrders.create_key_and_delete
+* BarbicanOrders.create_certificate_and_delete
+* BarbicanOrders.create_asymmetric_and_delete
 
 Removed
 ~~~~~~~
 
 * Removed the former multiattach support dropped in Cinder Train (5.0.0)
-
 * Removed the former ``sort_key`` and ``sort_dir`` support at listing cinder
   volumes.
 
@@ -32,10 +47,16 @@ Changed
 
 * Improved logging message for the number of used threads while creating
   keystone users and projects/tenants at *users@openstack* context.
-
 * Updated upper-constraints
-
 * Improved check for existing rules at *allow_ssh* context.
+
+Fixed
+~~~~~
+
+* Handling of errors while cleaning up octavia resources
+* Missing project_id key for several Octavia API calls
+
+  `Launchpad-bug #1819284 <https://launchpad.net/bugs/1833235>`_
 
 [1.5.0] - 2019-05-29
 --------------------
