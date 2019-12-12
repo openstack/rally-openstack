@@ -76,10 +76,13 @@ class TempestContext(context.VerifierContext):
                                helper_method=self._discover_or_create_image)
         self._configure_option("compute", "flavor_ref",
                                helper_method=self._discover_or_create_flavor,
-                               flv_ram=conf.CONF.openstack.flavor_ref_ram)
+                               flv_ram=conf.CONF.openstack.flavor_ref_ram,
+                               flv_disk=conf.CONF.openstack.flavor_ref_disk)
         self._configure_option("compute", "flavor_ref_alt",
                                helper_method=self._discover_or_create_flavor,
-                               flv_ram=conf.CONF.openstack.flavor_ref_alt_ram)
+                               flv_ram=conf.CONF.openstack.flavor_ref_alt_ram,
+                               flv_disk=conf.CONF.openstack.flavor_ref_alt_disk
+                               )
         if "neutron" in self.available_services:
             neutronclient = self.clients.neutron()
             if neutronclient.list_networks(shared=True)["networks"]:
@@ -242,14 +245,15 @@ class TempestContext(context.VerifierContext):
 
         return image_obj
 
-    def _discover_or_create_flavor(self, flv_ram):
+    def _discover_or_create_flavor(self, flv_ram, flv_disk):
         novaclient = self.clients.nova()
 
-        LOG.debug("Trying to discover a flavor with the following "
-                  "properties: RAM = %dMB, VCPUs = 1, disk = 0GB." % flv_ram)
+        LOG.debug("Trying to discover a flavor with the following properties: "
+                  "RAM = %(ram)dMB, VCPUs = 1, disk >= %(disk)dGiB." %
+                  {"ram": flv_ram, "disk": flv_disk})
         for flavor in novaclient.flavors.list():
             if (flavor.ram == flv_ram and
-                    flavor.vcpus == 1 and flavor.disk == 0):
+                    flavor.vcpus == 1 and flavor.disk >= flv_disk):
                 LOG.debug("The following flavor discovered: '{0}'. "
                           "Using flavor '{0}' (ID = {1}) for the tests."
                           .format(flavor.name, flavor.id))
@@ -261,10 +265,11 @@ class TempestContext(context.VerifierContext):
             "name": self.generate_random_name(),
             "ram": flv_ram,
             "vcpus": 1,
-            "disk": 0
+            "disk": flv_disk
         }
         LOG.debug("Creating flavor '%s' with the following properties: RAM "
-                  "= %dMB, VCPUs = 1, disk = 0GB." % (params["name"], flv_ram))
+                  "= %dMB, VCPUs = 1, disk = %dGB." %
+                  (params["name"], flv_ram, flv_disk))
         flavor = novaclient.flavors.create(**params)
         LOG.debug("Flavor '%s' (ID = %s) has been successfully created!"
                   % (flavor.name, flavor.id))

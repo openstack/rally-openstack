@@ -200,7 +200,8 @@ class TempestContextTestCase(test.TestCase):
 
         self.context.conf.set("compute", "flavor_ref", "")
         self.context._configure_option("compute", "flavor_ref",
-                                       helper_method=helper_method, flv_ram=64)
+                                       helper_method=helper_method, flv_ram=64,
+                                       flv_disk=5)
         self.assertEqual(1, helper_method.call_count)
 
         result = self.context.conf.get("compute", "flavor_ref")
@@ -234,9 +235,9 @@ class TempestContextTestCase(test.TestCase):
     def test__discover_or_create_flavor_when_flavor_exists(self):
         client = self.context.clients.nova()
         client.flavors.list.return_value = [fakes.FakeFlavor(id="id1", ram=64,
-                                                             vcpus=1, disk=0)]
+                                                             vcpus=1, disk=5)]
 
-        flavor = self.context._discover_or_create_flavor(64)
+        flavor = self.context._discover_or_create_flavor(64, 5)
         self.assertEqual("id1", flavor.id)
         self.assertEqual(0, len(self.context._created_flavors))
 
@@ -245,7 +246,7 @@ class TempestContextTestCase(test.TestCase):
         client.flavors.list.return_value = []
         client.flavors.create.side_effect = [fakes.FakeFlavor(id="id1")]
 
-        flavor = self.context._discover_or_create_flavor(64)
+        flavor = self.context._discover_or_create_flavor(64, 5)
         self.assertEqual("id1", flavor.id)
         self.assertEqual("id1", self.context._created_flavors[0].id)
 
@@ -363,10 +364,12 @@ class TempestContextTestCase(test.TestCase):
                        helper_method=ctx._discover_or_create_image),
              mock.call("compute", "flavor_ref",
                        helper_method=ctx._discover_or_create_flavor,
-                       flv_ram=config.CONF.openstack.flavor_ref_ram),
+                       flv_ram=config.CONF.openstack.flavor_ref_ram,
+                       flv_disk=config.CONF.openstack.flavor_ref_disk),
              mock.call("compute", "flavor_ref_alt",
                        helper_method=ctx._discover_or_create_flavor,
-                       flv_ram=config.CONF.openstack.flavor_ref_alt_ram)],
+                       flv_ram=config.CONF.openstack.flavor_ref_alt_ram,
+                       flv_disk=config.CONF.openstack.flavor_ref_alt_disk)],
             mock__configure_option.call_args_list)
 
         mock_create_dir.reset_mock()
@@ -401,10 +404,12 @@ class TempestContextTestCase(test.TestCase):
                        helper_method=ctx._discover_or_create_image),
              mock.call("compute", "flavor_ref",
                        helper_method=ctx._discover_or_create_flavor,
-                       flv_ram=config.CONF.openstack.flavor_ref_ram),
+                       flv_ram=config.CONF.openstack.flavor_ref_ram,
+                       flv_disk=config.CONF.openstack.flavor_ref_disk),
              mock.call("compute", "flavor_ref_alt",
                        helper_method=ctx._discover_or_create_flavor,
-                       flv_ram=config.CONF.openstack.flavor_ref_alt_ram),
+                       flv_ram=config.CONF.openstack.flavor_ref_alt_ram,
+                       flv_disk=config.CONF.openstack.flavor_ref_alt_disk),
              mock.call("compute", "fixed_network_name",
                        helper_method=ctx._create_network_resources),
              mock.call("orchestration", "instance_type",
