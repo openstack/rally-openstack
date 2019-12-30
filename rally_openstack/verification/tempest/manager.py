@@ -27,9 +27,9 @@ from rally_openstack.verification.tempest import config
 from rally_openstack.verification.tempest import consts
 
 
-AVAILABLE_SETS = (list(consts.TempestTestSets) +
-                  list(consts.TempestApiTestSets) +
-                  list(consts.TempestScenarioTestSets))
+AVAILABLE_SETS = (list(consts.TempestTestSets)
+                  + list(consts.TempestApiTestSets)
+                  + list(consts.TempestScenarioTestSets))
 
 
 @manager.configure(name="tempest", platform="openstack",
@@ -131,7 +131,7 @@ class TempestManager(testr.TestrLauncher):
                 "'%s' verifiers don't support extra installation settings "
                 "for extensions." % self.get_name())
         version = version or "master"
-        egg = re.sub("\.git$", "", os.path.basename(source.strip("/")))
+        egg = re.sub(r"\.git$", "", os.path.basename(source.strip("/")))
         full_source = "git+{0}@{1}#egg={2}".format(source, version, egg)
         # NOTE(ylobankov): Use 'develop mode' installation to provide an
         #                  ability to advanced users to change tests or

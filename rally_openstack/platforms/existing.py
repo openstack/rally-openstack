@@ -243,8 +243,8 @@ class OpenStack(platform.Platform):
 
     def info(self):
         """Return information about cloud as dict."""
-        active_user = (self.platform_data["admin"] or
-                       self.platform_data["users"][0])
+        active_user = (self.platform_data["admin"]
+                       or self.platform_data["users"][0])
         services = []
         for stype, name in osclients.Clients(active_user).services().items():
             if name == "__unknown__":
@@ -366,9 +366,9 @@ class OpenStack(platform.Platform):
         project_domain_name = sys_environ.get("OS_PROJECT_DOMAIN_NAME")
         identity_api_version = sys_environ.get(
             "OS_IDENTITY_API_VERSION", sys_environ.get("IDENTITY_API_VERSION"))
-        if (identity_api_version == "3" or
-                (identity_api_version is None and
-                 (user_domain_name or project_domain_name))):
+        if (identity_api_version == "3"
+                or (identity_api_version is None
+                    and (user_domain_name or project_domain_name))):
             # it is Keystone v3 and it has another config scheme
             spec["admin"]["project_name"] = spec["admin"].pop("tenant_name")
             spec["admin"]["user_domain_name"] = user_domain_name or "Default"

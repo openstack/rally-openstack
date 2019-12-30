@@ -81,8 +81,8 @@ class ValidCommandValidator(validators.FileExistsValidator):
             interpreter = (interpreter[-1]
                            if isinstance(interpreter, (tuple, list))
                            else interpreter)
-            if (command.get("local_path") and
-                    command.get("remote_path") != interpreter):
+            if (command.get("local_path")
+                    and command.get("remote_path") != interpreter):
                 self.fail(
                     "When uploading an interpreter its path should be as well"
                     " specified as the `remote_path' string: %r" % command)
@@ -359,6 +359,7 @@ class RuncommandHeat(vm_utils.VMScenario):
                           "rows": rows}}
         )
 
+
 BASH_DD_LOAD_TEST = """
 #!/bin/sh
 # Load server and output JSON results ready to be processed
@@ -382,8 +383,8 @@ get_used_cpu_percent() {
 
 get_used_ram_percent() {
     local total=$(free | grep Mem: | awk '{print $2}')
-    local used=$(free | grep -- -/+\ buffers | awk '{print $3}')
-    echo ${used} 100 \* ${total} / p | dc
+    local used=$(free | grep -- -/+\\ buffers | awk '{print $3}')
+    echo ${used} 100 \\* ${total} / p | dc
 }
 
 get_used_disk_percent() {

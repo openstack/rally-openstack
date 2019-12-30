@@ -356,8 +356,8 @@ class ManilaScenario(scenario.OpenStackScenario):
         :raises exceptions.InvalidArgumentsException: if invalid arguments
             were provided.
         """
-        if not (key_min_length <= key_max_length and
-                value_min_length <= value_max_length):
+        if not (key_min_length <= key_max_length
+                and value_min_length <= value_max_length):
             raise exceptions.InvalidArgumentsException(
                 "Min length for keys and values of metadata can not be bigger "
                 "than maximum length.")

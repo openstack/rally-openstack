@@ -153,7 +153,7 @@ class FlavorTestCase(test.TestCase):
                           resource_spec=resource_spec, config={})
 
     def test_preprocess_by_regex(self):
-        resource_spec = {"regex": "m(1|2)\.nano"}
+        resource_spec = {"regex": r"m(1|2)\.nano"}
         flavor_id = self.type_cls.pre_process(
             resource_spec=resource_spec, config={})
         self.assertEqual("42", flavor_id)

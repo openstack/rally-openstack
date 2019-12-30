@@ -252,8 +252,8 @@ class TempestContext(context.VerifierContext):
                   "RAM = %(ram)dMB, VCPUs = 1, disk >= %(disk)dGiB." %
                   {"ram": flv_ram, "disk": flv_disk})
         for flavor in novaclient.flavors.list():
-            if (flavor.ram == flv_ram and
-                    flavor.vcpus == 1 and flavor.disk >= flv_disk):
+            if (flavor.ram == flv_ram
+                    and flavor.vcpus == 1 and flavor.disk >= flv_disk):
                 LOG.debug("The following flavor discovered: '{0}'. "
                           "Using flavor '{0}' (ID = {1}) for the tests."
                           .format(flavor.name, flavor.id))

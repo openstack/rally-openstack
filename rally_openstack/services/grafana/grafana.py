@@ -60,8 +60,8 @@ class GrafanaService(service.Service):
                                       self._spec["grafana"]["password"]))
             result = resp.json()
             LOG.debug("Grafana response code: %s" % resp.status_code)
-            no_result = (result.get("data") is None or
-                         len(result["data"]["result"]) < 1)
+            no_result = (result.get("data") is None
+                         or len(result["data"]["result"]) < 1)
             if no_result and i + 1 >= retries_total:
                 LOG.debug("No instance metrics found in Grafana")
                 return False

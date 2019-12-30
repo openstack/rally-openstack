@@ -438,9 +438,9 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         identity_service = mock_identity.Identity.return_value
         identity_service.create_user.side_effect = Exception()
         with users.UserGenerator(self.context) as ctx:
-                self.assertRaises(exceptions.ContextSetupFailure, ctx.setup)
-                mock_log_warning.assert_called_with(
-                    "Failed to consume a task from the queue: ")
+            self.assertRaises(exceptions.ContextSetupFailure, ctx.setup)
+            mock_log_warning.assert_called_with(
+                "Failed to consume a task from the queue: ")
 
         # Ensure that tenants get deleted anyway
         self.assertEqual(0, len(ctx.context["tenants"]))

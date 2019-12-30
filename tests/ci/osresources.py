@@ -594,23 +594,21 @@ def main():
         # filter out expected additions
         expected = []
         for resource in added:
-            if (
-                    (resource["cls"] == "keystone" and
-                     resource["resource_name"] == "role" and
-                     resource["id"].get("name") == "_member_") or
+            if (False  # <- makes indent of other cases similar
+                    or (resource["cls"] == "keystone"
+                        and resource["resource_name"] == "role"
+                        and resource["id"].get("name") == "_member_")
+                    or (resource["cls"] == "neutron"
+                        and resource["resource_name"] == "security_group"
+                        and resource["id"].get("name") == "default")
+                    or (resource["cls"] == "cinder"
+                        and resource["resource_name"] == "volume"
+                        and resource["id"].get("name") in volume_names)
 
-                    (resource["cls"] == "neutron" and
-                     resource["resource_name"] == "security_group" and
-                     resource["id"].get("name") == "default") or
-
-                    (resource["cls"] == "cinder" and
-                     resource["resource_name"] == "volume" and
-                     resource["id"].get("name") in volume_names) or
-
-                    resource["cls"] == "murano" or
+                    or resource["cls"] == "murano"
 
                     # Glance has issues with uWSGI integration...
-                    resource["cls"] == "glance"):
+                    or resource["cls"] == "glance"):
                 expected.append(resource)
 
         for resource in expected:

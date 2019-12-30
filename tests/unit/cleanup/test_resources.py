@@ -553,8 +553,8 @@ class NeutronPortTestCase(test.TestCase):
         for port in ports:
             if port["tenant_id"] == tenant_uuid:
                 expected_ports.append(copy.deepcopy(port))
-                if ("device_id" in port and
-                        port["device_id"].startswith("router")):
+                if ("device_id" in port
+                        and port["device_id"].startswith("router")):
                     expected_ports[-1]["parent_name"] = [
                         r for r in routers
                         if r["id"] == port["device_id"]][0]["name"]

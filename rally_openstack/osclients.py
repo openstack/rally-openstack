@@ -55,8 +55,8 @@ class AuthenticationFailed(exceptions.AuthenticationFailed):
             # self-sufficient
             self.msg_fmt = self.msg_fmt_2
             message = error.message
-            if (message.startswith("Unable to establish connection to") or
-                    isinstance(error, ks_exc.DiscoveryFailure)):
+            if (message.startswith("Unable to establish connection to")
+                    or isinstance(error, ks_exc.DiscoveryFailure)):
                 if "Max retries exceeded with url" in message:
                     if "HTTPConnectionPool" in message:
                         splitter = ": HTTPConnectionPool"
@@ -141,8 +141,8 @@ class OSClient(plugin.Plugin):
         # version is a string object.
         # For those clients which doesn't accept string value(for example
         # zaqarclient), this method should be overridden.
-        version = (version or
-                   self.credential.api_info.get(self.get_name(), {}).get(
+        version = (version
+                   or self.credential.api_info.get(self.get_name(), {}).get(
                        "version") or self._meta_get("default_version"))
         if version is not None:
             version = str(version)
@@ -175,8 +175,8 @@ class OSClient(plugin.Plugin):
         Choose service type between transmitted(preferable value if present),
         service type from api_info(configured from a context) and default.
         """
-        return (service_type or
-                self.credential.api_info.get(self.get_name(), {}).get(
+        return (service_type
+                or self.credential.api_info.get(self.get_name(), {}).get(
                     "service_type") or self._meta_get("default_service_type"))
 
     @classmethod
@@ -312,8 +312,8 @@ class Keystone(OSClient):
                 # available version with the smallest number. To be able to
                 # discover versions we need session
                 temp_session = session.Session(
-                    verify=(self.credential.https_cacert or
-                            not self.credential.https_insecure),
+                    verify=(self.credential.https_cacert
+                            or not self.credential.https_insecure),
                     cert=self.credential.https_cert,
                     timeout=CONF.openstack_client_http_timeout)
                 version = str(discover.Discover(
@@ -329,8 +329,8 @@ class Keystone(OSClient):
             identity_plugin = identity.Password(**password_args)
             sess = session.Session(
                 auth=identity_plugin,
-                verify=(self.credential.https_cacert or
-                        not self.credential.https_insecure),
+                verify=(self.credential.https_cacert
+                        or not self.credential.https_insecure),
                 cert=self.credential.https_cert,
                 timeout=CONF.openstack_client_http_timeout)
             self.cache[key] = (sess, identity_plugin)

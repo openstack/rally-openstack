@@ -88,8 +88,8 @@ class ShareNetworks(context.Context):
     }
 
     def _setup_for_existing_users(self):
-        if (self.config["use_share_networks"] and
-                not self.config["share_networks"]):
+        if (self.config["use_share_networks"]
+                and not self.config["share_networks"]):
             msg = ("Usage of share networks was enabled but for deployment "
                    "with existing users share networks also should be "
                    "specified via arg 'share_networks'")
@@ -189,8 +189,8 @@ class ShareNetworks(context.Context):
             self._setup_for_autocreated_users()
 
     def cleanup(self):
-        if (not self.context["config"].get("existing_users") or
-                self.config["use_share_networks"]):
+        if (not self.context["config"].get("existing_users")
+                or self.config["use_share_networks"]):
             resource_manager.cleanup(
                 names=["manila.share_networks"],
                 users=self.context.get("users", []),

@@ -98,7 +98,7 @@ class SeekAndDestroy(object):
                 try:
                     if resource.is_deleted():
                         return
-                except Exception as e:
+                except Exception:
                     LOG.exception(
                         "Seems like %s.%s.is_deleted(self) method is broken "
                         "It shouldn't raise any exceptions."
@@ -169,8 +169,8 @@ class SeekAndDestroy(object):
             user=self._get_cached_client(user),
             tenant_uuid=user and user["tenant_id"])
 
-        if (isinstance(manager.name(), base.NoName) or
-                rutils.name_matches_object(
+        if (isinstance(manager.name(), base.NoName)
+                or rutils.name_matches_object(
                     manager.name(), *self.resource_classes,
                     task_id=self.task_id, exact=False)):
             self._delete_single_resource(manager)

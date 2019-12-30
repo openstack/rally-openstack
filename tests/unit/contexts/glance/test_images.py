@@ -128,8 +128,8 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
         wrapper_calls.extend(
             [mock.call().create_image(
                 container_format, image_url, disk_format,
-                name=mock.ANY, **expected_image_args)] *
-            tenants * images_per_tenant)
+                name=mock.ANY, **expected_image_args)]
+            * tenants * images_per_tenant)
 
         mock_clients.assert_has_calls([mock.call(mock.ANY)] * tenants)
 

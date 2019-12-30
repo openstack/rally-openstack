@@ -28,8 +28,8 @@ class CheckOpenStackAPIVersionsValidator(validation.Validator):
         for client in plugin_cfg:
             client_cls = osclients.OSClient.get(client)
             try:
-                if ("service_type" in plugin_cfg[client] or
-                        "service_name" in plugin_cfg[client]):
+                if ("service_type" in plugin_cfg[client]
+                        or "service_name" in plugin_cfg[client]):
                     client_cls.is_service_type_configurable()
 
                 if "version" in plugin_cfg[client]:

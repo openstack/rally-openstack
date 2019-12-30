@@ -28,7 +28,7 @@ class SenlinScenario(scenario.OpenStackScenario):
     def _list_clusters(self, **queries):
         """Return user cluster list.
 
-        :param kwargs \*\*queries: Optional query parameters to be sent to
+        :param kwargs **queries: Optional query parameters to be sent to
             restrict the clusters to be returned. Available parameters include:
 
             * name: The name of a cluster.

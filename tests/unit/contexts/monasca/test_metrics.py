@@ -93,8 +93,8 @@ class MonascaMetricGeneratorTestCase(test.TestCase):
         second_call = mock.call(monasca_utils.CONF.openstack.
                                 monasca_metric_create_prepoll_delay,
                                 atomic_delay=1)
-        self.assertEqual([first_call] * metrics_per_tenant * tenants_count +
-                         [second_call],
-                         mock_interruptable_sleep.call_args_list,
-                         "Method interruptable_sleep should be called "
-                         "tenant counts times metrics plus one")
+        self.assertEqual(
+            [first_call] * metrics_per_tenant * tenants_count + [second_call],
+            mock_interruptable_sleep.call_args_list,
+            "Method interruptable_sleep should be called tenant counts times "
+            "metrics plus one")

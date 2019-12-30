@@ -499,20 +499,20 @@ class CreateAndDeletePorts(utils.NeutronScenario):
 
     def run(self, network_create_args=None,
             port_create_args=None, ports_per_network=1):
-            """Create and delete a port.
+        """Create and delete a port.
 
-            Measure the "neutron port-create" and "neutron port-delete"
-            commands performance.
+        Measure the "neutron port-create" and "neutron port-delete"
+        commands performance.
 
-            :param network_create_args: dict, POST /v2.0/networks request
-                                        options. Deprecated.
-            :param port_create_args: dict, POST /v2.0/ports request options
-            :param ports_per_network: int, number of ports for one network
-            """
-            network = self._get_or_create_network(network_create_args)
-            for i in range(ports_per_network):
-                port = self._create_port(network, port_create_args)
-                self._delete_port(port)
+        :param network_create_args: dict, POST /v2.0/networks request
+                                    options. Deprecated.
+        :param port_create_args: dict, POST /v2.0/ports request options
+        :param ports_per_network: int, number of ports for one network
+        """
+        network = self._get_or_create_network(network_create_args)
+        for i in range(ports_per_network):
+            port = self._create_port(network, port_create_args)
+            self._delete_port(port)
 
 
 @validation.add("number", param_name="ports_per_network", minval=1,
@@ -546,9 +546,9 @@ class CreateAndBindPorts(utils.NeutronScenario):
         # successfully. Look at agent types used in the gate.
         host_to_bind = None
         for agent in self.context["networking_agents"]:
-            if (agent["admin_state_up"] and
-                    agent["alive"] and
-                    agent["agent_type"] in
+            if (agent["admin_state_up"]
+                    and agent["alive"]
+                    and agent["agent_type"] in
                     cfg.CONF.openstack.neutron_bind_l2_agent_types):
                 host_to_bind = agent["host"]
         if host_to_bind is None:

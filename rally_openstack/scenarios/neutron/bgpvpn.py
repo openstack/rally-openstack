@@ -19,11 +19,12 @@ from rally_openstack import scenario
 from rally_openstack.scenarios.neutron import utils
 
 
+"""Scenarios for Neutron Networking-Bgpvpn."""
+
+
 def _create_random_route_target():
     return "{}:{}".format(random.randint(0, 65535),
                           random.randint(0, 4294967295))
-
-"""Scenarios for Neutron Networking-Bgpvpn."""
 
 
 @validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],

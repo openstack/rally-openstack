@@ -1190,8 +1190,8 @@ class FakeNeutronClient(object):
     def add_interface_router(self, router_id, data):
         subnet_id = data["subnet_id"]
 
-        if (router_id not in self.__routers or
-                subnet_id not in self.__subnets):
+        if (router_id not in self.__routers
+                or subnet_id not in self.__subnets):
             raise neutron_exceptions.NeutronClientException
 
         subnet = self.__subnets[subnet_id]

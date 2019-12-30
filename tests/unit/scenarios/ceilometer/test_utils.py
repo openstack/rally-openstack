@@ -44,8 +44,8 @@ class CeilometerScenarioTestCase(test.ScenarioTestCase):
                     "resource_id": "fake_uuid",
                     "timestamp": test_timestamp.isoformat()}
         self.assertEqual(expected, result[0][0])
-        samples_int = (parser.parse(result[0][0]["timestamp"]) -
-                       parser.parse(result[0][1]["timestamp"])).seconds
+        samples_int = (parser.parse(result[0][0]["timestamp"])
+                       - parser.parse(result[0][1]["timestamp"])).seconds
         self.assertEqual(60, samples_int)
 
     @mock.patch("%s.uuid.uuid4" % CEILOMETER_UTILS)
@@ -63,8 +63,8 @@ class CeilometerScenarioTestCase(test.ScenarioTestCase):
                     "resource_id": "fake_uuid",
                     "timestamp": test_timestamp.isoformat()}
         self.assertEqual(expected, result[0][0])
-        samples_int = (parser.parse(result[0][-1]["timestamp"]) -
-                       parser.parse(result[1][0]["timestamp"])).seconds
+        samples_int = (parser.parse(result[0][-1]["timestamp"])
+                       - parser.parse(result[1][0]["timestamp"])).seconds
         # NOTE(idegtiarov): here we check that interval between last sample in
         # first batch and first sample in second batch is equal 60 sec.
         self.assertEqual(60, samples_int)

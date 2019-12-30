@@ -69,8 +69,6 @@ class ManilaSharesTestCase(test.ScenarioTestCase):
             "params": {
                 "share_proto": "cifs",
                 "size": 4,
-                "share_network": "foo",
-                "share_type": "bar",
                 "snapshot_id": "snapshot_foo",
                 "description": "foo_description",
                 "metadata": {"foo_metadata": "foo"},
@@ -122,8 +120,6 @@ class ManilaSharesTestCase(test.ScenarioTestCase):
             "params": {
                 "share_proto": "cifs",
                 "size": 4,
-                "share_network": "foo",
-                "share_type": "bar",
                 "snapshot_id": "snapshot_foo",
                 "description": "foo_description",
                 "metadata": {"foo_metadata": "foo"},
@@ -182,8 +178,6 @@ class ManilaSharesTestCase(test.ScenarioTestCase):
             "access_level": "ro",
             "share_proto": "cifs",
             "size": 4,
-            "share_network": "foo",
-            "share_type": "bar",
             "snapshot_id": "snapshot_foo",
             "description": "foo_description",
             "metadata": {"foo_metadata": "foo"},

@@ -80,8 +80,8 @@ class TempestConfigfileManager(object):
             from keystoneauth1 import session
 
             temp_session = session.Session(
-                verify=(self.credential.https_cacert or
-                        not self.credential.https_insecure),
+                verify=(self.credential.https_cacert
+                        or not self.credential.https_insecure),
                 timeout=CONF.openstack_client_http_timeout)
             data = discover.Discover(temp_session, auth_url).version_data()
             return dict([(v["version"][0], v["url"]) for v in data])
@@ -150,10 +150,10 @@ class TempestConfigfileManager(object):
     def _configure_network(self, section_name="network"):
         if "neutron" in self.available_services:
             neutronclient = self.clients.neutron()
-            public_nets = [net for net
-                           in neutronclient.list_networks()["networks"]
-                           if net["status"] == "ACTIVE" and
-                           net["router:external"] is True]
+            public_nets = [
+                net for net in neutronclient.list_networks()["networks"]
+                if net["status"] == "ACTIVE" and net["router:external"] is True
+            ]
             if public_nets:
                 net_id = public_nets[0]["id"]
                 net_name = public_nets[0]["name"]

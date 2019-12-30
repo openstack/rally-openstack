@@ -271,10 +271,9 @@ class ShareNetworksTestCase(test.TestCase):
             mock_manila_scenario__add_security_service_to_share_network)
         mock_add_security_service_to_share_network.assert_has_calls([
             mock.call(mock.ANY, mock.ANY)
-            for i in range(
-                self.TENANTS_AMOUNT *
-                networks_per_tenant *
-                len(self.SECURITY_SERVICES))])
+            for _ in range(
+                self.TENANTS_AMOUNT * networks_per_tenant
+                * len(self.SECURITY_SERVICES))])
         if neutron:
             sn_args = {
                 "neutron_net_id": mock.ANY,

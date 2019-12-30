@@ -121,8 +121,8 @@ class AllowSSH(context.Context):
     """Sets up security groups for all users to access VM via SSH."""
 
     def setup(self):
-        admin_or_user = (self.context.get("admin") or
-                         self.context.get("users")[0])
+        admin_or_user = (self.context.get("admin")
+                         or self.context.get("users")[0])
 
         net_wrapper = network.wrap(
             osclients.Clients(admin_or_user["credential"]),

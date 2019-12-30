@@ -126,10 +126,10 @@ class UserGenerator(context.Context):
         else:
             self.existing_users = []
             self.credential = context["admin"]["credential"]
-            project_domain = (self.credential["project_domain_name"] or
-                              cfg.CONF.openstack.project_domain)
-            user_domain = (self.credential["user_domain_name"] or
-                           cfg.CONF.openstack.user_domain)
+            project_domain = (self.credential["project_domain_name"]
+                              or cfg.CONF.openstack.project_domain)
+            user_domain = (self.credential["user_domain_name"]
+                           or cfg.CONF.openstack.user_domain)
             self.DEFAULT_FOR_NEW_USERS["project_domain"] = project_domain
             self.DEFAULT_FOR_NEW_USERS["user_domain"] = user_domain
             with self.config.unlocked():

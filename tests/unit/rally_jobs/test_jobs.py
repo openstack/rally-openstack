@@ -53,8 +53,9 @@ class RallyJobsTestCase(test.TestCase):
         discover.load_plugins(os.path.join(self.rally_jobs_path, "plugins"))
 
         files = {f for f in os.listdir(self.rally_jobs_path)
-                 if (os.path.isfile(os.path.join(self.rally_jobs_path, f)) and
-                     f.endswith(".yaml") and not f.endswith("_args.yaml"))}
+                 if (os.path.isfile(os.path.join(self.rally_jobs_path, f))
+                     and f.endswith(".yaml")
+                     and not f.endswith("_args.yaml"))}
 
         # TODO(andreykurilin): figure out why it fails
         files -= {"rally-mos.yaml", "sahara-clusters.yaml"}
