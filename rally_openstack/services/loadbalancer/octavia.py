@@ -163,7 +163,7 @@ class Octavia(service.Service):
         """Delete a listener
 
         :param stirng listener_id:
-            ID of of listener to delete
+            ID of listener to delete
         :return:
             Response Code from the API
         """
@@ -263,7 +263,7 @@ class Octavia(service.Service):
         """Delete a pool
 
         :param string pool_id:
-            ID of of pool to delete
+            ID of pool to delete
         :return:
             Response Code from the API
         """
@@ -390,7 +390,7 @@ class Octavia(service.Service):
         """Delete a l7policy
 
         :param string l7policy_id:
-            ID of of l7policy to delete
+            ID of l7policy to delete
         :return:
             Response Code from the API
         """
@@ -449,7 +449,7 @@ class Octavia(service.Service):
         """Delete a l7rule
 
         :param string l7rule_id:
-            ID of of listener to delete
+            ID of listener to delete
         :param string l7policy_id:
             ID of the l7policy for this l7rule
         :return:
@@ -513,7 +513,7 @@ class Octavia(service.Service):
         """Delete a health_monitor
 
         :param string health_monitor_id:
-            ID of of health monitor to delete
+            ID of health monitor to delete
         :return:
             Response Code from the API
         """
