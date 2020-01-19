@@ -186,7 +186,7 @@ class CinderV3Service(service.Service, cinder_common.CinderMixin):
                             to update.
         :param update_name: if True, can update name by generating random name.
                             if False, don't update name.
-        :param description: Description of the the volume type.
+        :param description: Description of the volume type.
         :rtype: :class:`VolumeType`
         """
         name = None

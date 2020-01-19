@@ -480,7 +480,7 @@ class UnifiedCinderMixin(object):
             name=transfer.name,
             volume_id=transfer.volume_id,
             # NOTE(andreykurilin): we need to access private field to avoid
-            #   calling extra GET request when the object is not not fully
+            #   calling extra GET request when the object is not fully
             #   loaded.
             auth_key=transfer._info.get("auth_key"))
 
