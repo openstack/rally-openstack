@@ -270,6 +270,32 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("subid1",
                          self.context._created_networks[0]["subnets"][0])
 
+    @mock.patch("rally_openstack.wrappers.network.NeutronWrapper.ext_gw_mode_enabled",  # noqa E501
+                new_callable=mock.PropertyMock, return_value=True)
+    def test__create_network_resources_public_network_override(self, mock_ext_gw_mode_enabled):  # noqa E501
+        client = self.context.clients.neutron()
+        conf = self.context.conf
+
+        conf.add_section("network")
+        conf.set("network", "public_network_id", "my-uuid")
+
+        fake_network = {
+            "id": "nid1",
+            "name": "network",
+            "status": "status"}
+
+        client.create_network.side_effect = [{"network": fake_network}]
+        client.create_router.side_effect = [{"router": {"id": "rid1"}}]
+        client.create_subnet.side_effect = [{"subnet": {"id": "subid1"}}]
+        client.list_networks.return_value = {"networks": []}
+
+        self.context._create_network_resources()
+        _name, pos, _kwargs = client.create_router.mock_calls[0]
+        router = pos[0]["router"]
+        external_gateway_info = router["external_gateway_info"]
+        self.assertEqual('my-uuid', external_gateway_info["network_id"])
+        self.assertEqual(True, external_gateway_info["enable_snat"])
+
     def test__cleanup_tempest_roles(self):
         self.context._created_roles = [fakes.FakeRole(), fakes.FakeRole()]
 
