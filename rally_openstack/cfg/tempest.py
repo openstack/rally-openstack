@@ -79,5 +79,10 @@ OPTS = {"openstack": [
     cfg.IntOpt("heat_instance_type_ram",
                default="64",
                deprecated_group="tempest",
-               help="RAM size flavor used for orchestration test cases")
+               help="RAM size flavor used for orchestration test cases"),
+    cfg.IntOpt("heat_instance_type_disk",
+               default="5",
+               deprecated_group="tempest",
+               help="Disk size requirement in GiB flavor used for "
+               "orchestration test cases"),
 ]}

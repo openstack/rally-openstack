@@ -102,7 +102,8 @@ class TempestContext(context.VerifierContext):
             self._configure_option(
                 "orchestration", "instance_type",
                 helper_method=self._discover_or_create_flavor,
-                flv_ram=conf.CONF.openstack.heat_instance_type_ram)
+                flv_ram=conf.CONF.openstack.heat_instance_type_ram,
+                flv_disk=conf.CONF.openstack.heat_instance_type_disk)
 
         with open(self.conf_path, "w") as configfile:
             self.conf.write(configfile)
