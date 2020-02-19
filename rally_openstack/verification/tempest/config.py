@@ -43,7 +43,7 @@ class TempestConfigfileManager(object):
         self.clients = self.credential.clients()
         self.available_services = self.clients.services().values()
 
-        self.conf = configparser.ConfigParser()
+        self.conf = configparser.ConfigParser(allow_no_value=True)
 
     def _get_service_type_by_service_name(self, service_name):
         for s_type, s_name in self.clients.services().items():

@@ -148,6 +148,13 @@ class TempestConfigfileManagerTestCase(test.TestCase):
                 "False",
                 self.tempest.conf.get("identity-feature-enabled", "api_v2"))
 
+        # Test a conf setting with a None value
+        try:
+            self.tempest.conf.set("identity", "region", None)
+        except TypeError as e:
+            self.fail("self.tempest.conf.set('identity', 'region', None) "
+                      "raised a TypeError: " + str(e))
+
     def test__configure_network_if_neutron(self):
         self.tempest.available_services = ["neutron"]
         client = self.tempest.clients.neutron()
