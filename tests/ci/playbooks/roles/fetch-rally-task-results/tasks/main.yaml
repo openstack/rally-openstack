@@ -18,14 +18,6 @@
     path: '{{ rally_results_dir }}'
   register: results_dir_stat
 
-- name: Gzip results files
-  become: yes
-  become_user: stack
-  shell: "gzip * -9 -q | true"
-  args:
-    chdir: '{{ rally_results_dir }}'
-  when: results_dir_stat.stat.exists == True
-
 - name: Gzip custom plugins
   become: yes
   become_user: stack
