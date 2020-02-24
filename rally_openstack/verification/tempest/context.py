@@ -280,9 +280,22 @@ class TempestContext(context.VerifierContext):
     def _create_network_resources(self):
         neutron_wrapper = network.NeutronWrapper(self.clients, self)
         tenant_id = self.clients.keystone.auth_ref.project_id
+        router_create_args = {}
+        public_net = None
+        if self.conf.has_section("network"):
+            public_net = self.conf.get("network", "public_network_id")
+        if public_net:
+            ext_gw_mode_enabled = neutron_wrapper.ext_gw_mode_enabled
+            external_gateway_info = {
+                "network_id": public_net
+            }
+            if ext_gw_mode_enabled:
+                external_gateway_info["enable_snat"] = True
+            router_create_args["external_gateway_info"] = external_gateway_info
         LOG.debug("Creating network resources: network, subnet, router.")
         net = neutron_wrapper.create_network(
             tenant_id, subnets_num=1, add_router=True,
+            router_create_args=router_create_args,
             network_create_args={"shared": True})
         LOG.debug("Network resources have been successfully created!")
         self._created_networks.append(net)
