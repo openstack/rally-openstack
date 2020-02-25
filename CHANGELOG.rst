@@ -16,6 +16,28 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[1.7.0] - 2020-12-25
+--------------------
+
+Added
+~~~~~
+
+* An ability to specify Primary and Alternate reference flavor disk sized.
+
+* Support to upload an image from a https server
+
+Fixed
+~~~~~
+
+* [tempest] Only volume-backed servers are allowed for flavors with zero disk
+  on stein
+
+  `Launchpad-bug #1841609 <https://launchpad.net/bugs/1841609>`_
+
+* [tempest] Failing to configure Tempest with nullable fields at Python 3 envs
+
+  `Launchpad-bug #1863945 <https://launchpad.net/bugs/1863945>`_
+
 [1.6.0] - 2019-11-29
 --------------------
 
