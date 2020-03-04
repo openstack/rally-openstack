@@ -45,7 +45,7 @@ class TempestContext(context.VerifierContext):
         self.clients = creds["admin"].clients()
         self.available_services = self.clients.services().values()
 
-        self.conf = configparser.ConfigParser()
+        self.conf = configparser.ConfigParser(allow_no_value=True)
         self.conf_path = self.verifier.manager.configfile
 
         self.data_dir = self.verifier.manager.home_dir
