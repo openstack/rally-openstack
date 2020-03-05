@@ -15,7 +15,6 @@
         - rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py27
-        - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
         - rally-dsvm-tox-functional
@@ -76,7 +75,6 @@
         - rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py27
-        - rally-tox-py35
         - rally-tox-py36
         - rally-tox-py37
         - rally-dsvm-tox-functional
