@@ -50,9 +50,11 @@ class MistralScenarioTestCase(test.ScenarioTestCase):
 
     def test_delete_workbook(self):
         scenario = utils.MistralScenario(context=self.context)
+
         scenario._delete_workbook("wb_name")
         self.clients("mistral").workbooks.delete.assert_called_once_with(
-            "wb_name"
+            "wb_name",
+            namespace=''
         )
         self._test_atomic_action_timer(
             scenario.atomic_actions(),
@@ -74,16 +76,22 @@ class MistralScenarioTestCase(test.ScenarioTestCase):
     def test_create_execution(self):
         scenario = utils.MistralScenario(context=self.context)
 
-        mock_wait_for_status = self.mock_wait_for_status.mock
+        namespace = 'namespace'
         wf_name = "fake_wf_name"
+
+        mock_wait_for_status = self.mock_wait_for_status.mock
         mock_create_exec = self.clients("mistral").executions.create
 
         self.assertEqual(
             mock_wait_for_status.return_value,
-            scenario._create_execution("%s" % wf_name)
+            scenario._create_execution("%s" % wf_name, namespace=namespace)
         )
 
-        mock_create_exec.assert_called_once_with(wf_name, workflow_input=None)
+        mock_create_exec.assert_called_once_with(
+            wf_name,
+            workflow_input=None,
+            namespace=namespace
+        )
 
         args, kwargs = mock_wait_for_status.call_args
         self.assertEqual(mock_create_exec.return_value, args[0])
@@ -107,8 +115,11 @@ class MistralScenarioTestCase(test.ScenarioTestCase):
                 wf_name, wf_input=str(INPUT_EXAMPLE))
         )
 
-        mock_create_exec.assert_called_once_with(wf_name,
-                                                 workflow_input=INPUT_EXAMPLE)
+        mock_create_exec.assert_called_once_with(
+            wf_name,
+            workflow_input=INPUT_EXAMPLE,
+            namespace=''
+        )
 
     def test_create_execution_with_params(self):
         scenario = utils.MistralScenario(context=self.context)
@@ -122,8 +133,12 @@ class MistralScenarioTestCase(test.ScenarioTestCase):
             scenario._create_execution(
                 wf_name, **PARAMS_EXAMPLE)
         )
-        mock_create_exec.assert_called_once_with(wf_name, workflow_input=None,
-                                                 **PARAMS_EXAMPLE)
+        mock_create_exec.assert_called_once_with(
+            wf_name,
+            workflow_input=None,
+            namespace='',
+            **PARAMS_EXAMPLE
+        )
 
         args, kwargs = mock_wait_for_status.call_args
         self.assertEqual(mock_create_exec.return_value, args[0])
@@ -153,4 +168,39 @@ class MistralScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(
             scenario.atomic_actions(),
             "mistral.delete_execution"
+        )
+
+    def test_create_workflow(self):
+        scenario = utils.MistralScenario(context=self.context)
+        definition = """
+wf:
+  type: direct
+  tasks:
+    task1:
+      action: std.noop
+"""
+        self.assertEqual(
+            self.clients("mistral").workflows.create.return_value,
+            scenario._create_workflow(definition)
+        )
+        self._test_atomic_action_timer(
+            scenario.atomic_actions(),
+            "mistral.create_workflow"
+        )
+
+    def test_delete_workflow(self):
+        wf_identifier = 'wf_identifier'
+        namespace = 'delete_wf_test'
+
+        scenario = utils.MistralScenario(context=self.context)
+        scenario._delete_workflow(wf_identifier, namespace=namespace)
+
+        self.clients("mistral").workflows.delete.assert_called_once_with(
+            wf_identifier,
+            namespace=namespace
+        )
+
+        self._test_atomic_action_timer(
+            scenario.atomic_actions(),
+            "mistral.delete_workflow"
         )

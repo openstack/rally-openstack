@@ -37,26 +37,59 @@ class MistralScenario(scenario.OpenStackScenario):
         return self.clients("mistral").workbooks.list()
 
     @atomic.action_timer("mistral.create_workbook")
-    def _create_workbook(self, definition):
+    def _create_workbook(self, definition, namespace=''):
         """Create a new workbook.
 
         :param definition: workbook description in string
                            (yaml string) format
+       :param namespace: the namespace where the workbook
+                           will be created in
         :returns: workbook object
         """
         definition = yaml.safe_load(definition)
         definition["name"] = self.generate_random_name()
         definition = yaml.safe_dump(definition)
 
-        return self.clients("mistral").workbooks.create(definition)
+        return self.clients("mistral").workbooks.create(
+            definition,
+            namespace=namespace
+        )
 
     @atomic.action_timer("mistral.delete_workbook")
-    def _delete_workbook(self, wb_name):
+    def _delete_workbook(self, wb_name, namespace=''):
         """Delete the given workbook.
 
         :param wb_name: the name of workbook that would be deleted.
+        :param namespace: the namespace of workbook that would be deleted.
         """
-        self.clients("mistral").workbooks.delete(wb_name)
+        self.clients("mistral").workbooks.delete(
+            wb_name,
+            namespace=namespace
+        )
+
+    @atomic.action_timer("mistral.create_workflow")
+    def _create_workflow(self, definition, namespace=''):
+        """creates a workflow in the given namespace.
+
+        :param definition: the definition of workflow
+        :param namespace: the namespace of the workflow
+        """
+        return self.clients("mistral").workflows.create(
+            definition,
+            namespace=namespace
+        )
+
+    @atomic.action_timer("mistral.delete_workflow")
+    def _delete_workflow(self, workflow_identifier, namespace=''):
+        """Delete the given workflow.
+
+        :param workflow_identifier: the identifier of workflow
+        :param namespace: the namespace of the workflow
+        """
+        self.clients("mistral").workflows.delete(
+            workflow_identifier,
+            namespace=namespace
+        )
 
     @atomic.action_timer("mistral.list_executions")
     def _list_executions(self, marker="", limit=None, sort_keys="",
@@ -71,10 +104,12 @@ class MistralScenario(scenario.OpenStackScenario):
             sort_dirs=sort_dirs)
 
     @atomic.action_timer("mistral.create_execution")
-    def _create_execution(self, workflow_identifier, wf_input=None, **params):
+    def _create_execution(self, workflow_identifier, wf_input=None,
+                          namespace='', **params):
         """Create a new execution.
 
         :param workflow_identifier: name or id of the workflow to execute
+        :param namespace: namespace of the workflow to execute
         :param input_: json string of mistral workflow input
         :param params: optional mistral params (this is the place to pass
                        environment).
@@ -82,7 +117,11 @@ class MistralScenario(scenario.OpenStackScenario):
         """
 
         execution = self.clients("mistral").executions.create(
-            workflow_identifier, workflow_input=wf_input, **params)
+            workflow_identifier,
+            namespace=namespace,
+            workflow_input=wf_input,
+            **params
+        )
 
         execution = utils.wait_for_status(
             execution, ready_statuses=["SUCCESS"], failure_statuses=["ERROR"],
