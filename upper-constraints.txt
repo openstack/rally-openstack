@@ -43,7 +43,7 @@ jsonpatch===1.23
 jsonpointer===2.0
 jsonschema===3.0.2
 keystoneauth1===3.11.0
-kubernetes===10.0.1
+kubernetes===11.0.0
 linecache2===1.0.0
 Mako===1.0.7
 MarkupSafe===1.1.1

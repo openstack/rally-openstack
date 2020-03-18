@@ -10,7 +10,7 @@ rally>=0.11.0                                          # Apache License, Version
 boto>=2.32.1                                           # MIT
 gnocchiclient>=3.3.1                                   # Apache Software License
 keystoneauth1>=3.3.0                                   # Apache Software License
-kubernetes>1.0.0                                       # Apache License Version 2.0
+kubernetes>=11.0.0                                     # Apache License Version 2.0
 os-faults>=0.2.0                                       # Apache Software License
 osprofiler>=1.4.0                                      # Apache Software License
 python-barbicanclient>=4.5.2                           # Apache Software License
