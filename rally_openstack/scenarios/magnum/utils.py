@@ -18,8 +18,8 @@ import string
 import time
 
 from kubernetes import client as k8s_config
+from kubernetes.client.api import core_v1_api
 from kubernetes.client import api_client
-from kubernetes.client.apis import core_v1_api
 from kubernetes.client.rest import ApiException
 
 from rally.common import cfg
