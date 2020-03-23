@@ -132,7 +132,7 @@ class MuranoScenarioTestCase(test.ScenarioTestCase):
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("shutil.copytree")
     @mock.patch(MRN_UTILS + ".MuranoPackageManager._change_app_fullname")
-    @mock.patch("rally.common.fileutils.pack_dir")
+    @mock.patch("%s.pack_dir" % MRN_UTILS)
     @mock.patch("shutil.rmtree")
     def test_prepare_zip_if_not_zip(
             self, mock_shutil_rmtree, mock_pack_dir,

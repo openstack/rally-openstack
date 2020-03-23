@@ -18,12 +18,12 @@ import os
 import pkgutil
 
 from rally.common import logging
-from rally.common import sshutils
 from rally.common import validation
 from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import atomic
 from rally.task import types
+from rally.utils import sshutils
 
 from rally_openstack import consts
 from rally_openstack import scenario

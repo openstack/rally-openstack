@@ -989,7 +989,7 @@ class VolumeTypeExistsValidatorTestCase(test.TestCase):
 @ddt.ddt
 class WorkbookContainsWorkflowValidatorTestCase(test.TestCase):
 
-    @mock.patch("rally.common.yamlutils.safe_load")
+    @mock.patch("%s.yaml.safe_load" % PATH)
     @mock.patch("%s.os.access" % PATH)
     @mock.patch("%s.open" % PATH)
     def test_validator(self, mock_open, mock_access, mock_safe_load):

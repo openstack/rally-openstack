@@ -26,30 +26,8 @@ from tests.unit import test
 
 
 class WorkaroundTestCase(test.TestCase):
-    WORKAROUNDS = [
-        ([0, 12], [
-            "'rally_openstack.__init__' module contains a hack for loading "
-            "configuration options.",
 
-            "'rally_openstack.types' module contains a compatibility layer for"
-            " an old interface of ResourceTypes."]
-         ),
-        ([0, 13], [
-            "'rally_openstack.validators' module has a check to do not "
-            "register 'required_platforms@openstack' validator for old Rally "
-            "releases."
-        ]),
-        ([1, 2], [
-            "'existing@openstack' platform puts 'traceback' in check method "
-            "in case of native keystone errors. It is redundant. "
-            "See https://review.opendev.org/597197"
-        ]),
-        ([1, 5], [
-            "New chart classes exist anyway at Rally side, so no need for "
-            "backward compatibility layer at rally_openstack.embecharts. "
-            "See https://review.opendev.org/#/c/653500/"
-        ])
-    ]
+    WORKAROUNDS = []
 
     def get_min_required_version(self):
         package = pkg_resources.get_distribution("rally-openstack")
@@ -62,8 +40,8 @@ class WorkaroundTestCase(test.TestCase):
             elif statement == ">":
                 version[-1] += 1
                 return version
-        self.skip("Failed to get a minimum required version of Rally "
-                  "framework.")
+        self.skipTest("Failed to get a minimum required version of Rally "
+                      "framework.")
 
     def test_rally_version(self):
         rally_version = self.get_min_required_version()

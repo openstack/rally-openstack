@@ -14,7 +14,7 @@
 
 import os
 
-from rally.common import yamlutils as yaml
+import yaml
 
 import rally_openstack
 from tests.unit import test

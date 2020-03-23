@@ -17,9 +17,10 @@ import re
 import shutil
 import subprocess
 
-from rally.common import yamlutils as yaml
+import yaml
+
 from rally import exceptions
-from rally.plugins.common.verification import testr
+from rally.plugins.verification import testr
 from rally.verification import manager
 from rally.verification import utils
 

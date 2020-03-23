@@ -19,8 +19,8 @@ import traceback
 from unittest import mock
 
 from rally import api
+from rally.cli import yamlutils as yaml
 from rally.common.plugin import discover
-from rally.common import yamlutils as yaml
 from rally.task import engine
 from rally.task import task_cfg
 

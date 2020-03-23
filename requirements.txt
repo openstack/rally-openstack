@@ -3,7 +3,7 @@
 
 requests!=2.20.0                                       # Apache License, Version 2.0
 
-rally>=0.11.0                                           # Apache License, Version 2.0
+rally>=3.0.0                                           # Apache License, Version 2.0
 
 # OpenStack related
 gnocchiclient                                          # Apache Software License

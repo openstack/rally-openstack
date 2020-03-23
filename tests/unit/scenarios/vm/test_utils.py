@@ -113,7 +113,7 @@ class VMScenarioTestCase(test.ScenarioTestCase):
             check_interval=CONF.openstack.vm_ping_poll_interval)
 
     @mock.patch(VMTASKS_UTILS + ".VMScenario._run_command_over_ssh")
-    @mock.patch("rally.common.sshutils.SSH")
+    @mock.patch("rally.utils.sshutils.SSH")
     def test__run_command(self, mock_sshutils_ssh,
                           mock_vm_scenario__run_command_over_ssh):
         vm_scenario = utils.VMScenario(self.context)

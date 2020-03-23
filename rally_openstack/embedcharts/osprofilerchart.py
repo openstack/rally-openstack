@@ -21,19 +21,6 @@ from rally.common import opts
 from rally.common.plugin import plugin
 from rally.task.processing import charts
 
-import rally_openstack
-
-
-if rally_openstack.__rally_version__ < (1, 5, 0):
-    # NOTE(andreykurilin): this is a workaround to make inheritance of
-    #   OSProfilerChart clear.
-    OutputEmbeddedChart = type("OutputEmbeddedChart", (object, ), {})
-    OutputEmbeddedExternalChart = type("OutputEmbeddedExternalChart",
-                                       (object, ), {})
-else:
-    OutputEmbeddedChart = charts.OutputEmbeddedChart
-    OutputEmbeddedExternalChart = charts.OutputEmbeddedExternalChart
-
 
 OPTS = {
     "openstack": [
@@ -61,8 +48,8 @@ def _datetime_json_serialize(obj):
 
 
 @plugin.configure(name="OSProfiler")
-class OSProfilerChart(OutputEmbeddedChart,
-                      OutputEmbeddedExternalChart,
+class OSProfilerChart(charts.OutputEmbeddedChart,
+                      charts.OutputEmbeddedExternalChart,
                       charts.OutputTextArea):
     """Chart for embedding OSProfiler data."""
 
@@ -130,13 +117,7 @@ class OSProfilerChart(OutputEmbeddedChart,
             title = "{0} : {1}".format(data["title"],
                                        data["data"]["trace_id"])
 
-            if rally_openstack.__rally_version__ < (1, 5, 0):
-                return {
-                    "title": title,
-                    "widget": "EmbeddedChart",
-                    "data": osp_report.replace("/script>", "\\/script>")
-                }
-            elif (mode and mode != "raw") and "workload_uuid" in data["data"]:
+            if (mode and mode != "raw") and "workload_uuid" in data["data"]:
                 # NOTE(andreykurilin): we need to rework our charts plugin
                 #   mechanism so it is available out of box
                 workload_uuid = data["data"]["workload_uuid"]
@@ -145,7 +126,7 @@ class OSProfilerChart(OutputEmbeddedChart,
                 path = os.path.join(mode, file_name)
                 with open(path, "w") as f:
                     f.write(osp_report)
-                return OutputEmbeddedExternalChart.render_complete_data(
+                return charts.OutputEmbeddedExternalChart.render_complete_data(
                     {
                         "title": title,
                         "widget": "EmbeddedChart",
@@ -153,7 +134,7 @@ class OSProfilerChart(OutputEmbeddedChart,
                     }
                 )
             else:
-                return OutputEmbeddedChart.render_complete_data(
+                return charts.OutputEmbeddedChart.render_complete_data(
                     {"title": title,
                      "widget": "EmbeddedChart",
                      "data": osp_report}

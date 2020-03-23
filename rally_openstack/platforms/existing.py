@@ -184,11 +184,8 @@ class OpenStack(platform.Platform):
             except osclients.exceptions.RallyException as e:
                 # all rally native exceptions should provide user-friendly
                 # messages
-                return {"available": False, "message": e.format_message(),
-                        # traceback is redundant here. Remove as soon as min
-                        #   required rally version will be updated
-                        #   More details here:
-                        #       https://review.openstack.org/597197
+                return {"available": False,
+                        "message": e.format_message(),
                         "traceback": traceback.format_exc()}
             except Exception:
                 d = copy.deepcopy(user)

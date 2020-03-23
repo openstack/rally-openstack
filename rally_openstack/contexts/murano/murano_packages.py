@@ -16,7 +16,6 @@
 import os
 import zipfile
 
-from rally.common import fileutils
 from rally.common import utils
 from rally.common import validation
 from rally import exceptions
@@ -25,6 +24,7 @@ from rally.task import context
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
+from rally_openstack.scenarios.murano import utils as mutils
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -51,7 +51,7 @@ class PackageGenerator(context.Context):
             zip_name = pckg_path
         elif os.path.isdir(pckg_path):
             is_config_app_dir = True
-            zip_name = fileutils.pack_dir(pckg_path)
+            zip_name = mutils.pack_dir(pckg_path)
         else:
             msg = "There is no zip archive or directory by this path: %s"
             raise exceptions.ContextSetupFailure(msg=msg % pckg_path,

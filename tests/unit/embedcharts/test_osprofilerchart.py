@@ -82,8 +82,8 @@ class OSProfilerChartTestCase(test.TestCase):
                 connection_str, trace_id)
             self.assertIsNone(r)
 
-    @mock.patch("%s.OutputEmbeddedExternalChart" % PATH)
-    @mock.patch("%s.OutputEmbeddedChart" % PATH)
+    @mock.patch("%s.charts.OutputEmbeddedExternalChart" % PATH)
+    @mock.patch("%s.charts.OutputEmbeddedChart" % PATH)
     @mock.patch("%s._return_raw_response_for_complete_data" % CHART_PATH)
     @mock.patch("%s._fetch_osprofiler_data" % CHART_PATH)
     @mock.patch("%s._generate_osprofiler_report" % CHART_PATH)
@@ -178,26 +178,3 @@ class OSProfilerChartTestCase(test.TestCase):
                                      "widget": "EmbeddedChart",
                                      "data": "/path/w_W_ID-777.html"})
         self.assertFalse(mock__return_raw_response_for_complete_data.called)
-
-        # case 6: rally < 1.5.0
-        pdata = {"data": {"trace_id": trace_id,
-                          "conn_str": "conn",
-                          "workload_uuid": "W_ID",
-                          "iteration": 777},
-                 "title": title}
-
-        mock_rally_os = mock.Mock()
-        mock_rally_os.__rally_version__ = (1, 4, 0)
-
-        with mock.patch.object(osp_chart, "rally_openstack") as m:
-            m.__rally_version__ = (1, 4, 0)
-            with mock.patch("%s.CONF.openstack" % PATH) as mock_cfg_os:
-                mock_cfg_os.osprofiler_chart_mode = "/path"
-
-                r = osp_chart.OSProfilerChart.render_complete_data(
-                    copy.deepcopy(pdata))
-                self.assertEqual({
-                    "title": "%s : %s" % (title, trace_id),
-                    "widget": "EmbeddedChart",
-                    "data": "DD"
-                }, r)

@@ -168,7 +168,8 @@ class OSClient(plugin.Plugin):
             float(version)
         except ValueError:
             raise exceptions.ValidationError(
-                "'%s' is invalid. Should be numeric value." % version)
+                "'%s' is invalid. Should be numeric value." % version
+            ) from None
 
     def choose_service_type(self, service_type=None):
         """Return service_type string.
@@ -286,7 +287,7 @@ class Keystone(OSClient):
                               {"username": self.credential.username,
                                "tenant_name": self.credential.tenant_name})
 
-            raise e
+            raise e from None
         return self.cache["keystone_auth_ref"]
 
     def get_session(self, version=None):
@@ -409,7 +410,7 @@ class Nova(OSClient):
             api_versions.get_api_version(version)
         except nova_exc.UnsupportedVersion:
             raise exceptions.RallyException(
-                "Version string '%s' is unsupported." % version)
+                "Version string '%s' is unsupported." % version) from None
 
     def create_client(self, version=None, service_type=None):
         """Return nova client."""
@@ -541,7 +542,7 @@ class Manila(OSClient):
             api_versions.get_api_version(version)
         except manila_exc.UnsupportedVersion:
             raise exceptions.RallyException(
-                "Version string '%s' is unsupported." % version)
+                "Version string '%s' is unsupported." % version) from None
 
     def create_client(self, version=None, service_type=None):
         """Return manila client."""
@@ -879,7 +880,7 @@ class Clients(object):
 
         spec = existing.OpenStack.create_spec_from_sys_environ(os.environ)
         if not spec["available"]:
-            raise ValueError(spec["message"])
+            raise ValueError(spec["message"]) from None
 
         creds = spec["spec"]
         oscred = credential.OpenStackCredential(

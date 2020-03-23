@@ -20,7 +20,6 @@ import uuid
 import zipfile
 
 from rally.common import cfg
-from rally.common import fileutils
 from rally.common import utils as common_utils
 from rally.task import atomic
 from rally.task import utils
@@ -30,6 +29,37 @@ from rally_openstack import scenario
 
 
 CONF = cfg.CONF
+
+
+def pack_dir(source_directory, zip_name=None):
+    """Archive content of the directory into .zip
+
+    Zip content of the source folder excluding root directory
+    into zip archive. When zip_name is specified, it would be used
+    as a destination for the archive. Otherwise method would
+    try to use temporary file as a destination for the archive.
+
+    :param source_directory: root of the newly created archive.
+        Directory is added recursively.
+    :param zip_name: destination zip file name.
+    :raises IOError: whenever there are IO issues.
+    :returns: path to the newly created zip archive either specified via
+        zip_name or a temporary one.
+    """
+
+    if not zip_name:
+        fp = tempfile.NamedTemporaryFile(delete=False)
+        zip_name = fp.name
+    zipf = zipfile.ZipFile(zip_name, mode="w")
+    try:
+        for root, dirs, files in os.walk(source_directory):
+            for f in files:
+                abspath = os.path.join(root, f)
+                relpath = os.path.relpath(abspath, source_directory)
+                zipf.write(abspath, relpath)
+    finally:
+        zipf.close()
+    return zip_name
 
 
 class MuranoScenario(scenario.OpenStackScenario):
@@ -253,7 +283,7 @@ class MuranoPackageManager(common_utils.RandomNameGeneratorMixin):
                 shutil.copytree(os.path.expanduser(package_path), pkg_dir)
 
                 self._change_app_fullname(pkg_dir)
-                package_path = fileutils.pack_dir(pkg_dir)
+                package_path = pack_dir(pkg_dir)
 
             finally:
                 shutil.rmtree(tmp_dir)

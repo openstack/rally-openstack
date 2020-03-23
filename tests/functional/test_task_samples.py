@@ -22,8 +22,8 @@ import traceback
 import unittest
 
 from rally import api
+from rally.cli import yamlutils as yaml
 from rally.common import broker
-from rally.common import yamlutils as yaml
 from rally import plugins
 import rally_openstack as rally_openstack_module
 from tests.functional import utils

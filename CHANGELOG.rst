@@ -26,6 +26,12 @@ Changed
   switched to use `docker image <https://hub.docker.com/r/xrally/xrally>`_ as
   a base user that brings use python 3.6 and ubuntu bionic.
 
+* Bump min supported Rally framework version (rally>=3.0.0)
+
+Removed
+~~~~~~~
+
+* Support for Python < 3.6
 
 [1.7.0] - 2020-12-25
 --------------------

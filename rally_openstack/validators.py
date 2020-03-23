@@ -17,14 +17,14 @@ import inspect
 import os
 import re
 
+import yaml
+
 from rally.common import logging
 from rally.common import validation
-from rally.common import yamlutils as yaml
 from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import types
 
-import rally_openstack
 from rally_openstack import consts
 from rally_openstack.contexts.keystone import roles
 from rally_openstack.contexts.nova import flavors as flavors_ctx
@@ -34,6 +34,7 @@ from rally_openstack import types as openstack_types
 LOG = logging.getLogger(__name__)
 
 
+@validation.configure("required_platform", platform="openstack")
 class RequiredOpenStackValidator(validation.RequiredPlatformValidator):
     def __init__(self, admin=False, users=False):
         """Validates credentials for OpenStack platform.
@@ -67,11 +68,6 @@ class RequiredOpenStackValidator(validation.RequiredPlatformValidator):
                 #   deployment. Let's assume that 'users' context can create
                 #   them via admin user and do not fail."
                 pass
-
-
-if rally_openstack.__rally_version__ >= (0, 13):
-    RequiredOpenStackValidator = validation.configure(
-        "required_platform", platform="openstack")(RequiredOpenStackValidator)
 
 
 def with_roles_ctx():

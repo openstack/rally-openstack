@@ -296,9 +296,13 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                  "users": [{"username": "balbab", "password": "12345"}]}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
-        self.assertEqual({"available": False, "message": e.format_message(),
-                          "traceback": mock.ANY},
-                         result)
+        self.assertEqual(
+            {
+                "available": False,
+                "message": e.format_message(),
+                "traceback": mock.ANY
+            },
+            result)
 
     @mock.patch("rally_openstack.osclients.Clients")
     def test_check_failed_admin(self, mock_clients):

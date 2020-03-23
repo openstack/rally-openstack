@@ -15,14 +15,12 @@
 import copy
 import operator
 import re
-import traceback
 
 from rally.common import logging
 from rally.common.plugin import plugin
 from rally import exceptions
 from rally.task import types
 
-import rally_openstack
 from rally_openstack import osclients
 from rally_openstack.services.image import image
 from rally_openstack.services.storage import block
@@ -38,14 +36,7 @@ class OpenStackResourceType(types.ResourceType):
     """A base class for OpenStack ResourceTypes plugins with help-methods"""
 
     def __init__(self, context=None, cache=None):
-        if rally_openstack.__rally_version__ >= (0, 12):
-            super(OpenStackResourceType, self).__init__(context, cache)
-        else:
-            super(OpenStackResourceType, self).__init__()
-            self._context = context or {}
-            self._global_cache = cache or {}
-            self._global_cache.setdefault(self.get_name(), {})
-            self._cache = self._global_cache[self.get_name()]
+        super(OpenStackResourceType, self).__init__(context, cache)
 
         self._clients = None
         if self._context.get("admin"):
@@ -130,34 +121,9 @@ class OpenStackResourceType(types.ResourceType):
                                          matching))})
         return matching[0]
 
-    if rally_openstack.__rally_version__ < (0, 12):
-        @classmethod
-        def _get_doc(cls):
-            return cls.__doc__
-
-
-class DeprecatedBehaviourMixin(object):
-    """A Mixin class which returns deprecated `transform` method."""
-
-    @classmethod
-    def transform(cls, clients, resource_config):
-        caller = traceback.format_stack(limit=2)[0]
-        if rally_openstack.__rally_version__ >= (0, 12):
-            # The new interface of ResourceClass is introduced with Rally 0.12
-            LOG.warning("Calling method `transform` of %s is deprecated:\n%s"
-                        % (cls.__name__, caller))
-        if clients:
-            # it doesn't matter "permission" of the user. it will pick the
-            # first one
-            context = {"admin": {"credential": clients.credential}}
-        else:
-            context = {}
-        self = cls(context, cache={})
-        return self.pre_process(resource_spec=resource_config, config={})
-
 
 @plugin.configure(name="nova_flavor")
-class Flavor(DeprecatedBehaviourMixin, OpenStackResourceType):
+class Flavor(OpenStackResourceType):
     """Find Nova's flavor ID by name or regexp."""
 
     def pre_process(self, resource_spec, config):
@@ -172,7 +138,7 @@ class Flavor(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="glance_image")
-class GlanceImage(DeprecatedBehaviourMixin, OpenStackResourceType):
+class GlanceImage(OpenStackResourceType):
     """Find Glance's image ID by name or regexp."""
 
     def pre_process(self, resource_spec, config):
@@ -191,7 +157,7 @@ class GlanceImage(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="glance_image_args")
-class GlanceImageArguments(DeprecatedBehaviourMixin, OpenStackResourceType):
+class GlanceImageArguments(OpenStackResourceType):
     """Process Glance image create options to look similar in case of V1/V2."""
     def pre_process(self, resource_spec, config):
         resource_spec = copy.deepcopy(resource_spec)
@@ -206,7 +172,7 @@ class GlanceImageArguments(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="ec2_image")
-class EC2Image(DeprecatedBehaviourMixin, OpenStackResourceType):
+class EC2Image(OpenStackResourceType):
     """Find EC2 image ID."""
 
     def pre_process(self, resource_spec, config):
@@ -229,7 +195,7 @@ class EC2Image(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="cinder_volume_type")
-class VolumeType(DeprecatedBehaviourMixin, OpenStackResourceType):
+class VolumeType(OpenStackResourceType):
     """Find Cinder volume type ID by name or regexp."""
 
     def pre_process(self, resource_spec, config):
@@ -244,7 +210,7 @@ class VolumeType(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="neutron_network")
-class NeutronNetwork(DeprecatedBehaviourMixin, OpenStackResourceType):
+class NeutronNetwork(OpenStackResourceType):
     """Find Neutron network ID by it's name."""
     def pre_process(self, resource_spec, config):
         resource_id = resource_spec.get("id")
@@ -262,7 +228,7 @@ class NeutronNetwork(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="watcher_strategy")
-class WatcherStrategy(DeprecatedBehaviourMixin, OpenStackResourceType):
+class WatcherStrategy(OpenStackResourceType):
     """Find Watcher strategy ID by it's name."""
 
     def pre_process(self, resource_spec, config):
@@ -279,7 +245,7 @@ class WatcherStrategy(DeprecatedBehaviourMixin, OpenStackResourceType):
 
 
 @plugin.configure(name="watcher_goal")
-class WatcherGoal(DeprecatedBehaviourMixin, OpenStackResourceType):
+class WatcherGoal(OpenStackResourceType):
     """Find Watcher goal ID by it's name."""
 
     def pre_process(self, resource_spec, config):

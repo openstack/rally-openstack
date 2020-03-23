@@ -523,8 +523,8 @@ class CreateAndDeletePorts(utils.NeutronScenario):
 @validation.add("required_platform", platform="openstack",
                 users=True, admin=True)
 @scenario.configure(context={"cleanup@openstack": ["neutron"],
-                             "networking_agents": {},
-                             "network": {}},
+                             "networking_agents@openstack": {},
+                             "network@openstack": {}},
                     name="NeutronNetworks.create_and_bind_ports",
                     platform="openstack")
 class CreateAndBindPorts(utils.NeutronScenario):
