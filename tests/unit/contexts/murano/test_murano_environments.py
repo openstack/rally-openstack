@@ -13,7 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.murano import murano_environments
 from rally_openstack.scenarios.murano import utils as murano_utils

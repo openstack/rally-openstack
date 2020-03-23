@@ -16,7 +16,6 @@
 import abc
 import itertools
 import netaddr
-import six
 
 from neutronclient.common import exceptions as neutron_exceptions
 from rally.common import cfg
@@ -58,8 +57,7 @@ class NetworkWrapperException(exceptions.RallyException):
     msg_fmt = "%(message)s"
 
 
-@six.add_metaclass(abc.ABCMeta)
-class NetworkWrapper(object):
+class NetworkWrapper(object, metaclass=abc.ABCMeta):
     """Base class for network service implementations.
 
     We actually have two network services implementations, with different API:

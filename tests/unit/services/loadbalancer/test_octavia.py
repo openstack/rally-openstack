@@ -13,11 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 import fixtures
-import mock
 
 from rally.common import cfg
 from rally import exceptions
+
 from rally_openstack.services.loadbalancer import octavia
 from tests.unit import test
 

@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 import ddt
-import mock
 
 from rally.common import cfg
 from rally_openstack import osclients
@@ -261,8 +262,8 @@ class TempestConfigfileManagerTestCase(test.TestCase):
         for item in expected:
             self.assertIn(item, result)
 
-    @mock.patch("%s.six.StringIO" % PATH)
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open())
+    @mock.patch("%s.io.StringIO" % PATH)
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     @mock.patch("inspect.getmembers")
     def test_create(self, mock_inspect_getmembers, mock_open, mock_string_io):
         configure_something_method = mock.MagicMock()

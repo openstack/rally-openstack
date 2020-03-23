@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import configparser
 import copy
 import errno
 import inspect
@@ -22,9 +23,7 @@ import shutil
 import subprocess
 import tempfile
 
-
 from oslo_utils import encodeutils
-from six.moves import configparser
 
 
 class RallyCliError(Exception):

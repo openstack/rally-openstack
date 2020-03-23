@@ -13,9 +13,7 @@
 # under the License.
 
 import copy
-
-import mock
-import six
+from unittest import mock
 
 from rally import exceptions
 from rally_openstack.contexts.ceilometer import samples
@@ -158,7 +156,7 @@ class CeilometerSampleGeneratorTestCase(test.TestCase):
         for id_ in tenants.keys():
             new_context["tenants"][id_].setdefault("samples", [])
             new_context["tenants"][id_].setdefault("resources", [])
-            for i in six.moves.xrange(resources_per_tenant):
+            for _ in range(resources_per_tenant):
                 for sample in samples_to_create:
                     new_context["tenants"][id_]["samples"].append(sample)
                 new_context["tenants"][id_]["resources"].append(

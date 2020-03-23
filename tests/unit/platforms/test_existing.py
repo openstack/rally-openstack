@@ -13,9 +13,10 @@
 #    under the License.
 
 import json
+from unittest import mock
 
 import jsonschema
-import mock
+
 from rally.env import env_mgr
 from rally.env import platform
 from rally import exceptions

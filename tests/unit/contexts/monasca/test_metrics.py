@@ -12,8 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
-import six
+from unittest import mock
 
 from rally_openstack.contexts.monasca import metrics
 from rally_openstack.scenarios.monasca import utils as monasca_utils
@@ -26,7 +25,7 @@ class MonascaMetricGeneratorTestCase(test.TestCase):
 
     def _gen_tenants(self, count):
         tenants = {}
-        for id in six.moves.range(count):
+        for id in range(count):
             tenants[str(id)] = {"name": str(id)}
         return tenants
 
@@ -35,7 +34,7 @@ class MonascaMetricGeneratorTestCase(test.TestCase):
         tenants = self._gen_tenants(tenants_count)
         users = []
         for id in tenants.keys():
-            for i in six.moves.range(users_per_tenant):
+            for i in range(users_per_tenant):
                 users.append({"id": i, "tenant_id": id,
                               "endpoint": mock.MagicMock()})
         context = test.get_test_context()

@@ -14,9 +14,9 @@
 
 import copy
 import datetime as dt
+from unittest import mock
 
 from dateutil import parser
-import mock
 
 from rally import exceptions
 from rally_openstack.scenarios.ceilometer import utils

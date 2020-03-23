@@ -18,19 +18,19 @@ import multiprocessing
 import random
 import re
 import string
+from unittest import mock
 import uuid
 
 from ceilometerclient import exc as ceilometer_exc
 from glanceclient import exc
-import mock
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exceptions
+from swiftclient import exceptions as swift_exceptions
+
 from rally import api
 from rally.common import utils as rally_utils
 from rally.task import context
 from rally.task import scenario
-import six
-from swiftclient import exceptions as swift_exceptions
 
 from rally_openstack import consts
 from rally_openstack import credential
@@ -429,7 +429,7 @@ class FakeServerManager(FakeManager):
         pass
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -462,7 +462,7 @@ class FakeImageManager(FakeManager):
         return self._create(name=name)
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -543,7 +543,7 @@ class FakeKeypairManager(FakeManager):
         return self._cache(kp)
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -561,7 +561,7 @@ class FakeClusterTemplateManager(FakeManager):
         return self._cache(cluster_template)
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -578,7 +578,7 @@ class FakeStackManager(FakeManager):
         return self._cache(stack)
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -596,7 +596,7 @@ class FakeDomainManager(FakeManager):
         return self._cache(domain)
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -656,7 +656,7 @@ class FakeSecurityGroupManager(FakeManager):
         raise nova_exceptions.NotFound("Security Group not found")
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)
@@ -927,7 +927,7 @@ class FakeDbInstanceManager(FakeManager):
         return self.__db_instances.values()
 
     def delete(self, resource):
-        if not isinstance(resource, six.string_types):
+        if not isinstance(resource, str):
             resource = resource.id
 
         cached = self.get(resource)

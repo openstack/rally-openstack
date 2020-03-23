@@ -15,12 +15,13 @@
 
 import abc
 import os
+from urllib.parse import urlparse
+from urllib.parse import urlunparse
 
 from rally.common import cfg
 from rally.common import logging
 from rally.common.plugin import plugin
 from rally import exceptions
-from six.moves.urllib import parse
 
 from rally_openstack import consts
 from rally_openstack import credential as oscred
@@ -342,13 +343,13 @@ class Keystone(OSClient):
         The keystone Client code requires that auth_url be the root url
         if a version override is used.
         """
-        url = parse.urlparse(self.credential.auth_url)
+        url = urlparse(self.credential.auth_url)
         path = url.path.rstrip("/")
         if path.endswith("v2.0") or path.endswith("v3"):
             path = os.path.join(*os.path.split(path)[:-1])
             parts = (url.scheme, url.netloc, path, url.params, url.query,
                      url.fragment)
-            return parse.urlunparse(parts)
+            return urlunparse(parts)
         return self.credential.auth_url
 
     def create_client(self, version=None):

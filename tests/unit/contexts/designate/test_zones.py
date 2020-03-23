@@ -14,8 +14,7 @@
 
 
 import copy
-
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.designate import zones
 from rally_openstack.scenarios.designate import utils

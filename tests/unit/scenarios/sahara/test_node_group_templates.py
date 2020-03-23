@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from rally_openstack.scenarios.sahara import node_group_templates as ngts
 from tests.unit import test

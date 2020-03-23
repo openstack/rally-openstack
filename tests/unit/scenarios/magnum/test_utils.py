@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
+from unittest import mock
 
-import mock
+import os
 
 from kubernetes import client as kubernetes_client
 from kubernetes.client.rest import ApiException

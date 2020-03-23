@@ -19,7 +19,6 @@ from rally.common import utils as rutils
 from rally.common import validation
 from rally import exceptions
 from rally.task import context
-from six import moves
 
 from rally_openstack import consts
 from rally_openstack.scenarios.ceilometer import utils as ceilo_utils
@@ -136,7 +135,7 @@ class CeilometerSampleGenerator(context.Context):
             scenario = ceilo_utils.CeilometerScenario(
                 context={"user": user, "task": self.context["task"]}
             )
-            for i in moves.xrange(self.config["resources_per_tenant"]):
+            for _ in range(self.config["resources_per_tenant"]):
                 samples_to_create = scenario._make_samples(
                     count=self.config["samples_per_resource"],
                     interval=self.config["timestamp_interval"],

@@ -13,9 +13,10 @@
 # under the License.
 
 import copy
+from unittest import mock
 
 import ddt
-import mock
+
 from rally.task import context
 
 from rally_openstack.contexts.cinder import volumes

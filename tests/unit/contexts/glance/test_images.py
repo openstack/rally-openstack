@@ -14,9 +14,9 @@
 
 
 import copy
+from unittest import mock
 
 import ddt
-import mock
 
 from rally_openstack.contexts.glance import images
 from tests.unit import test

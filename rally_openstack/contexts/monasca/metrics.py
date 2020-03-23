@@ -12,8 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from six import moves
-
 from rally.common import utils as rutils
 from rally.common import validation
 from rally.task import context
@@ -92,7 +90,7 @@ class MonascaMetricGenerator(context.Context):
             scenario = monasca_utils.MonascaScenario(
                 context={"user": user, "task": self.context["task"]}
             )
-            for i in moves.xrange(self.config["metrics_per_tenant"]):
+            for i in range(self.config["metrics_per_tenant"]):
                 scenario._create_metrics(**new_metric)
                 rutils.interruptable_sleep(0.001)
         rutils.interruptable_sleep(

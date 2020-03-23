@@ -15,7 +15,6 @@
 
 """List and compare most used OpenStack cloud resources."""
 
-
 import argparse
 import json
 import os
@@ -25,7 +24,6 @@ import sys
 from rally.cli import cliutils
 from rally.common.plugin import discover
 from rally import plugins
-import six
 
 from rally_openstack import consts
 from rally_openstack import credential
@@ -569,7 +567,7 @@ def main():
     else:
         out = subprocess.check_output(["rally", "deployment", "config",
                                        "--deployment", "devstack"])
-        config = json.loads(out if six.PY2 else out.decode("utf-8"))
+        config = json.loads(out.decode("utf-8"))
         config = config["openstack"]
         config.update(config.pop("admin"))
         if "users" in config:

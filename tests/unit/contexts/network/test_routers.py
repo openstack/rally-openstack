@@ -14,7 +14,7 @@
 #    under the License.
 
 import copy
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.network import routers as router_context
 from rally_openstack.scenarios.neutron import utils as neutron_utils

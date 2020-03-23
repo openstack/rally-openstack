@@ -15,7 +15,7 @@
 
 import copy
 import ddt
-import mock
+from unittest import mock
 
 from glanceclient import exc as glance_exc
 from novaclient import exceptions as nova_exc

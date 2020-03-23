@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 import ddt
 import fixtures
-import mock
 
 from rally_openstack.services.image import glance_v1
 from rally_openstack.services.image import image

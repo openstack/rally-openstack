@@ -15,8 +15,7 @@
 
 
 import sys
-
-import mock
+from unittest import mock
 
 
 from rally_openstack.workload import siege

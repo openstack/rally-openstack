@@ -10,7 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.senlin import profiles
 from tests.unit import test

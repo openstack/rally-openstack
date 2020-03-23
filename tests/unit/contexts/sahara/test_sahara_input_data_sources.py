@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.sahara import sahara_input_data_sources
 from rally_openstack.scenarios.swift import utils as swift_utils

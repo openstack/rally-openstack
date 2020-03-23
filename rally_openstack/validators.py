@@ -16,8 +16,6 @@
 import inspect
 import os
 import re
-import six
-
 
 from rally.common import logging
 from rally.common import validation
@@ -556,8 +554,8 @@ class RequiredCinderServicesValidator(validation.Validator):
 
         clients = context["admin"]["credential"].clients()
         for service in clients.cinder().services.list():
-            if (service.binary == six.text_type(self.services)
-                    and service.state == six.text_type("up")):
+            if (service.binary == str(self.services)
+                    and service.state == str("up")):
                 return
 
         self.fail("%s service is not available" % self.services)

@@ -13,8 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from urllib.parse import urlparse
+
 import requests
-from six.moves.urllib import parse
 
 from rally.common import utils as rutils
 from rally.common import validation
@@ -97,7 +98,7 @@ class SaharaInputDataSources(context.Context):
         swift_scenario = swift_utils.SwiftScenario(clients=clients,
                                                    context=self.context)
         # TODO(astudenov): use self.generate_random_name()
-        container_name = "rally_" + parse.urlparse(input_url).netloc.rstrip(
+        container_name = "rally_" + urlparse(input_url).netloc.rstrip(
             ".sahara")
         self.context["sahara"]["container_name"] = (
             swift_scenario._create_container(container_name=container_name))

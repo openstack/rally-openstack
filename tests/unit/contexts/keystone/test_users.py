@@ -13,9 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.contexts.keystone import users
 from rally_openstack import credential as oscredential
 from tests.unit import test

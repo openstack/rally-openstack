@@ -16,8 +16,8 @@ import os
 import shutil
 import tempfile
 import traceback
+from unittest import mock
 
-import mock
 from rally import api
 from rally.common.plugin import discover
 from rally.common import yamlutils as yaml

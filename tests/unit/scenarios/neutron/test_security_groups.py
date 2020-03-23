@@ -10,9 +10,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 import copy
 import ddt
-import mock
 
 from rally import exceptions as rally_exceptions
 from rally_openstack.scenarios.neutron import security_groups

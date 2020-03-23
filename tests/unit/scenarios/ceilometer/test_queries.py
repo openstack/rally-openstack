@@ -13,8 +13,7 @@
 #    under the License.
 
 import json
-
-import mock
+from unittest import mock
 
 from rally_openstack.scenarios.ceilometer import queries
 from tests.unit import test

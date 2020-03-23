@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.network import existing_network
 from tests.unit import test

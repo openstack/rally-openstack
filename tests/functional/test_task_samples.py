@@ -21,8 +21,6 @@ import re
 import traceback
 import unittest
 
-import six
-
 from rally import api
 from rally.common import broker
 from rally.common import yamlutils as yaml
@@ -127,7 +125,7 @@ class TestTaskSamples(unittest.TestCase):
                 rapi.task.validate(deployment="MAIN",
                                    config=task_config)
             except Exception as e:
-                if not self._skip(six.text_type(e)):
+                if not self._skip(str(e)):
                     failed_samples[full_path] = traceback.format_exc()
 
         broker.run(publisher, consumer, self.NUMBER_OF_THREADS)

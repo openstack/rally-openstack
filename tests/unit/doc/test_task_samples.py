@@ -17,14 +17,15 @@ import inspect
 import itertools
 import os
 import traceback
+from unittest import mock
 
-import mock
+import yaml
+
 from rally import api
 from rally.task import context
 from rally.task import engine
 from rally.task import scenario
 from rally.task import task_cfg
-import yaml
 
 import rally_openstack
 from tests.unit import test

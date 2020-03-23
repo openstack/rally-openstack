@@ -13,9 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack import types
 from tests.unit import fakes
 from tests.unit import test

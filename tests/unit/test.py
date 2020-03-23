@@ -15,14 +15,15 @@
 
 import fixtures
 import os
+from unittest import mock
 import uuid
 
-import mock
 from oslotest import base
 
 from rally.common import cfg
 from rally.common import db
 from rally import plugins
+
 from tests.unit import fakes
 
 

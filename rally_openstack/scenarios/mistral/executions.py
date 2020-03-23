@@ -16,7 +16,6 @@ import json
 
 from rally.task import types
 from rally.task import validation
-import six
 import yaml
 
 from rally_openstack import consts
@@ -91,7 +90,7 @@ class CreateExecutionFromWorkbook(utils.MistralScenario):
         wb_def = yaml.safe_load(wb.definition)
 
         if not workflow_name:
-            workflow_name = six.next(six.iterkeys(wb_def["workflows"]))
+            workflow_name = next(iter(wb_def["workflows"].keys()))
 
         workflow_identifier = ".".join([wb.name, workflow_name])
 

@@ -13,11 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 
 import ddt
-import mock
 import os_faults
 from os_faults.api import error
+
 from rally import consts
 from rally.task import hook
 

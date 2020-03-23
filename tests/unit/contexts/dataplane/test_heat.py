@@ -14,8 +14,7 @@
 #    under the License.
 
 import functools
-
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.dataplane import heat as heat_dataplane
 from tests.unit import test

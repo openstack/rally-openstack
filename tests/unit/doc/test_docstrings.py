@@ -22,6 +22,7 @@ from rally.common.plugin import plugin
 from rally.common import validation
 from rally import plugins
 from rally.task import scenario
+
 from tests.unit import test
 
 

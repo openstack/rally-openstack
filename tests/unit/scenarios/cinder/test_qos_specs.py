@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from rally import exceptions as rally_exceptions
 from rally_openstack.scenarios.cinder import qos_specs

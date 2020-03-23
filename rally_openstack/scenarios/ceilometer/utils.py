@@ -18,7 +18,6 @@ import uuid
 from rally import exceptions
 from rally.task import atomic
 from rally.task import utils as bench_utils
-import six
 
 from rally_openstack import scenario
 
@@ -67,7 +66,7 @@ class CeilometerScenario(scenario.OpenStackScenario):
         len_meta = len(metadata_list) if metadata_list else 0
         now = timestamp or dt.datetime.utcnow()
         samples = []
-        for i in six.moves.xrange(count):
+        for i in range(count):
             if i and not (i % batch_size):
                 yield samples
                 samples = []

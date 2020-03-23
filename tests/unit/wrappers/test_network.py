@@ -13,10 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import ddt
-import mock
+from unittest import mock
 
+import ddt
 from neutronclient.common import exceptions as neutron_exceptions
+
 from rally.common import utils
 
 from rally_openstack import consts

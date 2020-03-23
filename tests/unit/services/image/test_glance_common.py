@@ -12,12 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 import uuid
 
 from glanceclient import exc as glance_exc
-import mock
 
 from rally import exceptions
+
 from rally_openstack import service
 from rally_openstack.services.image import glance_common
 from rally_openstack.services.image import image

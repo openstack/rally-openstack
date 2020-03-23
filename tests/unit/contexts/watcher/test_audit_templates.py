@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.watcher import audit_templates
 from rally_openstack.scenarios.watcher import utils as watcher_utils

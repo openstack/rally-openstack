@@ -14,12 +14,13 @@
 #    under the License.
 
 import os
+from unittest import mock
 
 import ddt
-import mock
 
 from rally.common import validation
 from rally import exceptions
+
 from rally_openstack.scenarios.vm import vmtasks
 from tests.unit import test
 

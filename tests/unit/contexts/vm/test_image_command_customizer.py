@@ -15,9 +15,10 @@
 
 """Tests for the image customizer using a command execution."""
 
-import mock
+from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.contexts.vm import image_command_customizer
 from tests.unit import test
 

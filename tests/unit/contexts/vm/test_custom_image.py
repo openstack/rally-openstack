@@ -13,7 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
+
 from rally.task import context
 
 from rally_openstack.contexts.vm import custom_image

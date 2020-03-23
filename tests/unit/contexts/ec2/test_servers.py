@@ -13,8 +13,7 @@
 # under the License.
 
 import copy
-
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.ec2 import servers
 from rally_openstack.scenarios.ec2 import utils as ec2_utils

@@ -14,9 +14,9 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
 import ddt
-import mock
 from rally.common import logging
 from rally.task import context
 

@@ -14,10 +14,9 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
 import ddt
-import mock
-import six
 
 from rally_openstack import consts as rally_consts
 from rally_openstack.contexts.manila import consts
@@ -52,7 +51,7 @@ class SharesTestCase(test.TestCase):
                      share_size=1, share_proto="fake_proto", share_type=None):
         tenants = {}
         for t_id in range(self.TENANTS_AMOUNT):
-            tenants[six.text_type(t_id)] = {"name": six.text_type(t_id)}
+            tenants[str(t_id)] = {"name": str(t_id)}
         users = []
         for t_id in sorted(list(tenants.keys())):
             for i in range(self.USERS_PER_TENANT):

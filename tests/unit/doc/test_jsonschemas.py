@@ -17,6 +17,7 @@ import json
 
 from rally.common.plugin import plugin
 from rally import plugins
+
 from tests.unit import test
 
 

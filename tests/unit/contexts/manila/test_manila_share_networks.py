@@ -14,10 +14,9 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
 import ddt
-import mock
-import six
 
 from rally import exceptions
 from rally_openstack.contexts.manila import consts
@@ -61,15 +60,15 @@ class ShareNetworksTestCase(test.TestCase):
                      neutron_network_provider=True):
         tenants = {}
         for t_id in range(self.TENANTS_AMOUNT):
-            tenants[six.text_type(t_id)] = {"name": six.text_type(t_id)}
-            tenants[six.text_type(t_id)]["networks"] = []
+            tenants[str(t_id)] = {"name": str(t_id)}
+            tenants[str(t_id)]["networks"] = []
             for i in range(networks_per_tenant):
                 network = {"id": "fake_net_id_%s" % i}
                 if neutron_network_provider:
                     network["subnets"] = ["fake_subnet_id_of_net_%s" % i]
                 else:
                     network["cidr"] = "101.0.5.0/24"
-                tenants[six.text_type(t_id)]["networks"].append(network)
+                tenants[str(t_id)]["networks"].append(network)
         users = []
         for t_id in tenants.keys():
             for i in range(self.USERS_PER_TENANT):

@@ -12,9 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import mock
+from unittest import mock
 
 from rally.common import cfg
+
 from rally_openstack.scenarios.ec2 import utils
 from tests.unit import test
 

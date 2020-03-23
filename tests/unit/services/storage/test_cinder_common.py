@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 import uuid
 
 import ddt
-import mock
 
 from rally.common import cfg
 from rally import exceptions
+
 from rally_openstack import service
 from rally_openstack.services.storage import block
 from rally_openstack.services.storage import cinder_common

@@ -13,11 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import configparser
 import inspect
+import io
 import os
-
-import six
-from six.moves import configparser
 
 from rally.common import cfg
 from rally.common import logging
@@ -216,7 +215,7 @@ class TempestConfigfileManager(object):
         with open(conf_path, "w") as configfile:
             self.conf.write(configfile)
 
-        raw_conf = six.StringIO()
+        raw_conf = io.StringIO()
         raw_conf.write("# Some empty values of options will be replaced while "
                        "creating required resources (images, flavors, etc).\n")
         self.conf.write(raw_conf)

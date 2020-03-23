@@ -14,13 +14,14 @@
 #    under the License.
 
 import os
+from unittest import mock
 
 import ddt
-import mock
 import requests
 
 from rally.common import cfg
 from rally import exceptions
+
 from rally_openstack.verification.tempest import config
 from rally_openstack.verification.tempest import context
 from tests.unit import fakes
@@ -67,8 +68,7 @@ class TempestContextTestCase(test.TestCase):
         self.context.conf.add_section("orchestration")
         self.context.conf.add_section("scenario")
 
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open(),
-                create=True)
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open(), create=True)
     def test__download_image_from_glance(self, mock_open):
         self.mock_isfile.return_value = False
         img_path = os.path.join(self.context.data_dir, "foo")
@@ -84,7 +84,7 @@ class TempestContextTestCase(test.TestCase):
                                             mock.call("t"),
                                             mock.call("a")])
 
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open())
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     @mock.patch("requests.get", return_value=mock.MagicMock(status_code=200))
     def test__download_image_from_url_success(self, mock_get, mock_open):
         self.mock_isfile.return_value = False
@@ -118,7 +118,7 @@ class TempestContextTestCase(test.TestCase):
 
     @mock.patch("rally_openstack.wrappers."
                 "network.NeutronWrapper.create_network")
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open())
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     def test_options_configured_manually(
             self, mock_open, mock_neutron_wrapper_create_network):
         self.context.available_services = ["glance", "heat", "nova", "neutron"]
@@ -168,8 +168,7 @@ class TempestContextTestCase(test.TestCase):
         image = self.context._discover_image()
         self.assertEqual("CirrOS", image.name)
 
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open(),
-                create=True)
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open(), create=True)
     @mock.patch("rally_openstack.services.image.image.Image")
     @mock.patch("os.path.isfile", return_value=False)
     def test__download_image(self, mock_isfile, mock_image, mock_open):
@@ -356,7 +355,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("", self.context.conf.get("compute",
                                                    "fixed_network_name"))
 
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open())
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     @mock.patch("%s.TempestContext._configure_option" % PATH)
     @mock.patch("%s.TempestContext._create_tempest_roles" % PATH)
     @mock.patch("rally.verification.utils.create_dir")

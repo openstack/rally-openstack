@@ -13,16 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import configparser
 import os
 import re
+
+import requests
 
 from rally.common import logging
 from rally import exceptions
 from rally.task import utils as task_utils
 from rally.verification import context
 from rally.verification import utils
-import requests
-from six.moves import configparser
 
 from rally_openstack.services.image import image
 from rally_openstack.verification.tempest import config as conf

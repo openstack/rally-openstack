@@ -14,10 +14,10 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
 from boto import exception as boto_exception
 import ddt
-import mock
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exc
 from watcherclient.common.apiclient import exceptions as watcher_exceptions

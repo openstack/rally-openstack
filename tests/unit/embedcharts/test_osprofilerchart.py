@@ -15,8 +15,7 @@
 import copy
 import datetime as dt
 import os
-
-import mock
+from unittest import mock
 
 from rally_openstack.embedcharts import osprofilerchart as osp_chart
 from tests.unit import test

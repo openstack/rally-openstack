@@ -13,10 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import subprocess
+from unittest import mock
 
-import mock
 import netaddr
 
 from rally.common import cfg
@@ -47,7 +46,7 @@ class VMScenarioTestCase(test.ScenarioTestCase):
             stdin=mock_open.side_effect())
         mock_open.assert_called_once_with("foobar", "rb")
 
-    @mock.patch("%s.six.moves.StringIO" % VMTASKS_UTILS)
+    @mock.patch("%s.io.StringIO" % VMTASKS_UTILS)
     def test__run_command_over_ssh_script_inline(self, mock_string_io):
         mock_ssh = mock.MagicMock()
         vm_scenario = utils.VMScenario(self.context)

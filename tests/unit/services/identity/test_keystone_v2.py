@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
 import uuid
 
 import ddt
-import mock
 
 from rally_openstack.services.identity import identity
 from rally_openstack.services.identity import keystone_v2

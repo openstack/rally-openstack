@@ -13,17 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import io
 import os.path
 import subprocess
 import sys
 
 import netaddr
+
 from rally.common import cfg
 from rally.common import logging
 from rally.common import sshutils
 from rally.task import atomic
 from rally.task import utils
-import six
 
 from rally_openstack.scenarios.nova import utils as nova_utils
 from rally_openstack.wrappers import network as network_wrapper
@@ -107,7 +108,7 @@ class VMScenario(nova_utils.NovaScenario):
 
         interpreter = command.get("interpreter") or []
         if interpreter:
-            if isinstance(interpreter, six.string_types):
+            if isinstance(interpreter, str):
                 interpreter = [interpreter]
             elif type(interpreter) != list:
                 raise ValueError("command 'interpreter' value must be str "
@@ -116,7 +117,7 @@ class VMScenario(nova_utils.NovaScenario):
 
         remote_path = command.get("remote_path") or []
         if remote_path:
-            if isinstance(remote_path, six.string_types):
+            if isinstance(remote_path, str):
                 remote_path = [remote_path]
             elif type(remote_path) != list:
                 raise ValueError("command 'remote_path' value must be str "
@@ -131,7 +132,7 @@ class VMScenario(nova_utils.NovaScenario):
             stdin = open(os.path.expanduser(command["script_file"]), "rb")
 
         elif command.get("script_inline"):
-            stdin = six.moves.StringIO(command["script_inline"])
+            stdin = io.StringIO(command["script_inline"])
 
         cmd.extend(command.get("command_args") or [])
 

@@ -14,8 +14,7 @@
 
 
 import copy
-
-import mock
+from unittest import mock
 
 from rally_openstack.contexts.nova import servers
 from rally_openstack.scenarios.nova import utils as nova_utils

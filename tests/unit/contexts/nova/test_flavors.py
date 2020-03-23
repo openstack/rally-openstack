@@ -14,8 +14,8 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
-import mock
 from novaclient import exceptions as nova_exceptions
 
 from rally_openstack.contexts.nova import flavors

@@ -14,10 +14,10 @@
 import json
 import os
 import subprocess
-
-import mock
+from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.verification.tempest import manager
 from tests.unit import test
 
@@ -44,7 +44,7 @@ class TempestManagerTestCase(test.TestCase):
         self.assertEqual(os.path.join(tempest.home_dir, "tempest.conf"),
                          tempest.configfile)
 
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open())
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     def test_get_configuration(self, mock_open):
         tempest = manager.TempestManager(mock.MagicMock(uuid="uuuiiiddd"))
         tempest.get_configuration()
@@ -78,7 +78,7 @@ class TempestManagerTestCase(test.TestCase):
         mock_extend_configfile.assert_called_once_with(extra_options,
                                                        tempest.configfile)
 
-    @mock.patch("six.moves.builtins.open", side_effect=mock.mock_open())
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     def test_override_configuration(self, mock_open):
         tempest = manager.TempestManager(mock.MagicMock(uuid="uuuiiiddd"))
         new_content = mock.Mock()

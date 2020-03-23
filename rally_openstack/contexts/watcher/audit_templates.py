@@ -14,8 +14,6 @@
 
 import random
 
-import six
-
 from rally.common import validation
 from rally.task import context
 
@@ -85,7 +83,7 @@ class AuditTemplateGenerator(context.Context):
              })
 
         self.context["audit_templates"] = []
-        for i in six.moves.range(self.config["audit_templates_per_admin"]):
+        for i in range(self.config["audit_templates_per_admin"]):
             cfg_size = len(self.config["params"])
             if self.config["fill_strategy"] == "round_robin":
                 audit_params = self.config["params"][i % cfg_size]
