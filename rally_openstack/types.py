@@ -171,22 +171,6 @@ class Flavor(DeprecatedBehaviourMixin, OpenStackResourceType):
         return resource_id
 
 
-@plugin.configure(name="ec2_flavor")
-class EC2Flavor(DeprecatedBehaviourMixin, OpenStackResourceType):
-    """Find Nova's flavor Name by it's ID or regexp."""
-
-    def pre_process(self, resource_spec, config):
-        resource_name = resource_spec.get("name")
-        if not resource_name:
-            # NOTE(wtakase): gets resource name from OpenStack id
-            novaclient = self._clients.nova()
-            resource_name = types._name_from_id(
-                resource_config=resource_spec,
-                resources=novaclient.flavors.list(),
-                typename="flavor")
-        return resource_name
-
-
 @plugin.configure(name="glance_image")
 class GlanceImage(DeprecatedBehaviourMixin, OpenStackResourceType):
     """Find Glance's image ID by name or regexp."""

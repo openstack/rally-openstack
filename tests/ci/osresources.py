@@ -107,14 +107,6 @@ class Keystone(ResourceManager):
     def list_roles(self):
         return self.client.roles.list()
 
-    def list_ec2credentials(self):
-        users = self.list_users()
-        ec2_list = []
-        for user in users:
-            ec2_list.extend(
-                self.client.ec2.list(user.id))
-        return ec2_list
-
 
 class Magnum(ResourceManager):
 

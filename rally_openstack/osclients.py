@@ -761,33 +761,6 @@ class Swift(OSClient):
         return client
 
 
-@configure("ec2")
-class EC2(OSClient):
-    """Wrapper for EC2Client which returns an authenticated native client.
-
-    """
-
-    def create_client(self):
-        """Return ec2 client."""
-        LOG.warning("rally.osclient.EC2 is deprecated since Rally 0.10.0.")
-
-        import boto
-
-        kc = self.keystone()
-
-        if kc.version != "v2.0":
-            raise exceptions.RallyException(
-                "Rally EC2 scenario supports only Keystone version 2")
-        ec2_credential = kc.ec2.create(user_id=kc.auth_user_id,
-                                       tenant_id=kc.auth_tenant_id)
-        client = boto.connect_ec2_endpoint(
-            url=self._get_endpoint(),
-            aws_access_key_id=ec2_credential.access,
-            aws_secret_access_key=ec2_credential.secret,
-            is_secure=self.credential.https_insecure)
-        return client
-
-
 @configure("monasca", default_version="2_0",
            default_service_type="monitoring", supported_versions=["2_0"])
 class Monasca(OSClient):
