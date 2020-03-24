@@ -1,19 +1,7 @@
-- job:
-    name: rally-tox-cover-tmp
-    parent: tox-cover
-    description: |
-      Run test for rally project.
-
-      Uses tox with the ``cover`` environment.
-    vars:
-      coverage_output_src: '{{ zuul.project.src_dir }}/cover/'
-      zuul_executor_dest: '{{ zuul.executor.log_root }}/coverage/'
-
-
 - project:
     check:
       jobs:
-        - rally-tox-cover-tmp
+        - rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py36
         - rally-tox-py37
@@ -72,7 +60,7 @@
         - rally-verify-tempest
     gate:
       jobs:
-        - rally-tox-cover-tmp
+        - rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py36
         - rally-tox-py37
