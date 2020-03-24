@@ -16,6 +16,17 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[unreleased]
+------------
+
+Changed
+~~~~~~~
+
+* `docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ is
+  switched to use `docker image <https://hub.docker.com/r/xrally/xrally>`_ as
+  a base user that brings use python 3.6 and ubuntu bionic.
+
+
 [1.7.0] - 2020-12-25
 --------------------
 

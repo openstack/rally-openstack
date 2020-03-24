@@ -6,7 +6,7 @@
         - rally-tox-py36
         - rally-tox-py37
         - rally-dsvm-tox-functional
-        #- rally-docker-check
+        - rally-docker-check
         - rally-task-basic-with-existing-users:
             # use_existing_users key did not trigger proper ansible tasks
             voting: false
@@ -65,7 +65,7 @@
         - rally-tox-py36
         - rally-tox-py37
         - rally-dsvm-tox-functional
-        #- rally-docker-check
+        - rally-docker-check
         - rally-task-simple-job
         - rally-task-cinder
         #- rally-task-heat
