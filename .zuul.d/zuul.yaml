@@ -1,5 +1,5 @@
 - job:
-    name: rally-tox-cover
+    name: rally-tox-cover-tmp
     parent: tox-cover
     description: |
       Run test for rally project.
@@ -9,10 +9,11 @@
       coverage_output_src: '{{ zuul.project.src_dir }}/cover/'
       zuul_executor_dest: '{{ zuul.executor.log_root }}/coverage/'
 
+
 - project:
     check:
       jobs:
-        - rally-tox-cover
+        - rally-tox-cover-tmp
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py36
@@ -72,7 +73,7 @@
         - rally-verify-tempest
     gate:
       jobs:
-        - rally-tox-cover
+        - rally-tox-cover-tmp
         - rally-tox-pep8
         - rally-tox-py27
         - rally-tox-py36
