@@ -41,12 +41,12 @@
     - name: Create an Environment
       become: True
       become_user: root
-      command: docker run -v rally_volume:/home/rally/data xrally/xrally-openstack env create --name "special_env_name"
+      command: docker run -v rally_volume:/home/rally/.rally xrally/xrally-openstack env create --name "special_env_name"
 
     - name: List all available environments
       become: True
       become_user: root
-      command: docker run -v rally_volume:/home/rally/data xrally/xrally-openstack env list
+      command: docker run -v rally_volume:/home/rally/.rally xrally/xrally-openstack env list
       register: env_list
 
     # Check availability of that environment (check that volume stores Rally database)
@@ -58,4 +58,4 @@
       become: True
       become_user: root
       # this plugin was added with rally-openstack 1.1.0
-      command: docker run -v rally_volume:/home/rally/data xrally/xrally-openstack plugin show GnocchiMetric.list_metric
+      command: docker run -v rally_volume:/home/rally/.rally xrally/xrally-openstack plugin show GnocchiMetric.list_metric
