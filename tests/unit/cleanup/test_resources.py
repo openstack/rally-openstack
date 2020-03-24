@@ -16,7 +16,6 @@
 import copy
 from unittest import mock
 
-from boto import exception as boto_exception
 import ddt
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exc
@@ -136,74 +135,6 @@ class NovaServerGroupsTestCase(test.TestCase):
         mock_name_matches_object.side_effect = [False, True, True]
         mock_resource_manager__manager().list.return_value = server_groups
         self.assertEqual(server_groups, resources.NovaServerGroups().list())
-
-
-class EC2MixinTestCase(test.TestCase):
-
-    def get_ec2_mixin(self):
-        ec2 = resources.EC2Mixin()
-        ec2._service = "ec2"
-        return ec2
-
-    def test__manager(self):
-        ec2 = self.get_ec2_mixin()
-        ec2.user = mock.MagicMock()
-        self.assertEqual(ec2.user.ec2.return_value, ec2._manager())
-
-
-class EC2ServerTestCase(test.TestCase):
-
-    @mock.patch("%s.EC2Server._manager" % BASE)
-    def test_is_deleted(self, mock_ec2_server__manager):
-        raw_res1 = mock.MagicMock(state="terminated")
-        raw_res2 = mock.MagicMock(state="terminated")
-        resource = mock.MagicMock(id="test_id")
-        manager = resources.EC2Server(resource=resource)
-
-        mock_ec2_server__manager().get_only_instances.return_value = [raw_res1]
-        self.assertTrue(manager.is_deleted())
-
-        raw_res1.state = "running"
-        self.assertFalse(manager.is_deleted())
-
-        mock_ec2_server__manager().get_only_instances.return_value = [
-            raw_res1, raw_res2]
-        self.assertFalse(manager.is_deleted())
-
-        raw_res1.state = "terminated"
-        self.assertTrue(manager.is_deleted())
-
-        mock_ec2_server__manager().get_only_instances.return_value = []
-        self.assertTrue(manager.is_deleted())
-
-    @mock.patch("%s.EC2Server._manager" % BASE)
-    def test_is_deleted_exceptions(self, mock_ec2_server__manager):
-        mock_ec2_server__manager.side_effect = [
-            boto_exception.EC2ResponseError(
-                status="fake", reason="fake",
-                body={"Error": {"Code": "fake_code"}}),
-            boto_exception.EC2ResponseError(
-                status="fake", reason="fake",
-                body={"Error": {"Code": "InvalidInstanceID.NotFound"}})
-        ]
-        manager = resources.EC2Server(resource=mock.MagicMock())
-        self.assertFalse(manager.is_deleted())
-        self.assertTrue(manager.is_deleted())
-
-    @mock.patch("%s.EC2Server._manager" % BASE)
-    def test_delete(self, mock_ec2_server__manager):
-        resource = mock.MagicMock(id="test_id")
-        manager = resources.EC2Server(resource=resource)
-        manager.delete()
-        mock_ec2_server__manager().terminate_instances.assert_called_once_with(
-            instance_ids=["test_id"])
-
-    @mock.patch("%s.EC2Server._manager" % BASE)
-    def test_list(self, mock_ec2_server__manager):
-        manager = resources.EC2Server()
-        mock_ec2_server__manager().get_only_instances.return_value = [
-            "a", "b", "c"]
-        self.assertEqual(["a", "b", "c"], manager.list())
 
 
 class NeutronMixinTestCase(test.TestCase):

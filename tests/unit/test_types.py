@@ -172,42 +172,6 @@ class FlavorTestCase(test.TestCase):
                           resource_spec=resource_spec, config={})
 
 
-class EC2FlavorTestCase(test.TestCase):
-
-    def setUp(self):
-        super(EC2FlavorTestCase, self).setUp()
-        self.clients = fakes.FakeClients()
-        self.clients.nova().flavors._cache(fakes.FakeResource(name="m1.tiny",
-                                                              id="1"))
-        self.clients.nova().flavors._cache(fakes.FakeResource(name="m1.nano",
-                                                              id="2"))
-        self.clients.nova().flavors._cache(fakes.FakeResource(name="m1.large",
-                                                              id="3"))
-        self.clients.nova().flavors._cache(fakes.FakeResource(name="m1.xlarge",
-                                                              id="3"))
-        self.type_cls = types.EC2Flavor(
-            context={"admin": {"credential": mock.Mock()}})
-        self.type_cls._clients = self.clients
-
-    def test_preprocess_by_name(self):
-        resource_spec = {"name": "m1.nano"}
-        flavor_name = self.type_cls.pre_process(
-            resource_spec=resource_spec, config={})
-        self.assertEqual("m1.nano", flavor_name)
-
-    def test_preprocess_by_id(self):
-        resource_spec = {"id": "2"}
-        flavor_name = self.type_cls.pre_process(
-            resource_spec=resource_spec, config={})
-        self.assertEqual("m1.nano", flavor_name)
-
-    def test_preprocess_by_id_no_match(self):
-        resource_spec = {"id": "4"}
-        self.assertRaises(exceptions.InvalidScenarioArgument,
-                          self.type_cls.pre_process,
-                          resource_spec=resource_spec, config={})
-
-
 class GlanceImageTestCase(test.TestCase):
 
     def setUp(self):

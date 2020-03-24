@@ -874,30 +874,6 @@ class OSClientsTestCase(test.TestCase):
             mock_swift.client.Connection.assert_called_once_with(**kw)
             self.assertEqual(fake_swift, self.clients.cache["swift"])
 
-    @mock.patch("%s.EC2._get_endpoint" % PATH)
-    def test_ec2(self, mock_ec2__get_endpoint):
-        mock_boto = mock.Mock()
-        self.fake_keystone.ec2 = mock.Mock()
-        self.fake_keystone.ec2.create.return_value = mock.Mock(
-            access="fake_access", secret="fake_secret")
-        mock_ec2__get_endpoint.return_value = "http://fake.to:1/fake"
-        fake_ec2 = fakes.FakeEC2Client()
-        mock_boto.connect_ec2_endpoint.return_value = fake_ec2
-
-        self.assertNotIn("ec2", self.clients.cache)
-        with mock.patch.dict("sys.modules", {"boto": mock_boto}):
-            client = self.clients.ec2()
-
-            self.assertEqual(fake_ec2, client)
-            kw = {
-                "url": "http://fake.to:1/fake",
-                "aws_access_key_id": "fake_access",
-                "aws_secret_access_key": "fake_secret",
-                "is_secure": self.credential.https_insecure,
-            }
-            mock_boto.connect_ec2_endpoint.assert_called_once_with(**kw)
-            self.assertEqual(fake_ec2, self.clients.cache["ec2"])
-
     @mock.patch("%s.Keystone.service_catalog" % PATH)
     def test_services(self, mock_keystone_service_catalog):
         available_services = {consts.ServiceType.IDENTITY: {},

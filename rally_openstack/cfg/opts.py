@@ -14,7 +14,6 @@
 #    under the License.
 
 from rally_openstack.cfg import cinder
-from rally_openstack.cfg import ec2
 from rally_openstack.cfg import glance
 from rally_openstack.cfg import heat
 from rally_openstack.cfg import ironic
@@ -46,7 +45,7 @@ from rally_openstack.embedcharts import osprofilerchart
 def list_opts():
 
     opts = {}
-    for l_opts in (cinder.OPTS, ec2.OPTS, heat.OPTS, ironic.OPTS, magnum.OPTS,
+    for l_opts in (cinder.OPTS, heat.OPTS, ironic.OPTS, magnum.OPTS,
                    manila.OPTS, mistral.OPTS, monasca.OPTS, murano.OPTS,
                    nova.OPTS, osclients.OPTS, profiler.OPTS, sahara.OPTS,
                    vm.OPTS, glance.OPTS, watcher.OPTS, tempest.OPTS,
