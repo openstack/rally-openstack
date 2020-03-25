@@ -24,7 +24,7 @@ from watcherclient.common.apiclient import exceptions as watcher_exceptions
 from rally_openstack.task.cleanup import resources
 from tests.unit import test
 
-BASE = "rally_openstack.cleanup.resources"
+BASE = "rally_openstack.task.cleanup.resources"
 GLANCE_V2_PATH = ("rally_openstack.common.services.image.glance_v2."
                   "GlanceV2Service")
 

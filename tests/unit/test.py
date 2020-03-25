@@ -126,14 +126,14 @@ class ScenarioTestCase(TestCase):
         return key in self._clients
 
     def get_client_mocks(self):
-        base_path = "rally_openstack"
+        base_path = "rally_openstack.task"
 
         return [
             mock.patch(
-                "%s.scenario.OpenStackScenario.clients" % base_path,
+                f"{base_path}.scenario.OpenStackScenario.clients",
                 mock.Mock(side_effect=self.clients)),
             mock.patch(
-                "%s.scenario.OpenStackScenario.admin_clients" % base_path,
+                f"{base_path}.scenario.OpenStackScenario.admin_clients",
                 mock.Mock(side_effect=self.admin_clients))
         ]
 

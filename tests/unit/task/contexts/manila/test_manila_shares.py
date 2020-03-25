@@ -182,7 +182,7 @@ class SharesTestCase(test.TestCase):
             mock_calls, any_order=True)
 
     @mock.patch(MANILA_UTILS_PATH + "_create_share")
-    @mock.patch("rally_openstack.cleanup.manager.cleanup")
+    @mock.patch("rally_openstack.task.cleanup.manager.cleanup")
     def test_cleanup(
             self,
             mock_cleanup_manager_cleanup,

@@ -251,10 +251,12 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
                 tenant_name="tenant", username="user",
                 domain_name=None, project_domain_name=None,
                 user_domain_name=None)
-        self.ksa_session.Session.assert_has_calls(
+        self.assertEqual(
             [mock.call(timeout=180.0, verify=True, cert=None),
              mock.call(auth=self.ksa_identity_plugin, timeout=180.0,
-                       verify=True, cert=None)])
+                       verify=True, cert=None)],
+            self.ksa_session.Session.call_args_list
+        )
 
     def test_keystone_property(self):
         keystone = osclients.Keystone(self.credential, None)

@@ -19,7 +19,7 @@ from rally_openstack.task.cleanup import base
 from tests.unit import test
 
 
-BASE = "rally_openstack.cleanup.base"
+BASE = "rally_openstack.task.cleanup.base"
 
 
 class ResourceDecoratorTestCase(test.TestCase):

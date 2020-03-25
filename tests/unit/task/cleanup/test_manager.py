@@ -22,7 +22,7 @@ from rally_openstack.task.cleanup import manager
 from tests.unit import test
 
 
-BASE = "rally_openstack.cleanup.manager"
+BASE = "rally_openstack.task.cleanup.manager"
 
 
 class SeekAndDestroyTestCase(test.TestCase):
