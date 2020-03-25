@@ -16,18 +16,18 @@
 import sys
 
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager
 from rally_openstack.contexts.cleanup import base
 from rally_openstack import scenario
+from rally_openstack.task import context
 
 
 @validation.add(name="check_cleanup_resources", admin_required=True)
 # NOTE(amaretskiy): Set order to run this just before UserCleanup
 @context.configure(name="admin_cleanup", platform="openstack",
                    order=(sys.maxsize - 1), hidden=True)
-class AdminCleanup(base.CleanupMixin, context.Context):
+class AdminCleanup(base.CleanupMixin, context.OpenStackContext):
     """Context class for admin resources cleanup."""
 
     def cleanup(self):

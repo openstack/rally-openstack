@@ -12,18 +12,17 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import osclients
+from rally_openstack.task import context
 from rally_openstack.wrappers import network as network_wrapper
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="existing_network", platform="openstack", order=349)
-class ExistingNetwork(context.Context):
+class ExistingNetwork(context.OpenStackContext):
     """This context supports using existing networks in Rally.
 
     This context should be used on a deployment with existing users.
@@ -36,8 +35,7 @@ class ExistingNetwork(context.Context):
     }
 
     def setup(self):
-        for user, tenant_id in utils.iterate_per_tenants(
-                self.context.get("users", [])):
+        for user, tenant_id in self._iterate_per_tenants():
             net_wrapper = network_wrapper.wrap(
                 osclients.Clients(user["credential"]), self,
                 config=self.config)

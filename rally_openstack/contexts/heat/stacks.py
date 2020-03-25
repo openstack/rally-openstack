@@ -13,18 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.heat import utils as heat_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="stacks", platform="openstack", order=435)
-class StackGenerator(context.Context):
+class StackGenerator(context.OpenStackContext):
     """Context class for create temporary stacks with resources.
 
        Stack generator allows to generate arbitrary number of stacks for
@@ -72,8 +71,7 @@ class StackGenerator(context.Context):
     def setup(self):
         template = self._prepare_stack_template(
             self.config["resources_per_stack"])
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             heat_scenario = heat_utils.HeatScenario(
                 {"user": user, "task": self.context["task"],
                  "owner_id": self.context["owner_id"]})

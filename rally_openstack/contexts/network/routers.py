@@ -13,19 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.neutron import utils as neutron_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", admin=True,
                 users=True)
 @context.configure(name="router", platform="openstack", order=351)
-class Router(context.Context):
+class Router(context.OpenStackContext):
     """Create networking resources.
 
     This creates router for all tenants.
@@ -96,8 +95,7 @@ class Router(context.Context):
         for parameter in parameters:
             if parameter in self.config:
                 kwargs[parameter] = self.config[parameter]
-        for user, tenant_id in (utils.iterate_per_tenants(
-                self.context.get("users", []))):
+        for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id]["routers"] = []
             scenario = neutron_utils.NeutronScenario(
                 context={"user": user, "task": self.context["task"],

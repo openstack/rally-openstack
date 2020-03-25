@@ -13,12 +13,11 @@
 # under the License.
 
 from rally.common import logging
-from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack.scenarios.nova import utils as nova_utils
+from rally_openstack.task import context
 from rally_openstack import types
 
 
@@ -27,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="servers", platform="openstack", order=430)
-class ServerGenerator(context.Context):
+class ServerGenerator(context.OpenStackContext):
     """Creates specified amount of Nova Servers per each tenant."""
 
     CONFIG_SCHEMA = {
@@ -105,8 +104,7 @@ class ServerGenerator(context.Context):
         flavor_id = types.Flavor(self.context).pre_process(
             resource_spec=flavor, config={})
 
-        for iter_, (user, tenant_id) in enumerate(rutils.iterate_per_tenants(
-                self.context["users"])):
+        for iter_, (user, tenant_id) in enumerate(self._iterate_per_tenants()):
             LOG.debug("Booting servers for user tenant %s" % user["tenant_id"])
             tmp_context = {"user": user,
                            "tenant": self.context["tenants"][tenant_id],

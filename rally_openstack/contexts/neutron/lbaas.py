@@ -11,13 +11,11 @@
 #    under the License.
 
 from rally.common import logging
-from rally.common import utils
-
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import osclients
+from rally_openstack.task import context
 from rally_openstack.wrappers import network as network_wrapper
 
 
@@ -27,7 +25,7 @@ LOG = logging.getLogger(__name__)
 @validation.add("required_platform", platform="openstack", admin=True,
                 users=True)
 @context.configure(name="lbaas", platform="openstack", order=360)
-class Lbaas(context.Context):
+class Lbaas(context.OpenStackContext):
     """Creates a lb-pool for every subnet created in network context."""
     CONFIG_SCHEMA = {
         "type": "object",
@@ -64,8 +62,7 @@ class Lbaas(context.Context):
             return
 
         # Creates a lb-pool for every subnet created in network context.
-        for user, tenant_id in (utils.iterate_per_tenants(
-                self.context.get("users", []))):
+        for user, tenant_id in self._iterate_per_tenants():
             for network in self.context["tenants"][tenant_id]["networks"]:
                 for subnet in network.get("subnets", []):
                     if self.config["lbaas_version"] == 1:

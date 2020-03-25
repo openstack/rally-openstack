@@ -15,13 +15,12 @@
 import time
 
 from rally.common import logging
-from rally.common import utils as rutils
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack.scenarios.ceilometer import utils as ceilo_utils
+from rally_openstack.task import context
 
 
 LOG = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ LOG = logging.getLogger(__name__)
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="ceilometer", platform="openstack", order=450)
-class CeilometerSampleGenerator(context.Context):
+class CeilometerSampleGenerator(context.OpenStackContext):
     """Creates ceilometer samples and resources."""
 
     CONFIG_SCHEMA = {
@@ -128,8 +127,7 @@ class CeilometerSampleGenerator(context.Context):
         }
         resources = []
 
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id]["samples"] = []
             self.context["tenants"][tenant_id]["resources"] = []
             scenario = ceilo_utils.CeilometerScenario(

@@ -15,17 +15,17 @@
 import random
 
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.watcher import utils as watcher_utils
+from rally_openstack.task import context
 from rally_openstack import types
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @context.configure(name="audit_templates", platform="openstack", order=550)
-class AuditTemplateGenerator(context.Context):
+class AuditTemplateGenerator(context.OpenStackContext):
     """Creates Watcher audit templates for tenants."""
 
     CONFIG_SCHEMA = {

@@ -13,21 +13,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.sahara import utils
 from rally_openstack.scenarios.swift import utils as swift_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="sahara_output_data_sources", platform="openstack",
                    order=444)
-class SaharaOutputDataSources(context.Context):
+class SaharaOutputDataSources(context.OpenStackContext):
     """Context class for setting up Output Data Sources for an EDP job."""
 
     CONFIG_SCHEMA = {
@@ -47,8 +46,7 @@ class SaharaOutputDataSources(context.Context):
 
     def setup(self):
         utils.init_sahara_context(self)
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
 
             clients = osclients.Clients(user["credential"])
             sahara = clients.sahara()

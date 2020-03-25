@@ -16,15 +16,15 @@ import os
 
 from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack.scenarios.magnum import utils as magnum_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="ca_certs", platform="openstack", order=490)
-class CaCertGenerator(context.Context):
+class CaCertGenerator(context.OpenStackContext):
     """Creates ca certs."""
 
     CONFIG_SCHEMA = {
@@ -70,8 +70,7 @@ class CaCertGenerator(context.Context):
         return result
 
     def setup(self):
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
 
             magnum_scenario = magnum_utils.MagnumScenario({
                 "user": user,

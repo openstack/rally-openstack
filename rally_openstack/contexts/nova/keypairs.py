@@ -14,15 +14,15 @@
 #    under the License.
 
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import osclients
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="keypair", platform="openstack", order=310)
-class Keypair(context.Context):
+class Keypair(context.OpenStackContext):
     """Create Nova KeyPair for each user."""
 
     # NOTE(andreykurilin): "type" != "null", since we need to support backward

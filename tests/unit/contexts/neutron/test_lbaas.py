@@ -57,12 +57,8 @@ class LbaasTestCase(test.TestCase):
                          "LEAST_CONNECTIONS")
 
     @mock.patch(NET + "wrap")
-    @mock.patch("rally_openstack.contexts.neutron.lbaas.utils")
     @mock.patch("rally_openstack.osclients.Clients")
-    def test_setup_with_lbaas(self, mock_clients, mock_utils, mock_wrap):
-        mock_utils.iterate_per_tenants.return_value = [
-            ("foo_user", "foo_tenant"),
-            ("bar_user", "bar_tenant")]
+    def test_setup_with_lbaas(self, mock_clients, mock_wrap):
         foo_net = {"id": "foo_net",
                    "tenant_id": "foo_tenant",
                    "subnets": ["foo_subnet"],
@@ -83,10 +79,17 @@ class LbaasTestCase(test.TestCase):
         net_wrapper = mock_wrap(mock_clients.return_value)
         net_wrapper.supports_extension.return_value = (True, None)
         fake_args = {"lbaas_version": 1}
+
         lb_context = lbaas_context.Lbaas(self.get_context(**fake_args))
+        lb_context._iterate_per_tenants = mock.MagicMock(
+            return_value=[
+                ("foo_user", "foo_tenant"),
+                ("bar_user", "bar_tenant")]
+        )
+
         lb_context.setup()
-        mock_utils.iterate_per_tenants.assert_called_once_with(
-            lb_context.context["users"])
+
+        lb_context._iterate_per_tenants.assert_called_once_with()
         net_wrapper.supports_extension.assert_called_once_with("lbaas")
         for tenant_id, tenant_ctx in (
                 sorted(lb_context.context["tenants"].items())):
@@ -95,33 +98,35 @@ class LbaasTestCase(test.TestCase):
         self.assertEqual(expected_net, actual_net)
 
     @mock.patch(NET + "wrap")
-    @mock.patch("rally_openstack.contexts.neutron.lbaas.utils")
     @mock.patch("rally_openstack.osclients.Clients")
-    def test_setup_with_no_lbaas(self, mock_clients, mock_utils, mock_wrap):
-        mock_utils.iterate_per_tenants.return_value = [
-            ("bar_user", "bar_tenant")]
+    def test_setup_with_no_lbaas(self, mock_clients, mock_wrap):
         mock_create = mock.Mock(side_effect=lambda t, **kw: t + "-net")
         mock_wrap.return_value = mock.Mock(create_v1_pool=mock_create)
         fake_args = {"lbaas_version": 1}
         lb_context = lbaas_context.Lbaas(self.get_context(**fake_args))
         net_wrapper = mock_wrap(mock_clients.return_value)
         net_wrapper.supports_extension.return_value = (False, None)
+
+        lb_context._iterate_per_tenants = mock.MagicMock(
+            return_value=[("bar_user", "bar_tenant")]
+        )
         lb_context.setup()
-        mock_utils.iterate_per_tenants.assert_not_called()
+
+        lb_context._iterate_per_tenants.assert_not_called()
         net_wrapper.supports_extension.assert_called_once_with("lbaas")
         assert not net_wrapper.create_v1_pool.called
 
     @mock.patch(NET + "wrap")
-    @mock.patch("rally_openstack.contexts.neutron.lbaas.utils")
     @mock.patch("rally_openstack.osclients.Clients")
-    def test_setup_with_lbaas_version_not_one(self, mock_clients,
-                                              mock_utils, mock_wrap):
-        mock_utils.iterate_per_tenants.return_value = [
-            ("bar_user", "bar_tenant")]
+    def test_setup_with_lbaas_version_not_one(self, mock_clients, mock_wrap):
         mock_create = mock.Mock(side_effect=lambda t, **kw: t + "-net")
         mock_wrap.return_value = mock.Mock(create_v1_pool=mock_create)
         fake_args = {"lbaas_version": 2}
+
         lb_context = lbaas_context.Lbaas(self.get_context(**fake_args))
+        lb_context._iterate_per_tenants = mock.MagicMock(
+            return_value=[("bar_user", "bar_tenant")]
+        )
         net_wrapper = mock_wrap(mock_clients.return_value)
         net_wrapper.supports_extension.return_value = (True, None)
         self.assertRaises(NotImplementedError, lb_context.setup)

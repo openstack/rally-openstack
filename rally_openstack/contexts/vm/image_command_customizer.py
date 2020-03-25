@@ -17,10 +17,10 @@ import copy
 
 from rally.common import validation
 from rally import exceptions
-import rally.task.context as context
 
 from rally_openstack.contexts.vm import custom_image
 from rally_openstack.scenarios.vm import utils as vm_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)

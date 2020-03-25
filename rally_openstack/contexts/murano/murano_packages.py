@@ -16,20 +16,19 @@
 import os
 import zipfile
 
-from rally.common import utils
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.murano import utils as mutils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="murano_packages", platform="openstack", order=401)
-class PackageGenerator(context.Context):
+class PackageGenerator(context.OpenStackContext):
     """Context class for uploading applications for murano."""
 
     CONFIG_SCHEMA = {
@@ -57,8 +56,7 @@ class PackageGenerator(context.Context):
             raise exceptions.ContextSetupFailure(msg=msg % pckg_path,
                                                  ctx_name=self.get_name())
 
-        for user, tenant_id in utils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             clients = osclients.Clients(user["credential"])
             self.context["tenants"][tenant_id]["packages"] = []
             if is_config_app_dir:

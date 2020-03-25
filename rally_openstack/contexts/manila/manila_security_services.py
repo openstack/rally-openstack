@@ -14,14 +14,13 @@
 #    under the License.
 
 from rally.common import cfg
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts as rally_consts
 from rally_openstack.contexts.manila import consts
 from rally_openstack.scenarios.manila import utils as manila_utils
+from rally_openstack.task import context
 
 
 CONF = cfg.CONF
@@ -30,7 +29,7 @@ CONTEXT_NAME = consts.SECURITY_SERVICES_CONTEXT_NAME
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name=CONTEXT_NAME, platform="openstack", order=445)
-class SecurityServices(context.Context):
+class SecurityServices(context.OpenStackContext):
     """This context creates 'security services' for Manila project."""
 
     CONFIG_SCHEMA = {
@@ -65,7 +64,7 @@ class SecurityServices(context.Context):
     }
 
     def setup(self):
-        for user, tenant_id in (utils.iterate_per_tenants(
+        for user, tenant_id in (self._iterate_per_tenants(
                 self.context.get("users", []))):
             self.context["tenants"][tenant_id][CONTEXT_NAME] = {
                 "security_services": [],

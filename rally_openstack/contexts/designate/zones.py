@@ -12,18 +12,17 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.designate import utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="zones", platform="openstack", order=600)
-class ZoneGenerator(context.Context):
+class ZoneGenerator(context.OpenStackContext):
     """Context to add `zones_per_tenant` zones for each tenant."""
 
     CONFIG_SCHEMA = {
@@ -43,7 +42,7 @@ class ZoneGenerator(context.Context):
     }
 
     def setup(self):
-        for user, tenant_id in rutils.iterate_per_tenants(
+        for user, tenant_id in self._iterate_per_tenants(
                 self.context["users"]):
             self.context["tenants"][tenant_id].setdefault("zones", [])
             designate_util = utils.DesignateScenario(

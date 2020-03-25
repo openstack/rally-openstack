@@ -15,7 +15,6 @@
 
 from rally.common import logging
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack.contexts.quotas import cinder_quotas
@@ -24,6 +23,7 @@ from rally_openstack.contexts.quotas import manila_quotas
 from rally_openstack.contexts.quotas import neutron_quotas
 from rally_openstack.contexts.quotas import nova_quotas
 from rally_openstack import osclients
+from rally_openstack.task import context
 
 
 LOG = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ LOG = logging.getLogger(__name__)
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @context.configure(name="quotas", platform="openstack", order=300)
-class Quotas(context.Context):
+class Quotas(context.OpenStackContext):
     """Sets OpenStack Tenants quotas."""
 
     CONFIG_SCHEMA = {

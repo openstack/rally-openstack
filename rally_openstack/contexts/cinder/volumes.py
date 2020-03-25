@@ -12,17 +12,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from rally.common import utils as rutils
-from rally.task import context
-
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.services.storage import block
+from rally_openstack.task import context
 
 
 @context.configure(name="volumes", platform="openstack", order=420)
-class VolumeGenerator(context.Context):
+class VolumeGenerator(context.OpenStackContext):
     """Creates volumes for each tenant."""
 
     CONFIG_SCHEMA = {
@@ -59,8 +57,7 @@ class VolumeGenerator(context.Context):
         volume_type = self.config.get("type", None)
         volumes_per_tenant = self.config["volumes_per_tenant"]
 
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id].setdefault("volumes", [])
             clients = osclients.Clients(user["credential"])
             cinder_service = block.BlockStorage(

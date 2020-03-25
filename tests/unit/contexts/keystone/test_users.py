@@ -292,10 +292,8 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         net_wrapper.supports_extension.assert_called_once_with(
             "security-group")
 
-    @mock.patch("rally.common.utils.iterate_per_tenants")
     @mock.patch("%s.network" % CTX)
-    def test__remove_default_security_group(
-            self, mock_network, mock_iterate_per_tenants):
+    def test__remove_default_security_group(self, mock_network):
         net_wrapper = mock.Mock(SERVICE_IMPL=consts.Service.NEUTRON)
         net_wrapper.supports_extension.return_value = (True, None)
         mock_network.wrap.return_value = net_wrapper
@@ -317,20 +315,22 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_clients = [user1, user2]
         self.osclients.Clients.side_effect = [admin_clients] + user_clients
 
-        mock_iterate_per_tenants.return_value = [
-            (mock.MagicMock(), "t1"),
-            (mock.MagicMock(), "t2")]
+        user_generator._iterate_per_tenants = mock.MagicMock(
+            return_value=[
+                (mock.MagicMock(), "t1"),
+                (mock.MagicMock(), "t2")
+            ]
+        )
 
         user_generator._remove_default_security_group()
 
         mock_network.wrap.assert_called_once_with(admin_clients,
                                                   user_generator)
 
-        mock_iterate_per_tenants.assert_called_once_with(
-            user_generator.context["users"])
+        user_generator._iterate_per_tenants.assert_called_once_with()
         expected = [mock.call(user_generator.credential)] + [
             mock.call(u["credential"])
-            for u, t in mock_iterate_per_tenants.return_value]
+            for u, t in user_generator._iterate_per_tenants.return_value]
         self.osclients.Clients.assert_has_calls(expected, any_order=True)
 
         user_net = user1.neutron.return_value

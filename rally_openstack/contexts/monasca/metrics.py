@@ -14,15 +14,15 @@
 
 from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack.scenarios.monasca import utils as monasca_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="monasca_metrics", platform="openstack", order=510)
-class MonascaMetricGenerator(context.Context):
+class MonascaMetricGenerator(context.OpenStackContext):
     """Creates Monasca Metrics."""
 
     CONFIG_SCHEMA = {
@@ -85,8 +85,7 @@ class MonascaMetricGenerator(context.Context):
                 "dimensions": self.config["dimensions"]
             }
 
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             scenario = monasca_utils.MonascaScenario(
                 context={"user": user, "task": self.context["task"]}
             )

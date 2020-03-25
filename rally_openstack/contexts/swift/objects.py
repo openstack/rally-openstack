@@ -16,17 +16,18 @@
 from rally.common import logging
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack.contexts.swift import utils as swift_utils
+from rally_openstack.task import context
 
 LOG = logging.getLogger(__name__)
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="swift_objects", platform="openstack", order=360)
-class SwiftObjectGenerator(swift_utils.SwiftObjectMixin, context.Context):
+class SwiftObjectGenerator(swift_utils.SwiftObjectMixin,
+                           context.OpenStackContext):
     """Create containers and objects in each tenant."""
     CONFIG_SCHEMA = {
         "type": "object",
@@ -67,8 +68,7 @@ class SwiftObjectGenerator(swift_utils.SwiftObjectMixin, context.Context):
         containers_num = len(self.context["tenants"]) * containers_per_tenant
         LOG.debug("Creating %d containers using %d threads."
                   % (containers_num, threads))
-        containers_count = len(self._create_containers(self.context,
-                                                       containers_per_tenant,
+        containers_count = len(self._create_containers(containers_per_tenant,
                                                        threads))
         if containers_count != containers_num:
             raise exceptions.ContextSetupFailure(
@@ -81,8 +81,7 @@ class SwiftObjectGenerator(swift_utils.SwiftObjectMixin, context.Context):
         objects_num = containers_num * objects_per_container
         LOG.debug("Creating %d objects using %d threads."
                   % (objects_num, threads))
-        objects_count = len(self._create_objects(self.context,
-                                                 objects_per_container,
+        objects_count = len(self._create_objects(objects_per_container,
                                                  self.config["object_size"],
                                                  threads))
         if objects_count != objects_num:
@@ -96,5 +95,5 @@ class SwiftObjectGenerator(swift_utils.SwiftObjectMixin, context.Context):
         """Delete containers and objects, using the broker pattern."""
         threads = self.config["resource_management_workers"]
 
-        self._delete_objects(self.context, threads)
-        self._delete_containers(self.context, threads)
+        self._delete_objects(threads)
+        self._delete_containers(threads)

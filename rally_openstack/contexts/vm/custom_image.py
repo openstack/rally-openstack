@@ -18,19 +18,20 @@ import abc
 from rally.common import broker
 from rally.common import logging
 from rally.common import utils
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.vm import vmtasks
 from rally_openstack.services.image import image
+from rally_openstack.task import context
 from rally_openstack import types
 
 
 LOG = logging.getLogger(__name__)
 
 
-class BaseCustomImageGenerator(context.Context, metaclass=abc.ABCMeta):
+class BaseCustomImageGenerator(context.OpenStackContext,
+                               metaclass=abc.ABCMeta):
     """Base plugin for the contexts providing customized image with.
 
     Every context plugin for the specific customization must implement
@@ -131,8 +132,7 @@ class BaseCustomImageGenerator(context.Context, metaclass=abc.ABCMeta):
                 tenant["custom_image"] = custom_image
         else:
             def publish(queue):
-                users = self.context.get("users", [])
-                for user, tenant_id in utils.iterate_per_tenants(users):
+                for user, tenant_id in self._iterate_per_tenants():
                     queue.append((user, tenant_id))
 
             def consume(cache, args):

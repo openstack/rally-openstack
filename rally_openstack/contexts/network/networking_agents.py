@@ -14,17 +14,17 @@
 
 from rally.common import logging
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import osclients
+from rally_openstack.task import context
 
 LOG = logging.getLogger(__name__)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @context.configure(name="networking_agents", platform="openstack", order=349)
-class NetworkingAgents(context.Context):
+class NetworkingAgents(context.OpenStackContext):
     """This context supports querying Neutron agents in Rally."""
 
     CONFIG_SCHEMA = {

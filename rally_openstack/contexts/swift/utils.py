@@ -16,7 +16,6 @@
 import tempfile
 
 from rally.common import broker
-from rally.common import utils as rutils
 
 from rally_openstack.scenarios.swift import utils as swift_utils
 
@@ -24,10 +23,9 @@ from rally_openstack.scenarios.swift import utils as swift_utils
 class SwiftObjectMixin(object):
     """Mix-in method for Swift Object Context."""
 
-    def _create_containers(self, context, containers_per_tenant, threads):
+    def _create_containers(self, containers_per_tenant, threads):
         """Create containers and store results in Rally context.
 
-        :param context: dict, Rally context environment
         :param containers_per_tenant: int, number of containers to create
                                       per tenant
         :param threads: int, number of threads to use for broker pattern
@@ -37,18 +35,18 @@ class SwiftObjectMixin(object):
         containers = []
 
         def publish(queue):
-            for user, tenant_id in (rutils.iterate_per_tenants(
-                    context.get("users", []))):
-                context["tenants"][tenant_id]["containers"] = []
+            for user, tenant_id in self._iterate_per_tenants():
+                self.context["tenants"][tenant_id]["containers"] = []
                 for i in range(containers_per_tenant):
-                    args = (user, context["tenants"][tenant_id]["containers"])
+                    args = (user,
+                            self.context["tenants"][tenant_id]["containers"])
                     queue.append(args)
 
         def consume(cache, args):
             user, tenant_containers = args
             if user["id"] not in cache:
                 cache[user["id"]] = swift_utils.SwiftScenario(
-                    {"user": user, "task": context.get("task", {})})
+                    {"user": user, "task": self.context.get("task", {})})
             container_name = cache[user["id"]]._create_container()
             tenant_containers.append({"user": user,
                                       "container": container_name,
@@ -59,11 +57,9 @@ class SwiftObjectMixin(object):
 
         return containers
 
-    def _create_objects(self, context, objects_per_container, object_size,
-                        threads):
+    def _create_objects(self, objects_per_container, object_size, threads):
         """Create objects and store results in Rally context.
 
-        :param context: dict, Rally context environment
         :param objects_per_container: int, number of objects to create
                                       per container
         :param object_size: int, size of created swift objects in byte
@@ -78,9 +74,9 @@ class SwiftObjectMixin(object):
             dummy_file.truncate(object_size)
 
             def publish(queue):
-                for tenant_id in context["tenants"]:
-                    containers = context["tenants"][tenant_id]["containers"]
-                    for container in containers:
+                for tenant_id in self.context["tenants"]:
+                    items = self.context["tenants"][tenant_id]["containers"]
+                    for container in items:
                         for i in range(objects_per_container):
                             queue.append(container)
 
@@ -88,7 +84,7 @@ class SwiftObjectMixin(object):
                 user = container["user"]
                 if user["id"] not in cache:
                     cache[user["id"]] = swift_utils.SwiftScenario(
-                        {"user": user, "task": context.get("task", {})})
+                        {"user": user, "task": self.context.get("task", {})})
                 dummy_file.seek(0)
                 object_name = cache[user["id"]]._upload_object(
                     container["container"],
@@ -101,15 +97,14 @@ class SwiftObjectMixin(object):
 
         return objects
 
-    def _delete_containers(self, context, threads):
+    def _delete_containers(self, threads):
         """Delete containers created by Swift context and update Rally context.
 
-        :param context: dict, Rally context environment
         :param threads: int, number of threads to use for broker pattern
         """
         def publish(queue):
-            for tenant_id in context["tenants"]:
-                containers = context["tenants"][tenant_id]["containers"]
+            for tenant_id in self.context["tenants"]:
+                containers = self.context["tenants"][tenant_id]["containers"]
                 for container in containers[:]:
                     args = container, containers
                     queue.append(args)
@@ -119,21 +114,20 @@ class SwiftObjectMixin(object):
             user = container["user"]
             if user["id"] not in cache:
                 cache[user["id"]] = swift_utils.SwiftScenario(
-                    {"user": user, "task": context.get("task", {})})
+                    {"user": user, "task": self.context.get("task", {})})
             cache[user["id"]]._delete_container(container["container"])
             tenant_containers.remove(container)
 
         broker.run(publish, consume, threads)
 
-    def _delete_objects(self, context, threads):
+    def _delete_objects(self, threads):
         """Delete objects created by Swift context and update Rally context.
 
-        :param context: dict, Rally context environment
         :param threads: int, number of threads to use for broker pattern
         """
         def publish(queue):
-            for tenant_id in context["tenants"]:
-                containers = context["tenants"][tenant_id]["containers"]
+            for tenant_id in self.context["tenants"]:
+                containers = self.context["tenants"][tenant_id]["containers"]
                 for container in containers:
                     for object_name in container["objects"][:]:
                         args = object_name, container
@@ -144,7 +138,7 @@ class SwiftObjectMixin(object):
             user = container["user"]
             if user["id"] not in cache:
                 cache[user["id"]] = swift_utils.SwiftScenario(
-                    {"user": user, "task": context.get("task", {})})
+                    {"user": user, "task": self.context.get("task", {})})
             cache[user["id"]]._delete_object(container["container"],
                                              object_name)
             container["objects"].remove(object_name)

@@ -16,12 +16,12 @@ from rally.common import cfg
 from rally.common import logging
 from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.services.image import image
+from rally_openstack.task import context
 
 
 CONF = cfg.CONF
@@ -31,7 +31,7 @@ LOG = logging.getLogger(__name__)
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="images", platform="openstack", order=410)
-class ImageGenerator(context.Context):
+class ImageGenerator(context.OpenStackContext):
     """Uploads specified Glance images to every tenant."""
 
     CONFIG_SCHEMA = {
@@ -159,8 +159,7 @@ class ImageGenerator(context.Context):
         if "image_name" in self.config and images_per_tenant == 1:
             image_name = self.config["image_name"]
 
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             current_images = []
             clients = osclients.Clients(user["credential"])
             image_service = image.Image(

@@ -13,18 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.murano import utils as murano_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="murano_environments", platform="openstack", order=402)
-class EnvironmentGenerator(context.Context):
+class EnvironmentGenerator(context.OpenStackContext):
     """Context class for creating murano environments."""
 
     CONFIG_SCHEMA = {
@@ -41,8 +40,7 @@ class EnvironmentGenerator(context.Context):
     }
 
     def setup(self):
-        for user, tenant_id in utils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id]["environments"] = []
             for i in range(self.config["environments_per_tenant"]):
                 murano_util = murano_utils.MuranoScenario(

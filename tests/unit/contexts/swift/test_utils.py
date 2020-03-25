@@ -16,7 +16,19 @@
 from unittest import mock
 
 from rally_openstack.contexts.swift import utils
+from rally_openstack.task import context
 from tests.unit import test
+
+
+class SwiftContext(utils.SwiftObjectMixin, context.OpenStackContext):
+    def __init__(self, context):
+        self.context = context
+
+    def setup(self):
+        pass
+
+    def cleanup(self):
+        pass
 
 
 class SwiftObjectMixinTestCase(test.TestCase):
@@ -38,9 +50,8 @@ class SwiftObjectMixinTestCase(test.TestCase):
             ]
         })
 
-        mixin = utils.SwiftObjectMixin()
-        containers = mixin._create_containers(context, containers_per_tenant,
-                                              15)
+        mixin = SwiftContext(context)
+        containers = mixin._create_containers(containers_per_tenant, 15)
 
         self.assertEqual(tenants * containers_per_tenant, len(containers))
         for index, container in enumerate(sorted(containers)):
@@ -87,9 +98,8 @@ class SwiftObjectMixinTestCase(test.TestCase):
             }
         })
 
-        mixin = utils.SwiftObjectMixin()
-        objects_list = mixin._create_objects(context, objects_per_container,
-                                             1024, 25)
+        mixin = SwiftContext(context)
+        objects_list = mixin._create_objects(objects_per_container, 1024, 25)
 
         self.assertEqual(
             tenants * containers_per_tenant * objects_per_container,
@@ -133,8 +143,7 @@ class SwiftObjectMixinTestCase(test.TestCase):
             }
         })
 
-        mixin = utils.SwiftObjectMixin()
-        mixin._delete_containers(context, 1)
+        SwiftContext(context)._delete_containers(1)
 
         mock_swift = mock_clients.return_value.swift.return_value
         expected_containers = ["c1", "c2"]
@@ -173,8 +182,7 @@ class SwiftObjectMixinTestCase(test.TestCase):
             }
         })
 
-        mixin = utils.SwiftObjectMixin()
-        mixin._delete_objects(context, 1)
+        SwiftContext(context)._delete_objects(1)
 
         mock_swift = mock_clients.return_value.swift.return_value
         expected_objects = [("c1", "o1"), ("c1", "o2"), ("c1", "o3"),

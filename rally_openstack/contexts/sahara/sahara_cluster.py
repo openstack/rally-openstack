@@ -14,15 +14,14 @@
 # under the License.
 
 from rally.common import cfg
-from rally.common import utils as rutils
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 from rally.task import utils as bench_utils
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.sahara import utils
+from rally_openstack.task import context
 
 
 CONF = cfg.CONF
@@ -30,7 +29,7 @@ CONF = cfg.CONF
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="sahara_cluster", platform="openstack", order=441)
-class SaharaCluster(context.Context):
+class SaharaCluster(context.OpenStackContext):
     """Context class for setting up the Cluster an EDP job."""
 
     CONFIG_SCHEMA = {
@@ -105,8 +104,7 @@ class SaharaCluster(context.Context):
 
         wait_dict = {}
 
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
 
             image_id = self.context["tenants"][tenant_id]["sahara"]["image"]
 

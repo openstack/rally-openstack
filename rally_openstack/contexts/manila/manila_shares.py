@@ -14,14 +14,13 @@
 #    under the License.
 
 from rally.common import cfg
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts as rally_consts
 from rally_openstack.contexts.manila import consts
 from rally_openstack.scenarios.manila import utils as manila_utils
+from rally_openstack.task import context
 
 CONF = cfg.CONF
 CONTEXT_NAME = consts.SHARES_CONTEXT_NAME
@@ -29,7 +28,7 @@ CONTEXT_NAME = consts.SHARES_CONTEXT_NAME
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name=CONTEXT_NAME, platform="openstack", order=455)
-class Shares(context.Context):
+class Shares(context.OpenStackContext):
     """This context creates shares for Manila project."""
 
     CONFIG_SCHEMA = {
@@ -78,8 +77,7 @@ class Shares(context.Context):
             tenant_ctxt["shares"].append(share.to_dict())
 
     def setup(self):
-        for user, tenant_id in (
-                utils.iterate_per_tenants(self.context.get("users", []))):
+        for user, tenant_id in self._iterate_per_tenants():
             manila_scenario = manila_utils.ManilaScenario({
                 "task": self.task,
                 "owner_id": self.context["owner_id"],

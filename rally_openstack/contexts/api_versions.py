@@ -14,10 +14,10 @@ import random
 
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import osclients
+from rally_openstack.task import context
 
 
 @validation.configure("check_api_versions")
@@ -44,7 +44,7 @@ class CheckOpenStackAPIVersionsValidator(validation.Validator):
 
 @validation.add("check_api_versions")
 @context.configure(name="api_versions", platform="openstack", order=150)
-class OpenStackAPIVersions(context.Context):
+class OpenStackAPIVersions(context.OpenStackContext):
     """Context for specifying OpenStack clients versions and service types.
 
     Some OpenStack services support several API versions. To recognize

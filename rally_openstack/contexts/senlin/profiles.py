@@ -10,17 +10,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack.scenarios.senlin import utils as senlin_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="profiles", platform="openstack", order=190)
-class ProfilesGenerator(context.Context):
+class ProfilesGenerator(context.OpenStackContext):
     """Context creates a temporary profile for Senlin test."""
 
     CONFIG_SCHEMA = {
@@ -44,8 +43,7 @@ class ProfilesGenerator(context.Context):
 
     def setup(self):
         """Create test profiles."""
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
 
             senlin_scenario = senlin_utils.SenlinScenario({
                 "user": user,
@@ -57,8 +55,7 @@ class ProfilesGenerator(context.Context):
 
     def cleanup(self):
         """Delete created test profiles."""
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
 
             senlin_scenario = senlin_utils.SenlinScenario({
                 "user": user,

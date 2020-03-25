@@ -18,12 +18,12 @@ import pkgutil
 from rally.common import utils as rutils
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.heat import utils as heat_utils
+from rally_openstack.task import context
 
 
 def get_data(filename_or_resource):
@@ -34,7 +34,7 @@ def get_data(filename_or_resource):
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="heat_dataplane", platform="openstack", order=435)
-class HeatDataplane(context.Context):
+class HeatDataplane(context.OpenStackContext):
     """Context class for create stack by given template.
 
     This context will create stacks by given template for each tenant and
@@ -125,8 +125,7 @@ class HeatDataplane(context.Context):
         with parameters.unlocked():
             if "network_id" not in parameters:
                 parameters["network_id"] = self._get_public_network_id()
-            for user, tenant_id in rutils.iterate_per_tenants(
-                    self.context["users"]):
+            for user, tenant_id in self._iterate_per_tenants():
                 for name, path in self.config.get("context_parameters",
                                                   {}).items():
                     parameters[name] = self._get_context_parameter(user,

@@ -14,12 +14,11 @@
 #    under the License.
 
 from rally.common import logging
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import osclients
+from rally_openstack.task import context
 from rally_openstack.wrappers import network as network_wrapper
 
 
@@ -30,7 +29,7 @@ LOG = logging.getLogger(__name__)
 @validation.add("required_platform", platform="openstack", admin=True,
                 users=True)
 @context.configure(name="network", platform="openstack", order=350)
-class Network(context.Context):
+class Network(context.OpenStackContext):
     """Create networking resources.
 
     This creates networks for all tenants, and optionally creates
@@ -107,8 +106,7 @@ class Network(context.Context):
         kwargs = {}
         if self.config["dns_nameservers"] is not None:
             kwargs["dns_nameservers"] = self.config["dns_nameservers"]
-        for user, tenant_id in (utils.iterate_per_tenants(
-                self.context.get("users", []))):
+        for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id]["networks"] = []
             for i in range(self.config["networks_per_tenant"]):
                 # NOTE(amaretskiy): router_create_args and subnets_num take

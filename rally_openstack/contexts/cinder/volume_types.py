@@ -15,12 +15,12 @@
 from rally.common import logging
 from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.services.storage import block
+from rally_openstack.task import context
 
 
 LOG = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ LOG = logging.getLogger(__name__)
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @context.configure(name="volume_types", platform="openstack", order=410)
-class VolumeTypeGenerator(context.Context):
+class VolumeTypeGenerator(context.OpenStackContext):
     """Adds cinder volumes types."""
 
     CONFIG_SCHEMA = {

@@ -14,11 +14,10 @@
 #    under the License.
 
 from rally.common import logging
-from rally.common import utils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack import osclients
+from rally_openstack.task import context
 from rally_openstack.wrappers import network
 
 
@@ -117,7 +116,7 @@ def _prepare_open_secgroup(credential, secgroup_name):
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="allow_ssh", platform="openstack", order=320)
-class AllowSSH(context.Context):
+class AllowSSH(context.OpenStackContext):
     """Sets up security groups for all users to access VM via SSH."""
 
     def setup(self):
@@ -138,8 +137,7 @@ class AllowSSH(context.Context):
                                                       secgroup_name)
 
     def cleanup(self):
-        for user, tenant_id in utils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             with logging.ExceptionLogger(
                     LOG,
                     "Unable to delete security group: %s."

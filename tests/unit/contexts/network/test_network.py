@@ -66,20 +66,20 @@ class NetworkTestCase(test.TestCase):
               {"dns_nameservers": ["1.2.3.4", "5.6.7.8"]})
     @ddt.unpack
     @mock.patch(NET + "wrap")
-    @mock.patch("rally_openstack.contexts.network.networks.utils")
     @mock.patch("rally_openstack.osclients.Clients")
-    def test_setup(self, mock_clients, mock_utils, mock_wrap, **dns_kwargs):
-        mock_utils.iterate_per_tenants.return_value = [
-            ("foo_user", "foo_tenant"),
-            ("bar_user", "bar_tenant")]
+    def test_setup(self, mock_clients, mock_wrap, **dns_kwargs):
         mock_create = mock.Mock(side_effect=lambda t, **kw: t + "-net")
-        mock_utils.generate_random_name = mock.Mock()
         mock_wrap.return_value = mock.Mock(create_network=mock_create)
         nets_per_tenant = 2
         net_context = network_context.Network(
             self.get_context(networks_per_tenant=nets_per_tenant,
                              network_create_args={"fakearg": "fake"},
                              **dns_kwargs))
+        net_context._iterate_per_tenants = mock.MagicMock(
+            return_value=[
+                ("foo_user", "foo_tenant"),
+                ("bar_user", "bar_tenant")]
+        )
 
         net_context.setup()
 
@@ -91,11 +91,10 @@ class NetworkTestCase(test.TestCase):
                       subnets_num=1, network_create_args={"fakearg": "fake"},
                       router_create_args={"external": True},
                       **dns_kwargs)
-            for user, tenant in mock_utils.iterate_per_tenants.return_value]
+            for user, tenant in net_context._iterate_per_tenants.return_value]
         mock_create.assert_has_calls(create_calls)
 
-        mock_utils.iterate_per_tenants.assert_called_once_with(
-            net_context.context["users"])
+        net_context._iterate_per_tenants.assert_called_once_with()
         expected_networks = ["bar_tenant-net",
                              "foo_tenant-net"] * nets_per_tenant
         actual_networks = []

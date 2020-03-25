@@ -19,6 +19,12 @@ Changelog
 [unreleased]
 ------------
 
+Added
+~~~~~
+
+* The *rally_openstack.task.context.OpenStackContext* class which provides
+  helpers for all OpenStack context.
+
 Changed
 ~~~~~~~
 

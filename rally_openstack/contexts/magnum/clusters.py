@@ -12,19 +12,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from rally.common import utils as rutils
 from rally.common import validation
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack.scenarios.magnum import utils as magnum_utils
 from rally_openstack.scenarios.nova import utils as nova_utils
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="clusters", platform="openstack", order=480)
-class ClusterGenerator(context.Context):
+class ClusterGenerator(context.OpenStackContext):
     """Creates specified amount of Magnum clusters."""
 
     CONFIG_SCHEMA = {
@@ -45,8 +44,7 @@ class ClusterGenerator(context.Context):
     DEFAULT_CONFIG = {"node_count": 1}
 
     def setup(self):
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
 
             nova_scenario = nova_utils.NovaScenario({
                 "user": user,

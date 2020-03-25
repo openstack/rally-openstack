@@ -12,21 +12,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from rally.common import utils as rutils
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack.cleanup import manager as resource_manager
 from rally_openstack import consts
 from rally_openstack import osclients
 from rally_openstack.scenarios.sahara import utils
 from rally_openstack.services.image import image as image_services
+from rally_openstack.task import context
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="sahara_image", platform="openstack", order=440)
-class SaharaImage(context.Context):
+class SaharaImage(context.OpenStackContext):
     """Context class for adding and tagging Sahara images."""
 
     CONFIG_SCHEMA = {
@@ -103,13 +102,11 @@ class SaharaImage(context.Context):
                 )
             image_id = image_uuid
 
-            for user, tenant_id in rutils.iterate_per_tenants(
-                    self.context["users"]):
+            for user, tenant_id in self._iterate_per_tenants():
                 self.context["tenants"][tenant_id]["sahara"]["image"] = (
                     image_id)
         else:
-            for user, tenant_id in rutils.iterate_per_tenants(
-                    self.context["users"]):
+            for user, tenant_id in self._iterate_per_tenants():
 
                 image_id = self._create_image(
                     hadoop_version=self.config["hadoop_version"],

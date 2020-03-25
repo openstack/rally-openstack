@@ -20,15 +20,14 @@ import uuid
 from rally.common import broker
 from rally.common import cfg
 from rally.common import logging
-from rally.common import utils as rutils
 from rally.common import validation
 from rally import exceptions
-from rally.task import context
 
 from rally_openstack import consts
 from rally_openstack import credential
 from rally_openstack import osclients
 from rally_openstack.services.identity import identity
+from rally_openstack.task import context
 from rally_openstack.wrappers import network
 
 
@@ -44,7 +43,7 @@ USER_DOMAIN_DESCR = "ID of domain in which users will be created."
 
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="users", platform="openstack", order=100)
-class UserGenerator(context.Context):
+class UserGenerator(context.OpenStackContext):
     """Creates specified amount of keystone users and tenants."""
 
     CONFIG_SCHEMA = {
@@ -149,8 +148,7 @@ class UserGenerator(context.Context):
             LOG.debug("Security group context is disabled: %s" % msg)
             return
 
-        for user, tenant_id in rutils.iterate_per_tenants(
-                self.context["users"]):
+        for user, tenant_id in self._iterate_per_tenants():
             with logging.ExceptionLogger(
                     LOG, "Unable to delete default security group"):
                 uclients = osclients.Clients(user["credential"])
