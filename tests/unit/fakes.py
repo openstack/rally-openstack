@@ -32,8 +32,8 @@ from rally.common import utils as rally_utils
 from rally.task import context
 from rally.task import scenario
 
-from rally_openstack import consts
-from rally_openstack import credential
+from rally_openstack.common import consts
+from rally_openstack.common import credential
 
 
 def generate_uuid():

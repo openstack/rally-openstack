@@ -25,8 +25,8 @@ from rally.cli import cliutils
 from rally.common.plugin import discover
 from rally import plugins
 
-from rally_openstack import consts
-from rally_openstack import credential
+from rally_openstack.common import consts
+from rally_openstack.common import credential
 
 
 def skip_if_service(service):

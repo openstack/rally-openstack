@@ -213,7 +213,7 @@ class ContextTestCase(ScenarioTestCase):
     def get_client_mocks(self):
         return [
             mock.patch(
-                "rally_openstack.osclients.Clients",
+                "rally_openstack.common.osclients.Clients",
                 mock.Mock(side_effect=self.context_client))
         ]
 

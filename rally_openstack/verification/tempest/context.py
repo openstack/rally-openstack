@@ -25,9 +25,9 @@ from rally.task import utils as task_utils
 from rally.verification import context
 from rally.verification import utils
 
-from rally_openstack.services.image import image
+from rally_openstack.common.services.image import image
+from rally_openstack.common.wrappers import network
 from rally_openstack.verification.tempest import config as conf
-from rally_openstack.wrappers import network
 
 
 LOG = logging.getLogger(__name__)

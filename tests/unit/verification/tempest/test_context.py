@@ -116,7 +116,7 @@ class TempestContextTestCase(test.TestCase):
                           self.context._download_image_from_source,
                           os.path.join(self.context.data_dir, "foo"))
 
-    @mock.patch("rally_openstack.wrappers."
+    @mock.patch("rally_openstack.common.wrappers."
                 "network.NeutronWrapper.create_network")
     @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     def test_options_configured_manually(
@@ -159,7 +159,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertIn(role3, created_roles)
         self.assertIn(role4, created_roles)
 
-    @mock.patch("rally_openstack.services.image.image.Image")
+    @mock.patch("rally_openstack.common.services.image.image.Image")
     def test__discover_image(self, mock_image):
         client = mock_image.return_value
         client.list_images.return_value = [fakes.FakeImage(name="Foo"),
@@ -169,7 +169,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("CirrOS", image.name)
 
     @mock.patch("%s.open" % PATH, side_effect=mock.mock_open(), create=True)
-    @mock.patch("rally_openstack.services.image.image.Image")
+    @mock.patch("rally_openstack.common.services.image.image.Image")
     @mock.patch("os.path.isfile", return_value=False)
     def test__download_image(self, mock_isfile, mock_image, mock_open):
         img_1 = mock.MagicMock()
@@ -206,7 +206,7 @@ class TempestContextTestCase(test.TestCase):
         result = self.context.conf.get("compute", "flavor_ref")
         self.assertEqual("id1", result)
 
-    @mock.patch("rally_openstack.services.image.image.Image")
+    @mock.patch("rally_openstack.common.services.image.image.Image")
     def test__discover_or_create_image_when_image_exists(self, mock_image):
         client = mock_image.return_value
         client.list_images.return_value = [fakes.FakeImage(name="CirrOS")]
@@ -216,7 +216,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual(0, client.create_image.call_count)
         self.assertEqual(0, len(self.context._created_images))
 
-    @mock.patch("rally_openstack.services.image.image.Image")
+    @mock.patch("rally_openstack.common.services.image.image.Image")
     def test__discover_or_create_image(self, mock_image):
         client = mock_image.return_value
 
@@ -269,7 +269,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("subid1",
                          self.context._created_networks[0]["subnets"][0])
 
-    @mock.patch("rally_openstack.wrappers.network.NeutronWrapper.ext_gw_mode_enabled",  # noqa E501
+    @mock.patch("rally_openstack.common.wrappers.network.NeutronWrapper.ext_gw_mode_enabled",  # noqa E501
                 new_callable=mock.PropertyMock, return_value=True)
     def test__create_network_resources_public_network_override(self, mock_ext_gw_mode_enabled):  # noqa E501
         client = self.context.clients.neutron()
@@ -302,7 +302,7 @@ class TempestContextTestCase(test.TestCase):
         client = self.context.clients.keystone()
         self.assertEqual(2, client.roles.delete.call_count)
 
-    @mock.patch("rally_openstack.services.image.image.Image")
+    @mock.patch("rally_openstack.common.services.image.image.Image")
     def test__cleanup_images(self, mock_image):
         self.context._created_images = [fakes.FakeImage(id="id1"),
                                         fakes.FakeImage(id="id2")]
@@ -343,7 +343,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("", self.context.conf.get("orchestration",
                                                    "instance_type"))
 
-    @mock.patch("rally_openstack.wrappers."
+    @mock.patch("rally_openstack.common.wrappers."
                 "network.NeutronWrapper.delete_network")
     def test__cleanup_network_resources(
             self, mock_neutron_wrapper_delete_network):

@@ -18,7 +18,7 @@ from unittest import mock
 import ddt
 
 from rally.common import cfg
-from rally_openstack import osclients
+from rally_openstack.common import osclients
 from rally_openstack.verification.tempest import config
 from tests.unit import fakes
 from tests.unit import test

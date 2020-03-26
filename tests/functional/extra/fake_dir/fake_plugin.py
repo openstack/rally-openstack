@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally_openstack import osclients
-from rally_openstack import scenario
+from rally_openstack.common import osclients
+from rally_openstack.task import scenario
 
 
 @osclients.configure("fakedummy", default_version="1",

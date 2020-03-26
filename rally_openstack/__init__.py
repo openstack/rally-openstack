@@ -15,9 +15,17 @@
 import pbr.version
 from rally.common import version as __rally_version__
 
+from rally_openstack import _compat
+
 __rally_version__ = __rally_version__.version_info.semantic_version()
 __rally_version__ = __rally_version__.version_tuple()
 
 __version_info__ = pbr.version.VersionInfo("rally-openstack")
 __version__ = __version_info__.version_string()
 __version_tuple__ = __version_info__.semantic_version().version_tuple()
+
+
+# WARNING: IF YOU ARE LOOKING FOR SOME PHYSICALLY UNEXISTING MODULES THAT CAN
+#   BE IMPORTED (FOR BACKWARD COMPATIBILITY), PLEASE CHECK THE NEXT FUNCTION
+# HAPPY DEBUGGING!!
+_compat.init()

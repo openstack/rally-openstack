@@ -4,7 +4,7 @@
     -
       args:
         workload:
-          resource: ["rally.plugins.workload", "siege.py"]
+          resource: ["rally_openstack.task.scenarios.vm.workloads", "siege.py"]
           username: "fedora"
         template: rally-jobs/extra/workload/wordpress_heat_template.yaml
         files:

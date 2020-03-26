@@ -14,7 +14,7 @@
                 "workload": {
                     "username": "fedora",
                     "resource": [
-                        "rally.plugins.workload",
+                        "rally_openstack.task.scenarios.vm.workloads",
                         "siege.py"
                     ]
                 },
