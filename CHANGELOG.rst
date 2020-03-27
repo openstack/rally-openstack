@@ -25,6 +25,8 @@ Added
 * The *rally_openstack.task.context.OpenStackContext* class which provides
   helpers for all OpenStack context.
 
+* Declare Python 3.8 support
+
 Changed
 ~~~~~~~
 
