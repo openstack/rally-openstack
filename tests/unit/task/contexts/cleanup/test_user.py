@@ -72,11 +72,15 @@ class UserCleanupTestCase(test.TestCase):
         mock_find_resource_managers.assert_called_once_with(("a", "b"), False)
         mock_seek_and_destroy.assert_has_calls([
             mock.call(mock_find_resource_managers.return_value[0],
-                      None, ctx["users"], api_versions=None,
-                      resource_classes=[ResourceClass], task_id="task_id"),
+                      None,
+                      ctx["users"],
+                      resource_classes=[ResourceClass],
+                      task_id="task_id"),
             mock.call().exterminate(),
             mock.call(mock_find_resource_managers.return_value[1],
-                      None, ctx["users"], api_versions=None,
-                      resource_classes=[ResourceClass], task_id="task_id"),
+                      None,
+                      ctx["users"],
+                      resource_classes=[ResourceClass],
+                      task_id="task_id"),
             mock.call().exterminate()
         ])

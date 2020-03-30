@@ -241,7 +241,7 @@ class SaharaScenario(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args("`flavor_id` argument is deprecated. Use "
                                  "`master_flavor_id` and `worker_flavor_id` "
-                                 "parameters.", rally_version="2.0",
+                                 "parameters.", rally_version="0.2.0",
                                  deprecated_args=["flavor_id"])
     @atomic.action_timer("sahara.launch_cluster")
     def _launch_cluster(self, plugin_name, hadoop_version, master_flavor_id,

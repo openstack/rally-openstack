@@ -212,7 +212,7 @@ class CreateImageAndBootInstances(GlanceBasic, nova_utils.NovaScenario):
 
     def run(self, container_format, image_location, disk_format,
             flavor, number_instances, visibility="private", min_disk=0,
-            min_ram=0, properties=None, boot_server_kwargs=None, **kwargs):
+            min_ram=0, properties=None, boot_server_kwargs=None):
         """Create an image and boot several instances from it.
 
         :param container_format: container format of image. Acceptable
@@ -228,14 +228,7 @@ class CreateImageAndBootInstances(GlanceBasic, nova_utils.NovaScenario):
         :param flavor: Nova flavor to be used to launch an instance
         :param number_instances: number of Nova servers to boot
         :param boot_server_kwargs: optional parameters to boot server
-        :param kwargs: optional parameters to create server (deprecated)
         """
-        boot_server_kwargs = boot_server_kwargs or kwargs or {}
-
-        if kwargs:
-            LOG.warning("'kwargs' is deprecated in Rally v0.8.0: Use "
-                        "'boot_server_kwargs' for additional parameters when "
-                        "booting servers.")
 
         image = self.glance.create_image(
             container_format=container_format,
@@ -247,7 +240,7 @@ class CreateImageAndBootInstances(GlanceBasic, nova_utils.NovaScenario):
             properties=properties)
 
         self._boot_servers(image.id, flavor, number_instances,
-                           **boot_server_kwargs)
+                           **(boot_server_kwargs or {}))
 
 
 @validation.add("enum", param_name="container_format",

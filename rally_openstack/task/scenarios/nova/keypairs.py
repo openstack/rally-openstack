@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import logging
 from rally.task import types
 from rally.task import validation
 
@@ -77,11 +76,7 @@ class CreateAndDeleteKeypair(utils.NovaScenario):
                     platform="openstack")
 class BootAndDeleteServerWithKeypair(utils.NovaScenario):
 
-    @logging.log_deprecated_args(
-        "'server_kwargs' has been renamed 'boot_server_kwargs'",
-        "0.3.2", ["server_kwargs"], once=True)
-    def run(self, image, flavor, boot_server_kwargs=None,
-            server_kwargs=None, **kwargs):
+    def run(self, image, flavor, boot_server_kwargs=None, **kwargs):
         """Boot and delete server with keypair.
 
         Plan of this scenario:
@@ -95,16 +90,13 @@ class BootAndDeleteServerWithKeypair(utils.NovaScenario):
         :param flavor: ID of the flavor to be used for server creation
         :param boot_server_kwargs: Optional additional arguments for VM
                                    creation
-        :param server_kwargs: Deprecated alias for boot_server_kwargs
         :param kwargs: Optional additional arguments for keypair creation
         """
-
-        boot_server_kwargs = boot_server_kwargs or server_kwargs or {}
 
         keypair = self._create_keypair(**kwargs)
         server = self._boot_server(image, flavor,
                                    key_name=keypair,
-                                   **boot_server_kwargs)
+                                   **(boot_server_kwargs) or {})
         self._delete_server(server)
         self._delete_keypair(keypair)
 

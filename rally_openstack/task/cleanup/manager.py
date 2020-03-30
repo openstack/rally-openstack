@@ -28,7 +28,7 @@ LOG = logging.getLogger(__name__)
 
 class SeekAndDestroy(object):
 
-    def __init__(self, manager_cls, admin, users, api_versions=None,
+    def __init__(self, manager_cls, admin, users,
                  resource_classes=None, task_id=None):
         """Resource deletion class.
 
@@ -38,7 +38,6 @@ class SeekAndDestroy(object):
         :param manager_cls: subclass of base.ResourceManager
         :param admin: admin credential like in context["admin"]
         :param users: users credentials like in context["users"]
-        :param api_versions: dict of client API versions
         :param resource_classes: Resource classes to match resource names
                                  against
         :param task_id: The UUID of task to match resource names against
@@ -46,7 +45,6 @@ class SeekAndDestroy(object):
         self.manager_cls = manager_cls
         self.admin = admin
         self.users = users or []
-        self.api_versions = api_versions
         self.resource_classes = resource_classes or [
             rutils.RandomNameGeneratorMixin]
         self.task_id = task_id
@@ -56,7 +54,7 @@ class SeekAndDestroy(object):
         if not user:
             return None
         # NOTE(astudenov): Credential now supports caching by default
-        return user["credential"].clients(api_info=self.api_versions)
+        return user["credential"].clients()
 
     def _delete_single_resource(self, resource):
         """Safe resource deletion with retries and timeouts.
@@ -240,7 +238,7 @@ def find_resource_managers(names=None, admin_required=None):
 
 
 def cleanup(names=None, admin_required=None, admin=None, users=None,
-            api_versions=None, superclass=plugin.Plugin, task_id=None):
+            superclass=plugin.Plugin, task_id=None):
     """Generic cleaner.
 
     This method goes through all plugins. Filter those and left only plugins
@@ -270,11 +268,6 @@ def cleanup(names=None, admin_required=None, admin=None, users=None,
                        Scenario resources.
     :param task_id: The UUID of task
     """
-    if api_versions:
-        LOG.warning("'api_version' argument of 'cleanup' method is deprecated"
-                    " since rally-openstack 1.3.0 . API information should be"
-                    " included into credentials object, you can directly"
-                    " remove passed api_versions argument.")
     resource_classes = [cls for cls in discover.itersubclasses(superclass)
                         if issubclass(cls, rutils.RandomNameGeneratorMixin)]
     if not resource_classes and issubclass(superclass,
@@ -285,6 +278,5 @@ def cleanup(names=None, admin_required=None, admin=None, users=None,
                   % {"service": manager._service,
                      "resource": manager._resource})
         SeekAndDestroy(manager, admin, users,
-                       api_versions=api_versions,
                        resource_classes=resource_classes,
                        task_id=task_id).exterminate()

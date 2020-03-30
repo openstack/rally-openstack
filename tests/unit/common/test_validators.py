@@ -611,44 +611,6 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
         clients.glance().images.get.assert_called_with("image_id")
 
 
-class RequiredClientsValidatorTestCase(test.TestCase):
-
-    def setUp(self):
-        super(RequiredClientsValidatorTestCase, self).setUp()
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
-
-    def test_validate(self):
-        validator = validators.RequiredClientsValidator(components=["keystone",
-                                                                    "nova"])
-        clients = self.context["users"][0]["credential"].clients.return_value
-
-        result = validator.validate(self.context, self.config, None, None)
-        self.assertIsNone(result)
-
-        clients.nova.side_effect = ImportError
-        e = self.assertRaises(
-            validators.validation.ValidationError,
-            validator.validate, self.context, self.config, None, None)
-        self.assertEqual("Client for nova is not installed. To install it "
-                         "run `pip install python-novaclient`", e.message)
-
-    def test_validate_with_admin(self):
-        validator = validators.RequiredClientsValidator(components=["keystone",
-                                                                    "nova"],
-                                                        admin=True)
-        clients = self.context["admin"]["credential"].clients.return_value
-        result = validator.validate(self.context, self.config, None, None)
-        self.assertIsNone(result)
-
-        clients.keystone.side_effect = ImportError
-        e = self.assertRaises(
-            validators.validation.ValidationError,
-            validator.validate, self.context, self.config, None, None)
-        self.assertEqual("Client for keystone is not installed. To install it "
-                         "run `pip install python-keystoneclient`", e.message)
-
-
 class RequiredServicesValidatorTestCase(test.TestCase):
 
     def setUp(self):

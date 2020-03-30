@@ -33,16 +33,13 @@ class SeekAndDestroyTestCase(test.TestCase):
         manager.SeekAndDestroy.cache = {}
 
     def test__get_cached_client(self):
-        api_versions = {"cinder": {"version": "1", "service_type": "volume"}}
-
-        destroyer = manager.SeekAndDestroy(None, None, None,
-                                           api_versions=api_versions)
+        destroyer = manager.SeekAndDestroy(None, None, None)
         cred = mock.Mock()
         user = {"credential": cred}
 
         clients = destroyer._get_cached_client(user)
         self.assertIs(cred.clients.return_value, clients)
-        cred.clients.assert_called_once_with(api_info=api_versions)
+        cred.clients.assert_called_once_with()
 
         self.assertIsNone(destroyer._get_cached_client(None))
 
@@ -384,48 +381,16 @@ class ResourceManagerTestCase(test.TestCase):
         mock_find_resource_managers.assert_called_once_with(["a", "b"], True)
 
         mock_seek_and_destroy.assert_has_calls([
-            mock.call(mock_find_resource_managers.return_value[0], "admin",
-                      ["user"], api_versions=None,
-                      resource_classes=[A], task_id="task_id"),
+            mock.call(mock_find_resource_managers.return_value[0],
+                      "admin",
+                      ["user"],
+                      resource_classes=[A],
+                      task_id="task_id"),
             mock.call().exterminate(),
-            mock.call(mock_find_resource_managers.return_value[1], "admin",
-                      ["user"], api_versions=None,
-                      resource_classes=[A], task_id="task_id"),
-            mock.call().exterminate()
-        ])
-
-    @mock.patch("rally.common.plugin.discover.itersubclasses")
-    @mock.patch("%s.SeekAndDestroy" % BASE)
-    @mock.patch("%s.find_resource_managers" % BASE,
-                return_value=[mock.MagicMock(), mock.MagicMock()])
-    def test_cleanup_with_api_versions(self,
-                                       mock_find_resource_managers,
-                                       mock_seek_and_destroy,
-                                       mock_itersubclasses):
-        class A(utils.RandomNameGeneratorMixin):
-            pass
-
-        class B(object):
-            pass
-
-        mock_itersubclasses.return_value = [A, B]
-
-        api_versions = {"cinder": {"version": "1", "service_type": "volume"}}
-        manager.cleanup(names=["a", "b"], admin_required=True,
-                        admin="admin", users=["user"],
-                        api_versions=api_versions,
-                        superclass=utils.RandomNameGeneratorMixin,
-                        task_id="task_id")
-
-        mock_find_resource_managers.assert_called_once_with(["a", "b"], True)
-
-        mock_seek_and_destroy.assert_has_calls([
-            mock.call(mock_find_resource_managers.return_value[0], "admin",
-                      ["user"], api_versions=api_versions,
-                      resource_classes=[A], task_id="task_id"),
-            mock.call().exterminate(),
-            mock.call(mock_find_resource_managers.return_value[1], "admin",
-                      ["user"], api_versions=api_versions,
-                      resource_classes=[A], task_id="task_id"),
+            mock.call(mock_find_resource_managers.return_value[1],
+                      "admin",
+                      ["user"],
+                      resource_classes=[A],
+                      task_id="task_id"),
             mock.call().exterminate()
         ])

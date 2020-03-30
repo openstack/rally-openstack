@@ -49,7 +49,6 @@ class OpenStackCredentialTestCase(test.TestCase):
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_clients(self, mock_clients):
-        clients = self.credential.clients(api_info="fake_info")
-        mock_clients.assert_called_once_with(
-            self.credential, api_info="fake_info", cache={})
+        clients = self.credential.clients()
+        mock_clients.assert_called_once_with(self.credential, cache={})
         self.assertIs(mock_clients.return_value, clients)

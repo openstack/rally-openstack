@@ -75,8 +75,7 @@ class OpenStackCredential(dict):
 
     # this method is mostly used by validation step. let's refactor it and
     # deprecated this
-    def clients(self, api_info=None):
+    def clients(self):
         from rally_openstack.common import osclients
 
-        return osclients.Clients(self, api_info=api_info,
-                                 cache=self._clients_cache)
+        return osclients.Clients(self, cache=self._clients_cache)
