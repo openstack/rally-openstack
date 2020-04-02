@@ -27,6 +27,9 @@ Added
 
 * Declare Python 3.8 support
 
+* ManilaShares.create_share_and_access_from_vm scenario which allows to check
+  share access from within a VM.
+
 Changed
 ~~~~~~~
 
