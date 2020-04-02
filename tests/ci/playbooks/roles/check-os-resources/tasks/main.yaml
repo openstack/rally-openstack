@@ -3,15 +3,9 @@
   become_user: stack
   shell:
     cmd: |
-      pip3 freeze | grep rally > /dev/null
-      if [ "$?" = "0" ]; then
-          PYTHON=python3
-      else
-          PYTHON=python
-      fi
-      $PYTHON ./tests/ci/osresources.py --compare-with-list {{ rally_resources_at_start }}
-  args:
+      python3 ./tests/ci/osresources.py --compare-with-list {{ rally_resources_at_start }} {%- if zuul.project.name == "openstack/rally-openstack"%} --fail {% endif %}
     chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
+
   register: command_result
 
 - name: Check results of listing resources

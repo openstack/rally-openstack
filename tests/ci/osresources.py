@@ -17,7 +17,6 @@
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 
@@ -542,6 +541,11 @@ def main():
                         type=argparse.FileType("r"),
                         metavar="<path/to/credentials.json>",
                         help="cloud credentials in JSON format")
+    parser.add_argument("--fail",
+                        action="store_true",
+                        help="Return not zero code in case when some resources"
+                             " left."
+                        )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--dump-list",
                        type=argparse.FileType("w"),
@@ -597,6 +601,9 @@ def main():
 
                     or resource["cls"] == "murano"
 
+                    or (resource["cls"] == "gnocchi"
+                        and resource["resource_name"] == "metric")
+
                     # Glance has issues with uWSGI integration...
                     or resource["cls"] == "glance"):
                 expected.append(resource)
@@ -613,16 +620,8 @@ def main():
         if expected:
             _print_tabular_resources(expected, "Added resources (expected)")
 
-        if any(changes):
-            # NOTE(andreykurilin): '1' return value will fail gate job. It is
-            #     ok for changes to Rally project, but changes to other
-            #     projects, which have rally job, should not be affected by
-            #     this check, since in most cases resources are left due
-            #     to wrong cleanup of a particular scenario.
-            print(os.environ.get("ZUUL_PROJECT"))
-            if os.environ.get("ZUUL_PROJECT") == "openstack/rally-openstack":
-                return 1
-            return 0
+        if any(changes) and args.fail:
+            return 1
     return 0
 
 
