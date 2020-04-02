@@ -292,8 +292,8 @@ class TempestContextTestCase(test.TestCase):
         _name, pos, _kwargs = client.create_router.mock_calls[0]
         router = pos[0]["router"]
         external_gateway_info = router["external_gateway_info"]
-        self.assertEqual('my-uuid', external_gateway_info["network_id"])
-        self.assertEqual(True, external_gateway_info["enable_snat"])
+        self.assertEqual("my-uuid", external_gateway_info["network_id"])
+        self.assertTrue(external_gateway_info["enable_snat"])
 
     def test__cleanup_tempest_roles(self):
         self.context._created_roles = [fakes.FakeRole(), fakes.FakeRole()]

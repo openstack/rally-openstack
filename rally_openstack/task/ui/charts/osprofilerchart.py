@@ -58,9 +58,9 @@ class OSProfilerChart(charts.OutputEmbeddedChart,
         from osprofiler.drivers import base
         from osprofiler import opts as osprofiler_opts
 
-        opts.register_opts(osprofiler_opts.list_opts())
+        opts.register_opts(osprofiler_opts.list_opts())  # noqa
 
-        try:
+        try:  # noqa
             engine = base.get_driver(connection_str)
         except Exception:
             msg = "Error while fetching OSProfiler results."

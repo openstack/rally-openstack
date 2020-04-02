@@ -37,7 +37,7 @@ class MistralScenario(scenario.OpenStackScenario):
         return self.clients("mistral").workbooks.list()
 
     @atomic.action_timer("mistral.create_workbook")
-    def _create_workbook(self, definition, namespace=''):
+    def _create_workbook(self, definition, namespace=""):
         """Create a new workbook.
 
         :param definition: workbook description in string
@@ -56,7 +56,7 @@ class MistralScenario(scenario.OpenStackScenario):
         )
 
     @atomic.action_timer("mistral.delete_workbook")
-    def _delete_workbook(self, wb_name, namespace=''):
+    def _delete_workbook(self, wb_name, namespace=""):
         """Delete the given workbook.
 
         :param wb_name: the name of workbook that would be deleted.
@@ -68,7 +68,7 @@ class MistralScenario(scenario.OpenStackScenario):
         )
 
     @atomic.action_timer("mistral.create_workflow")
-    def _create_workflow(self, definition, namespace=''):
+    def _create_workflow(self, definition, namespace=""):
         """creates a workflow in the given namespace.
 
         :param definition: the definition of workflow
@@ -80,7 +80,7 @@ class MistralScenario(scenario.OpenStackScenario):
         )
 
     @atomic.action_timer("mistral.delete_workflow")
-    def _delete_workflow(self, workflow_identifier, namespace=''):
+    def _delete_workflow(self, workflow_identifier, namespace=""):
         """Delete the given workflow.
 
         :param workflow_identifier: the identifier of workflow
@@ -105,7 +105,7 @@ class MistralScenario(scenario.OpenStackScenario):
 
     @atomic.action_timer("mistral.create_execution")
     def _create_execution(self, workflow_identifier, wf_input=None,
-                          namespace='', **params):
+                          namespace="", **params):
         """Create a new execution.
 
         :param workflow_identifier: name or id of the workflow to execute
