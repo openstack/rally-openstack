@@ -3,12 +3,6 @@
   become_user: stack
   shell:
     cmd: |
-      pip3 freeze | grep rally > /dev/null
-      if [ "$?" = "0" ]; then
-          PYTHON=python3
-      else
-          PYTHON=python
-      fi
-      $PYTHON ./tests/ci/osresources.py --dump-list {{ rally_resources_at_start }}
+      python3 ./tests/ci/osresources.py list --out {{ rally_resources_at_start }}
   args:
     chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"

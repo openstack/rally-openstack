@@ -3,16 +3,22 @@
   become_user: stack
   shell:
     cmd: |
-      python3 ./tests/ci/osresources.py --compare-with-list {{ rally_resources_at_start }} {%- if zuul.project.name == "openstack/rally-openstack"%} --fail {% endif %}
+      python3 ./tests/ci/osresources.py compare --with {{ rally_resources_at_start }}
     chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
-
+  ignore_errors: yes
   register: command_result
 
-- name: Check results of listing resources
-  shell:
-    cmd: |
-      if [ "{{ command_result.rc }}" != "0" ] && [ ! -f "{{ rally_results_dir }}/status.txt" ]; then
-          echo "OSResources check found resources which appeared after Rally Task execution. Check cleanup logs for errors." > "{{ rally_results_dir }}/status.txt"
-      fi
+- name: Check the existence of status.txt
+  stat:
+    path: '{{ zuul.project.src_dir }}/rally-jobs/plugins'
+  register: status_txt_stat
+  when: command_result.rc != 0
 
-      exit "{{ command_result.rc }}"
+- name: Update status.txt
+  shell: echo "{{ cleanup_error_msg }}" > "{{ rally_results_dir }}/status.txt"
+  when: command_result.rc != 0 and custom_plugins_stat.stat.exists == False
+
+- name: Fail if there are some resources left after Rally execution (for rally-openstack project)
+  fail:
+    msg: "{{ cleanup_error_msg }}"
+  when: command_result.rc != 0 and zuul.project.name == "openstack/rally-openstack"

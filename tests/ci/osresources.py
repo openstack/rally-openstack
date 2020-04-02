@@ -516,6 +516,12 @@ class CloudResources(object):
         return removed, added
 
 
+def dump_resources(resources_mgr, args):
+    resources_list = resources_mgr.list()
+    with open(args.out, "w") as f:
+        f.write(json.dumps(resources_list))
+
+
 def _print_tabular_resources(resources, table_label):
     def dict_formatter(d):
         return "\n".join("%s:%s" % (k, v) for k, v in d.items())
@@ -531,98 +537,107 @@ def _print_tabular_resources(resources, table_label):
     print("")
 
 
+def check_resource(resources_mgs, args):
+    with open(args.dump) as f:
+        compare_to = f.read()
+    compare_to = json.loads(compare_to)
+    changes = resources_mgs.compare(with_list=compare_to)
+    removed, added = changes
+
+    # Cinder has a feature - cache images for speeding-up time of creating
+    # volumes from images. let's put such cache-volumes into expected list
+    volume_names = [
+        "image-%s" % i["id"]["id"] for i in compare_to
+        if i["cls"] == "glance" and i["resource_name"] == "image"]
+
+    # filter out expected additions
+    expected = []
+    for resource in added:
+        if (False  # <- makes indent of other cases similar
+                or (resource["cls"] == "keystone"
+                    and resource["resource_name"] == "role"
+                    and resource["id"].get("name") == "_member_")
+                or (resource["cls"] == "neutron"
+                    and resource["resource_name"] == "security_group"
+                    and resource["id"].get("name") == "default")
+                or (resource["cls"] == "cinder"
+                    and resource["resource_name"] == "volume"
+                    and resource["id"].get("name") in volume_names)
+
+                or resource["cls"] == "murano"
+
+                # Glance has issues with uWSGI integration...
+                # or resource["cls"] == "glance"
+
+                or (resource["cls"] == "gnocchi"
+                    and resource["resource_name"] == "metric")):
+
+            expected.append(resource)
+
+    for resource in expected:
+        added.remove(resource)
+
+    if removed:
+        _print_tabular_resources(removed, "Removed resources")
+
+    if added:
+        _print_tabular_resources(added, "Added resources (unexpected)")
+
+    if expected:
+        _print_tabular_resources(expected, "Added resources (expected)")
+
+    if any(changes):
+        return 1
+
+
 @plugins.ensure_plugins_are_loaded
 def main():
 
     parser = argparse.ArgumentParser(
         description=("Save list of OpenStack cloud resources or compare "
                      "with previously saved list."))
-    parser.add_argument("--credentials",
-                        type=argparse.FileType("r"),
-                        metavar="<path/to/credentials.json>",
-                        help="cloud credentials in JSON format")
-    parser.add_argument("--fail",
-                        action="store_true",
-                        help="Return not zero code in case when some resources"
-                             " left."
-                        )
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--dump-list",
-                       type=argparse.FileType("w"),
-                       metavar="<path/to/output/list.json>",
-                       help="dump resources to given file in JSON format")
-    group.add_argument("--compare-with-list",
-                       type=argparse.FileType("r"),
-                       metavar="<path/to/existent/list.json>",
-                       help=("compare current resources with a list from "
-                             "given JSON file"))
+
+    subparsers = parser.add_subparsers()
+
+    p = subparsers.add_parser(
+        "list", help="List and save available cloud resources."
+    )
+    p.set_defaults(func=dump_resources)
+    p.add_argument(
+        "--out",
+        type=str,
+        metavar="<path/to/output/list.json>",
+        required=True,
+        help="A path to save dump to."
+    )
+
+    p = subparsers.add_parser(
+        "compare",
+        help="Compare current with given resources."
+    )
+    p.set_defaults(func=check_resource)
+    p.add_argument(
+        "--with",
+        type=str,
+        dest="dump",
+        metavar="<path/to/input/list.json>",
+        required=True,
+        help="A path to dump file with a JSON to compare resource with."
+    )
+
     args = parser.parse_args()
 
-    if args.credentials:
-        config = json.load(args.credentials)
-    else:
-        out = subprocess.check_output(["rally", "deployment", "config",
-                                       "--deployment", "devstack"])
-        config = json.loads(out.decode("utf-8"))
-        config = config["openstack"]
-        config.update(config.pop("admin"))
-        if "users" in config:
-            del config["users"]
+    out = subprocess.check_output(
+        ["rally", "env", "show", "--only-spec", "--env", "devstack"])
+    config = json.loads(out.decode("utf-8"))
+    config = config["existing@openstack"]
+    config.update(config.pop("admin"))
+    if "users" in config:
+        del config["users"]
 
     resources = CloudResources(**config)
 
-    if args.dump_list:
-        resources_list = resources.list()
-        json.dump(resources_list, args.dump_list)
-    elif args.compare_with_list:
-        given_list = json.load(args.compare_with_list)
-        changes = resources.compare(with_list=given_list)
-        removed, added = changes
-
-        # Cinder has a feature - cache images for speeding-up time of creating
-        # volumes from images. let's put such cache-volumes into expected list
-        volume_names = [
-            "image-%s" % i["id"]["id"] for i in given_list
-            if i["cls"] == "glance" and i["resource_name"] == "image"]
-
-        # filter out expected additions
-        expected = []
-        for resource in added:
-            if (False  # <- makes indent of other cases similar
-                    or (resource["cls"] == "keystone"
-                        and resource["resource_name"] == "role"
-                        and resource["id"].get("name") == "_member_")
-                    or (resource["cls"] == "neutron"
-                        and resource["resource_name"] == "security_group"
-                        and resource["id"].get("name") == "default")
-                    or (resource["cls"] == "cinder"
-                        and resource["resource_name"] == "volume"
-                        and resource["id"].get("name") in volume_names)
-
-                    or resource["cls"] == "murano"
-
-                    or (resource["cls"] == "gnocchi"
-                        and resource["resource_name"] == "metric")
-
-                    # Glance has issues with uWSGI integration...
-                    or resource["cls"] == "glance"):
-                expected.append(resource)
-
-        for resource in expected:
-            added.remove(resource)
-
-        if removed:
-            _print_tabular_resources(removed, "Removed resources")
-
-        if added:
-            _print_tabular_resources(added, "Added resources (unexpected)")
-
-        if expected:
-            _print_tabular_resources(expected, "Added resources (expected)")
-
-        if any(changes) and args.fail:
-            return 1
-    return 0
+    return args.func(resources, args)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1 @@
+cleanup_error_msg: "OSResources check found resources which appeared after Rally Task execution. Check cleanup logs for errors."
