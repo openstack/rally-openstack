@@ -77,6 +77,12 @@ class ManilaScenarioTestCase(test.ScenarioTestCase):
         self.mock_get_from_manager.mock.assert_called_once_with(
             ("error_deleting", ))
 
+    def test_export_location(self):
+        fake_share = mock.MagicMock()
+        fake_share.export_locations = "fake_location"
+        result = self.scenario._export_location(fake_share)
+        self.assertEqual(result, "fake_location")
+
     @ddt.data(
         {},
         {"detailed": False, "search_opts": None},
