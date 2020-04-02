@@ -86,6 +86,14 @@ class ManilaScenario(scenario.OpenStackScenario):
             timeout=CONF.openstack.manila_share_delete_timeout,
             check_interval=CONF.openstack.manila_share_delete_poll_interval)
 
+    def _export_location(self, share):
+        """Export share location.
+
+        :param share: :class:`Share`
+        """
+        location = share.export_locations
+        return location
+
     def _get_access_from_share(self, share, access_id):
         """Get access from share
 

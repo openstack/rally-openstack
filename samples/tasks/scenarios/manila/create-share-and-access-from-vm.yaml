@@ -1,0 +1,28 @@
+  ManilaShares.create_share_and_access_from_vm:
+    -
+      args:
+        size: 1
+        share_type: "CephNFStype"
+        flavor:
+            name: "m1.tiny"
+        image:
+            name: "^cirros.*-disk$"
+        username: "ubuntu"
+      runner:
+        type: "constant"
+        times: 2
+        concurrency: 2
+      context:
+        quotas:
+          manila:
+            shares: -1
+            gigabytes: -1
+        users:
+          tenants: 2
+          users_per_tenant: 1
+        network:
+          dns_nameservers:
+             - "9.9.9.9"
+      sla:
+        failure_rate:
+          max: 0
