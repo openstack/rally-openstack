@@ -92,7 +92,7 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
             create_client = mock.MagicMock()
 
         fake_client = FakeClient({"auth_url": "url", "username": "user",
-                                  "password": "pass"}, {}, {})
+                                  "password": "pass"}, {})
         self.assertEqual(default_service_type,
                          fake_client.choose_service_type())
         self.assertEqual("foo",
@@ -111,7 +111,7 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
             endpoint_type=endpoint_type,
             region_name=region_name)
         mock_choose_service_type = mock.MagicMock()
-        osclient = osclients.OSClient(credential, {}, mock.MagicMock())
+        osclient = osclients.OSClient(credential, mock.MagicMock())
         osclient.choose_service_type = mock_choose_service_type
         mock_url_for = mock_keystone_service_catalog.url_for
         self.assertEqual(mock_url_for.return_value,
@@ -135,8 +135,7 @@ class CachedTestCase(test.TestCase):
         class SomeClient(osclients.OSClient):
             pass
 
-        fake_client = SomeClient(clients.credential, clients.api_info,
-                                 clients.cache)
+        fake_client = SomeClient(clients.credential, clients.cache)
         fake_client.create_client = mock.MagicMock()
 
         self.assertEqual({}, clients.cache)
@@ -173,7 +172,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         # client. Hopefully one day we'll get a real fake from the
         # keystone guys.
         self.set_up_keystone_mocks()
-        keystone = osclients.Keystone(self.credential, {}, mock.MagicMock())
+        keystone = osclients.Keystone(self.credential, mock.MagicMock())
         keystone.get_session = mock.Mock(
             return_value=(self.ksa_session, self.ksa_identity_plugin,))
         client = keystone.create_client(version=3)
@@ -199,7 +198,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         self.set_up_keystone_mocks()
         auth_kwargs, all_kwargs = self.make_auth_args()
         keystone = osclients.Keystone(
-            self.credential, {}, mock.MagicMock())
+            self.credential, mock.MagicMock())
         keystone.get_session = mock.Mock(
             return_value=(self.ksa_session, self.ksa_identity_plugin,))
         client = keystone.create_client(version="3")
@@ -224,7 +223,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
     def test__remove_url_version(self, original, cropped):
         credential = oscredential.OpenStackCredential(
             original, "user", "pass", "tenant")
-        keystone = osclients.Keystone(credential, {}, {})
+        keystone = osclients.Keystone(credential, {})
         self.assertEqual(cropped, keystone._remove_url_version())
 
     @ddt.data("http://auth_url/v2.0", "http://auth_url/v3",
@@ -233,7 +232,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         credential = oscredential.OpenStackCredential(
             auth_url, "user", "pass", "tenant")
         self.set_up_keystone_mocks()
-        keystone = osclients.Keystone(credential, {}, {})
+        keystone = osclients.Keystone(credential, {})
 
         version_data = mock.Mock(return_value=[{"version": (1, 0)}])
         self.ksa_auth.discover.Discover.return_value = (
@@ -258,7 +257,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
                        verify=True, cert=None)])
 
     def test_keystone_property(self):
-        keystone = osclients.Keystone(self.credential, None, None)
+        keystone = osclients.Keystone(self.credential, None)
         self.assertRaises(exceptions.RallyException, lambda: keystone.keystone)
 
     @mock.patch("%s.Keystone.get_session" % PATH)
@@ -267,7 +266,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         auth_plugin = mock.MagicMock()
         mock_keystone_get_session.return_value = (session, auth_plugin)
         cache = {}
-        keystone = osclients.Keystone(self.credential, None, cache)
+        keystone = osclients.Keystone(self.credential, cache)
 
         self.assertEqual(auth_plugin.get_access.return_value,
                          keystone.auth_ref)
@@ -282,7 +281,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
     @mock.patch("%s.logging.is_debug" % PATH)
     def test_auth_ref_fails(self, mock_is_debug, mock_log_exception):
         mock_is_debug.return_value = False
-        keystone = osclients.Keystone(self.credential, {}, {})
+        keystone = osclients.Keystone(self.credential, {})
         session = mock.Mock()
         auth_plugin = mock.Mock()
         auth_plugin.get_access.side_effect = Exception
@@ -299,7 +298,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
     @mock.patch("%s.logging.is_debug" % PATH)
     def test_auth_ref_fails_debug(self, mock_is_debug, mock_log_exception):
         mock_is_debug.return_value = True
-        keystone = osclients.Keystone(self.credential, {}, {})
+        keystone = osclients.Keystone(self.credential, {})
         session = mock.Mock()
         auth_plugin = mock.Mock()
         auth_plugin.get_access.side_effect = Exception
@@ -319,7 +318,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         from keystoneauth1 import exceptions as ks_exc
 
         mock_is_debug.return_value = True
-        keystone = osclients.Keystone(self.credential, {}, {})
+        keystone = osclients.Keystone(self.credential, {})
         session = mock.Mock()
         auth_plugin = mock.Mock()
         auth_plugin.get_access.side_effect = ks_exc.ConnectFailure("foo")

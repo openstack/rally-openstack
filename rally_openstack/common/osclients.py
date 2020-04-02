@@ -108,15 +108,10 @@ def configure(name, default_version=None, default_service_type=None,
 class OSClient(plugin.Plugin):
     """Base class for OpenStack clients"""
 
-    def __init__(self, credential, api_info=None, cache_obj=None):
+    def __init__(self, credential, cache_obj=None):
         self.credential = credential
         if not isinstance(self.credential, oscred.OpenStackCredential):
             self.credential = oscred.OpenStackCredential(**self.credential)
-        if api_info:
-            LOG.warning("api_info argument of %s is deprecated. api"
-                        " information has been moved into credential"
-                        " argument." % self.__class__.__name__)
-            self.credential.api_info.update(api_info)
         self.cache = cache_obj if cache_obj is not None else {}
 
     def choose_version(self, version=None):
@@ -190,8 +185,7 @@ class OSClient(plugin.Plugin):
 
     @property
     def keystone(self):
-        return OSClient.get("keystone")(self.credential, None,
-                                        self.cache)
+        return OSClient.get("keystone")(self.credential, self.cache)
 
     def _get_endpoint(self, service_type=None):
         kw = {"service_type": self.choose_service_type(service_type),
@@ -863,15 +857,13 @@ class Barbican(OSClient):
 class Clients(object):
     """This class simplify and unify work with OpenStack python clients."""
 
-    def __init__(self, credential, api_info=None, cache=None):
+    def __init__(self, credential, cache=None):
         self.credential = credential
-        self.api_info = api_info or {}
         self.cache = cache or {}
 
     def __getattr__(self, client_name):
         """Lazy load of clients."""
-        return OSClient.get(client_name)(self.credential, self.api_info,
-                                         self.cache)
+        return OSClient.get(client_name)(self.credential, self.cache)
 
     @classmethod
     def create_from_env(cls):

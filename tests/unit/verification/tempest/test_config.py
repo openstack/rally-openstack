@@ -122,7 +122,7 @@ class TempestConfigfileManagerTestCase(test.TestCase):
         self.tempest.conf.add_section("identity-feature-enabled")
         self.tempest.credential.auth_url = auth_url
         process_url = osclients.Keystone(
-            self.tempest.credential, 0, 0)._remove_url_version
+            self.tempest.credential, 0)._remove_url_version
         self.tempest.clients.keystone._remove_url_version = process_url
 
         from keystoneauth1 import discover
