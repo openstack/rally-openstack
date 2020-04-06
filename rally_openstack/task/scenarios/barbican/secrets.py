@@ -17,6 +17,7 @@ import datetime as dt
 import os
 
 from rally.task import validation
+from rally.utils import encodeutils
 
 from rally_openstack.common import consts
 from rally_openstack.task import scenario
@@ -113,12 +114,13 @@ class BarbicanSecretsCreateSymmetricAndDelete(utils.BarbicanBase):
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-        payload = payload.encode("utf-8")
+        payload = encodeutils.safe_encode(payload)
         salt = os.urandom(16)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(), length=32, salt=salt,
             iterations=1000, backend=default_backend())
         payload = base64.b64encode(kdf.derive(payload))
+        payload = encodeutils.safe_decode(payload)
         expire_time = (dt.datetime.utcnow() + dt.timedelta(days=5))
         secret = self.admin_barbican.create_secret(
             expiration=expire_time.isoformat(), algorithm=algorithm,
