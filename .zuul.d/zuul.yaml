@@ -13,7 +13,12 @@
             voting: false
         - rally-task-simple-job
         - rally-task-barbican:
-            voting: false
+            files:
+              - rally-jobs/barbican.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/key_manager
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/scenarios/barbican
         - rally-task-cinder
         # NOTE(andreykurilin): this requires more thing to configure before
         #   launching.
