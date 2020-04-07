@@ -8,9 +8,7 @@
         - rally-tox-py38
         - rally-dsvm-tox-functional
         - rally-docker-check
-        - rally-task-basic-with-existing-users:
-            # use_existing_users key did not trigger proper ansible tasks
-            voting: false
+        - rally-task-basic-with-existing-users
         - rally-task-simple-job
         - rally-task-barbican:
             files:
@@ -83,6 +81,7 @@
         - rally-tox-py38
         - rally-dsvm-tox-functional
         - rally-docker-check
+        - rally-task-basic-with-existing-users
         - rally-task-simple-job
         - rally-task-barbican:
             files:
