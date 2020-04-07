@@ -14,11 +14,14 @@
         - rally-task-simple-job
         - rally-task-barbican:
             files:
+              - .zuul.d/zuul.yaml
               - rally-jobs/barbican.yaml
               - rally_openstack/common/osclients.py
               - rally_openstack/common/services/key_manager
               - rally_openstack/task/cleanup/resources.py
               - rally_openstack/task/scenarios/barbican
+              - tests/ci/playbooks
+              - tests/ci/osresources.py
         - rally-task-cinder
         # NOTE(andreykurilin): this requires more thing to configure before
         #   launching.
@@ -30,11 +33,14 @@
         - rally-task-magnum:
             voting: false
             files:
+              - .zuul.d/zuul.yaml
               - rally-jobs/magnum.yaml
-              - rally_openstack/cleanup/resources.py
-              - rally_openstack/contexts/magnum
-              - rally_openstack/scenarios/magnum
-              - rally_openstack/osclients.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/contexts/magnum
+              - rally_openstack/task/scenarios/magnum
+              - tests/ci/playbooks
+              - tests/ci/osresources.py
         - rally-task-manila-no-ss:
             voting: false
         - rally-task-manila-ss:
@@ -47,9 +53,13 @@
         - rally-task-neutron
         - rally-task-neutron-trunk:
             files:
+              - .zuul.d/zuul.yaml
               - rally-jobs/neutron-trunk.yaml
-              - rally_openstack/scenarios/neutron/trunk.py
-              - rally_openstack/scenarios/neutron/network.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/scenarios/neutron/trunk.py
+              - rally_openstack/task/scenarios/neutron/network.py
+              - tests/ci/playbooks
+              - tests/ci/osresources.py
         - rally-task-neutron-with-extensions:
             voting: false
         - rally-task-nova:
@@ -74,12 +84,30 @@
         - rally-dsvm-tox-functional
         - rally-docker-check
         - rally-task-simple-job
+        - rally-task-barbican:
+            files:
+              - .zuul.d/zuul.yaml
+              - rally-jobs/barbican.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/key_manager
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/scenarios/barbican
+              - tests/ci/playbooks
+              - tests/ci/osresources.py
         - rally-task-cinder
         #- rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift
         - rally-task-mistral
         - rally-task-neutron
+        - rally-task-neutron-trunk:
+            files:
+              - rally-jobs/neutron-trunk.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/scenarios/neutron/trunk.py
+              - rally_openstack/task/scenarios/neutron/network.py
+              - tests/ci/playbooks
+              - tests/ci/osresources.py
         - rally-task-telemetry
         - rally-task-zaqar
         - rally-verify-tempest

@@ -13,6 +13,7 @@
 #    under the License.
 
 import os
+import re
 
 import yaml
 
@@ -21,8 +22,8 @@ from tests.unit import test
 
 
 class RallyJobsTestCase(test.TestCase):
-    zuul_jobs_path = os.path.join(
-        os.path.dirname(rally_openstack.__file__), "..", ".zuul.d")
+    root_dir = os.path.dirname(os.path.dirname(rally_openstack.__file__))
+    zuul_jobs_path = os.path.join(root_dir, ".zuul.d")
 
     def setUp(self):
         super(RallyJobsTestCase, self).setUp()
@@ -34,35 +35,34 @@ class RallyJobsTestCase(test.TestCase):
             if "project" in item:
                 self.project_cfg = item["project"]
                 break
+        if self.project_cfg is None:
+            self.fail("Cannot detect project section from zuul config.")
 
     @staticmethod
-    def _get_job_name(job):
+    def _parse_job(job):
         if isinstance(job, dict):
-            return list(job)[0]
-        return job
+            job_name = list(job)[0]
+            job_cfg = job[job_name]
+            return job_name, job_cfg
+        return job, None
 
-    def _check_order_of_jobs(self, jobs, pipeline_name, allow_params=False):
-        if not allow_params:
-            for job in jobs:
-                if isinstance(job, dict):
-                    self.fail("Setting parameters of jobs for '%s' pipeline "
-                              "is permitted. Please fix '%s' job." %
-                              (pipeline_name, self._get_job_name(job)))
+    def _check_order_of_jobs(self, pipeline):
+        jobs = self.project_cfg[pipeline]["jobs"]
 
         specific_jobs = ["rally-dsvm-tox-functional",
                          "rally-docker-check",
                          "rally-task-basic-with-existing-users",
                          "rally-task-simple-job"]
         error_message = (
-            "[%s pipeline] We are trying to display jobs in a specific order "
-            "to simplify search and reading. Tox jobs should go first in "
-            "alphabetic order. Next several specific jobs are expected (%s). "
-            "Next - all other jobs in alphabetic order."
-            % (pipeline_name, ", ".join(specific_jobs))
+            f"[{pipeline} pipeline] We are trying to display jobs in a "
+            f"specific order to simplify search and reading. Tox jobs should "
+            f"go first in alphabetic order. Next several specific jobs are "
+            f"expected ({', '.join(specific_jobs)}). "
+            f"Next - all other jobs in alphabetic order."
         )
         error_message += "\nPlease place '%s' at the position of '%s'."
 
-        jobs_names = [self._get_job_name(job) for job in jobs]
+        jobs_names = [self._parse_job(job)[0] for job in jobs]
 
         tox_jobs = sorted(job for job in jobs_names
                           if job.startswith("rally-tox"))
@@ -84,14 +84,67 @@ class RallyJobsTestCase(test.TestCase):
                 self.fail(error_message % (job, jobs_names[i + j]))
 
     def test_order_of_displaying_jobs(self):
-        self._check_order_of_jobs(
-            self.project_cfg["check"]["jobs"],
-            pipeline_name="check",
-            allow_params=True
-        )
+        for pipeline in ("check", "gate"):
+            self._check_order_of_jobs(pipeline=pipeline)
 
-        self._check_order_of_jobs(
-            self.project_cfg["gate"]["jobs"],
-            pipeline_name="gate",
-            allow_params=False
-        )
+    JOB_FILES_PARAMS = {"files", "irrelevant-files"}
+
+    def test_job_configs(self):
+
+        file_matchers = {}
+
+        for pipeline in ("check", "gate"):
+            for job in self.project_cfg[pipeline]["jobs"]:
+                job_name, job_cfg = self._parse_job(job)
+                if job_cfg is None:
+                    continue
+
+                if pipeline == "gate":
+                    params = set(job_cfg) - self.JOB_FILES_PARAMS
+                    if params:
+                        self.fail(
+                            f"Invalid parameter(s) for '{job_name}' job at "
+                            f"gate pipeline: {', '.join(params)}.")
+
+                for param in self.JOB_FILES_PARAMS:
+                    if param in job_cfg:
+                        for file_matcher in job_cfg[param]:
+                            file_matchers.setdefault(
+                                file_matcher,
+                                {
+                                    "matcher": re.compile(file_matcher),
+                                    "used_by": []
+                                }
+                            )
+                            file_matchers[file_matcher]["used_by"].append(
+                                {
+                                    "pipeline": pipeline,
+                                    "job": job_name,
+                                    "param": param
+                                }
+                            )
+        not_matched = set(file_matchers)
+
+        for dir_name, _, files in os.walk(self.root_dir):
+            dir_name = os.path.relpath(dir_name, self.root_dir)
+            if dir_name in (".tox", ".git"):
+                continue
+            for f in files:
+                full_path = os.path.join(dir_name, f)
+                for key in list(not_matched):
+                    if file_matchers[key]["matcher"].match(full_path):
+                        not_matched.remove(key)
+                if not not_matched:
+                    # stop iterating files if no more matchers to check
+                    break
+            if not not_matched:
+                # stop iterating files if no more matchers to check
+                break
+
+        for key in not_matched:
+            user = file_matchers[key]["used_by"][0]
+            self.fail(
+                f"'{user['job']}' job configuration for "
+                f"'{user['pipeline']}' pipeline includes wrong "
+                f"matcher '{key}' at '{user['param']}'."
+            )
