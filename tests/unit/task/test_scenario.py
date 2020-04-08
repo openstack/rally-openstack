@@ -104,8 +104,8 @@ class OpenStackScenarioTestCase(test.TestCase):
               ([("admin", CREDENTIAL_WITHOUT_HMAC),
                 ("user", CREDENTIAL_WITHOUT_HMAC)], 0))
     @ddt.unpack
-    @mock.patch("rally_openstack.scenario.profiler.init")
-    @mock.patch("rally_openstack.scenario.profiler.get")
+    @mock.patch("rally_openstack.task.scenario.profiler.init")
+    @mock.patch("rally_openstack.task.scenario.profiler.get")
     def test_profiler_init(self, users_credentials,
                            expected_call_count,
                            mock_profiler_get,

@@ -315,6 +315,7 @@ class Keystone(OSClient):
                 version = str(discover.Discover(
                     temp_session,
                     password_args["auth_url"]).version_data()[0]["version"][0])
+                temp_session.session.close()
 
             if "v2.0" not in password_args["auth_url"] and version != "2":
                 password_args.update({
@@ -868,7 +869,7 @@ class Clients(object):
     @classmethod
     def create_from_env(cls):
         from rally_openstack.common import credential
-        from rally_openstack.platforms import existing
+        from rally_openstack.environment.platforms import existing
 
         spec = existing.OpenStack.create_spec_from_sys_environ(os.environ)
         if not spec["available"]:

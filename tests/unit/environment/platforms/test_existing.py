@@ -21,7 +21,7 @@ from rally.env import env_mgr
 from rally.env import platform
 from rally import exceptions
 
-from rally_openstack.platforms import existing
+from rally_openstack.environment.platforms import existing
 from tests.unit import test
 
 
