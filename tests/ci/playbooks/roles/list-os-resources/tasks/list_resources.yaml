@@ -1,0 +1,12 @@
+- name: Save available OpenStack resources before Rally launch
+  become: yes
+  become_user: stack
+  osresources:
+    json_output: "{{ resources_at_start_dest }}"
+  ignore_errors: yes
+  register: command_result
+
+- name: Fail if there is an error while executing previos command (for rally-openstack project)
+  fail:
+    msg: "{{ cleanup_error_msg }}"
+  when: command_result.rc != 0 and zuul.project.name == "openstack/rally-openstack"

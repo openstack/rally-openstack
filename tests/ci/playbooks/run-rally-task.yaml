@@ -7,13 +7,16 @@
     rally_home_dir: '/opt/stack/.rally'
     rally_fake_image_path: '{{ rally_home_dir }}/extra/fake-image.img'
     rally_results_dir: '{{ rally_home_dir }}/results'
-    rally_resources_at_start: '{{ rally_results_dir }}/resources_at_start.txt'
     rally_task_args_file: "100-percent-not-exist-file"
   roles:
     - prepare-for-rally-task
-    - snapshot-available-os-resources
+    - role: list-os-resources
+      vars:
+        compare: False
     - run-rally-task
     - process-task-results
     - import-task-results
-    - check-os-resources
+    - role: list-os-resources
+      vars:
+        compare: True
     - check-task-sla

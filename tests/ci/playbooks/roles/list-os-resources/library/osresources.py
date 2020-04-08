@@ -16,9 +16,12 @@
 """List and compare most used OpenStack cloud resources."""
 
 import argparse
+import io
 import json
 import subprocess
 import sys
+
+from ansible.module_utils.basic import AnsibleModule
 
 from rally.cli import cliutils
 from rally.common.plugin import discover
@@ -521,15 +524,11 @@ class CloudResources(object):
         return removed, added
 
 
-def dump_resources(resources_mgr, args):
-    resources_list = resources_mgr.list()
-    with open(args.dump_list, "w") as f:
-        f.write(json.dumps(resources_list))
-
-
 def _print_tabular_resources(resources, table_label):
     def dict_formatter(d):
         return "\n".join("%s:%s" % (k, v) for k, v in d.items())
+
+    out = io.StringIO()
 
     cliutils.print_list(
         objs=[dict(r) for r in resources],
@@ -537,13 +536,25 @@ def _print_tabular_resources(resources, table_label):
         field_labels=("service", "resource type", "id", "fields"),
         table_label=table_label,
         formatters={"id": lambda d: dict_formatter(d["id"]),
-                    "fields": lambda d: dict_formatter(d["props"])}
+                    "fields": lambda d: dict_formatter(d["props"])},
+        out=out
     )
-    print("")
+    out.write("\n")
+    print(out.getvalue())
 
 
-def check_resource(resources_mgs, args):
-    with open(args.compare_with_list) as f:
+def dump_resources(resources_mgr, json_output):
+    resources_list = resources_mgr.list()
+    _print_tabular_resources(resources_list, "Available resources.")
+
+    if json_output:
+        with open(json_output, "w") as f:
+            f.write(json.dumps(resources_list))
+    return 0, resources_list
+
+
+def check_resource(resources_mgs, compare_with, json_output):
+    with open(compare_with) as f:
         compare_to = f.read()
     compare_to = json.loads(compare_to)
     changes = resources_mgs.compare(with_list=compare_to)
@@ -590,23 +601,61 @@ def check_resource(resources_mgs, args):
     if expected:
         _print_tabular_resources(expected, "Added resources (expected)")
 
-    if any(changes):
-        return 1
+    result = {"removed": removed, "added": added, "expected": expected}
+    if json_output:
+        with open(json_output, "w") as f:
+            f.write(json.dumps(result, indent=4))
+
+    rc = 1 if any(changes) else 0
+    return rc, result
 
 
 @plugins.ensure_plugins_are_loaded
-def main():
+def main(json_output, compare_with):
 
+    out = subprocess.check_output(
+        ["rally", "env", "show", "--only-spec", "--env", "devstack"])
+    config = json.loads(out.decode("utf-8"))
+    config = config["existing@openstack"]
+    config.update(config.pop("admin"))
+    if "users" in config:
+        del config["users"]
+
+    resources = CloudResources(**config)
+
+    if compare_with:
+        return check_resource(resources, compare_with, json_output)
+    else:
+        return dump_resources(resources, json_output)
+
+
+def ansible_main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            json_output=dict(required=False, type="str"),
+            compare_with=dict(required=False, type="path")
+        )
+    )
+
+    rc, json_result = main(
+        json_output=module.params.get("json_output"),
+        compare_with=module.params.get("compare_with")
+    )
+    if rc:
+        module.fail_json(
+            msg="Unexpected changes of resources are detected.",
+            rc=1,
+            resources=json_result
+        )
+
+    module.exit_json(rc=0, changed=True, resources=json_result)
+
+
+def cli_main():
     parser = argparse.ArgumentParser(
         description=("Save list of OpenStack cloud resources or compare "
                      "with previously saved list."))
 
-    subparsers = parser.add_subparsers()
-
-    p = subparsers.add_parser(
-        "list", help="List and save available cloud resources."
-    )
-    p.set_defaults(func=dump_resources)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--dump-list",
                        type=str,
@@ -619,21 +668,14 @@ def main():
                              "given JSON file"))
     args = parser.parse_args()
 
-    out = subprocess.check_output(
-        ["rally", "env", "show", "--only-spec", "--env", "devstack"])
-    config = json.loads(out.decode("utf-8"))
-    config = config["existing@openstack"]
-    config.update(config.pop("admin"))
-    if "users" in config:
-        del config["users"]
+    rc, _json_result = main(
+        json_output=args.dump_list, compare_with=args.compare_with_list)
 
-    resources = CloudResources(**config)
-
-    if args.dump_list:
-        return dump_resources(resources, args)
-    else:
-        return check_resource(resources, args)
+    return rc
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if sys.stdin.isatty():
+        cli_main()
+    else:
+        ansible_main()

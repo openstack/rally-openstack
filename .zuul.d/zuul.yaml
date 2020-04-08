@@ -19,7 +19,6 @@
               - rally_openstack/task/cleanup/resources.py
               - rally_openstack/task/scenarios/barbican
               - tests/ci/playbooks
-              - tests/ci/osresources.py
         - rally-task-cinder
         # NOTE(andreykurilin): this requires more thing to configure before
         #   launching.
@@ -38,7 +37,6 @@
               - rally_openstack/task/contexts/magnum
               - rally_openstack/task/scenarios/magnum
               - tests/ci/playbooks
-              - tests/ci/osresources.py
         - rally-task-manila-no-ss:
             voting: false
         - rally-task-manila-ss:
@@ -57,7 +55,6 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-              - tests/ci/osresources.py
         - rally-task-neutron-with-extensions:
             voting: false
         - rally-task-nova:
@@ -92,7 +89,6 @@
               - rally_openstack/task/cleanup/resources.py
               - rally_openstack/task/scenarios/barbican
               - tests/ci/playbooks
-              - tests/ci/osresources.py
         - rally-task-cinder
         #- rally-task-heat
         - rally-task-ironic
@@ -106,7 +102,6 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-              - tests/ci/osresources.py
         - rally-task-telemetry
         - rally-task-zaqar
         - rally-verify-tempest

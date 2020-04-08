@@ -1,0 +1,5 @@
+- include_tasks: list_resources.yaml
+  when: "{%- if compare|bool %}{% else %}True{% endif -%}"
+
+- include_tasks: list_and_compare_resources.yaml
+  when: "{%- if compare|bool %}True{% endif -%}"
