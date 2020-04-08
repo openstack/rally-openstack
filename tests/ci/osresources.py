@@ -24,8 +24,13 @@ from rally.cli import cliutils
 from rally.common.plugin import discover
 from rally import plugins
 
-from rally_openstack.common import consts
-from rally_openstack.common import credential
+try:
+    from rally_openstack.common import consts
+    from rally_openstack.common import credential
+except ImportError:
+    # backward compatibility for stable branches
+    from rally_openstack import consts
+    from rally_openstack import credential
 
 
 def skip_if_service(service):
@@ -518,7 +523,7 @@ class CloudResources(object):
 
 def dump_resources(resources_mgr, args):
     resources_list = resources_mgr.list()
-    with open(args.out, "w") as f:
+    with open(args.dump_list, "w") as f:
         f.write(json.dumps(resources_list))
 
 
@@ -538,7 +543,7 @@ def _print_tabular_resources(resources, table_label):
 
 
 def check_resource(resources_mgs, args):
-    with open(args.dump) as f:
+    with open(args.compare_with_list) as f:
         compare_to = f.read()
     compare_to = json.loads(compare_to)
     changes = resources_mgs.compare(with_list=compare_to)
@@ -603,28 +608,16 @@ def main():
         "list", help="List and save available cloud resources."
     )
     p.set_defaults(func=dump_resources)
-    p.add_argument(
-        "--out",
-        type=str,
-        metavar="<path/to/output/list.json>",
-        required=True,
-        help="A path to save dump to."
-    )
-
-    p = subparsers.add_parser(
-        "compare",
-        help="Compare current with given resources."
-    )
-    p.set_defaults(func=check_resource)
-    p.add_argument(
-        "--with",
-        type=str,
-        dest="dump",
-        metavar="<path/to/input/list.json>",
-        required=True,
-        help="A path to dump file with a JSON to compare resource with."
-    )
-
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--dump-list",
+                       type=str,
+                       metavar="<path/to/output/list.json>",
+                       help="dump resources to given file in JSON format")
+    group.add_argument("--compare-with-list",
+                       type=str,
+                       metavar="<path/to/existent/list.json>",
+                       help=("compare current resources with a list from "
+                             "given JSON file"))
     args = parser.parse_args()
 
     out = subprocess.check_output(
@@ -637,7 +630,10 @@ def main():
 
     resources = CloudResources(**config)
 
-    return args.func(resources, args)
+    if args.dump_list:
+        return dump_resources(resources, args)
+    else:
+        return check_resource(resources, args)
 
 
 if __name__ == "__main__":

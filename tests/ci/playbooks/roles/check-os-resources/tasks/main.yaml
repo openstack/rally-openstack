@@ -3,7 +3,7 @@
   become_user: stack
   shell:
     cmd: |
-      python3 ./tests/ci/osresources.py compare --with {{ rally_resources_at_start }}
+      python3 ./tests/ci/osresources.py --compare-with-list {{ rally_resources_at_start }}
     chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
   ignore_errors: yes
   register: command_result
