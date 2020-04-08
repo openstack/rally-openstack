@@ -574,8 +574,7 @@ def check_resource(resources_mgs, args):
                 # Glance has issues with uWSGI integration...
                 # or resource["cls"] == "glance"
 
-                or (resource["cls"] == "gnocchi"
-                    and resource["resource_name"] == "metric")):
+                or resource["cls"] == "gnocchi"):
 
             expected.append(resource)
 
