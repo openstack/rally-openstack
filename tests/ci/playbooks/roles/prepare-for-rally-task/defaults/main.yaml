@@ -1,7 +1,5 @@
-existing_user_name_1: "rally-test-user-1"
-existing_user_password_1: "rally-test-password-1"
-existing_user_project_1: "rally-test-project-1"
-existing_user_name_2: "rally-test-user-2"
-existing_user_password_2: "rally-test-password-2"
-existing_user_project_2: "rally-test-project-2"
+rally_use_existing_users: False
+existing_users_env_spec: '{{ rally_home_dir }}/env-with-existing-users-config'
+projects_count: 2
+users_per_project: 1
 RALLY_OSPROFILER_CHART: "osprofiler_reports"

@@ -110,68 +110,18 @@
           openstack network list
       fi
 
-- name: Create new projects and users
+- name: Print Rally environment config
   become: True
   become_user: stack
-  shell:
-    executable: /bin/sh
-    cmd: |
-      set -e
+  command: "rally env show --only-spec"
 
-      . {{ rally_home_dir }}/openrc admin admin
-
-      openstack --version
-
-      openstack project create {{ existing_user_project_1 }}
-      openstack user create --project {{ existing_user_project_1 }} --password {{ existing_user_password_1 }} {{ existing_user_name_1 }}
-      openstack role add --project {{ existing_user_project_1 }} --user {{ existing_user_name_1 }} Member
-
-      openstack project create {{ existing_user_project_2 }}
-      openstack user create --project {{ existing_user_project_2 }} --password {{ existing_user_password_2 }} {{ existing_user_name_2 }}
-      openstack role add --project {{ existing_user_project_2 }} --user {{ existing_user_name_2 }} Member
-
-      set +e
-      NEUTRON_EXISTS=$(openstack --os-interface admin service list | grep neutron)
-      set -e
-      if [ "$NEUTRON_EXISTS" ]; then
-          OS_QUOTA_STR="--networks -1 --subnets -1 --routers -1 --floating-ips -1 --subnetpools -1 --secgroups -1 --secgroup-rules -1 --ports -1"
-          openstack --debug quota set $OS_QUOTA_STR {{ existing_user_project_1 }}
-          openstack --debug quota show {{ existing_user_project_1 }}
-          openstack --debug quota set $OS_QUOTA_STR {{ existing_user_project_2 }}
-          openstack --debug quota show {{ existing_user_project_2 }}
-      fi
-  when: rally_use_existing_users == True
-
-- name: Capture Keystone auth URL
-  become: True
-  become_user: stack
-  shell: ". {{ rally_home_dir }}/openrc admin admin > /dev/null && echo $OS_AUTH_URL"
-  register: keystone_auth_url
-  when: rally_use_existing_users == True
-
-- name: Make Rally Environment spec with existing users
-  become: True
-  become_user: stack
-  template:
-    src: env.yaml.j2
-    dest: "{{ rally_existing_users_config }}"
-  when: rally_use_existing_users == True
-
-- name: Create new projects and users
-  become: True
-  become_user: stack
-  shell: rally env create --name devstask-with-users --spec "{{ rally_existing_users_config }}"
+- include_tasks: prepare-env-with-existing-users.yaml
   when: rally_use_existing_users == True
 
 - name: Check Environment works
   become: True
   become_user: stack
   command: "rally --debug env check"
-
-- name: Print Rally deployment config
-  become: True
-  become_user: stack
-  command: "rally deployment config"
 
 - name: Print Environment info
   become: True

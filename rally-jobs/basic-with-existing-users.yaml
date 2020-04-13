@@ -1,11 +1,11 @@
 {% set flavor_name = "m1.tiny" %}
 {% set image_name = "^cirros.*-disk$" %}
-{% set cirros_image_url = "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img" %}
+{% set cirros_image_url = "https://github.com/cirros-dev/cirros/releases/download/0.3.5/cirros-0.3.5-x86_64-disk.img" %}
 {% set smoke = 0 %}
 
 ---
   version: 2
-  title: rally-neutron-existing-users.yaml
+  title: Rally task that is called for an evironment with existing users
   description: >
     The task contains various scenarios that do not require admin user
   subtasks:
@@ -72,22 +72,7 @@
           sla:
             failure_rate:
               max: 0
-    -
-      title: Test main Glance actions
-      workloads:
-        -
-          scenario:
-            GlanceImages.create_and_delete_image:
-              image_location: "{{ cirros_image_url }}"
-              container_format: "bare"
-              disk_format: "qcow2"
-          runner:
-            constant:
-              times: 1
-              concurrency: 1
-          sla:
-            failure_rate:
-              max: 100
+
     -
       title: Test main Neutron actions
       workloads:

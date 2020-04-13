@@ -1,0 +1,18 @@
+- name: Create keystone projects & users for a new rally environment
+  become: yes
+  become_user: stack
+  make_env_spec_with_existing_users:
+    projects_count: "{{ projects_count }}"
+    users_per_project: "{{ users_per_project }}"
+    parent_env_name: "devstack"
+    path_for_new_spec: "{{ existing_users_env_spec }}"
+
+- name: Create a new Rally environment
+  become: True
+  become_user: stack
+  shell: rally env create --name devstask-with-users --spec "{{ existing_users_env_spec }}"
+
+- name: Print new Rally env spec
+  become: True
+  become_user: stack
+  command: "rally env show --only-spec"
