@@ -677,7 +677,7 @@ class Murano(OSClient):
         return client
 
 
-@configure("designate", default_version="1", default_service_type="dns",
+@configure("designate", default_version="2", default_service_type="dns",
            supported_versions=["1", "2"])
 class Designate(OSClient):
     """Wrapper for DesignateClient which returns authenticated native client.

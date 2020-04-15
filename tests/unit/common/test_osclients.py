@@ -936,7 +936,7 @@ class OSClientsTestCase(test.TestCase):
                 region_name=self.credential.region_name
             )
 
-            default = version or "1"
+            default = version or "2"
 
             # Check that we append /v<version>
             url = self.service_catalog.url_for.return_value

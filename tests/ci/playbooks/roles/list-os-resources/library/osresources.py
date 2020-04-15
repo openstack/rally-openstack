@@ -379,18 +379,6 @@ class Designate(ResourceManager):
 
     REQUIRED_SERVICE = consts.Service.DESIGNATE
 
-    def list_domains(self):
-        return self.client.domains.list()
-
-    def list_records(self):
-        result = []
-        result.extend(self.client.records.list(domain_id)
-                      for domain_id in self.client.domains.list())
-        return result
-
-    def list_servers(self):
-        return self.client.servers.list()
-
     def list_zones(self):
         return self.clients.designate("2").zones.list()
 

@@ -1,5 +1,22 @@
 - job:
     name: rally-task-designate
     parent: rally-task-at-devstack
+    required-projects:
+      - openstack/designate
+      - openstack/designate-dashboard
+      - openstack/python-designateclient
     vars:
       rally_task: rally-jobs/designate.yaml
+      devstack_localrc:
+        DESIGNATE_SERVICE_PORT_DNS: 5322
+        USE_PYTHON3: true
+      devstack_plugins:
+        designate: https://opendev.org/openstack/designate
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+      devstack_services:
+        designate: true
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        c-bak: false
