@@ -30,6 +30,9 @@ Added
 * ManilaShares.create_share_and_access_from_vm scenario which allows to check
   share access from within a VM.
 
+* Regular automated builds for `docker image
+  <https://hub.docker.com/r/xrally/xrally-openstack>`_
+
 Changed
 ~~~~~~~
 

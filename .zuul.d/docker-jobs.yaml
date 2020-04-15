@@ -1,0 +1,52 @@
+- secret:
+    name: rally-openstack-dockerhub-credentials
+    data:
+      username: !encrypted/pkcs1-oaep
+        - D76f4bTe1hv1uL30TaW3QiO6ytmB/XvFuTn6SF7HBPjiKKWS2TnPXc4B73EXuiXTDRfeM
+          AEaNV7zqIRiSIPv9f31p7gJR7XHUb7S0osXvnzytNY+4B43p2Q6+fQlZsQ+3Df69xYKLd
+          2S4uAc3HF9AvHMQ4E1Fn1XzrBGfmamKK90rkeRwvbFUeOVyoeB9etFIkB3QGzRDWqrkM3
+          qAOkjkNP2QIUTdWmCBgXt9SgOiRIZMG5dIyvlYQKGnLGtXzROb3sIUCGtWwh3pBJf2UuD
+          LIb43OlxAm3AaSGhvbNX10295a0iHChAuR1NX8j3e2GPvCn+0aOdp8T038BWjqKZPblZU
+          UYekgsMzgUaqs6naY1fwrRAoAcGvi2JqXcpSUkTh9XdfAcFumwSZlg26HCDz1UEpwIvKj
+          XSAcYeC+Ol9VNE97QXRgdcQQIO8tDHjbXbs30TbMJI5RoQ0N1vFBLxNd2nsHK2PIBzfik
+          2N93XoE5fCEcumULtlwBK9pbMBElRjBpWBUKMR4WicJUAhwQgf/PT6g1TEK8sZHIjS6lw
+          E1iVfAqq2cP3CyvvnjUUeCx1RuWgaFcmFxio9rK189eeZnLNYtgJlnA/pvZoJ9oNNAvPX
+          XotXoZ7wmiV6ISVF9U6nHLOoWT+54smeTfAXHu93AtKHzUocHBq7A66cV5jX54=
+      password: !encrypted/pkcs1-oaep
+        - CthIToeDxeITidxDPpkFrRCHqLqeL6dE7w/eA6AYRNLpHYHtq2rqLmqb2XGnAw4ZX5pQ9
+          mKVO5TE0Nnj3INBvCtgoY1n0CmPVD8B2YzoPYkzfwF6lX5wap2SfnSoW4f0caJQiBMPdd
+          YAjCxb14RtofdTEhiVTskmUMmQ7nFrb4oGMa2ub6k/K2KXxqh1jEUTCc2HEcJqEh2Lbb/
+          txsh2bqabXC4oOcysdb4VPAcIwF3wRoOqIrTChiu1wDie0pj8IEJ9MAapB1YNLFj5qVUe
+          zfQGW1QaYzXjNrvabGLYBDR7HXoTf9Rlr76vu5HHfyIIh5QwPMa6+ux67tmT/yR9B2qov
+          ijdJbKqIKx77KBo8VyZsI8KWQb8rK/2C84Hia+3XbW7PM6vxx+bLijcEI8PMFhaeE1Gnm
+          pNf7tVXPG6Hzk3O26f2zahMsRxvFPpkcVCVGixj+hv+ltMaQ9842MlrdGwJbxK/qBjLJ9
+          uDFJyClrPBC4AAe/ctaFq0K08mg0RMlS4F8zzEOOR9vvjNcdc2r9Qar0pVkTQQKCoLIBP
+          pm95hJSPjVDW6LhujIKIWL21swKyeSrJGB9f3MlaYkiQn3vZ1Dy/7rE/fRN9a9Vur/KNU
+          eh7c/tXVG3k0n2Y+7O6gMnLpT6lHM18jlbjyNfvEWLSfDVoRWG87L2BDeVTZtY=
+
+- job:
+    name: rally-openstack-docker-build
+    parent: rally-docker-build
+    required-projects:
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+    vars:
+      docker_repository: "xrally/xrally-openstack"
+      docker_image_version: latest
+      rally_plugin_name: "Dummy.openstack"
+      rally_package_name: "rally-openstack"
+
+- job:
+    name: rally-openstack-docker-build-and-push
+    parent: rally-docker-build-and-push
+    required-projects:
+        - name: openstack/rally
+        - name: openstack/rally-openstack
+    vars:
+      docker_repository: "xrally/xrally-openstack"
+      rally_plugin_name: "Dummy.openstack"
+      rally_package_name: "rally-openstack"
+    secrets:
+        name: dockerhub_credentials
+        secret: rally-openstack-dockerhub-credentials
+        pass-to-parent: true

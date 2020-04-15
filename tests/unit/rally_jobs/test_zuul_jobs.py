@@ -50,7 +50,7 @@ class RallyJobsTestCase(test.TestCase):
         jobs = self.project_cfg[pipeline]["jobs"]
 
         specific_jobs = ["rally-dsvm-tox-functional",
-                         "rally-docker-check",
+                         "rally-openstack-docker-build",
                          "rally-task-basic-with-existing-users",
                          "rally-task-simple-job"]
         error_message = (
