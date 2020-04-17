@@ -1,0 +1,28 @@
+---
+VMTasks.check_designate_dns_resolving:
+-
+  args:
+    flavor:
+      "name": "m1.tiny"
+    image:
+      "name": "^cirros.*-disk$"
+    username: "ubuntu"
+
+  context:
+    users:
+      tenants: 2
+      users_per_tenant: 3
+    network:
+      dns_nameservers:
+        - 8.8.8.8
+        - 192.168.1.12
+    zones: 
+      set_zone_in_network: True
+  runner:
+    concurrency:  3
+    times: 6
+    type: "constant"
+
+  sla:
+    failure_rate: 
+      max: 0

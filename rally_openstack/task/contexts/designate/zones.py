@@ -18,6 +18,7 @@ from rally_openstack.common import consts
 from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
 from rally_openstack.task.scenarios.designate import utils
+from rally_openstack.task.scenarios.neutron import utils as neutron_utils
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -33,12 +34,17 @@ class ZoneGenerator(context.OpenStackContext):
                 "type": "integer",
                 "minimum": 1
             },
+            "set_zone_in_network": {
+                "type": "boolean",
+                "description": "Update network with created DNS zone."
+            }
         },
         "additionalProperties": False
     }
 
     DEFAULT_CONFIG = {
-        "zones_per_tenant": 1
+        "zones_per_tenant": 1,
+        "set_zone_in_network": False
     }
 
     def setup(self):
@@ -52,6 +58,21 @@ class ZoneGenerator(context.OpenStackContext):
             for i in range(self.config["zones_per_tenant"]):
                 zone = designate_util._create_zone()
                 self.context["tenants"][tenant_id]["zones"].append(zone)
+        if self.config["set_zone_in_network"]:
+            for user, tenant_id in self._iterate_per_tenants(
+                    self.context["users"]):
+                tenant = self.context["tenants"][tenant_id]
+
+                network_update_args = {
+                    "dns_domain": tenant["zones"][0]["name"]
+                }
+                body = {"network": network_update_args}
+                scenario = neutron_utils.NeutronScenario(
+                    context={"user": user, "task": self.context["task"],
+                             "owner_id": self.context["owner_id"]}
+                )
+                scenario.clients("neutron").update_network(
+                    tenant["networks"][0]["id"], body)
 
     def cleanup(self):
         resource_manager.cleanup(names=["designate.zones"],

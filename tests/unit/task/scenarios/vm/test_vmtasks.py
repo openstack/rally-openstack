@@ -290,6 +290,143 @@ class VMTasksTestCase(test.ScenarioTestCase):
                     "title": "Workload summary"}
         scenario.add_output.assert_called_once_with(complete=expected)
 
+    def create_env_for_designate(self, zone_config=None):
+        scenario = vmtasks.CheckDesignateDNSResolving(self.context)
+        self.ip = {"id": "foo_id", "ip": "foo_ip", "is_floating": True}
+        scenario._boot_server_with_fip = mock.Mock(
+            return_value=("foo_server", self.ip))
+        scenario._delete_server_with_fip = mock.Mock()
+        scenario._run_command = mock.MagicMock(
+            return_value=(0, "ANSWER SECTION", "foo_err"))
+        scenario.add_output = mock.Mock()
+        if zone_config is None:
+            zone_config = {
+                "test_existing_designate_from_VM": {
+                    "bind_ip": "192.168.1.123"
+                }
+            }
+        self.context.update(
+            {
+                "config": {
+                    "zones@openstack": zone_config
+                },
+                "user": {
+                    "keypair": {"name": "keypair_name"},
+                    "credential": mock.MagicMock()
+                },
+                "tenant": {
+                    "id": "0",
+                    "name": "tenant1",
+                    "zones": [
+                        {"name": "zone1.com."}
+                    ],
+                    "networks": [
+                        {
+                            "name": "net1",
+                            "subnets": [
+                                {
+                                    "name": "subnet1",
+                                    "dns_nameservers": "1.2.3.4"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        args = {"image": "some_image", "flavor": "m1.small",
+                "username": "chuck norris"}
+        return scenario, args
+
+    @mock.patch("rally.task.utils.get_from_manager")
+    @mock.patch("rally.task.utils.wait_for_status")
+    def test_check_designate_dns_resolving_ok(
+            self,
+            mock_rally_task_utils_wait_for_status,
+            mock_rally_task_utils_get_from_manager):
+        scenario, args = self.create_env_for_designate()
+        scenario.run(**args)
+
+        scenario._boot_server_with_fip.assert_called_once_with(
+            "some_image", "m1.small", floating_network=None,
+            key_name="keypair_name", use_floating_ip=True)
+        mock_rally_task_utils_wait_for_status.assert_called_once_with(
+            "foo_server", ready_statuses=["ACTIVE"], update_resource=mock.ANY)
+        scenario._delete_server_with_fip.assert_called_once_with(
+            "foo_server", {"id": "foo_id", "ip": "foo_ip",
+                           "is_floating": True},
+            force_delete=False)
+        scenario.add_output.assert_called_with(
+            complete={"chart_plugin": "TextArea",
+                      "data": [
+                          "foo_err"],
+                      "title": "Script StdErr"})
+
+    @mock.patch("rally.task.utils.get_from_manager")
+    @mock.patch("rally.task.utils.wait_for_status")
+    def test_test_existing_designate_from_vm_command_timeout(
+            self,
+            mock_rally_task_utils_wait_for_status,
+            mock_rally_task_utils_get_from_manager):
+        scenario, _ = self.create_env_for_designate()
+
+        scenario._run_command.side_effect = exceptions.SSHTimeout()
+        self.assertRaises(exceptions.SSHTimeout,
+                          scenario.run,
+                          "foo_flavor", "foo_image", "foo_interpreter",
+                          "foo_script", "foo_username")
+        scenario._delete_server_with_fip.assert_called_once_with(
+            "foo_server", self.ip, force_delete=False)
+        self.assertFalse(scenario.add_output.called)
+
+    @mock.patch("rally.task.utils.get_from_manager")
+    @mock.patch("rally.task.utils.wait_for_status")
+    def test_test_existing_designate_from_vm_wait_timeout(
+            self,
+            mock_rally_task_utils_wait_for_status,
+            mock_rally_task_utils_get_from_manager):
+        scenario, args = self.create_env_for_designate()
+
+        mock_rally_task_utils_wait_for_status.side_effect = \
+            exceptions.TimeoutException(
+                resource_type="foo_resource",
+                resource_name="foo_name",
+                resource_id="foo_id",
+                desired_status="foo_desired_status",
+                resource_status="foo_resource_status",
+                timeout=2)
+        self.assertRaises(exceptions.TimeoutException,
+                          scenario.run,
+                          "foo_flavor", "foo_image", "foo_interpreter",
+                          "foo_script", "foo_username")
+        scenario._delete_server_with_fip.assert_called_once_with(
+            "foo_server", self.ip, force_delete=False)
+        self.assertFalse(scenario.add_output.called)
+
+    @ddt.data(
+        {"output": (1, "x y z", "error message"),
+         "raises": exceptions.ScriptError},
+        {"output": (0, "[1, 2, 3, 4]", ""),
+         "raises": exceptions.ScriptError}
+    )
+    @ddt.unpack
+    def test_test_existing_designate_from_vm_add_output(self, output,
+                                                        expected=None,
+                                                        raises=None):
+        scenario, _ = self.create_env_for_designate()
+
+        scenario._run_command.return_value = output
+        kwargs = {"flavor": "foo_flavor",
+                  "image": "foo_image",
+                  "username": "foo_username",
+                  "password": "foo_password",
+                  "use_floating_ip": "use_fip",
+                  "floating_network": "ext_network",
+                  "force_delete": "foo_force"}
+
+        self.assertRaises(raises, scenario.run, **kwargs)
+        self.assertFalse(scenario.add_output.called)
+
 
 @ddt.ddt
 class ValidCommandValidatorTestCase(test.TestCase):

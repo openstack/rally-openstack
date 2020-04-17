@@ -33,6 +33,9 @@ Added
 * Regular automated builds for `docker image
   <https://hub.docker.com/r/xrally/xrally-openstack>`_
 
+* VMTasks.check_designate_dns_resolving scenario which tests resolving
+  hostname from within a VM using existing designate DNS.
+
 Changed
 ~~~~~~~
 
