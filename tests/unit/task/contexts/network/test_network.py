@@ -68,8 +68,12 @@ class NetworkTestCase(test.TestCase):
     @mock.patch(NET + "wrap")
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_setup(self, mock_clients, mock_wrap, **dns_kwargs):
-        mock_create = mock.Mock(side_effect=lambda t, **kw: t + "-net")
-        mock_wrap.return_value = mock.Mock(create_network=mock_create)
+        def create_net_infra(t_id, **kwargs):
+            return {"network": f"{t_id}-net", "subnets": []}
+
+        mock_create = mock.Mock(side_effect=create_net_infra)
+        mock_wrap.return_value = mock.Mock(
+            _create_network_infrastructure=mock_create)
         nets_per_tenant = 2
         net_context = network_context.Network(
             self.get_context(networks_per_tenant=nets_per_tenant,

@@ -198,7 +198,7 @@ class NeutronWrapper(NetworkWrapper):
             start_cidr=self.start_cidr if ip_version == 4
             else self.start_ipv6_cidr)
 
-    def create_network(self, tenant_id, **kwargs):
+    def _create_network_infrastructure(self, tenant_id, **kwargs):
         """Create network.
 
         The following keyword arguments are accepted:
@@ -258,19 +258,48 @@ class NeutronWrapper(NetworkWrapper):
                 }
             }
             subnet = self.client.create_subnet(subnet_args)["subnet"]
-            subnets.append(subnet["id"])
+            subnets.append(subnet)
 
             if router:
                 self.client.add_interface_router(router["id"],
                                                  {"subnet_id": subnet["id"]})
 
-        return {"id": network["id"],
+        return {
+            "network": {
+                "id": network["id"],
                 "name": network["name"],
                 "status": network["status"],
-                "subnets": subnets,
+                "subnets": [s["id"] for s in subnets],
                 "external": network.get("router:external", False),
                 "router_id": router and router["id"] or None,
-                "tenant_id": tenant_id}
+                "tenant_id": tenant_id
+            },
+            "subnets": subnets,
+            "router": router
+        }
+
+    def create_network(self, tenant_id, **kwargs):
+        """Create network.
+
+        The following keyword arguments are accepted:
+
+        * add_router: Deprecated, please use router_create_args instead.
+                      Create an external router and add an interface to each
+                      subnet created. Default: False
+        * subnets_num: Number of subnets to create per network. Default: 0
+        * dualstack: Whether subnets should be of both IPv4 and IPv6
+        * dns_nameservers: Nameservers for each subnet. Default:
+                           8.8.8.8, 8.8.4.4
+        * network_create_args: Additional network creation arguments.
+        * router_create_args: Additional router creation arguments.
+
+        :param tenant_id: str, tenant ID
+        :param kwargs: Additional options, left open-ended for compatbilitiy.
+                       See above for recognized keyword args.
+        :returns: dict, network data
+        """
+        return self._create_network_infrastructure(
+            tenant_id, **kwargs)["network"]
 
     def delete_v1_pool(self, pool_id):
         """Delete LB Pool (v1)

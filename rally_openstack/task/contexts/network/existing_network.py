@@ -16,7 +16,6 @@ from rally.common import validation
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.common.wrappers import network as network_wrapper
 from rally_openstack.task import context
 
 
@@ -36,11 +35,14 @@ class ExistingNetwork(context.OpenStackContext):
 
     def setup(self):
         for user, tenant_id in self._iterate_per_tenants():
-            net_wrapper = network_wrapper.wrap(
-                osclients.Clients(user["credential"]), self,
-                config=self.config)
+            clients = osclients.Clients(user["credential"])
             self.context["tenants"][tenant_id]["networks"] = (
-                net_wrapper.list_networks())
+                clients.neutron().list_networks()["networks"]
+            )
+
+            self.context["tenants"][tenant_id]["subnets"] = (
+                clients.neutron().list_subnets()["subnets"]
+            )
 
     def cleanup(self):
         """Networks were not created by Rally, so nothing to do."""

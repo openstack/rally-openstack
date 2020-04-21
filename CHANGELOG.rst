@@ -42,6 +42,9 @@ Changed
 
 * Bump min supported Rally framework version (rally>=3.0.0)
 
+* Extend *network@openstack* context to save information about created subnets
+  and *existing_network@openstack* context with listing subnets.
+
 Deprecated
 ~~~~~~~~~~
 

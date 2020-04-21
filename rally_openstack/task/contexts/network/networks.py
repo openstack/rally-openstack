@@ -102,24 +102,31 @@ class Network(context.OpenStackContext):
         #               creating a connection in setup and cleanup separately.
         net_wrapper = network_wrapper.wrap(
             osclients.Clients(self.context["admin"]["credential"]),
-            self, config=self.config)
+            self,
+            config=self.config
+        )
         kwargs = {}
         if self.config["dns_nameservers"] is not None:
             kwargs["dns_nameservers"] = self.config["dns_nameservers"]
         for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id]["networks"] = []
+            self.context["tenants"][tenant_id]["subnets"] = []
+
             for i in range(self.config["networks_per_tenant"]):
-                # NOTE(amaretskiy): router_create_args and subnets_num take
-                #                   effect for Neutron only.
                 network_create_args = self.config["network_create_args"].copy()
-                network = net_wrapper.create_network(
+                net_infra = net_wrapper._create_network_infrastructure(
                     tenant_id,
                     dualstack=self.config["dualstack"],
                     subnets_num=self.config["subnets_per_network"],
                     network_create_args=network_create_args,
                     router_create_args=self.config["router"],
                     **kwargs)
-                self.context["tenants"][tenant_id]["networks"].append(network)
+                self.context["tenants"][tenant_id]["networks"].append(
+                    net_infra["network"]
+                )
+                self.context["tenants"][tenant_id]["subnets"].extend(
+                    net_infra["subnets"]
+                )
 
     def cleanup(self):
         net_wrapper = network_wrapper.wrap(

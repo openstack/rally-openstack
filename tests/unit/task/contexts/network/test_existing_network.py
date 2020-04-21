@@ -31,10 +31,10 @@ class ExistingNetworkTestCase(test.TestCase):
             "users": [
                 {"id": 1,
                  "tenant_id": "tenant1",
-                 "credential": mock.Mock()},
+                 "credential": mock.Mock(tenant_name="tenant_1")},
                 {"id": 2,
                  "tenant_id": "tenant2",
-                 "credential": mock.Mock()},
+                 "credential": mock.Mock(tenant_name="tenant_2")},
             ],
             "tenants": {
                 "tenant1": {},
@@ -46,34 +46,51 @@ class ExistingNetworkTestCase(test.TestCase):
         })
 
     @mock.patch("rally_openstack.common.osclients.Clients")
-    @mock.patch("rally_openstack.common.wrappers.network.wrap")
-    def test_setup(self, mock_network_wrap, mock_clients):
-        networks = [mock.Mock(), mock.Mock(), mock.Mock()]
-        net_wrappers = {
-            "tenant1": mock.Mock(
-                **{"list_networks.return_value": networks[0:2]}),
-            "tenant2": mock.Mock(
-                **{"list_networks.return_value": networks[2:]})
+    def test_setup(self, mock_clients):
+        clients = {
+            # key is tenant_name
+            "tenant_1": mock.MagicMock(),
+            "tenant_2": mock.MagicMock()
         }
-        mock_network_wrap.side_effect = [net_wrappers["tenant1"],
-                                         net_wrappers["tenant2"]]
+        mock_clients.side_effect = lambda cred: clients[cred.tenant_name]
+
+        networks = {
+            # key is tenant_id
+            "tenant_1": [mock.Mock(), mock.Mock()],
+            "tenant_2": [mock.Mock()]
+        }
+        subnets = {
+            # key is tenant_id
+            "tenant_1": [mock.Mock()],
+            "tenant_2": [mock.Mock()]
+        }
+        neutron1 = clients["tenant_1"].neutron.return_value
+        neutron2 = clients["tenant_2"].neutron.return_value
+        neutron1.list_networks.return_value = {
+            "networks": networks["tenant_1"]}
+        neutron2.list_networks.return_value = {
+            "networks": networks["tenant_2"]}
+        neutron1.list_subnets.return_value = {"subnets": subnets["tenant_1"]}
+        neutron2.list_subnets.return_value = {"subnets": subnets["tenant_2"]}
 
         context = existing_network.ExistingNetwork(self.context)
         context.setup()
 
         mock_clients.assert_has_calls([
             mock.call(u["credential"]) for u in self.context["users"]])
-        mock_network_wrap.assert_has_calls([
-            mock.call(mock_clients.return_value, context, config=self.config),
-            mock.call(mock_clients.return_value, context, config=self.config)])
-        for net_wrapper in net_wrappers.values():
-            net_wrapper.list_networks.assert_called_once_with()
+
+        neutron1.list_networks.assert_called_once_with()
+        neutron1.list_subnets.assert_called_once_with()
+        neutron2.list_networks.assert_called_once_with()
+        neutron2.list_subnets.assert_called_once_with()
 
         self.assertEqual(
             self.context["tenants"],
             {
-                "tenant1": {"networks": networks[0:2]},
-                "tenant2": {"networks": networks[2:]},
+                "tenant1": {"networks": networks["tenant_1"],
+                            "subnets": subnets["tenant_1"]},
+                "tenant2": {"networks": networks["tenant_2"],
+                            "subnets": subnets["tenant_2"]},
             }
         )
 
