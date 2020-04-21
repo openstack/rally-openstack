@@ -1904,6 +1904,16 @@ class FakeDeployment(dict):
         return {}
 
 
+class FakeEnvironment(object):
+    def __init__(self, env_uuid, data):
+        self.uuid = env_uuid
+        self.data = data
+
+    @property
+    def cached_data(self):
+        return self.data
+
+
 class FakeTask(dict, object):
 
     def __init__(self, task=None, temporary=False, **kwargs):

@@ -104,7 +104,7 @@ class TempestManager(testr.TestrLauncher):
     def configure(self, extra_options=None):
         """Configure Tempest."""
         utils.create_dir(self.home_dir)
-        tcm = config.TempestConfigfileManager(self.verifier.deployment)
+        tcm = config.TempestConfigfileManager(self.verifier.env)
         return tcm.create(self.configfile, extra_options)
 
     def is_configured(self):

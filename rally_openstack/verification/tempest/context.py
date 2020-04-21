@@ -25,6 +25,8 @@ from rally.task import utils as task_utils
 from rally.verification import context
 from rally.verification import utils
 
+from rally_openstack.common import consts
+from rally_openstack.common import credential
 from rally_openstack.common.services.image import image
 from rally_openstack.common.wrappers import network
 from rally_openstack.verification.tempest import config as conf
@@ -42,8 +44,12 @@ class TempestContext(context.VerifierContext):
     def __init__(self, ctx):
         super(TempestContext, self).__init__(ctx)
 
-        creds = self.verifier.deployment.get_credentials_for("openstack")
-        self.clients = creds["admin"].clients()
+        openstack_platform = self.verifier.env.data["platforms"]["openstack"]
+        admin_creds = credential.OpenStackCredential(
+            permission=consts.EndpointPermission.ADMIN,
+            **openstack_platform["platform_data"]["admin"])
+
+        self.clients = admin_creds.clients()
         self.available_services = self.clients.services().values()
 
         self.conf = configparser.ConfigParser(allow_no_value=True)

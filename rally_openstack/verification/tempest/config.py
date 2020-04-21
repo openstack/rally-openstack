@@ -23,6 +23,9 @@ from rally.common import logging
 from rally import exceptions
 from rally.verification import utils
 
+from rally_openstack.common import consts
+from rally_openstack.common import credential
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -31,13 +34,16 @@ LOG = logging.getLogger(__name__)
 class TempestConfigfileManager(object):
     """Class to create a Tempest config file."""
 
-    def __init__(self, deployment):
-        self.credential = deployment.get_credentials_for("openstack")["admin"]
+    def __init__(self, env):
+        openstack_platform = env.data["platforms"]["openstack"]
+        self.credential = credential.OpenStackCredential(
+            permission=consts.EndpointPermission.ADMIN,
+            **openstack_platform["platform_data"]["admin"])
+
         if not self.credential:
             raise exceptions.ValidationError(
-                "Failed to configure 'tempest' for '%s' environment since "
-                "admin credentials for OpenStack platform is missed there." %
-                deployment["name"]
+                f"Failed to configure 'tempest' for '{env} since "
+                "admin credentials for OpenStack platform is missed there."
             )
         self.clients = self.credential.clients()
         self.available_services = self.clients.services().values()

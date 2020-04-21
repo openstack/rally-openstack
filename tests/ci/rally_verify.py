@@ -26,6 +26,10 @@ import uuid
 import jinja2
 
 from rally import api
+from rally.env import env_mgr
+
+from rally_openstack.common import consts
+from rally_openstack.common import credential
 
 LOG = logging.getLogger("verify-job")
 LOG.setLevel(logging.DEBUG)
@@ -148,31 +152,32 @@ class Step(object):
 class SetUpStep(Step):
     """Validate deployment, create required resources and directories."""
 
-    DEPLOYMENT_NAME = "tempest"
+    ENV_NAME = "tempest"
 
     def run(self):
         if not os.path.exists("%s/extra" % self.BASE_DIR):
             os.makedirs("%s/extra" % self.BASE_DIR)
 
-        # ensure that deployment exit
-        deployment = self.rapi.deployment._get(self.DEPLOYMENT_NAME)
-        # check it
-        result = self.rapi.deployment.check(
-            deployment=self.DEPLOYMENT_NAME)["openstack"]
-        if "admin_error" in result[0] or "user_error" in result[0]:
-            self.result["status"] = Status.ERROR
-            return
+        # ensure that environment exit and check it
+        env = env_mgr.EnvManager.get(self.ENV_NAME)
+        for p_name, status in env.check_health().items():
+            if not status["available"]:
+                self.result["status"] = Status.ERROR
+                return
 
         try:
-            subprocess.check_call(["rally", "deployment", "use",
-                                   "--deployment", self.DEPLOYMENT_NAME],
-                                  stdout=sys.stdout)
+            subprocess.check_call(
+                ["rally", "env", "use", "--env", self.ENV_NAME],
+                stdout=sys.stdout)
         except subprocess.CalledProcessError:
             self.result["status"] = Status.ERROR
             return
 
-        credentials = deployment.get_credentials_for("openstack")["admin"]
-        clients = credentials.clients()
+        openstack_platform = env.data["platforms"]["openstack"]
+        admin_creds = credential.OpenStackCredential(
+            permission=consts.EndpointPermission.ADMIN,
+            **openstack_platform["platform_data"]["admin"])
+        clients = admin_creds.clients()
 
         if self.args.ctx_create_resources:
             # If the 'ctx-create-resources' arg is provided, delete images and
@@ -455,7 +460,7 @@ class DestroyDeployment(Step):
     """Delete the deployment, and verifications of this deployment."""
 
     COMMAND = "deployment destroy --deployment %(id)s"
-    CALL_ARGS = {"id": SetUpStep.DEPLOYMENT_NAME}
+    CALL_ARGS = {"id": SetUpStep.ENV_NAME}
     DEPENDS_ON = SetUpStep
 
 

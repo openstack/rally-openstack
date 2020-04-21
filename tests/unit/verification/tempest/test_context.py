@@ -57,9 +57,14 @@ class TempestContextTestCase(test.TestCase):
                                       return_value=True).start()
 
         self.cred = fakes.FakeCredential(**CRED)
-        self.deployment = fakes.FakeDeployment(
-            uuid="fake_deployment", admin=self.cred)
-        cfg = {"verifier": mock.Mock(deployment=self.deployment),
+        p_cred = mock.patch(PATH + ".credential.OpenStackCredential",
+                            return_value=self.cred)
+        p_cred.start()
+        self.addCleanup(p_cred.stop)
+        self.env = mock.Mock(data={"platforms": {"openstack": {
+            "platform_data": {"admin": {}}}}}
+        )
+        cfg = {"verifier": mock.Mock(env=self.env),
                "verification": {"uuid": "uuid"}}
         cfg["verifier"].manager.home_dir = "/p/a/t/h"
         cfg["verifier"].manager.configfile = "/fake/path/to/config"
@@ -362,7 +367,7 @@ class TempestContextTestCase(test.TestCase):
     def test_setup(self, mock_create_dir,
                    mock__create_tempest_roles, mock__configure_option,
                    mock_open):
-        verifier = mock.Mock(deployment=self.deployment)
+        verifier = mock.Mock(env=self.env)
         verifier.manager.home_dir = "/p/a/t/h"
 
         # case #1: no neutron and heat

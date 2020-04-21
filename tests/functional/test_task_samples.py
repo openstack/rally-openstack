@@ -25,7 +25,10 @@ from rally import api
 from rally.cli import yamlutils as yaml
 from rally.common import broker
 from rally import plugins
+
 import rally_openstack as rally_openstack_module
+from rally_openstack.common import consts
+from rally_openstack.common import credential
 from tests.functional import utils
 
 
@@ -57,13 +60,17 @@ class TestTaskSamples(unittest.TestCase):
         # let's use pre-created users to make TestTaskSamples quicker
         rapi = api.API(config_file=rally.config_filename)
         deployment = rapi.deployment._get("MAIN")
-        admin_cred = deployment.get_credentials_for("openstack")["admin"]
+
+        openstack_platform = deployment.env_obj.data["platforms"]["openstack"]
+        admin_creds = credential.OpenStackCredential(
+            permission=consts.EndpointPermission.ADMIN,
+            **openstack_platform["platform_data"]["admin"])
 
         ctx = {
             "env": {
                 "platforms": {
                     "openstack": {
-                        "admin": admin_cred.to_dict(),
+                        "admin": admin_creds.to_dict(),
                         "users": []}}},
             "task": {"uuid": self.__class__.__name__,
                      "deployment_uuid": deployment["uuid"]}}
