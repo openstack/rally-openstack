@@ -32,7 +32,6 @@ CRED = {
     "tenant_name": "admin",
     "password": "admin-12345",
     "auth_url": "http://test:5000/v2.0/",
-    "permission": "admin",
     "region_name": "test",
     "https_insecure": False,
     "https_cacert": "/path/to/cacert/file",
@@ -48,9 +47,21 @@ class TempestConfigfileManagerTestCase(test.TestCase):
 
     def setUp(self):
         super(TempestConfigfileManagerTestCase, self).setUp()
-        deployment = fakes.FakeDeployment(uuid="fake_deployment",
-                                          admin=fakes.FakeCredential(**CRED))
-        self.tempest = config.TempestConfigfileManager(deployment)
+        env = fakes.FakeEnvironment(
+            env_uuid="fake_env",
+            data={
+                "platforms": {
+                    "openstack": {
+                        "platform_data": {
+                            "admin": CRED
+                        }
+                    }
+                }
+            }
+        )
+        with mock.patch("%s.credential.OpenStackCredential" % PATH,
+                        return_value=fakes.FakeCredential(**CRED)):
+            self.tempest = config.TempestConfigfileManager(env)
 
     def test__configure_auth(self):
         self.tempest.conf.add_section("auth")

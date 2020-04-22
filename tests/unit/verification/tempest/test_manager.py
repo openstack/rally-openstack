@@ -61,7 +61,7 @@ class TempestManagerTestCase(test.TestCase):
         self.assertEqual(cm.create.return_value,
                          tempest.configure(extra_options))
         mock_tempest_configfile_manager.assert_called_once_with(
-            tempest.verifier.deployment)
+            tempest.verifier.env)
         cm.create.assert_called_once_with(tempest.configfile, extra_options)
 
     @mock.patch("%s.config.os.path.exists" % PATH)
