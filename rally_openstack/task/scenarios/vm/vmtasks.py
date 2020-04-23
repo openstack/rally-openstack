@@ -16,6 +16,7 @@
 import json
 import os
 import pkgutil
+import re
 
 from rally.common import logging
 from rally.common import validation
@@ -23,6 +24,7 @@ from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import atomic
 from rally.task import types
+from rally.task import utils as rally_utils
 from rally.utils import sshutils
 
 from rally_openstack.common import consts
@@ -534,3 +536,112 @@ class DDLoadTest(BootRuncommandDelete):
             force_delete=force_delete,
             wait_for_ping=wait_for_ping, max_log_length=max_log_length,
             **kwargs)
+
+@types.convert(image={"type": "glance_image"},
+               flavor={"type": "nova_flavor"})
+@validation.add("image_valid_on_flavor", flavor_param="flavor",
+                image_param="image", fail_on_404_image=False)
+@validation.add("number", param_name="port", minval=1, maxval=65535,
+                nullable=True, integer_only=True)
+@validation.add("external_network_exists", param_name="floating_network")
+@validation.add("required_services", services=[consts.Service.DESIGNATE,
+                                               consts.Service.NEUTRON,
+                                               consts.Service.NOVA])
+@validation.add("required_contexts", contexts=["network", "zones"])
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_context_config", context_name="zones",
+                context_config={"set_zone_in_network": True})
+@scenario.configure(context={"cleanup@openstack": ["designate",
+                                                   "nova", "neutron"],
+                             "keypair@openstack": {},
+                             "allow_ssh@openstack": None},
+                    name="VMTasks.check_designate_dns_resolving",
+                    platform="openstack")
+class CheckDesignateDNSResolving(vm_utils.VMScenario):
+
+    def run(self, image, flavor, username, password=None,
+            floating_network=None, port=22,
+            use_floating_ip=True, force_delete=False, max_log_length=None,
+            **kwargs):
+        """Try to resolve hostname from VM against existing designate DNS.
+
+        - requires zone context with set_zone_in_network parameter
+            zones:
+                set_zone_in_network: True
+        - designate IP should be in default dns_nameservers list for new
+        networks or it can be specified in a network context
+            network:
+                dns_nameservers:
+                   - 8.8.8.8
+                   - 192.168.210.45
+
+        :param image: glance image name to use for the vm
+        :param flavor: VM flavor name
+        :param username: ssh username on server
+        :param password: Password on SSH authentication
+        :param floating_network: external network name, for floating ip
+        :param port: ssh port for SSH connection
+        :param use_floating_ip: bool, floating or fixed IP for SSH connection
+        :param force_delete: whether to use force_delete for servers
+        :param max_log_length: The number of tail nova console-log lines user
+                               would like to retrieve
+        :param kwargs: optional args
+        """
+
+        zone = self.context["tenant"]["zones"][0]["name"]
+
+        server, fip = self._boot_server_with_fip(
+            image, flavor, use_floating_ip=use_floating_ip,
+            floating_network=floating_network,
+            key_name=self.context["user"]["keypair"]["name"],
+            **kwargs)
+
+        script = f"cloud-init status -w; systemd-resolve --status; "\
+                 f"dig $(hostname).{zone}"
+
+        command = {
+            "script_inline": script,
+            "interpreter": "/bin/bash"
+        }
+        try:
+            rally_utils.wait_for_status(
+                server,
+                ready_statuses=["ACTIVE"],
+                update_resource=rally_utils.get_from_manager(),
+            )
+
+            code, out, err = self._run_command(
+                fip["ip"], port, username, password, command=command)
+            if code:
+                raise exceptions.ScriptError(
+                    "Error running command %(command)s. "
+                    "Error %(code)s: %(error)s" % {
+                        "command": command, "code": code, "error": err})
+            else:
+                if not re.findall(".*ANSWER SECTION.*", out, re.MULTILINE):
+                    raise exceptions.ScriptError(
+                        f"Error running {script}. "
+                        f"Error: Missing ANSWER section in the output {out}")
+
+        except (exceptions.TimeoutException,
+                exceptions.SSHTimeout):
+            console_logs = self._get_server_console_output(server,
+                                                           max_log_length)
+            LOG.debug("VM console logs:\n%s" % console_logs)
+            raise
+
+        finally:
+            self._delete_server_with_fip(server, fip,
+                                         force_delete=force_delete)
+
+        self.add_output(complete={
+            "title": "Script StdOut",
+            "chart_plugin": "TextArea",
+            "data": str(out).split("\n")
+        })
+        if err:
+            self.add_output(complete={
+                "title": "Script StdErr",
+                "chart_plugin": "TextArea",
+                "data": err.split("\n")
+            })

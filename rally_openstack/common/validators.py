@@ -618,3 +618,30 @@ class WorkbookContainsWorkflowValidator(validators.FileExistsValidator):
                 if wf_name not in wb_def["workflows"]:
                     self.fail("workflow '%s' not found in the definition '%s'"
                               % (wf_name, wb_def))
+
+
+@validation.configure(name="required_context_config", platform="openstack")
+class RequiredContextConfigValidator(validation.Validator):
+
+    def __init__(self, context_name, context_config):
+        """Validate that context is configured according to requirements.
+
+        :param context_name: string efining context name
+        :param context_config: dictionary of required key/value pairs
+        """
+        super(RequiredContextConfigValidator, self).__init__()
+        self.context_name = context_name
+        self.context_config = context_config
+
+    def validate(self, context, config, plugin_cls, plugin_cfg):
+        if self.context_name not in config.get("contexts", {}):
+            # fail silently. if it is required context,
+            # `required_contexts` validator should raise proper error
+            return
+        ctx_config = config["contexts"].get(self.context_name)
+
+        for key, value in self.context_config.items():
+            if key not in ctx_config or ctx_config[key] != value:
+                self.fail(
+                    f"The '{self.context_name}' context "
+                    f"expects '{self.context_config}'")

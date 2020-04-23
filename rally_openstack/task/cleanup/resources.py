@@ -766,12 +766,6 @@ class DesignateResource(SynchronizedDeletion, base.ResourceManager):
                 if item["name"].startswith(self.NAME_PREFIX)]
 
 
-@base.resource("designate", "domains", order=next(_designate_order),
-               tenant_resource=True, threads=1)
-class DesignateDomain(DesignateResource):
-    pass
-
-
 @base.resource("designate", "servers", order=next(_designate_order),
                admin_required=True, perform_for_admin_only=True, threads=1)
 class DesignateServer(DesignateResource):

@@ -44,7 +44,8 @@ config = dict(args={"image": {"id": "fake_id",
                     "foo_image": {"id": "fake_image_id"}
                     },
               context={"images": {"image_name": "foo_image"},
-                       "api_versions@openstack": mock.MagicMock()}
+                       "api_versions@openstack": mock.MagicMock(),
+                       "zones": {"set_zone_in_network": True}}
               )
 
 
@@ -985,3 +986,63 @@ class WorkbookContainsWorkflowValidatorTestCase(test.TestCase):
         self.assertEqual(1, mock_open.called)
         self.assertEqual(1, mock_access.called)
         self.assertEqual(1, mock_safe_load.called)
+
+
+@ddt.ddt
+class RequiredContextConfigValidatorTestCase(test.TestCase):
+
+    def test_validator(self):
+        validator = validators.RequiredContextConfigValidator(
+            context_name="zones",
+            context_config={"set_zone_in_network": True})
+        cfg = {
+            "contexts": {
+                "users": {
+                    "tenants": 1, "users_per_tenant": 1
+                },
+                "network": {
+                    "dns_nameservers": ["8.8.8.8", "192.168.210.45"]
+                },
+                "zones": {"set_zone_in_network": True}
+            },
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_validator_context_not_in_contexts(self):
+        validator = validators.RequiredContextConfigValidator(
+            context_name="zones",
+            context_config={"set_zone_in_network": True})
+        cfg = {
+            "contexts": {
+                "users": {
+                    "tenants": 1, "users_per_tenant": 1
+                },
+                "network": {
+                    "dns_nameservers": ["8.8.8.8", "192.168.210.45"]
+                },
+            },
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_validator_failed(self):
+        validator = validators.RequiredContextConfigValidator(
+            context_name="zones",
+            context_config={"set_zone_in_network": True})
+        cfg = {
+            "contexts": {
+                "users": {
+                    "tenants": 1, "users_per_tenant": 1
+                },
+                "network": {
+                    "dns_nameservers": ["8.8.8.8", "192.168.210.45"]
+                },
+                "zones": {"set_zone_in_network": False}
+            },
+        }
+
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertEqual(
+            "The 'zones' context expects '{'set_zone_in_network': True}'",
+            e.message)
