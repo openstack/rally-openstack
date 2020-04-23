@@ -176,11 +176,11 @@ class KeystoneMixin(object):
 
     def fetch_token(self):
         """Authenticate user token."""
-        cred = self._clients.credential
         aname = "keystone_v%s.fetch_token" % self.version
         with atomic.ActionTimer(self, aname):
-            clients = osclients.Clients(credential=cred,
-                                        api_info=self._clients.api_info)
+            # use another instance of osclients.Clients to avoid usage of
+            # cached keystone session
+            clients = osclients.Clients(credential=self._clients.credential)
             return clients.keystone.auth_ref.auth_token
 
     def validate_token(self, token):

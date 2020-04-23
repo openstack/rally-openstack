@@ -14,6 +14,7 @@
 
 from unittest import mock
 
+from rally_openstack.common import osclients
 from rally_openstack.common import service
 from rally_openstack.common.services.identity import identity
 from rally_openstack.common.services.identity import keystone_common
@@ -265,13 +266,14 @@ class KeystoneMixinTestCase(test.TestCase):
         self.kc.ec2.delete.assert_called_once_with(user_id=user_id,
                                                    access=access)
 
-    @mock.patch("rally_openstack.common.osclients.Clients")
+    @mock.patch("rally_openstack.common.osclients.Clients",
+                spec=osclients.Clients)
     def test_fetch_token(self, mock_clients):
+        mock_clients.return_value = mock.Mock(keystone=mock.Mock())
         expected_token = mock_clients.return_value.keystone.auth_ref.auth_token
         self.assertEqual(expected_token, self.service.fetch_token())
         mock_clients.assert_called_once_with(
-            credential=self.clients.credential,
-            api_info=self.clients.api_info)
+            credential=self.clients.credential)
 
     def test_validate_token(self):
         token = "some_token"
