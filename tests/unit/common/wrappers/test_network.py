@@ -35,84 +35,87 @@ class Owner(utils.RandomNameGeneratorMixin):
 @ddt.ddt
 class NeutronWrapperTestCase(test.TestCase):
     def setUp(self):
+        super(NeutronWrapperTestCase, self).setUp()
         self.owner = Owner()
         self.owner.generate_random_name = mock.Mock()
-        super(NeutronWrapperTestCase, self).setUp()
-
-    def get_wrapper(self, *skip_cidrs, **kwargs):
-        return network.NeutronWrapper(mock.Mock(), self.owner, config=kwargs)
+        self.wrapper = network.NeutronWrapper(mock.MagicMock(),
+                                              self.owner,
+                                              config={})
+        self._nc = self.wrapper.neutron.client
 
     def test_SUBNET_IP_VERSION(self):
         self.assertEqual(4, network.NeutronWrapper.SUBNET_IP_VERSION)
 
-    @mock.patch("rally_openstack.common.wrappers.network.generate_cidr")
+    @mock.patch(
+        "rally_openstack.common.services.network.net_utils.generate_cidr")
     def test__generate_cidr(self, mock_generate_cidr):
         cidrs = iter(range(5))
-        mock_generate_cidr.side_effect = (
-            lambda start_cidr: start_cidr + next(cidrs)
-        )
-        service = self.get_wrapper(start_cidr=3)
-        self.assertEqual(3, service._generate_cidr())
-        self.assertEqual(4, service._generate_cidr())
-        self.assertEqual(5, service._generate_cidr())
-        self.assertEqual(6, service._generate_cidr())
-        self.assertEqual(7, service._generate_cidr())
-        self.assertEqual([mock.call(start_cidr=3)] * 5,
-                         mock_generate_cidr.mock_calls)
+
+        def fake_gen_cidr(ip_version=None, start_cidr=None):
+            return 4, 3 + next(cidrs)
+
+        mock_generate_cidr.side_effect = fake_gen_cidr
+
+        self.assertEqual(3, self.wrapper._generate_cidr())
+        self.assertEqual(4, self.wrapper._generate_cidr())
+        self.assertEqual(5, self.wrapper._generate_cidr())
+        self.assertEqual(6, self.wrapper._generate_cidr())
+        self.assertEqual(7, self.wrapper._generate_cidr())
+        self.assertEqual([mock.call(start_cidr=self.wrapper.start_cidr)] * 5,
+                         mock_generate_cidr.call_args_list)
 
     def test_external_networks(self):
-        wrap = self.get_wrapper()
-        wrap.client.list_networks.return_value = {"networks": "foo_networks"}
-        self.assertEqual("foo_networks", wrap.external_networks)
-        wrap.client.list_networks.assert_called_once_with(
+        self._nc.list_networks.return_value = {"networks": "foo_networks"}
+        self.assertEqual("foo_networks", self.wrapper.external_networks)
+        self._nc.list_networks.assert_called_once_with(
             **{"router:external": True})
 
     def test_get_network(self):
-        wrap = self.get_wrapper()
         neutron_net = {"id": "foo_id",
-                       "name": self.owner.generate_random_name.return_value,
+                       "name": "foo_name",
                        "tenant_id": "foo_tenant",
                        "status": "foo_status",
                        "router:external": "foo_external",
                        "subnets": "foo_subnets"}
         expected_net = {"id": "foo_id",
-                        "name": self.owner.generate_random_name.return_value,
+                        "name": "foo_name",
                         "tenant_id": "foo_tenant",
                         "status": "foo_status",
                         "external": "foo_external",
                         "router_id": None,
                         "subnets": "foo_subnets"}
-        wrap.client.show_network.return_value = {"network": neutron_net}
-        net = wrap.get_network(net_id="foo_id")
+        self._nc.show_network.return_value = {"network": neutron_net}
+        net = self.wrapper.get_network(net_id="foo_id")
         self.assertEqual(expected_net, net)
-        wrap.client.show_network.assert_called_once_with("foo_id")
+        self._nc.show_network.assert_called_once_with("foo_id")
 
-        wrap.client.show_network.side_effect = (
+        self._nc.show_network.side_effect = (
             neutron_exceptions.NeutronClientException)
-        self.assertRaises(network.NetworkWrapperException, wrap.get_network,
+        self.assertRaises(network.NetworkWrapperException,
+                          self.wrapper.get_network,
                           net_id="foo_id")
 
-        wrap.client.list_networks.return_value = {"networks": [neutron_net]}
-        net = wrap.get_network(name="foo_name")
+        self._nc.list_networks.return_value = {"networks": [neutron_net]}
+        net = self.wrapper.get_network(name="foo_name")
         self.assertEqual(expected_net, net)
-        wrap.client.list_networks.assert_called_once_with(name="foo_name")
+        self._nc.list_networks.assert_called_once_with(name="foo_name")
 
-        wrap.client.list_networks.return_value = {"networks": []}
-        self.assertRaises(network.NetworkWrapperException, wrap.get_network,
+        self._nc.list_networks.return_value = {"networks": []}
+        self.assertRaises(network.NetworkWrapperException,
+                          self.wrapper.get_network,
                           name="foo_name")
 
     def test_create_v1_pool(self):
         subnet = "subnet_id"
         tenant = "foo_tenant"
-        service = self.get_wrapper()
         expected_pool = {"pool": {
             "id": "pool_id",
             "name": self.owner.generate_random_name.return_value,
             "subnet_id": subnet,
             "tenant_id": tenant}}
-        service.client.create_pool.return_value = expected_pool
-        resultant_pool = service.create_v1_pool(tenant, subnet)
-        service.client.create_pool.assert_called_once_with({
+        self.wrapper.client.create_pool.return_value = expected_pool
+        resultant_pool = self.wrapper.create_v1_pool(tenant, subnet)
+        self.wrapper.client.create_pool.assert_called_once_with({
             "pool": {"lb_method": "ROUND_ROBIN",
                      "subnet_id": subnet,
                      "tenant_id": tenant,
@@ -121,13 +124,12 @@ class NeutronWrapperTestCase(test.TestCase):
         self.assertEqual(expected_pool, resultant_pool)
 
     def test_create_network(self):
-        service = self.get_wrapper()
-        service.client.create_network.return_value = {
+        self._nc.create_network.return_value = {
             "network": {"id": "foo_id",
                         "name": self.owner.generate_random_name.return_value,
                         "status": "foo_status"}}
-        net = service.create_network("foo_tenant")
-        service.client.create_network.assert_called_once_with({
+        net = self.wrapper.create_network("foo_tenant")
+        self._nc.create_network.assert_called_once_with({
             "network": {"tenant_id": "foo_tenant",
                         "name": self.owner.generate_random_name.return_value}})
         self.assertEqual({"id": "foo_id",
@@ -140,22 +142,18 @@ class NeutronWrapperTestCase(test.TestCase):
 
     def test_create_network_with_subnets(self):
         subnets_num = 4
-        service = self.get_wrapper()
-        subnets_cidrs = iter(range(subnets_num))
         subnets_ids = iter(range(subnets_num))
-        service._generate_cidr = mock.Mock(
-            side_effect=lambda v: "cidr-%d" % next(subnets_cidrs))
-        service.client.create_subnet = mock.Mock(
-            side_effect=lambda i: {
-                "subnet": {"id": "subnet-%d" % next(subnets_ids)}})
-        service.client.create_network.return_value = {
+        self._nc.create_subnet.side_effect = lambda i: {
+            "subnet": {"id": "subnet-%d" % next(subnets_ids)}}
+        self._nc.create_network.return_value = {
             "network": {"id": "foo_id",
                         "name": self.owner.generate_random_name.return_value,
                         "status": "foo_status"}}
 
-        net = service.create_network("foo_tenant", subnets_num=subnets_num)
+        net = self.wrapper.create_network("foo_tenant",
+                                          subnets_num=subnets_num)
 
-        service.client.create_network.assert_called_once_with({
+        self._nc.create_network.assert_called_once_with({
             "network": {"tenant_id": "foo_tenant",
                         "name": self.owner.generate_random_name.return_value}})
         self.assertEqual({"id": "foo_id",
@@ -167,25 +165,24 @@ class NeutronWrapperTestCase(test.TestCase):
                           "subnets": ["subnet-%d" % i
                                       for i in range(subnets_num)]}, net)
         self.assertEqual(
-            service.client.create_subnet.mock_calls,
             [mock.call({"subnet":
                         {"name": self.owner.generate_random_name.return_value,
-                         "enable_dhcp": True,
                          "network_id": "foo_id",
                          "tenant_id": "foo_tenant",
-                         "ip_version": service.SUBNET_IP_VERSION,
+                         "ip_version": self.wrapper.SUBNET_IP_VERSION,
                          "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
-                         "cidr": "cidr-%d" % i}})
-             for i in range(subnets_num)])
+                         "cidr": mock.ANY}})
+             for i in range(subnets_num)],
+            self.wrapper.client.create_subnet.call_args_list
+        )
 
     def test_create_network_with_router(self):
-        service = self.get_wrapper()
-        service.create_router = mock.Mock(return_value={"id": "foo_router"})
-        service.client.create_network.return_value = {
+        self._nc.create_router.return_value = {"router": {"id": "foo_router"}}
+        self._nc.create_network.return_value = {
             "network": {"id": "foo_id",
                         "name": self.owner.generate_random_name.return_value,
                         "status": "foo_status"}}
-        net = service.create_network("foo_tenant", add_router=True)
+        net = self.wrapper.create_network("foo_tenant", add_router=True)
         self.assertEqual({"id": "foo_id",
                           "name": self.owner.generate_random_name.return_value,
                           "status": "foo_status",
@@ -193,23 +190,25 @@ class NeutronWrapperTestCase(test.TestCase):
                           "tenant_id": "foo_tenant",
                           "router_id": "foo_router",
                           "subnets": []}, net)
-        service.create_router.assert_called_once_with(external=True,
-                                                      tenant_id="foo_tenant")
+        self._nc.create_router.assert_called_once_with({
+            "router": {
+                "name": self.owner.generate_random_name(),
+                "tenant_id": "foo_tenant"
+            }
+        })
 
     def test_create_network_with_router_and_subnets(self):
         subnets_num = 4
-        service = self.get_wrapper()
-        service._generate_cidr = mock.Mock(return_value="foo_cidr")
-        service.create_router = mock.Mock(return_value={"id": "foo_router"})
-        service.client.create_subnet = mock.Mock(
-            return_value={"subnet": {"id": "foo_subnet"}})
-        service.client.create_network.return_value = {
+        self.wrapper._generate_cidr = mock.Mock(return_value="foo_cidr")
+        self._nc.create_router.return_value = {"router": {"id": "foo_router"}}
+        self._nc.create_subnet.return_value = {"subnet": {"id": "foo_subnet"}}
+        self._nc.create_network.return_value = {
             "network": {"id": "foo_id",
                         "name": self.owner.generate_random_name.return_value,
                         "status": "foo_status"}}
-        net = service.create_network("foo_tenant", add_router=True,
-                                     subnets_num=subnets_num,
-                                     dns_nameservers=["foo_nameservers"])
+        net = self.wrapper.create_network(
+            "foo_tenant", add_router=True, subnets_num=subnets_num,
+            dns_nameservers=["foo_nameservers"])
         self.assertEqual({"id": "foo_id",
                           "name": self.owner.generate_random_name.return_value,
                           "status": "foo_status",
@@ -217,76 +216,70 @@ class NeutronWrapperTestCase(test.TestCase):
                           "tenant_id": "foo_tenant",
                           "router_id": "foo_router",
                           "subnets": ["foo_subnet"] * subnets_num}, net)
-        service.create_router.assert_called_once_with(external=True,
-                                                      tenant_id="foo_tenant")
+        self._nc.create_router.assert_called_once_with(
+            {"router": {"name": self.owner.generate_random_name.return_value,
+                        "tenant_id": "foo_tenant"}})
         self.assertEqual(
-            service.client.create_subnet.mock_calls,
-            [mock.call({"subnet":
-                        {"name": self.owner.generate_random_name.return_value,
-                         "enable_dhcp": True,
-                         "network_id": "foo_id",
-                         "tenant_id": "foo_tenant",
-                         "ip_version": service.SUBNET_IP_VERSION,
-                         "dns_nameservers": ["foo_nameservers"],
-                         "cidr": "foo_cidr"}})] * subnets_num)
-        self.assertEqual(service.client.add_interface_router.mock_calls,
+            [
+                mock.call(
+                    {"subnet": {
+                        "name": self.owner.generate_random_name.return_value,
+                        "network_id": "foo_id",
+                        "tenant_id": "foo_tenant",
+                        "ip_version": self.wrapper.SUBNET_IP_VERSION,
+                        "dns_nameservers": ["foo_nameservers"],
+                        "cidr": mock.ANY
+                    }}
+                )
+            ] * subnets_num,
+            self._nc.create_subnet.call_args_list,
+        )
+        self.assertEqual(self._nc.add_interface_router.call_args_list,
                          [mock.call("foo_router", {"subnet_id": "foo_subnet"})
                           for i in range(subnets_num)])
 
-    @mock.patch("rally_openstack.common.wrappers.network.NeutronWrapper"
-                ".supports_extension", return_value=(False, ""))
-    def test_delete_network(self, mock_neutron_wrapper_supports_extension):
-        service = self.get_wrapper()
-        service.client.list_ports.return_value = {"ports": []}
-        service.client.list_subnets.return_value = {"subnets": []}
-        service.client.delete_network.return_value = "foo_deleted"
-        result = service.delete_network({"id": "foo_id", "router_id": None,
-                                         "subnets": []})
-        self.assertEqual("foo_deleted", result)
-        self.assertEqual([], service.client.remove_gateway_router.mock_calls)
-        self.assertEqual(
-            [], service.client.remove_interface_router.mock_calls)
-        self.assertEqual([], service.client.delete_router.mock_calls)
-        self.assertEqual([], service.client.delete_subnet.mock_calls)
-        service.client.delete_network.assert_called_once_with("foo_id")
-
     def test_delete_v1_pool(self):
-        service = self.get_wrapper()
         pool = {"pool": {"id": "pool-id"}}
-        service.delete_v1_pool(pool["pool"]["id"])
-        service.client.delete_pool.assert_called_once_with("pool-id")
+        self.wrapper.delete_v1_pool(pool["pool"]["id"])
+        self.wrapper.client.delete_pool.assert_called_once_with("pool-id")
 
-    @mock.patch("rally_openstack.common.wrappers.network.NeutronWrapper"
-                ".supports_extension", return_value=(True, ""))
-    def test_delete_network_with_dhcp_and_router_and_ports_and_subnets(
-            self, mock_neutron_wrapper_supports_extension):
+    def test_delete_network(self):
+        self._nc.list_ports.return_value = {"ports": []}
+        self._nc.list_subnets.return_value = {"subnets": []}
+        self._nc.delete_network.return_value = "foo_deleted"
+        self.wrapper.delete_network(
+            {"id": "foo_id", "router_id": None, "subnets": [], "name": "x",
+             "status": "y", "external": False})
+        self.assertFalse(self._nc.remove_gateway_router.called)
+        self.assertFalse(self._nc.remove_interface_router.called)
+        self.assertFalse(self._nc.client.delete_router.called)
+        self.assertFalse(self._nc.client.delete_subnet.called)
+        self._nc.delete_network.assert_called_once_with("foo_id")
 
-        service = self.get_wrapper()
-        agents = ["foo_agent", "bar_agent"]
+    def test_delete_network_with_router_and_ports_and_subnets(self):
+
         subnets = ["foo_subnet", "bar_subnet"]
         ports = [{"id": "foo_port", "device_owner": "network:router_interface",
                   "device_id": "rounttter"},
                  {"id": "bar_port", "device_owner": "network:dhcp"}]
-        service.client.list_dhcp_agent_hosting_networks.return_value = (
-            {"agents": [{"id": agent_id} for agent_id in agents]})
-        service.client.list_ports.return_value = ({"ports": ports})
-        service.client.list_subnets.return_value = (
+        self._nc.list_ports.return_value = ({"ports": ports})
+        self._nc.list_subnets.return_value = (
             {"subnets": [{"id": id_} for id_ in subnets]})
-        service.client.delete_network.return_value = "foo_deleted"
 
-        result = service.delete_network(
+        self.wrapper.delete_network(
             {"id": "foo_id", "router_id": "foo_router", "subnets": subnets,
-             "lb_pools": []})
+             "lb_pools": [], "name": "foo", "status": "x", "external": False})
 
-        self.assertEqual("foo_deleted", result)
-        self.assertEqual(service.client.remove_gateway_router.mock_calls,
+        self.assertEqual(self._nc.remove_gateway_router.mock_calls,
                          [mock.call("foo_router")])
-        service.client.delete_port.assert_called_once_with(ports[1]["id"])
-        service.client.remove_interface_router.assert_called_once_with(
+        self._nc.delete_port.assert_called_once_with(ports[1]["id"])
+        self._nc.remove_interface_router.assert_called_once_with(
             ports[0]["device_id"], {"port_id": ports[0]["id"]})
-        self.assertEqual(service.client.delete_subnet.mock_calls,
-                         [mock.call(subnet_id) for subnet_id in subnets])
-        service.client.delete_network.assert_called_once_with("foo_id")
+        self.assertEqual(
+            [mock.call(subnet_id) for subnet_id in subnets],
+            self._nc.delete_subnet.call_args_list
+        )
+        self._nc.delete_network.assert_called_once_with("foo_id")
 
     @ddt.data({"exception_type": neutron_exceptions.NotFound,
                "should_raise": False},
@@ -295,193 +288,153 @@ class NeutronWrapperTestCase(test.TestCase):
               {"exception_type": KeyError,
                "should_raise": True})
     @ddt.unpack
-    @mock.patch("rally_openstack.common.wrappers.network.NeutronWrapper"
-                ".supports_extension", return_value=(True, ""))
     def test_delete_network_with_router_throw_exception(
-            self, mock_neutron_wrapper_supports_extension, exception_type,
-            should_raise):
+            self, exception_type, should_raise):
         # Ensure cleanup context still move forward even
         # remove_interface_router throw NotFound/BadRequest exception
 
-        service = self.get_wrapper()
-        service.client.remove_interface_router.side_effect = exception_type
-        agents = ["foo_agent", "bar_agent"]
+        self._nc.remove_interface_router.side_effect = exception_type
         subnets = ["foo_subnet", "bar_subnet"]
         ports = [{"id": "foo_port", "device_owner": "network:router_interface",
                   "device_id": "rounttter"},
                  {"id": "bar_port", "device_owner": "network:dhcp"}]
-        service.client.list_dhcp_agent_hosting_networks.return_value = (
-            {"agents": [{"id": agent_id} for agent_id in agents]})
-        service.client.list_ports.return_value = ({"ports": ports})
-        service.client.delete_network.return_value = "foo_deleted"
-        service.client.list_subnets.return_value = {"subnets": [
+        self._nc.list_ports.return_value = {"ports": ports}
+        self._nc.list_subnets.return_value = {"subnets": [
             {"id": id_} for id_ in subnets]}
 
         if should_raise:
-            self.assertRaises(exception_type, service.delete_network,
-                              {"id": "foo_id", "router_id": "foo_router",
-                               "subnets": subnets, "lb_pools": []})
-
-            self.assertNotEqual(service.client.delete_subnet.mock_calls,
-                                [mock.call(subnet_id) for subnet_id in
-                                 subnets])
-            self.assertFalse(service.client.delete_network.called)
+            self.assertRaises(
+                exception_type, self.wrapper.delete_network,
+                {"id": "foo_id", "name": "foo", "router_id": "foo_router",
+                 "subnets": subnets, "lb_pools": [], "status": "xxx",
+                 "external": False})
+            self.assertFalse(self._nc.delete_subnet.called)
+            self.assertFalse(self._nc.delete_network.called)
         else:
-            result = service.delete_network(
-                {"id": "foo_id", "router_id": "foo_router", "subnets": subnets,
-                 "lb_pools": []})
+            self.wrapper.delete_network(
+                {"id": "foo_id", "name": "foo", "status": "xxx",
+                 "router_id": "foo_router", "subnets": subnets,
+                 "lb_pools": [], "external": False})
 
-            self.assertEqual("foo_deleted", result)
-            service.client.delete_port.assert_called_once_with(ports[1]["id"])
-            service.client.remove_interface_router.assert_called_once_with(
+            self._nc.delete_port.assert_called_once_with(ports[1]["id"])
+            self._nc.remove_interface_router.assert_called_once_with(
                 ports[0]["device_id"], {"port_id": ports[0]["id"]})
-            self.assertEqual(service.client.delete_subnet.mock_calls,
-                             [mock.call(subnet_id) for subnet_id in subnets])
-            service.client.delete_network.assert_called_once_with("foo_id")
+            self.assertEqual(
+                [mock.call(subnet_id) for subnet_id in subnets],
+                self._nc.delete_subnet.call_args_list
+            )
+            self._nc.delete_network.assert_called_once_with("foo_id")
 
-        self.assertEqual(service.client.remove_gateway_router.mock_calls,
-                         [mock.call("foo_router")])
+            self._nc.remove_gateway_router.assert_called_once_with(
+                "foo_router")
 
     def test_list_networks(self):
-        service = self.get_wrapper()
-        service.client.list_networks.return_value = {"networks": "foo_nets"}
-        self.assertEqual("foo_nets", service.list_networks())
-        service.client.list_networks.assert_called_once_with()
+        self._nc.list_networks.return_value = {"networks": "foo_nets"}
+        self.assertEqual("foo_nets", self.wrapper.list_networks())
+        self._nc.list_networks.assert_called_once_with()
 
-    @mock.patch(SVC + "NeutronWrapper.external_networks")
-    def test_create_floating_ip(self, mock_neutron_wrapper_external_networks):
-        wrap = self.get_wrapper()
-        wrap.create_port = mock.Mock(return_value={"id": "port_id"})
-        wrap.client.create_floatingip = mock.Mock(
-            return_value={"floatingip": {"id": "fip_id",
-                                         "floating_ip_address": "fip_ip"}})
+    def test_create_floating_ip(self):
+        self._nc.create_port.return_value = {"port": {"id": "port_id"}}
+        self._nc.create_floatingip.return_value = {
+            "floatingip": {"id": "fip_id", "floating_ip_address": "fip_ip"}}
 
-        self.assertRaises(ValueError, wrap.create_floating_ip)
+        self.assertRaises(ValueError, self.wrapper.create_floating_ip)
 
-        mock_neutron_wrapper_external_networks.__get__ = lambda *args: []
+        self._nc.list_networks.return_value = {"networks": []}
         self.assertRaises(network.NetworkWrapperException,
-                          wrap.create_floating_ip, tenant_id="foo_tenant")
+                          self.wrapper.create_floating_ip,
+                          tenant_id="foo_tenant")
 
-        mock_neutron_wrapper_external_networks.__get__ = (
-            lambda *args: [{"id": "ext_id"}]
-        )
-        fip = wrap.create_floating_ip(tenant_id="foo_tenant",
-                                      port_id="port_id")
+        self._nc.list_networks.return_value = {"networks": [{"id": "ext_id"}]}
+        fip = self.wrapper.create_floating_ip(
+            tenant_id="foo_tenant", port_id="port_id")
         self.assertEqual({"id": "fip_id", "ip": "fip_ip"}, fip)
 
-        wrap.get_network = mock.Mock(
-            return_value={"id": "foo_net", "external": True})
-        wrap.create_floating_ip(tenant_id="foo_tenant", ext_network="ext_net",
-                                port_id="port_id")
+        self._nc.list_networks.return_value = {"networks": [
+            {"id": "ext_net_id", "name": "ext_net", "router:external": True}]}
+        self.wrapper.create_floating_ip(
+            tenant_id="foo_tenant", ext_network="ext_net", port_id="port_id")
 
-        wrap.get_network = mock.Mock(
-            return_value={"id": "foo_net", "external": False})
-        wrap.create_floating_ip(tenant_id="foo_tenant", port_id="port_id")
-
-        self.assertRaises(network.NetworkWrapperException,
-                          wrap.create_floating_ip, tenant_id="foo_tenant",
-                          ext_network="ext_net")
+        self.assertRaises(
+            network.NetworkWrapperException,
+            self.wrapper.create_floating_ip, tenant_id="foo_tenant",
+            ext_network="ext_net_2")
 
     def test_delete_floating_ip(self):
-        wrap = self.get_wrapper()
-        wrap.delete_floating_ip("fip_id")
-        wrap.delete_floating_ip("fip_id", ignored_kwarg="bar")
+        self.wrapper.delete_floating_ip("fip_id")
+        self.wrapper.delete_floating_ip("fip_id", ignored_kwarg="bar")
         self.assertEqual([mock.call("fip_id")] * 2,
-                         wrap.client.delete_floatingip.mock_calls)
+                         self._nc.delete_floatingip.call_args_list)
 
-    @mock.patch(SVC + "NeutronWrapper.external_networks")
-    def test_create_router(self, mock_neutron_wrapper_external_networks):
-        wrap = self.get_wrapper()
-        wrap.client.create_router.return_value = {"router": "foo_router"}
-        wrap.client.list_extensions.return_value = {
+    def test_create_router(self):
+        self._nc.create_router.return_value = {"router": "foo_router"}
+        self._nc.list_extensions.return_value = {
             "extensions": [{"alias": "ext-gw-mode"}]}
-        mock_neutron_wrapper_external_networks.__get__ = (
-            lambda *args: [{"id": "ext_id"}]
-        )
+        self._nc.list_networks.return_value = {"networks": [{"id": "ext_id"}]}
 
-        router = wrap.create_router()
-        wrap.client.create_router.assert_called_once_with(
+        router = self.wrapper.create_router()
+        self._nc.create_router.assert_called_once_with(
             {"router": {"name": self.owner.generate_random_name.return_value}})
         self.assertEqual("foo_router", router)
 
-        router = wrap.create_router(external=True, foo="bar")
-        wrap.client.create_router.assert_called_with(
+        self.wrapper.create_router(external=True, flavor_id="bar")
+        self._nc.create_router.assert_called_with(
             {"router": {"name": self.owner.generate_random_name.return_value,
                         "external_gateway_info": {
                             "network_id": "ext_id",
                             "enable_snat": True},
-                        "foo": "bar"}})
+                        "flavor_id": "bar"}})
 
-    @mock.patch(SVC + "NeutronWrapper.external_networks")
-    def test_create_router_without_ext_gw_mode_extension(
-            self, mock_neutron_wrapper_external_networks):
-        wrap = self.get_wrapper()
-        wrap.client.create_router.return_value = {"router": "foo_router"}
-        wrap.client.list_extensions.return_value = {"extensions": []}
-        mock_neutron_wrapper_external_networks.__get__ = (
-            lambda *args: [{"id": "ext_id"}]
-        )
+    def test_create_router_without_ext_gw_mode_extension(self):
+        self._nc.create_router.return_value = {"router": "foo_router"}
+        self._nc.list_extensions.return_value = {"extensions": []}
+        self._nc.list_networks.return_value = {"networks": [{"id": "ext_id"}]}
 
-        router = wrap.create_router()
-        wrap.client.create_router.assert_called_once_with(
+        router = self.wrapper.create_router()
+        self._nc.create_router.assert_called_once_with(
             {"router": {"name": self.owner.generate_random_name.return_value}})
         self.assertEqual(router, "foo_router")
 
-        router = wrap.create_router(external=True, foo="bar")
-        wrap.client.create_router.assert_called_with(
+        self.wrapper.create_router(external=True, flavor_id="bar")
+        self._nc.create_router.assert_called_with(
             {"router": {"name": self.owner.generate_random_name.return_value,
                         "external_gateway_info": {"network_id": "ext_id"},
-                        "foo": "bar"}})
+                        "flavor_id": "bar"}})
 
     def test_create_port(self):
-        wrap = self.get_wrapper()
-        wrap.client.create_port.return_value = {"port": "foo_port"}
+        self._nc.create_port.return_value = {"port": "foo_port"}
 
-        port = wrap.create_port("foo_net")
-        wrap.client.create_port.assert_called_once_with(
+        port = self.wrapper.create_port("foo_net")
+        self._nc.create_port.assert_called_once_with(
             {"port": {"network_id": "foo_net",
                       "name": self.owner.generate_random_name.return_value}})
         self.assertEqual("foo_port", port)
 
-        port = wrap.create_port("foo_net", foo="bar")
-        wrap.client.create_port.assert_called_with(
+        port = self.wrapper.create_port("foo_net", foo="bar")
+        self.wrapper.client.create_port.assert_called_with(
             {"port": {"network_id": "foo_net",
                       "name": self.owner.generate_random_name.return_value,
                       "foo": "bar"}})
 
     def test_supports_extension(self):
-        wrap = self.get_wrapper()
-        wrap.client.list_extensions.return_value = (
+        self._nc.list_extensions.return_value = (
             {"extensions": [{"alias": "extension"}]})
-        self.assertTrue(wrap.supports_extension("extension")[0])
+        self.assertTrue(self.wrapper.supports_extension("extension")[0])
 
-        wrap.client.list_extensions.return_value = (
+        self.wrapper.neutron._cached_supported_extensions = None
+        self._nc.list_extensions.return_value = (
             {"extensions": [{"alias": "extension"}]})
-        self.assertFalse(wrap.supports_extension("dummy-group")[0])
+        self.assertFalse(self.wrapper.supports_extension("dummy-group")[0])
 
-        wrap.client.list_extensions.return_value = {}
-        self.assertFalse(wrap.supports_extension("extension")[0])
+        self.wrapper.neutron._cached_supported_extensions = None
+        self._nc.list_extensions.return_value = {"extensions": []}
+        self.assertFalse(self.wrapper.supports_extension("extension")[0])
 
 
 class FunctionsTestCase(test.TestCase):
 
-    def test_generate_cidr(self):
-        with mock.patch("rally_openstack.common.wrappers.network.cidr_incr",
-                        iter(range(1, 4))):
-            self.assertEqual("10.2.1.0/24", network.generate_cidr())
-            self.assertEqual("10.2.2.0/24", network.generate_cidr())
-            self.assertEqual("10.2.3.0/24", network.generate_cidr())
-
-        with mock.patch("rally_openstack.common.wrappers.network.cidr_incr",
-                        iter(range(1, 4))):
-            start_cidr = "1.1.0.0/26"
-            self.assertEqual("1.1.0.64/26", network.generate_cidr(start_cidr))
-            self.assertEqual("1.1.0.128/26", network.generate_cidr(start_cidr))
-            self.assertEqual("1.1.0.192/26", network.generate_cidr(start_cidr))
-
     def test_wrap(self):
         mock_clients = mock.Mock()
-        mock_clients.nova().networks.list.return_value = []
         config = {"fakearg": "fake"}
         owner = Owner()
 

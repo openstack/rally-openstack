@@ -14,24 +14,20 @@
 #    under the License.
 
 import abc
-import itertools
-import netaddr
 
 from neutronclient.common import exceptions as neutron_exceptions
+
 from rally.common import cfg
 from rally.common import logging
-from rally.common import utils
 from rally import exceptions
 
 from rally_openstack.common import consts
+from rally_openstack.common.services.network import net_utils
+from rally_openstack.common.services.network import neutron
 
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-
-
-cidr_incr = utils.RAMInt()
-ipv6_cidr_incr = utils.RAMInt()
 
 
 def generate_cidr(start_cidr="10.2.0.0/24"):
@@ -44,11 +40,7 @@ def generate_cidr(start_cidr="10.2.0.0/24"):
     :param start_cidr: start CIDR str
     :returns: next available CIDR str
     """
-    if netaddr.IPNetwork(start_cidr).version == 4:
-        cidr = str(netaddr.IPNetwork(start_cidr).next(next(cidr_incr)))
-    else:
-        cidr = str(netaddr.IPNetwork(start_cidr).next(next(ipv6_cidr_incr)))
-    LOG.debug("CIDR generated: %s" % cidr)
+    ip_version, cidr = net_utils.generate_cidr(start_cidr=start_cidr)
     return cidr
 
 
@@ -69,7 +61,7 @@ class NetworkWrapper(object, metaclass=abc.ABCMeta):
     START_IPV6_CIDR = "dead:beaf::/64"
     SERVICE_IMPL = None
 
-    def __init__(self, clients, owner, config=None):
+    def __init__(self, clients, owner, config=None, atomics=None):
         """Returns available network wrapper instance.
 
         :param clients: rally.plugins.openstack.osclients.Clients instance
@@ -124,10 +116,22 @@ class NeutronWrapper(NetworkWrapper):
     LB_METHOD = "ROUND_ROBIN"
     LB_PROTOCOL = "HTTP"
 
+    def __init__(self, *args, **kwargs):
+        super(NeutronWrapper, self).__init__(*args, **kwargs)
+
+        class _SingleClientWrapper(object):
+            def neutron(_self):
+                return self.client
+
+        self.neutron = neutron.NeutronService(
+            clients=_SingleClientWrapper(),
+            name_generator=self.owner.generate_random_name,
+            atomic_inst=getattr(self.owner, "_atomic_actions", [])
+        )
+
     @property
     def external_networks(self):
-        return self.client.list_networks(**{
-            "router:external": True})["networks"]
+        return self.neutron.list_networks(router_external=True)
 
     @property
     def ext_gw_mode_enabled(self):
@@ -135,25 +139,30 @@ class NeutronWrapper(NetworkWrapper):
 
         Without this extension, we can't pass the enable_snat parameter.
         """
-        return any(e["alias"] == "ext-gw-mode"
-                   for e in self.client.list_extensions()["extensions"])
+        return self.neutron.supports_extension("ext-gw-mode", silent=True)
 
     def get_network(self, net_id=None, name=None):
         net = None
         try:
             if net_id:
-                net = self.client.show_network(net_id)["network"]
+                net = self.neutron.get_network(net_id)
             else:
-                for net in self.client.list_networks(name=name)["networks"]:
-                    break
+                networks = self.neutron.list_networks(name=name)
+                if networks:
+                    net = networks[0]
+        except neutron_exceptions.NeutronClientException:
+            pass
+
+        if net:
             return {"id": net["id"],
                     "name": net["name"],
-                    "tenant_id": net["tenant_id"],
+                    "tenant_id": net.get("tenant_id",
+                                         net.get("project_id", None)),
                     "status": net["status"],
-                    "external": net["router:external"],
-                    "subnets": net["subnets"],
+                    "external": net.get("router:external", False),
+                    "subnets": net.get("subnets", []),
                     "router_id": None}
-        except (TypeError, neutron_exceptions.NeutronClientException):
+        else:
             raise NetworkWrapperException(
                 "Network not found: %s" % (name or net_id))
 
@@ -164,14 +173,12 @@ class NeutronWrapper(NetworkWrapper):
         :param **kwargs: POST /v2.0/routers request options
         :returns: neutron router dict
         """
-        kwargs["name"] = self.owner.generate_random_name()
+        kwargs.pop("name", None)
+        if "tenant_id" in kwargs and "project_id" not in kwargs:
+            kwargs["project_id"] = kwargs.pop("tenant_id")
 
-        if external and "external_gateway_info" not in kwargs:
-            for net in self.external_networks:
-                kwargs["external_gateway_info"] = {"network_id": net["id"]}
-                if self.ext_gw_mode_enabled:
-                    kwargs["external_gateway_info"]["enable_snat"] = True
-        return self.client.create_router({"router": kwargs})["router"]
+        return self.neutron.create_router(
+            discover_external_gw=external, **kwargs)
 
     def create_v1_pool(self, tenant_id, subnet_id, **kwargs):
         """Create LB Pool (v1).
@@ -194,9 +201,10 @@ class NeutronWrapper(NetworkWrapper):
 
     def _generate_cidr(self, ip_version=4):
         # TODO(amaretskiy): Generate CIDRs unique for network, not cluster
-        return generate_cidr(
+        ip_version, cidr = net_utils.generate_cidr(
             start_cidr=self.start_cidr if ip_version == 4
             else self.start_ipv6_cidr)
+        return cidr
 
     def _create_network_infrastructure(self, tenant_id, **kwargs):
         """Create network.
@@ -218,51 +226,34 @@ class NeutronWrapper(NetworkWrapper):
                        See above for recognized keyword args.
         :returns: dict, network data
         """
-        network_args = {"network": kwargs.get("network_create_args", {})}
-        network_args["network"].update({
-            "tenant_id": tenant_id,
-            "name": self.owner.generate_random_name()})
-        network = self.client.create_network(network_args)["network"]
+        network_args = dict(kwargs.get("network_create_args", {}))
+        network_args["project_id"] = tenant_id
 
-        router = None
         router_args = dict(kwargs.get("router_create_args", {}))
         add_router = kwargs.get("add_router", False)
-        if router_args or add_router:
-            router_args["external"] = (
-                router_args.get("external", False) or add_router)
-            router_args["tenant_id"] = tenant_id
-            router = self.create_router(**router_args)
+        if not (router_args or add_router):
+            router_args = None
+        else:
+            router_args["project_id"] = tenant_id
+            router_args["discover_external_gw"] = router_args.pop(
+                "external", False) or add_router
+        subnet_create_args = {"project_id": tenant_id}
+        if "dns_nameservers" in kwargs:
+            subnet_create_args["dns_nameservers"] = kwargs["dns_nameservers"]
 
-        dualstack = kwargs.get("dualstack", False)
-
-        subnets = []
-        subnets_num = kwargs.get("subnets_num", 0)
-        ip_versions = itertools.cycle(
-            [self.SUBNET_IP_VERSION, self.SUBNET_IPV6_VERSION]
-            if dualstack else [self.SUBNET_IP_VERSION])
-        for i in range(subnets_num):
-            ip_version = next(ip_versions)
-            subnet_args = {
-                "subnet": {
-                    "tenant_id": tenant_id,
-                    "network_id": network["id"],
-                    "name": self.owner.generate_random_name(),
-                    "ip_version": ip_version,
-                    "cidr": self._generate_cidr(ip_version),
-                    "enable_dhcp": True,
-                    "dns_nameservers": (
-                        kwargs.get("dns_nameservers", ["8.8.8.8", "8.8.4.4"])
-                        if ip_version == 4
-                        else kwargs.get("dns_nameservers",
-                                        ["dead:beaf::1", "dead:beaf::2"]))
-                }
-            }
-            subnet = self.client.create_subnet(subnet_args)["subnet"]
-            subnets.append(subnet)
-
-            if router:
-                self.client.add_interface_router(router["id"],
-                                                 {"subnet_id": subnet["id"]})
+        net_topo = self.neutron.create_network_topology(
+            network_create_args=network_args,
+            router_create_args=router_args,
+            subnet_create_args=subnet_create_args,
+            subnets_dualstack=kwargs.get("dualstack", False),
+            subnets_count=kwargs.get("subnets_num", 0)
+        )
+        network = net_topo["network"]
+        subnets = net_topo["subnets"]
+        if net_topo["routers"]:
+            router = net_topo["routers"][0]
+        else:
+            router = None
 
         return {
             "network": {
@@ -309,50 +300,33 @@ class NeutronWrapper(NetworkWrapper):
         self.client.delete_pool(pool_id)
 
     def delete_network(self, network):
+        """Delete network
 
-        if network["router_id"]:
-            self.client.remove_gateway_router(network["router_id"])
+        :param network: network object returned by create_network method
+        """
 
-        for port in self.client.list_ports(network_id=network["id"])["ports"]:
-            if port["device_owner"] in (
-                    "network:router_interface",
-                    "network:router_interface_distributed",
-                    "network:ha_router_replicated_interface",
-                    "network:router_gateway"):
-                try:
-                    self.client.remove_interface_router(
-                        port["device_id"], {"port_id": port["id"]})
-                except (neutron_exceptions.BadRequest,
-                        neutron_exceptions.NotFound):
-                    # Some neutron plugins don't use router as
-                    # the device ID. Also, some plugin doesn't allow
-                    # to update the ha rotuer interface as there is
-                    # an internal logic to update the interface/data model
-                    # instead.
-                    pass
-            else:
-                try:
-                    self.client.delete_port(port["id"])
-                except neutron_exceptions.PortNotFoundClient:
-                    # port is auto-removed
-                    pass
+        router = {"id": network["router_id"]} if network["router_id"] else None
+        # delete_network_topology uses only IDs, but let's transmit as much as
+        # possible info
+        topo = {
+            "network": {
+                "id": network["id"],
+                "name": network["name"],
+                "status": network["status"],
+                "subnets": network["subnets"],
+                "router:external": network["external"]
+            },
+            "subnets": [{"id": s} for s in network["subnets"]],
+            "routers": [router] if router else []
+        }
 
-        for subnet in self.client.list_subnets(
-                network_id=network["id"])["subnets"]:
-            self._delete_subnet(subnet["id"])
-
-        responce = self.client.delete_network(network["id"])
-
-        if network["router_id"]:
-            self.client.delete_router(network["router_id"])
-
-        return responce
+        self.neutron.delete_network_topology(topo)
 
     def _delete_subnet(self, subnet_id):
-        self.client.delete_subnet(subnet_id)
+        self.neutron.delete_subnet(subnet_id)
 
     def list_networks(self):
-        return self.client.list_networks()["networks"]
+        return self.neutron.list_networks()
 
     def create_port(self, network_id, **kwargs):
         """Create neutron port.
@@ -361,9 +335,7 @@ class NeutronWrapper(NetworkWrapper):
         :param **kwargs: POST /v2.0/ports request options
         :returns: neutron port dict
         """
-        kwargs["network_id"] = network_id
-        kwargs["name"] = self.owner.generate_random_name()
-        return self.client.create_port({"port": kwargs})["port"]
+        return self.neutron.create_port(network_id=network_id, **kwargs)
 
     def create_floating_ip(self, ext_network=None,
                            tenant_id=None, port_id=None, **kwargs):
@@ -377,34 +349,13 @@ class NeutronWrapper(NetworkWrapper):
         """
         if not tenant_id:
             raise ValueError("Missed tenant_id")
-
-        if type(ext_network) is dict:
-            net_id = ext_network["id"]
-        elif ext_network:
-            ext_net = self.get_network(name=ext_network)
-            if not ext_net["external"]:
-                raise NetworkWrapperException("Network is not external: %s"
-                                              % ext_network)
-            net_id = ext_net["id"]
-        else:
-            ext_networks = self.external_networks
-            if not ext_networks:
-                raise NetworkWrapperException(
-                    "Failed to allocate floating IP: "
-                    "no external networks found")
-            net_id = ext_networks[0]["id"]
-
-        kwargs = {"floatingip": {"floating_network_id": net_id,
-                                 "tenant_id": tenant_id}}
-
-        if not CONF.openstack.pre_newton_neutron:
-            descr = self.owner.generate_random_name()
-            kwargs["floatingip"]["description"] = descr
-
-        if port_id:
-            kwargs["floatingip"]["port_id"] = port_id
-
-        fip = self.client.create_floatingip(kwargs)["floatingip"]
+        try:
+            fip = self.neutron.create_floatingip(
+                floating_network=ext_network, project_id=tenant_id,
+                port_id=port_id)
+        except (exceptions.NotFoundException,
+                exceptions.GetResourceFailure) as e:
+            raise NetworkWrapperException(str(e)) from None
         return {"id": fip["id"], "ip": fip["floating_ip_address"]}
 
     def delete_floating_ip(self, fip_id, **kwargs):
@@ -413,7 +364,7 @@ class NeutronWrapper(NetworkWrapper):
         :param fip_id: int floating IP id
         :param **kwargs: for compatibility, not used here
         """
-        self.client.delete_floatingip(fip_id)
+        self.neutron.delete_floatingip(fip_id)
 
     def supports_extension(self, extension):
         """Check whether a neutron extension is supported
@@ -422,11 +373,12 @@ class NeutronWrapper(NetworkWrapper):
         :returns: result tuple
         :rtype: (bool, string)
         """
-        extensions = self.client.list_extensions().get("extensions", [])
-        if any(ext.get("alias") == extension for ext in extensions):
-            return True, ""
+        try:
+            self.neutron.supports_extension(extension)
+        except exceptions.NotFoundException as e:
+            return False, str(e)
 
-        return False, "Neutron driver does not support %s" % extension
+        return True, ""
 
 
 def wrap(clients, owner, config=None):

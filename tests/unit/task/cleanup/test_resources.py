@@ -149,16 +149,6 @@ class NeutronMixinTestCase(test.TestCase):
         neut.user = mock.MagicMock()
         self.assertEqual(neut.user.neutron.return_value, neut._manager())
 
-    @mock.patch("%s.NeutronMixin._manager" % BASE)
-    def test_supports_extension(self, mock__manager):
-        mock__manager().list_extensions.return_value = {
-            "extensions": [{"alias": "foo"}, {"alias": "bar"}]
-        }
-        neut = self.get_neutron_mixin()
-        self.assertTrue(neut.supports_extension("foo"))
-        self.assertTrue(neut.supports_extension("bar"))
-        self.assertFalse(neut.supports_extension("foobar"))
-
     def test_id(self):
         neut = self.get_neutron_mixin()
         neut.raw_resource = {"id": "test"}
@@ -200,11 +190,12 @@ class NeutronLbaasV1MixinTestCase(test.TestCase):
     def get_neutron_lbaasv1_mixin(self, extensions=None):
         if extensions is None:
             extensions = []
-        neut = resources.NeutronLbaasV1Mixin()
+        user = mock.MagicMock()
+        neut = resources.NeutronLbaasV1Mixin(user=user)
         neut._service = "neutron"
         neut._resource = "some_resource"
         neut._manager = mock.Mock()
-        neut._manager().list_extensions.return_value = {
+        user.neutron.return_value.list_extensions.return_value = {
             "extensions": [{"alias": ext} for ext in extensions]
         }
         return neut
@@ -234,11 +225,13 @@ class NeutronLbaasV2MixinTestCase(test.TestCase):
     def get_neutron_lbaasv2_mixin(self, extensions=None):
         if extensions is None:
             extensions = []
-        neut = resources.NeutronLbaasV2Mixin()
+
+        user = mock.MagicMock()
+        neut = resources.NeutronLbaasV2Mixin(user=user)
         neut._service = "neutron"
         neut._resource = "some_resource"
         neut._manager = mock.Mock()
-        neut._manager().list_extensions.return_value = {
+        user.neutron.return_value.list_extensions.return_value = {
             "extensions": [{"alias": ext} for ext in extensions]
         }
         return neut
@@ -310,7 +303,8 @@ class NeutronBgpvpnTestCase(test.TestCase):
         admin = mock.Mock()
         neut = resources.NeutronBgpvpn(admin=admin)
         neut._manager = mock.Mock()
-        neut._manager().list_extensions.return_value = {
+        nc = admin.neutron.return_value
+        nc.list_extensions.return_value = {
             "extensions": [{"alias": ext} for ext in extensions]
         }
         return neut
