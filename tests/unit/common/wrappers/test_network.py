@@ -38,9 +38,10 @@ class NeutronWrapperTestCase(test.TestCase):
         super(NeutronWrapperTestCase, self).setUp()
         self.owner = Owner()
         self.owner.generate_random_name = mock.Mock()
-        self.wrapper = network.NeutronWrapper(mock.MagicMock(),
-                                              self.owner,
-                                              config={})
+        clients = mock.MagicMock()
+        clients.credential.permission = consts.EndpointPermission.ADMIN
+        self.wrapper = network.NeutronWrapper(
+            clients, self.owner, config={})
         self._nc = self.wrapper.neutron.client
 
     def test_SUBNET_IP_VERSION(self):

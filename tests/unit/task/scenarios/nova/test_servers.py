@@ -919,9 +919,15 @@ class NovaServersTestCase(test.ScenarioTestCase):
         scenario._get_console_url_server.assert_called_once_with(
             server, "novnc")
 
-    @mock.patch(NOVA_SERVERS_MODULE + ".network_wrapper.wrap")
-    def test_boot_and_associate_floating_ip(self, mock_wrap):
-        scenario = servers.BootAndAssociateFloatingIp(self.context)
+    def test_boot_and_associate_floating_ip(self):
+        clients = mock.MagicMock()
+        neutronclient = clients.neutron.return_value
+        floatingip = "floatingip"
+        neutronclient.create_floatingip.return_value = {
+            "floatingip": floatingip}
+
+        scenario = servers.BootAndAssociateFloatingIp(self.context,
+                                                      clients=clients)
         server = mock.Mock()
         scenario._boot_server = mock.Mock(return_value=server)
         scenario._associate_floating_ip = mock.Mock()
@@ -932,16 +938,21 @@ class NovaServersTestCase(test.ScenarioTestCase):
 
         scenario._boot_server.assert_called_once_with(image, flavor,
                                                       fakearg="fakearg")
-        net_wrap = mock_wrap.return_value
-        net_wrap.create_floating_ip.assert_called_once_with(
-            tenant_id=server.tenant_id)
+        neutronclient.create_floatingip.assert_called_once_with(
+            {"floatingip": mock.ANY}
+        )
         scenario._associate_floating_ip.assert_called_once_with(
-            server, net_wrap.create_floating_ip.return_value["ip"])
+            server, floatingip)
 
-    @mock.patch(NOVA_SERVERS_MODULE + ".network_wrapper.wrap")
-    def test_boot_server_associate_and_dissociate_floating_ip(self, mock_wrap):
+    def test_boot_server_associate_and_dissociate_floating_ip(self):
+        clients = mock.MagicMock()
+        neutronclient = clients.neutron.return_value
+        floatingip = "floatingip"
+        neutronclient.create_floatingip.return_value = {
+            "floatingip": floatingip}
+
         scenario = servers.BootServerAssociateAndDissociateFloatingIP(
-            self.context)
+            self.context, clients=clients)
         server = mock.Mock()
         scenario._boot_server = mock.Mock(return_value=server)
         scenario._associate_floating_ip = mock.Mock()
@@ -953,13 +964,13 @@ class NovaServersTestCase(test.ScenarioTestCase):
 
         scenario._boot_server.assert_called_once_with(image, flavor,
                                                       fakearg="fakearg")
-        net_wrap = mock_wrap.return_value
-        net_wrap.create_floating_ip.assert_called_once_with(
-            tenant_id=server.tenant_id)
+        neutronclient.create_floatingip.assert_called_once_with(
+            {"floatingip": mock.ANY}
+        )
         scenario._associate_floating_ip.assert_called_once_with(
-            server, net_wrap.create_floating_ip.return_value["ip"])
+            server, floatingip)
         scenario._dissociate_floating_ip.assert_called_once_with(
-            server, net_wrap.create_floating_ip.return_value["ip"])
+            server, floatingip)
 
     def test_boot_and_update_server(self):
         scenario = servers.BootAndUpdateServer(self.context)

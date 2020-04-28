@@ -17,7 +17,6 @@ from unittest import mock
 
 import ddt
 
-from rally import exceptions as rally_exceptions
 from rally_openstack.task.scenarios.neutron import network
 from tests.unit import test
 
@@ -25,139 +24,179 @@ BASE = "rally_openstack.task.scenarios.neutron.network"
 
 
 @ddt.ddt
-class NeutronNetworksTestCase(test.ScenarioTestCase):
+class NeutronNetworksTestCase(test.TestCase):
+    def setUp(self):
+        super(NeutronNetworksTestCase, self).setUp()
+        patch = mock.patch("rally_openstack.common.osclients.Clients")
+        self.clients = patch.start().return_value
+        self.addCleanup(patch.stop)
+
+        self.nc = self.clients.neutron.return_value
+        self.context = self.get_test_context()
+
+    @staticmethod
+    def get_test_context():
+        ctx = test.get_test_context()
+        ctx.update(
+            user_choice_method="random",
+            tenants={"tenant-1": {}},
+            users=[
+                {
+                    "tenant_id": "tenant-1",
+                    "credential": {}
+                }
+            ]
+        )
+        return ctx
 
     @ddt.data(
         {"network_create_args": {}},
-        {"network_create_args": {"name": "given-name"}},
+        {"network_create_args": {"admin_state_up": False}},
         {"network_create_args": {"provider:network_type": "vxlan"}}
     )
     @ddt.unpack
-    @mock.patch("%s.CreateAndListNetworks._list_networks" % BASE)
-    @mock.patch("%s.CreateAndListNetworks._create_network" % BASE)
-    def test_create_and_list_networks(self,
-                                      mock__create_network,
-                                      mock__list_networks,
-                                      network_create_args):
+    def test_create_and_list_networks(self, network_create_args):
+        net = {
+            "id": "network-id",
+            "name": "network-name",
+            "admin_state_up": False
+        }
+        self.nc.create_network.return_value = {"network": net}
+
         scenario = network.CreateAndListNetworks(self.context)
-
         scenario.run(network_create_args=network_create_args)
-        mock__create_network.assert_called_once_with(network_create_args)
-        mock__list_networks.assert_called_once_with()
 
-        mock__create_network.reset_mock()
-        mock__list_networks.reset_mock()
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.nc.list_networks.assert_called_once_with()
 
     @ddt.data(
         {"network_create_args": {}},
-        {"network_create_args": {"name": "given-name"}},
+        {"network_create_args": {"admin_state_up": False}},
     )
     @ddt.unpack
-    @mock.patch("%s.CreateAndShowNetwork._show_network" % BASE)
-    @mock.patch("%s.CreateAndShowNetwork._create_network" % BASE)
-    def test_create_and_show_network(self,
-                                     mock__create_network,
-                                     mock__show_network,
-                                     network_create_args):
-        scenario = network.CreateAndShowNetwork(self.context)
-        mock_net = mock.Mock()
+    def test_create_and_show_network(self, network_create_args):
+        net = {
+            "id": "network-id",
+            "name": "network-name",
+            "admin_state_up": False
+        }
+        self.nc.create_network.return_value = {"network": net}
 
-        mock__create_network.return_value = mock_net
+        scenario = network.CreateAndShowNetwork(self.context)
+
         scenario.run(network_create_args=network_create_args)
 
-        mock__create_network.assert_called_once_with(network_create_args)
-        mock__show_network.assert_called_once_with(mock_net)
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.nc.show_network.assert_called_once_with(net["id"])
 
-        mock__create_network.reset_mock()
-        mock__show_network.reset_mock()
+    def test_create_and_update_networks(self):
+        net = {
+            "id": "network-id",
+            "name": "network-name",
+            "admin_state_up": False
+        }
+        self.nc.create_network.return_value = {"network": net}
 
-    @mock.patch("%s.CreateAndUpdateNetworks._update_network" % BASE)
-    @mock.patch("%s.CreateAndUpdateNetworks._create_network" % BASE,
-                return_value={
-                    "network": {
-                        "id": "network-id",
-                        "name": "network-name",
-                        "admin_state_up": False
-                    }
-                })
-    def test_create_and_update_networks(self,
-                                        mock__create_network,
-                                        mock__update_network):
         scenario = network.CreateAndUpdateNetworks(self.context)
 
-        network_update_args = {"name": "_updated", "admin_state_up": True}
+        network_update_args = {"admin_state_up": True}
 
         # Default options
         scenario.run(network_update_args=network_update_args)
 
-        mock__create_network.assert_called_once_with({})
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY}}
+        )
+        self.nc.update_network.assert_called_once_with(
+            net["id"], {"network": network_update_args}
+        )
 
-        mock__update_network.assert_has_calls(
-            [mock.call(
-                mock__create_network.return_value, network_update_args
-            )])
+        self.nc.create_network.reset_mock()
+        self.nc.update_network.reset_mock()
 
-        mock__create_network.reset_mock()
-        mock__update_network.reset_mock()
-
-        # Explicit network name is specified
+        # admin_state_up is specified
         network_create_args = {
-            "name": "network-name",
             "admin_state_up": False
         }
 
         scenario.run(network_create_args=network_create_args,
                      network_update_args=network_update_args)
-        mock__create_network.assert_called_once_with(network_create_args)
-        mock__update_network.assert_has_calls(
-            [mock.call(mock__create_network.return_value,
-                       network_update_args)])
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.nc.update_network.assert_called_once_with(
+            net["id"], {"network": network_update_args}
+        )
 
-    @mock.patch("%s.CreateAndDeleteNetworks._delete_network" % BASE)
-    @mock.patch("%s.CreateAndDeleteNetworks._create_network" % BASE)
-    def test_create_and_delete_networks(self,
-                                        mock__create_network,
-                                        mock__delete_network):
+    def test_create_and_delete_networks(self):
+        net = {
+            "id": "network-id",
+            "name": "network-name",
+            "admin_state_up": False
+        }
+        self.nc.create_network.return_value = {"network": net}
+
         scenario = network.CreateAndDeleteNetworks(self.context)
 
         # Default options
         network_create_args = {}
-        scenario.run()
-        mock__create_network.assert_called_once_with(network_create_args)
-        self.assertTrue(mock__delete_network.call_count)
+        scenario.run(network_create_args=network_create_args)
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY}}
+        )
+        self.assertTrue(self.nc.delete_network.called)
 
-        mock__create_network.reset_mock()
-        mock__delete_network.reset_mock()
+        self.nc.create_network.reset_mock()
+        self.nc.delete_network.reset_mock()
 
         # Explicit network name is specified
-        network_create_args = {"name": "given-name"}
+        network_create_args = {"admin_state_up": True}
         scenario.run(network_create_args=network_create_args)
-        mock__create_network.assert_called_once_with(network_create_args)
-        self.assertTrue(mock__delete_network.call_count)
+
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertTrue(self.nc.delete_network.called)
 
     def test_create_and_list_subnets(self):
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_cidr_start = "default_cidr"
+        subnet_cidr_start = "10.2.0.0/24"
         subnets_per_network = 5
         net = mock.MagicMock()
 
+        self.nc.create_network.return_value = {"network": net}
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": i}} for i in range(subnets_per_network)
+        ]
+
         scenario = network.CreateAndListSubnets(self.context)
-        scenario._create_network = mock.Mock(return_value=net)
-        scenario._create_subnets = mock.Mock()
-        scenario._list_subnets = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      subnet_create_args=subnet_create_args,
                      subnet_cidr_start=subnet_cidr_start,
                      subnets_per_network=subnets_per_network)
 
-        scenario._create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_subnets.assert_called_once_with(
-            net, subnet_create_args, subnet_cidr_start, subnets_per_network)
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
 
-        scenario._list_subnets.assert_called_once_with()
+        self.nc.list_subnets.assert_called_once_with()
 
     def test_create_and_show_subnets(self):
         network_create_args = {"router:external": True}
@@ -166,10 +205,12 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
         subnets_per_network = 5
         net = mock.MagicMock()
 
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": i}} for i in range(subnets_per_network)
+        ]
+
         scenario = network.CreateAndShowSubnets(self.context)
         scenario._get_or_create_network = mock.Mock(return_value=net)
-        scenario._create_subnets = mock.MagicMock()
-        scenario._show_subnet = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      subnet_create_args=subnet_create_args,
@@ -177,46 +218,68 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                      subnets_per_network=subnets_per_network)
 
         scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_subnets.assert_called_once_with(
-            net, subnet_create_args, subnet_cidr_start, subnets_per_network)
-        for subnet in scenario._create_subnets.return_value:
-            scenario._show_subnet.assert_called_with(subnet)
+            **network_create_args)
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(i) for i in range(subnets_per_network)],
+            self.nc.show_subnet.call_args_list
+        )
 
     def test_set_and_clear_router_gateway(self):
         network_create_args = {"router:external": True}
         router_create_args = {"admin_state_up": True}
         enable_snat = True
-        ext_net = mock.MagicMock()
-        router = mock.MagicMock()
-        scenario = network.SetAndClearRouterGateway(self.context)
-        scenario._create_network = mock.Mock(return_value=ext_net)
-        scenario._create_router = mock.Mock(return_value=router)
-        scenario._add_gateway_router = mock.Mock()
-        scenario._remove_gateway_router = mock.Mock()
+        ext_net = {"id": "ext-net-1"}
+        router = {"id": "router-id"}
 
-        scenario.run(enable_snat, network_create_args, router_create_args)
+        self.nc.create_network.return_value = {"network": ext_net}
+        self.nc.create_router.return_value = {"router": router}
+        self.nc.list_extensions.return_value = {
+            "extensions": [{"alias": "ext-gw-mode"}]
+        }
 
-        scenario._create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_router.assert_called_once_with(router_create_args)
-        scenario._add_gateway_router.assert_called_once_with(router, ext_net,
-                                                             enable_snat)
-        scenario._remove_gateway_router.assert_called_once_with(router)
+        network.SetAndClearRouterGateway(self.context).run(
+            enable_snat, network_create_args, router_create_args
+        )
+
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+
+        self.nc.create_router.assert_called_once_with(
+            {"router": {"name": mock.ANY, **router_create_args}}
+        )
+
+        self.nc.add_gateway_router.assert_called_once_with(
+            router["id"], {"network_id": ext_net["id"],
+                           "enable_snat": enable_snat}
+        )
+        self.nc.remove_gateway_router.assert_called_once_with(router["id"])
 
     def test_create_and_update_subnets(self):
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_update_args = {"enabled_dhcp": True}
-        subnet_cidr_start = "default_cidr"
+        subnet_update_args = {"enable_dhcp": True}
+        subnet_cidr_start = "1.1.0.0/30"
         subnets_per_network = 5
         net = mock.MagicMock()
-        subnets = [mock.MagicMock() for _ in range(subnets_per_network)]
+
+        self.nc.create_network.return_value = {"network": net}
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": i}} for i in range(subnets_per_network)
+        ]
 
         scenario = network.CreateAndUpdateSubnets(self.context)
-        scenario._create_network = mock.Mock(return_value=net)
-        scenario._create_subnets = mock.Mock(return_value=subnets)
-        scenario._update_subnet = mock.Mock()
 
         scenario.run(subnet_update_args,
                      network_create_args=network_create_args,
@@ -224,25 +287,39 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                      subnet_cidr_start=subnet_cidr_start,
                      subnets_per_network=subnets_per_network)
 
-        scenario._create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_subnets.assert_called_once_with(
-            net, subnet_create_args, subnet_cidr_start, subnets_per_network)
-        scenario._update_subnet.assert_has_calls(
-            [mock.call(s, subnet_update_args) for s in subnets])
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(s, {"subnet": subnet_update_args})
+             for s in range(subnets_per_network)],
+            self.nc.update_subnet.call_args_list
+        )
 
     def test_create_and_delete_subnets(self):
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_cidr_start = "default_cidr"
+        subnet_cidr_start = "1.1.0.0/30"
         subnets_per_network = 5
         net = mock.MagicMock()
-        subnets = [mock.MagicMock() for _ in range(subnets_per_network)]
+
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": i}} for i in range(subnets_per_network)
+        ]
 
         scenario = network.CreateAndDeleteSubnets(self.context)
         scenario._get_or_create_network = mock.Mock(return_value=net)
-        scenario._create_subnets = mock.Mock(return_value=subnets)
-        scenario._delete_subnet = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      subnet_create_args=subnet_create_args,
@@ -250,60 +327,79 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                      subnets_per_network=subnets_per_network)
 
         scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_subnets.assert_called_once_with(
-            net, subnet_create_args, subnet_cidr_start, subnets_per_network)
-        scenario._delete_subnet.assert_has_calls(
-            [mock.call(s) for s in subnets])
+            **network_create_args)
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(s) for s in range(subnets_per_network)],
+            self.nc.delete_subnet.call_args_list
+        )
 
     def test_create_and_list_routers(self):
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_cidr_start = "default_cidr"
+        subnet_cidr_start = "1.1.0.0/30"
         subnets_per_network = 5
         router_create_args = {"admin_state_up": True}
+        net = {"id": "foo"}
+        self.nc.create_network.return_value = {"network": net}
 
         scenario = network.CreateAndListRouters(self.context)
-        scenario._create_network_structure = mock.Mock()
-        scenario._list_routers = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      subnet_create_args=subnet_create_args,
                      subnet_cidr_start=subnet_cidr_start,
                      subnets_per_network=subnets_per_network,
                      router_create_args=router_create_args)
-
-        scenario._create_network_structure.assert_called_once_with(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
-        scenario._list_routers.assert_called_once_with()
-
-    def test_list_agents(self):
-        agent_args = {
-            "F": "id",
-            "sort-dir": "asc"
-        }
-        scenario = network.ListAgents(self.context)
-        scenario._list_agents = mock.Mock()
-
-        scenario.run(agent_args=agent_args)
-        scenario._list_agents.assert_called_once_with(**agent_args)
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call({"router": {
+                "name": mock.ANY,
+                **router_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_router.call_args_list
+        )
+        self.nc.list_routers.assert_called_once_with()
 
     def test_create_and_update_routers(self):
         router_update_args = {"admin_state_up": False}
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_cidr_start = "default_cidr"
+        subnet_cidr_start = "1.1.0.0/30"
         subnets_per_network = 5
         router_create_args = {"admin_state_up": True}
-        net = mock.MagicMock()
-        subnets = [mock.MagicMock() for i in range(subnets_per_network)]
-        routers = [mock.MagicMock() for i in range(subnets_per_network)]
+        net = {"id": "foo"}
+        self.nc.create_network.return_value = {"network": net}
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": i}} for i in range(subnets_per_network)
+        ]
+        self.nc.create_router.side_effect = [
+            {"router": {"id": i}} for i in range(subnets_per_network)
+        ]
 
         scenario = network.CreateAndUpdateRouters(self.context)
-        scenario._create_network_structure = mock.Mock(
-            return_value=(net, subnets, routers))
-        scenario._update_router = mock.Mock()
 
         scenario.run(router_update_args,
                      network_create_args=network_create_args,
@@ -312,29 +408,49 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                      subnets_per_network=subnets_per_network,
                      router_create_args=router_create_args)
 
-        scenario._create_network_structure.assert_called_once_with(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
-
-        update_calls = [mock.call(router, router_update_args)
-                        for router in routers]
-        scenario._update_router.assert_has_calls(update_calls)
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call({"router": {
+                "name": mock.ANY,
+                **router_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_router.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(i, {"router": router_update_args})
+             for i in range(subnets_per_network)],
+            self.nc.update_router.call_args_list
+        )
 
     def test_create_and_delete_routers(self):
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_cidr_start = "default_cidr"
+        subnet_cidr_start = "1.1.0.0/30"
         subnets_per_network = 5
         router_create_args = {"admin_state_up": True}
-        net = mock.MagicMock()
-        subnets = [mock.MagicMock() for i in range(subnets_per_network)]
-        routers = [mock.MagicMock() for i in range(subnets_per_network)]
+        net = {"id": "foo"}
+        self.nc.create_network.return_value = {"network": net}
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": f"s-{i}"}} for i in range(subnets_per_network)
+        ]
+        self.nc.create_router.side_effect = [
+            {"router": {"id": f"r-{i}"}} for i in range(subnets_per_network)
+        ]
 
         scenario = network.CreateAndDeleteRouters(self.context)
-        scenario._create_network_structure = mock.Mock(
-            return_value=(net, subnets, routers))
-        scenario._remove_interface_router = mock.Mock()
-        scenario._delete_router = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      subnet_create_args=subnet_create_args,
@@ -342,30 +458,53 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                      subnets_per_network=subnets_per_network,
                      router_create_args=router_create_args)
 
-        scenario._create_network_structure.assert_called_once_with(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
-
-        scenario._remove_interface_router.assert_has_calls([
-            mock.call(subnets[i]["subnet"], routers[i]["router"])
-            for i in range(subnets_per_network)])
-        scenario._delete_router.assert_has_calls(
-            [mock.call(router) for router in routers])
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call({"router": {
+                "name": mock.ANY,
+                **router_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_router.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(f"r-{i}", {"subnet_id": f"s-{i}"})
+             for i in range(subnets_per_network)],
+            self.nc.remove_interface_router.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(f"r-{i}") for i in range(subnets_per_network)],
+            self.nc.delete_router.call_args_list
+        )
 
     def test_create_and_show_routers(self):
         network_create_args = {"router:external": True}
         subnet_create_args = {"allocation_pools": []}
-        subnet_cidr_start = "default_cidr"
+        subnet_cidr_start = "1.1.0.0/30"
         subnets_per_network = 5
         router_create_args = {"admin_state_up": True}
-        net = mock.MagicMock()
-        subnets = [mock.MagicMock() for i in range(subnets_per_network)]
-        routers = [mock.MagicMock() for i in range(subnets_per_network)]
+        net = {"id": "foo"}
+        self.nc.create_network.return_value = {"network": net}
+        self.nc.create_subnet.side_effect = [
+            {"subnet": {"id": i}} for i in range(subnets_per_network)
+        ]
+        self.nc.create_router.side_effect = [
+            {"router": {"id": i}} for i in range(subnets_per_network)
+        ]
 
         scenario = network.CreateAndShowRouters(self.context)
-        scenario._create_network_structure = mock.Mock(
-            return_value=(net, subnets, routers))
-        scenario._show_router = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      subnet_create_args=subnet_create_args,
@@ -373,12 +512,41 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                      subnets_per_network=subnets_per_network,
                      router_create_args=router_create_args)
 
-        scenario._create_network_structure.assert_called_once_with(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY, **network_create_args}}
+        )
+        self.assertEqual(
+            [mock.call({"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY,
+                **subnet_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [mock.call({"router": {
+                "name": mock.ANY,
+                **router_create_args}}
+            )] * subnets_per_network,
+            self.nc.create_router.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(i) for i in range(subnets_per_network)],
+            self.nc.show_router.call_args_list
+        )
 
-        scenario._show_router.assert_has_calls(
-            [mock.call(router) for router in routers])
+    def test_list_agents(self):
+        agent_args = {
+            "F": "id",
+            "sort-dir": "asc"
+        }
+        scenario = network.ListAgents(self.context)
+
+        scenario.run(agent_args=agent_args)
+        self.nc.list_agents.assert_called_once_with(**agent_args)
 
     def test_create_and_list_ports(self):
         port_create_args = {"allocation_pools": []}
@@ -388,60 +556,76 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
 
         scenario = network.CreateAndListPorts(self.context)
         scenario._get_or_create_network = mock.Mock(return_value=net)
-        scenario._create_port = mock.MagicMock()
-        scenario._list_ports = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      port_create_args=port_create_args,
                      ports_per_network=ports_per_network)
         scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_port.assert_has_calls(
-            [mock.call(net, port_create_args)
-             for _ in range(ports_per_network)])
+            **network_create_args)
+        self.assertEqual(
+            [
+                mock.call({
+                    "port": {
+                        "network_id": net["id"],
+                        "name": mock.ANY,
+                        **port_create_args
+                    }
+                }) for _ in range(ports_per_network)
+            ],
+            self.nc.create_port.call_args_list
+        )
 
-        scenario._list_ports.assert_called_once_with()
+        self.nc.list_ports.assert_called_once_with()
 
     def test_create_and_update_ports(self):
-        port_update_args = {"admin_state_up": False},
+        port_update_args = {"admin_state_up": False}
         port_create_args = {"allocation_pools": []}
         ports_per_network = 10
         network_create_args = {"router:external": True}
         net = mock.MagicMock()
-        ports = [mock.MagicMock() for _ in range(ports_per_network)]
+        self.nc.create_port.side_effect = [
+            {"port": {"id": f"p-{i}"}}
+            for i in range(ports_per_network)
+        ]
 
         scenario = network.CreateAndUpdatePorts(self.context)
         scenario._get_or_create_network = mock.Mock(return_value=net)
-        scenario._create_port = mock.Mock(side_effect=ports)
-        scenario._update_port = mock.Mock()
 
         scenario.run(port_update_args,
                      network_create_args=network_create_args,
                      port_create_args=port_create_args,
                      ports_per_network=ports_per_network)
+
         scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_port.assert_has_calls(
-            [mock.call(net, port_create_args)
-             for _ in range(ports_per_network)])
-        scenario._update_port.assert_has_calls(
-            [mock.call(p, port_update_args) for p in ports])
+            **network_create_args)
+        self.assertEqual(
+            [mock.call({"port": {
+                "network_id": net["id"],
+                "name": mock.ANY,
+                **port_create_args}}
+            )] * ports_per_network,
+            self.nc.create_port.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(f"p-{i}", {"port": port_update_args})
+             for i in range(ports_per_network)],
+            self.nc.update_port.call_args_list
+        )
 
     def test_create_and_bind_ports(self):
         ports_per_network = 2
-        ports = [mock.Mock() for _ in range(ports_per_network)]
         port_update_args = {
             "device_owner": "compute:nova",
             "device_id": "ba805478-85ff-11e9-a2e4-2b8dea218fc8",
             "binding:host_id": "fake-host",
         }
-
-        context = {
-            "tenant": {"id": "fake-tenant-id"},
+        net = {"id": "net-id"}
+        self.context.update({
             "tenants": {
-                "fake-tenant-id": {
+                "tenant-1": {
+                    "id": "tenant-1",
                     "networks": [
-                        mock.Mock()
+                        net
                     ],
                 },
             },
@@ -451,22 +635,31 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
                 "admin_state_up": True,
                 "agent_type": "Open vSwitch agent",
             }],
-        }
-        scenario = network.CreateAndBindPorts(context)
+        })
+        scenario = network.CreateAndBindPorts(self.context)
+        scenario.admin_neutron = mock.MagicMock()
 
-        scenario._create_network = mock.Mock()
-        scenario._create_subnet = mock.Mock()
-        scenario._create_port = mock.Mock(
-            side_effect=ports)
-        scenario._update_port = mock.Mock()
+        self.nc.create_port.side_effect = [
+            {"port": {"id": f"p-{i}"}}
+            for i in range(ports_per_network)
+        ]
 
-        scenario.run(
-            ports_per_network=ports_per_network)
+        scenario.run(ports_per_network=ports_per_network)
 
-        scenario._update_port.assert_has_calls(
-            [mock.call(p, port_update_args=port_update_args) for p in ports])
+        self.assertEqual(
+            [mock.call({"port": {
+                "network_id": net["id"],
+                "name": mock.ANY}}
+            )] * ports_per_network,
+            self.nc.create_port.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(port_id=f"p-{i}", **port_update_args)
+             for i in range(ports_per_network)],
+            scenario.admin_neutron.update_port.call_args_list
+        )
 
-    def test_create_and_show_ports_positive(self):
+    def test_create_and_show_ports(self):
         port_create_args = {"allocation_pools": []}
         ports_per_network = 1
         network_create_args = {"router:external": True}
@@ -474,151 +667,159 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
 
         scenario = network.CreateAndShowPorts(self.context)
         scenario._get_or_create_network = mock.MagicMock(return_value=net)
-        scenario._create_port = mock.MagicMock()
-        scenario._show_port = mock.MagicMock()
-        port = {"port": {"id": 1, "name": "f"}}
-        port_info = {"port": {"id": 1, "name": "f", "status": "ACTIVE"}}
-        scenario._show_port.return_value = port_info
+        port = {"id": 1, "name": "f"}
+        self.nc.create_port.return_value = {"port": port}
 
-        # Positive case:
-        scenario._create_port.return_value = port
         scenario.run(network_create_args=network_create_args,
                      port_create_args=port_create_args,
                      ports_per_network=ports_per_network)
         scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_port.assert_called_with(net, port_create_args)
-        scenario._show_port.assert_called_with(port)
+            **network_create_args)
+        self.nc.create_port.assert_called_with({"port": {
+            "network_id": net["id"], "name": mock.ANY, **port_create_args
+        }})
 
-    def test_create_and_show_ports_negative(self):
-        port_create_args = {"allocation_pools": []}
-        ports_per_network = 1
-        network_create_args = {"router:external": True}
-        net = mock.MagicMock()
-
-        scenario = network.CreateAndShowPorts(self.context)
-        scenario._get_or_create_network = mock.MagicMock(return_value=net)
-        scenario._create_port = mock.MagicMock()
-        scenario._show_port = mock.MagicMock()
-
-        # Negative case1: port isn't created
-        scenario._create_port.return_value = None
-        self.assertRaises(rally_exceptions.RallyAssertionError,
-                          scenario.run,
-                          network_create_args,
-                          port_create_args,
-                          ports_per_network)
-        scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_port.assert_called_once_with(net, port_create_args)
-
-        # Negative case2: port isn't show
-        port = {"port": {"id": 1, "name": "f1"}}
-        port_info = {"port": {"id": 2, "name": "f2", "status": "ACTIVE"}}
-        scenario._show_port.return_value = port_info
-        scenario._create_port.return_value = port
-
-        self.assertRaises(rally_exceptions.RallyAssertionError,
-                          scenario.run,
-                          network_create_args,
-                          port_create_args,
-                          ports_per_network)
-
-        scenario._get_or_create_network.assert_called_with(
-            network_create_args)
-        scenario._create_port.assert_called_with(net, port_create_args)
-        scenario._show_port.assert_called_with(port)
+        self.nc.show_port.assert_called_with(port["id"])
 
     def test_create_and_delete_ports(self):
         port_create_args = {"allocation_pools": []}
         ports_per_network = 10
         network_create_args = {"router:external": True}
         net = mock.MagicMock()
-        ports = [mock.MagicMock() for _ in range(ports_per_network)]
+        self.nc.create_port.side_effect = [
+            {"port": {"id": f"p-{i}"}}
+            for i in range(ports_per_network)
+        ]
 
         scenario = network.CreateAndDeletePorts(self.context)
         scenario._get_or_create_network = mock.Mock(return_value=net)
-        scenario._create_port = mock.Mock(side_effect=ports)
-        scenario._delete_port = mock.Mock()
 
         scenario.run(network_create_args=network_create_args,
                      port_create_args=port_create_args,
                      ports_per_network=ports_per_network)
+
         scenario._get_or_create_network.assert_called_once_with(
-            network_create_args)
-        scenario._create_port.assert_has_calls(
-            [mock.call(net, port_create_args)
-             for _ in range(ports_per_network)])
-        scenario._delete_port.assert_has_calls(
-            [mock.call(p) for p in ports])
+            **network_create_args)
+
+        self.assertEqual(
+            [mock.call({"port": {
+                "network_id": net["id"],
+                "name": mock.ANY,
+                **port_create_args}}
+            )] * ports_per_network,
+            self.nc.create_port.call_args_list
+        )
+        self.assertEqual(
+            [mock.call(f"p-{i}") for i in range(ports_per_network)],
+            self.nc.delete_port.call_args_list
+        )
 
     @ddt.data(
-        {"floating_network": "ext-net"},
-        {"floating_network": "ext-net",
-         "floating_ip_args": {"floating_ip_address": "1.1.1.1"}},
+        {},
+        {"floating_ip_args": {"floating_ip_address": "1.1.1.1"}},
     )
     @ddt.unpack
-    def test_create_and_list_floating_ips(self, floating_network=None,
-                                          floating_ip_args=None):
+    def test_create_and_list_floating_ips(self, floating_ip_args=None):
+        floating_ip_args = floating_ip_args or {}
+        floating_network = {"id": "ext-net"}
+
         scenario = network.CreateAndListFloatingIps(self.context)
-        floating_ip_args = floating_ip_args or {}
-        scenario._create_floatingip = mock.Mock()
-        scenario._list_floating_ips = mock.Mock()
+
+        self.nc.create_floatingip.return_value = {"floatingip": mock.Mock()}
+        self.nc.list_floatingips.return_value = {"floatingips": mock.Mock()}
         scenario.run(floating_network=floating_network,
                      floating_ip_args=floating_ip_args)
-        scenario._create_floatingip.assert_called_once_with(
-            floating_network, **floating_ip_args)
-        scenario._list_floating_ips.assert_called_once_with()
+        self.nc.create_floatingip.assert_called_once_with(
+            {"floatingip": {"description": mock.ANY,
+                            "floating_network_id": floating_network["id"],
+                            **floating_ip_args}})
+        self.nc.list_floatingips.assert_called_once_with()
 
     @ddt.data(
-        {"floating_network": "ext-net"},
-        {"floating_network": "ext-net",
-         "floating_ip_args": {"floating_ip_address": "1.1.1.1"}},
+        {},
+        {"floating_ip_args": {"floating_ip_address": "1.1.1.1"}},
     )
     @ddt.unpack
-    def test_create_and_delete_floating_ips(self, floating_network=None,
-                                            floating_ip_args=None):
-        scenario = network.CreateAndDeleteFloatingIps(self.context)
+    def test_create_and_delete_floating_ips(self, floating_ip_args=None):
+        floating_network = {"id": "ext-net"}
         floating_ip_args = floating_ip_args or {}
-        fip = {"floatingip": {"id": "floating-ip-id"}}
-        scenario._create_floatingip = mock.Mock(return_value=fip)
-        scenario._delete_floating_ip = mock.Mock()
+        floatingip = {"id": "floating-ip-id"}
+
+        self.nc.create_floatingip.return_value = {"floatingip": floatingip}
+
+        scenario = network.CreateAndDeleteFloatingIps(self.context)
+
         scenario.run(floating_network=floating_network,
                      floating_ip_args=floating_ip_args)
-        scenario._create_floatingip.assert_called_once_with(
-            floating_network, **floating_ip_args)
-        scenario._delete_floating_ip.assert_called_once_with(
-            scenario._create_floatingip.return_value["floatingip"])
+        self.nc.create_floatingip.assert_called_once_with(
+            {"floatingip": {"description": mock.ANY,
+                            "floating_network_id": floating_network["id"],
+                            **floating_ip_args}})
+        self.nc.delete_floatingip.assert_called_once_with(floatingip["id"])
 
     def test_associate_and_dissociate_floating_ips(self):
-        scenario = network.AssociateAndDissociateFloatingIps(self.context)
+        floating_network = {
+            "id": "floating-net-id",
+            "name": "public",
+            "router:external": True
+        }
+        floatingip = {"id": "floating-ip-id"}
+        net = {"id": "net-id"}
+        subnet = {"id": "subnet-id"}
+        port = {"id": "port-id"}
+        router = {"id": "router-id"}
 
-        fip = {"floatingip": {"id": "floating-ip-id"}}
-        subnet = {"subnet": {}}
-        port = {"port": {"id": "port-id"}}
-        router = {"router": {}}
+        self.nc.create_floatingip.return_value = {"floatingip": floatingip}
+        self.nc.create_network.return_value = {"network": net}
+        self.nc.create_subnet.return_value = {"subnet": subnet}
+        self.nc.create_port.return_value = {"port": port}
+        self.nc.create_router.return_value = {"router": router}
+        self.nc.list_networks.return_value = {"networks": [floating_network]}
 
-        scenario._create_floatingip = mock.Mock(return_value=fip)
-        scenario._create_network = mock.Mock()
-        scenario._create_subnet = mock.Mock(return_value=subnet)
-        scenario._create_port = mock.Mock(return_value=port)
-        scenario._create_router = mock.Mock(return_value=router)
-        scenario._get_network_id = mock.Mock()
-        scenario._add_gateway_router = mock.Mock()
-        scenario._add_interface_router = mock.Mock()
+        network.AssociateAndDissociateFloatingIps(self.context).run(
+            floating_network=floating_network["name"])
 
-        scenario._associate_floating_ip = mock.Mock()
-        scenario._dissociate_floating_ip = mock.Mock()
+        self.nc.create_floatingip.assert_called_once_with(
+            {"floatingip": {"description": mock.ANY,
+                            "floating_network_id": floating_network["id"]}})
+        self.nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY}}
+        )
+        self.nc.create_subnet.assert_called_once_with(
+            {"subnet": {
+                "name": mock.ANY,
+                "network_id": net["id"],
+                "dns_nameservers": ["8.8.8.8", "8.8.4.4"],
+                "ip_version": 4,
+                "cidr": mock.ANY
+            }}
+        )
+        self.nc.create_port.assert_called_once_with(
+            {"port": {"name": mock.ANY,
+                      "network_id": net["id"]}}
+        )
+        self.nc.add_gateway_router.assert_called_once_with(
+            router["id"], {"network_id": floating_network["id"]}
+        )
+        self.nc.add_interface_router.assert_called_once_with(
+            router["id"], {"subnet_id": subnet["id"]}
+        )
 
-        scenario.run(floating_network="public")
+        self.assertEqual(
+            [
+                mock.call(
+                    floatingip["id"],
+                    {"floatingip": {"port_id": port["id"]}}
+                ),
+                mock.call(
+                    floatingip["id"],
+                    {"floatingip": {"port_id": None}}
+                )
+            ],
+            self.nc.update_floatingip.call_args_list
+        )
 
-        scenario._associate_floating_ip.assert_called_once_with(
-            floatingip=fip["floatingip"], port=port["port"])
-        scenario._dissociate_floating_ip.assert_called_once_with(
-            floatingip=fip["floatingip"])
-
-    @mock.patch("%s.DeleteSubnets._delete_subnet" % BASE)
-    def test_delete_subnets(self, mock__delete_subnet):
+    def test_delete_subnets(self):
         # do not guess what user will be used
         self.context["user_choice_method"] = "round_robin"
         # if it is the 4th iteration, the second user from the second tenant
@@ -659,7 +860,7 @@ class NeutronNetworksTestCase(test.ScenarioTestCase):
 
         self.assertEqual(
             [
-                mock.call({"subnet": {"id": "subnet-3"}}),
-                mock.call({"subnet": {"id": "subnet-5"}})
+                mock.call("subnet-3"),
+                mock.call("subnet-5")
             ],
-            mock__delete_subnet.call_args_list)
+            self.nc.delete_subnet.call_args_list)

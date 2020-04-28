@@ -2,13 +2,10 @@
   NeutronNetworks.create_and_update_subnets:
     -
       args:
-        network_create_args: {}
-        subnet_create_args: {}
         subnet_cidr_start: "1.4.0.0/16"
         subnets_per_network: 2
         subnet_update_args:
             enable_dhcp: False
-            name: "_subnet_updated"
       runner:
         type: "constant"
         times: 10

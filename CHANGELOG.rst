@@ -26,8 +26,15 @@ Changed
   image changed from /rally/xrally_opentstack to /rally/xrally_openstack
   (there was a typo in work openstack)
 
+* *network@openstack* context does not require admin credentials anymore and
+  work with regular users as well
+
 Fixed
 ~~~~~
+
+* Some neutron scenarios accepted *name* parameter for create or update actions
+  on various entities. The value of the parameter was always ignored, but
+  anyway it gave wrong assumption.
 
 * [verification component] Make config parser case sensitivity in
   TempestContext and TempestConfigfileManager.

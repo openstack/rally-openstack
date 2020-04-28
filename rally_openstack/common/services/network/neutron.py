@@ -20,6 +20,7 @@ from rally import exceptions
 from rally.task import atomic
 from rally.task import service
 
+from rally_openstack.common import consts
 from rally_openstack.common.services.network import net_utils
 
 
@@ -271,17 +272,27 @@ class NeutronService(service.Service):
         resp = self.client.show_network(network_id, **body)
         return resp["network"]
 
-    def find_network(self, network_id_or_name):
+    def find_network(self, network_id_or_name, external=_NONE):
         """Find network by identifier (id or name)
 
         :param network_id_or_name: Network ID or name
+        :param external: check target network is external or not
         """
+        network = None
         for net in self.list_networks():
             if network_id_or_name in (net["name"], net["id"]):
-                return net
-        raise exceptions.GetResourceFailure(
-            resource="network",
-            err=f"no name or id matches {network_id_or_name}")
+                network = net
+                break
+        if network is None:
+            raise exceptions.GetResourceFailure(
+                resource="network",
+                err=f"no name or id matches {network_id_or_name}")
+        if external:
+            if not network.get("router:external", False):
+                raise exceptions.NotFoundException(
+                    f"Network '{network['name']} (id={network['id']})' is not "
+                    f"external.")
+        return network
 
     @atomic.action_timer("neutron.update_network")
     @_create_network_arg_adapter()
@@ -579,7 +590,7 @@ class NeutronService(service.Service):
                       description=_NONE, discover_external_gw=False,
                       external_gateway_info=_NONE, distributed=_NONE, ha=_NONE,
                       availability_zone_hints=_NONE, service_type_id=_NONE,
-                      flavor_id=_NONE):
+                      flavor_id=_NONE, enable_snat=_NONE):
         """Create router.
 
         :param project_id: The ID of the project that owns the resource. Only
@@ -605,12 +616,21 @@ class NeutronService(service.Service):
         :param service_type_id: The ID of the service type associated with
             the router.
         :param flavor_id: The ID of the flavor associated with the router.
+        :param enable_snat: Whether to include `enable_snat: True` to
+            external_gateway_info or not. By default, it is enabled if a user
+            is admin and "ext-gw-mode" extension presents
         """
 
         if external_gateway_info is _NONE and discover_external_gw:
             for external_network in self.list_networks(router_external=True):
                 external_gateway_info = {"network_id": external_network["id"]}
-                if self.supports_extension("ext-gw-mode", silent=True):
+                if enable_snat is _NONE:
+                    permission = self._clients.credential.permission
+                    is_admin = permission == consts.EndpointPermission.ADMIN
+                    if (self.supports_extension("ext-gw-mode", silent=True)
+                            and is_admin):
+                        external_gateway_info["enable_snat"] = True
+                elif enable_snat:
                     external_gateway_info["enable_snat"] = True
                 break
 
@@ -856,7 +876,8 @@ class NeutronService(service.Service):
                 self.client.delete_port(port["id"])
             except neutron_exceptions.PortNotFoundClient:
                 # port is auto-removed
-                pass
+                return False
+        return True
 
     @atomic.action_timer("neutron.list_ports")
     def list_ports(self, network_id=_NONE, device_id=_NONE, device_owner=_NONE,
@@ -918,12 +939,7 @@ class NeutronService(service.Service):
         if isinstance(floating_network, dict):
             net_id = floating_network["id"]
         elif floating_network:
-            network = self.find_network(floating_network)
-            if not network.get("router:external", False):
-                raise exceptions.NotFoundException(
-                    f"Network '{network['name']} (id={network['id']})' is not "
-                    f"external.")
-            net_id = network["id"]
+            net_id = self.find_network(floating_network, external=True)["id"]
         else:
             ext_networks = self.list_networks(router_external=True)
             if not ext_networks:

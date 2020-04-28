@@ -28,7 +28,7 @@ from rally.verification import utils
 from rally_openstack.common import consts
 from rally_openstack.common import credential
 from rally_openstack.common.services.image import image
-from rally_openstack.common.wrappers import network
+from rally_openstack.common.services.network import neutron
 from rally_openstack.verification.tempest import config as conf
 
 
@@ -287,25 +287,29 @@ class TempestContext(context.VerifierContext):
         return flavor
 
     def _create_network_resources(self):
-        neutron_wrapper = network.NeutronWrapper(self.clients, self)
+        client = neutron.NeutronService(
+            clients=self.clients,
+            name_generator=self.generate_random_name,
+            atomic_inst=self.atomic_actions()
+        )
         tenant_id = self.clients.keystone.auth_ref.project_id
-        router_create_args = {}
+        router_create_args = {"project_id": tenant_id}
         public_net = None
         if self.conf.has_section("network"):
             public_net = self.conf.get("network", "public_network_id")
         if public_net:
-            ext_gw_mode_enabled = neutron_wrapper.ext_gw_mode_enabled
             external_gateway_info = {
                 "network_id": public_net
             }
-            if ext_gw_mode_enabled:
+            if client.supports_extension("ext-gw-mode", silent=True):
                 external_gateway_info["enable_snat"] = True
             router_create_args["external_gateway_info"] = external_gateway_info
         LOG.debug("Creating network resources: network, subnet, router.")
-        net = neutron_wrapper.create_network(
-            tenant_id, subnets_num=1, add_router=True,
+        net = client.create_network_topology(
+            subnets_count=1,
             router_create_args=router_create_args,
-            network_create_args={"shared": True})
+            subnet_create_args={"project_id": tenant_id},
+            network_create_args={"shared": True, "project_id": tenant_id})
         LOG.debug("Network resources have been successfully created!")
         self._created_networks.append(net)
 
@@ -343,11 +347,16 @@ class TempestContext(context.VerifierContext):
             self._remove_opt_value_from_config("orchestration", flavor.id)
 
     def _cleanup_network_resources(self):
-        neutron_wrapper = network.NeutronWrapper(self.clients, self)
-        for net in self._created_networks:
+        client = neutron.NeutronService(
+            clients=self.clients,
+            name_generator=self.generate_random_name,
+            atomic_inst=self.atomic_actions()
+        )
+        for topo in self._created_networks:
             LOG.debug("Deleting network resources: router, subnet, network.")
-            neutron_wrapper.delete_network(net)
-            self._remove_opt_value_from_config("compute", net["name"])
+            client.delete_network_topology(topo)
+            self._remove_opt_value_from_config("compute",
+                                               topo["network"]["name"])
             LOG.debug("Network resources have been deleted.")
 
     def _remove_opt_value_from_config(self, section, opt_value):

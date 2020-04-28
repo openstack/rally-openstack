@@ -2,13 +2,10 @@
     "NeutronNetworks.create_and_update_ports": [
         {
             "args": {
-                "network_create_args": {},
-                "port_create_args": {},
                 "port_update_args": {
                     "admin_state_up": false,
                     "device_id": "dummy_id",
-                    "device_owner": "dummy_owner",
-                    "name": "_port_updated"
+                    "device_owner": "dummy_owner"
                 },
                 "ports_per_network": 5
             },

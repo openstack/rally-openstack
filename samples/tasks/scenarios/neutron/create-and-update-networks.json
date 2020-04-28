@@ -3,10 +3,8 @@
         {
             "args": {
                 "network_update_args": {
-                    "admin_state_up": false,
-                    "name": "_updated"
-                 },
-                "network_create_args": {}
+                    "admin_state_up": false
+                 }
             },
             "runner": {
                 "type": "constant",

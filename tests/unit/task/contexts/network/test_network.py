@@ -21,7 +21,7 @@ import netaddr
 from rally_openstack.task.contexts.network import networks as network_context
 from tests.unit import test
 
-NET = "rally_openstack.common.wrappers.network."
+PATH = "rally_openstack.task.contexts.network.networks"
 
 
 @ddt.ddt
@@ -30,26 +30,23 @@ class NetworkTestCase(test.TestCase):
         return {"task": {"uuid": "foo_task"},
                 "admin": {"credential": "foo_admin"},
                 "config": {"network": kwargs},
-                "users": [{"id": "foo_user", "tenant_id": "foo_tenant"},
-                          {"id": "bar_user", "tenant_id": "bar_tenant"}],
+                "users": [{"id": "foo_user", "tenant_id": "foo_tenant",
+                           "credential": mock.MagicMock()},
+                          {"id": "bar_user", "tenant_id": "bar_tenant",
+                           "credential": mock.MagicMock()}],
                 "tenants": {"foo_tenant": {"networks": [{"id": "foo_net"}]},
                             "bar_tenant": {"networks": [{"id": "bar_net"}]}}}
 
-    def test_START_CIDR_DFLT(self):
+    def test_default_start_cidr_is_valid(self):
         netaddr.IPNetwork(network_context.Network.DEFAULT_CONFIG["start_cidr"])
 
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    @mock.patch(NET + "wrap", return_value="foo_service")
-    def test__init__default(self, mock_wrap, mock_clients):
+    def test__init__default(self):
         context = network_context.Network(self.get_context())
         self.assertEqual(1, context.config["networks_per_tenant"])
         self.assertEqual(network_context.Network.DEFAULT_CONFIG["start_cidr"],
                          context.config["start_cidr"])
-        self.assertIsNone(context.config["dns_nameservers"])
 
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    @mock.patch(NET + "wrap", return_value="foo_service")
-    def test__init__explicit(self, mock_wrap, mock_clients):
+    def test__init__explicit(self):
         context = network_context.Network(
             self.get_context(start_cidr="foo_cidr", networks_per_tenant=42,
                              network_create_args={"fakearg": "fake"},
@@ -61,57 +58,120 @@ class NetworkTestCase(test.TestCase):
         self.assertEqual(("1.2.3.4", "5.6.7.8"),
                          context.config["dns_nameservers"])
 
-    @ddt.data({},
-              {"dns_nameservers": []},
-              {"dns_nameservers": ["1.2.3.4", "5.6.7.8"]})
-    @ddt.unpack
-    @mock.patch(NET + "wrap")
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_setup(self, mock_clients, mock_wrap, **dns_kwargs):
-        def create_net_infra(t_id, **kwargs):
-            return {"network": f"{t_id}-net", "subnets": []}
+    def test_setup(self):
+        ctx = self.get_context(networks_per_tenant=1,
+                               network_create_args={},
+                               subnets_per_network=2,
+                               dns_nameservers=None,
+                               external=True)
+        user = ctx["users"][0]
+        nc = user["credential"].clients.return_value.neutron.return_value
+        network = {"id": "net-id", "name": "s-1"}
+        subnets = [
+            {"id": "subnet1-id", "name": "subnet1-name"},
+            {"id": "subnet2-id", "name": "subnet2-name"}
+        ]
+        router = {"id": "router"}
+        nc.create_network.return_value = {"network": network.copy()}
+        nc.create_router.return_value = {"router": router.copy()}
+        nc.create_subnet.side_effect = [{"subnet": s} for s in subnets]
 
-        mock_create = mock.Mock(side_effect=create_net_infra)
-        mock_wrap.return_value = mock.Mock(
-            _create_network_infrastructure=mock_create)
-        nets_per_tenant = 2
-        net_context = network_context.Network(
-            self.get_context(networks_per_tenant=nets_per_tenant,
-                             network_create_args={"fakearg": "fake"},
-                             **dns_kwargs))
-        net_context._iterate_per_tenants = mock.MagicMock(
-            return_value=[
-                ("foo_user", "foo_tenant"),
-                ("bar_user", "bar_tenant")]
+        network_context.Network(ctx).setup()
+
+        ctx_data = ctx["tenants"][ctx["users"][0]["tenant_id"]]
+        self.assertEqual(
+            [{
+                "id": network["id"],
+                "name": network["name"],
+                "router_id": router["id"],
+                "subnets": [s["id"] for s in subnets]
+            }],
+            ctx_data["networks"]
         )
 
-        net_context.setup()
+        nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY}})
+        nc.create_router.assert_called_once_with(
+            {"router": {"name": mock.ANY}})
+        self.assertEqual(
+            [
+                mock.call({"subnet": {
+                    "name": mock.ANY, "network_id": network["id"],
+                    "dns_nameservers": mock.ANY,
+                    "ip_version": 4,
+                    "cidr": mock.ANY}})
+                for i in range(2)],
+            nc.create_subnet.call_args_list
+        )
+        self.assertEqual(
+            [
+                mock.call(router["id"], {"subnet_id": subnets[0]["id"]}),
+                mock.call(router["id"], {"subnet_id": subnets[1]["id"]})
+            ],
+            nc.add_interface_router.call_args_list
+        )
 
-        if "dns_nameservers" in dns_kwargs:
-            dns_kwargs["dns_nameservers"] = tuple(
-                dns_kwargs["dns_nameservers"])
-        create_calls = [
-            mock.call(tenant, dualstack=False,
-                      subnets_num=1, network_create_args={"fakearg": "fake"},
-                      router_create_args={"external": True},
-                      **dns_kwargs)
-            for user, tenant in net_context._iterate_per_tenants.return_value]
-        mock_create.assert_has_calls(create_calls)
+    def test_setup_without_router(self):
+        dns_nameservers = ["1.2.3.4", "5.6.7.8"]
+        ctx = self.get_context(networks_per_tenant=1,
+                               network_create_args={},
+                               subnets_per_network=2,
+                               router=None,
+                               dns_nameservers=dns_nameservers)
+        user = ctx["users"][0]
+        nc = user["credential"].clients.return_value.neutron.return_value
+        network = {"id": "net-id", "name": "s-1"}
+        subnets = [
+            {"id": "subnet1-id", "name": "subnet1-name"},
+            {"id": "subnet2-id", "name": "subnet2-name"}
+        ]
+        router = {"id": "router"}
+        nc.create_network.return_value = {"network": network.copy()}
+        nc.create_router.return_value = {"router": router.copy()}
+        nc.create_subnet.side_effect = [{"subnet": s} for s in subnets]
 
-        net_context._iterate_per_tenants.assert_called_once_with()
-        expected_networks = ["bar_tenant-net",
-                             "foo_tenant-net"] * nets_per_tenant
-        actual_networks = []
-        for tenant_id, tenant_ctx in net_context.context["tenants"].items():
-            actual_networks.extend(tenant_ctx["networks"])
-        self.assertSequenceEqual(sorted(expected_networks),
-                                 sorted(actual_networks))
+        network_context.Network(ctx).setup()
 
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    @mock.patch(NET + "wrap")
-    def test_cleanup(self, mock_wrap, mock_clients):
-        net_context = network_context.Network(self.get_context())
-        net_context.cleanup()
-        mock_wrap().delete_network.assert_has_calls(
-            [mock.call({"id": "foo_net"}), mock.call({"id": "bar_net"})],
-            any_order=True)
+        ctx_data = ctx["tenants"][ctx["users"][0]["tenant_id"]]
+        self.assertEqual(
+            [{
+                "id": network["id"],
+                "name": network["name"],
+                "router_id": None,
+                "subnets": [s["id"] for s in subnets]
+            }],
+            ctx_data["networks"]
+        )
+
+        nc.create_network.assert_called_once_with(
+            {"network": {"name": mock.ANY}})
+        self.assertEqual(
+            [
+                mock.call({"subnet": {
+                    "name": mock.ANY, "network_id": network["id"],
+                    # rally.task.context.Context converts list to unchangeable
+                    #   collection - tuple
+                    "dns_nameservers": tuple(dns_nameservers),
+                    "ip_version": 4,
+                    "cidr": mock.ANY}})
+                for i in range(2)],
+            nc.create_subnet.call_args_list
+        )
+
+        self.assertFalse(nc.create_router.called)
+        self.assertFalse(nc.add_interface_router.called)
+
+    @mock.patch("%s.resource_manager.cleanup" % PATH)
+    def test_cleanup(self, mock_cleanup):
+        ctx = self.get_context()
+
+        network_context.Network(ctx).cleanup()
+
+        mock_cleanup.assert_called_once_with(
+            names=["neutron.subnet", "neutron.network", "neutron.router",
+                   "neutron.port"],
+            superclass=network_context.Network,
+            admin=ctx.get("admin"),
+            users=ctx.get("users", []),
+            task_id=ctx["task"]["uuid"]
+        )

@@ -20,7 +20,6 @@ from rally.task import types
 from rally.task import validation
 
 from rally_openstack.common import consts
-from rally_openstack.common.wrappers import network as network_wrapper
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 from rally_openstack.task.scenarios.neutron import utils as neutron_utils
@@ -37,7 +36,7 @@ LOG = logging.getLogger(__name__)
                flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
-@validation.add("required_services", services=(consts.Service.NOVA))
+@validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["nova"]},
                     name="NovaServers.boot_and_list_server",
@@ -926,9 +925,8 @@ class BootAndAssociateFloatingIp(utils.NovaScenario):
         """
         create_floating_ip_args = create_floating_ip_args or {}
         server = self._boot_server(image, flavor, **kwargs)
-        address = network_wrapper.wrap(self.clients, self).create_floating_ip(
-            tenant_id=server.tenant_id, **create_floating_ip_args)
-        self._associate_floating_ip(server, address["ip"])
+        floatingip = self.neutron.create_floatingip(**create_floating_ip_args)
+        self._associate_floating_ip(server, floatingip)
 
 
 @types.convert(image={"type": "glance_image"},
@@ -1114,10 +1112,9 @@ class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
 
         create_floating_ip_args = create_floating_ip_args or {}
         server = self._boot_server(image, flavor, **kwargs)
-        address = network_wrapper.wrap(self.clients, self).create_floating_ip(
-            tenant_id=server.tenant_id, **create_floating_ip_args)
-        self._associate_floating_ip(server, address["ip"])
-        self._dissociate_floating_ip(server, address["ip"])
+        floatingip = self.neutron.create_floatingip(**create_floating_ip_args)
+        self._associate_floating_ip(server, floatingip)
+        self._dissociate_floating_ip(server, floatingip)
 
 
 @types.convert(image={"type": "glance_image"},

@@ -263,84 +263,60 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
             "task": {"uuid": "task_id", "deployment_uuid": "dep_uuid"}
         })
 
-    @mock.patch("%s.network.wrap" % CTX)
-    def test__remove_default_security_group_not_needed(self, mock_wrap):
-        services = {"compute": consts.Service.NOVA}
-        self.osclients.Clients().services.return_value = services
-        user_generator = users.UserGenerator(self.context)
-        user_generator._remove_default_security_group()
-        self.assertFalse(mock_wrap.called)
+    def test__remove_default_security_group(self):
 
-    @mock.patch("%s.network.wrap" % CTX)
-    def test__remove_default_security_group_neutron_no_sg(self, mock_wrap):
-        net_wrapper = mock.Mock(SERVICE_IMPL=consts.Service.NEUTRON)
-        net_wrapper.supports_extension.return_value = (False, None)
-        mock_wrap.return_value = net_wrapper
-
-        user_generator = users.UserGenerator(self.context)
-
-        admin_clients = mock.Mock()
-        admin_clients.services.return_value = {
-            "compute": consts.Service.NOVA,
-            "neutron": consts.Service.NEUTRON}
-        user_clients = [mock.Mock(), mock.Mock()]
-        self.osclients.Clients.side_effect = [admin_clients] + user_clients
-
-        user_generator._remove_default_security_group()
-
-        mock_wrap.assert_called_once_with(admin_clients, user_generator)
-        net_wrapper.supports_extension.assert_called_once_with(
-            "security-group")
-
-    @mock.patch("%s.network" % CTX)
-    def test__remove_default_security_group(self, mock_network):
-        net_wrapper = mock.Mock(SERVICE_IMPL=consts.Service.NEUTRON)
-        net_wrapper.supports_extension.return_value = (True, None)
-        mock_network.wrap.return_value = net_wrapper
-
-        user_generator = users.UserGenerator(self.context)
-
-        admin_clients = mock.Mock()
-        admin_clients.services.return_value = {
-            "compute": consts.Service.NOVA,
-            "neutron": consts.Service.NEUTRON}
-        user1 = mock.Mock()
-        user1.neutron.return_value.list_security_groups.return_value = {
-            "security_groups": [{"id": "id-1", "name": "default"},
-                                {"id": "id-2", "name": "not-default"}]}
-        user2 = mock.Mock()
-        user2.neutron.return_value.list_security_groups.return_value = {
-            "security_groups": [{"id": "id-3", "name": "default"},
-                                {"id": "id-4", "name": "not-default"}]}
-        user_clients = [user1, user2]
-        self.osclients.Clients.side_effect = [admin_clients] + user_clients
-
-        user_generator._iterate_per_tenants = mock.MagicMock(
-            return_value=[
-                (mock.MagicMock(), "t1"),
-                (mock.MagicMock(), "t2")
-            ]
+        self.context.update(
+            tenants={
+                "tenant-1": {},
+                "tenant-2": {}
+            }
         )
 
-        user_generator._remove_default_security_group()
+        self.osclients.Clients.return_value = mock.Mock()
+        neutron = self.osclients.Clients.return_value.neutron.return_value
+        neutron.list_extensions.return_value = {
+            "extensions": [{"alias": "security-group"}]}
 
-        mock_network.wrap.assert_called_once_with(admin_clients,
-                                                  user_generator)
+        neutron.list_security_groups.return_value = {
+            "security_groups": [
+                {"id": "id-1", "name": "default", "tenant_id": "tenant-1"},
+                {"id": "id-2", "name": "default", "tenant_id": "tenant-2"},
+                {"id": "id-3", "name": "default", "tenant_id": "tenant-3"}
+            ]
+        }
 
-        user_generator._iterate_per_tenants.assert_called_once_with()
-        expected = [mock.call(user_generator.credential)] + [
-            mock.call(u["credential"])
-            for u, t in user_generator._iterate_per_tenants.return_value]
-        self.osclients.Clients.assert_has_calls(expected, any_order=True)
+        users.UserGenerator(self.context)._remove_default_security_group()
 
-        user_net = user1.neutron.return_value
-        user_net.list_security_groups.assert_called_once_with(tenant_id="t1")
-        user_net = user2.neutron.return_value
-        user_net.list_security_groups.assert_called_once_with(tenant_id="t2")
-        admin_neutron = admin_clients.neutron.return_value
+        neutron.list_security_groups.assert_called_once_with(name="default")
         self.assertEqual(
-            [mock.call("id-1"), mock.call("id-3")],
-            admin_neutron.delete_security_group.call_args_list)
+            [mock.call("id-1"), mock.call("id-2")],
+            neutron.delete_security_group.call_args_list
+        )
+
+    def test__remove_default_security_group_no_sg(self):
+        self.context.update(
+            tenants={
+                "tenant-1": {},
+                "tenant-2": {}
+            }
+        )
+
+        self.osclients.Clients.return_value = mock.Mock()
+        neutron = self.osclients.Clients.return_value.neutron.return_value
+        neutron.list_extensions.return_value = {"extensions": []}
+
+        neutron.list_security_groups.return_value = {
+            "security_groups": [
+                {"id": "id-1", "name": "default", "tenant_id": "tenant-1"},
+                {"id": "id-2", "name": "default", "tenant_id": "tenant-2"},
+                {"id": "id-3", "name": "default", "tenant_id": "tenant-3"}
+            ]
+        }
+
+        users.UserGenerator(self.context)._remove_default_security_group()
+
+        self.assertFalse(neutron.list_security_groups.called)
+        self.assertFalse(neutron.delete_security_group.called)
 
     @mock.patch("%s.identity" % CTX)
     def test__create_tenants(self, mock_identity):

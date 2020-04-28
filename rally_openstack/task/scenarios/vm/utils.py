@@ -26,7 +26,6 @@ from rally.task import atomic
 from rally.task import utils
 from rally.utils import sshutils
 
-from rally_openstack.common.wrappers import network as network_wrapper
 from rally_openstack.task.scenarios.nova import utils as nova_utils
 
 LOG = logging.getLogger(__name__)
@@ -161,30 +160,23 @@ class VMScenario(nova_utils.NovaScenario):
                         "id": fip.get("id"),
                         "is_floating": use_floating_ip}
 
-    @atomic.action_timer("vm.attach_floating_ip")
     def _attach_floating_ip(self, server, floating_network):
         internal_network = list(server.networks)[0]
         fixed_ip = server.addresses[internal_network][0]["addr"]
 
-        with atomic.ActionTimer(self, "neutron.create_floating_ip"):
-            fip = network_wrapper.wrap(self.clients, self).create_floating_ip(
-                ext_network=floating_network,
-                tenant_id=server.tenant_id, fixed_ip=fixed_ip)
+        floatingip = self.neutron.create_floatingip(
+            floating_network=floating_network)
+        self._associate_floating_ip(server, floatingip, fixed_address=fixed_ip)
 
-        self._associate_floating_ip(server, fip, fixed_address=fixed_ip)
+        return {"id": floatingip["id"],
+                "ip": floatingip["floating_ip_address"]}
 
-        return fip
-
-    @atomic.action_timer("vm.delete_floating_ip")
     def _delete_floating_ip(self, server, fip):
         with logging.ExceptionLogger(
                 LOG, "Unable to delete IP: %s" % fip["ip"]):
             if self.check_ip_address(fip["ip"])(server):
                 self._dissociate_floating_ip(server, fip)
-                with atomic.ActionTimer(self, "neutron.delete_floating_ip"):
-                    network_wrapper.wrap(self.clients,
-                                         self).delete_floating_ip(
-                        fip["id"], wait=True)
+                self.neutron.delete_floatingip(fip["id"])
 
     def _delete_server_with_fip(self, server, fip, force_delete=False):
         if fip["is_floating"]:

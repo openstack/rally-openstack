@@ -2,10 +2,8 @@
   NeutronNetworks.create_and_update_networks:
     -
       args:
-        network_create_args: {}
         network_update_args:
             admin_state_up: False
-            name: "_updated"
       runner:
         type: "constant"
         times: 10

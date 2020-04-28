@@ -89,7 +89,7 @@ def configure(name, default_version=None, default_service_type=None,
         variable is not specified, validation will assume that your client
         doesn't allow to specify service type.
     :param supported_versions: List of supported versions(If this variable is
-        not specified, `OSClients.validate_version` method will raise an
+        not specified, `OSClient.validate_version` method will raise an
         exception that client doesn't support setting any versions. If this
         logic is wrong for your client, you should override `validate_version`
         in client object)

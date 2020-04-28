@@ -44,6 +44,7 @@ CRED = {
     "project_domain_name": "admin"
 }
 
+NET_PATH = "rally_openstack.common.services.network"
 PATH = "rally_openstack.verification.tempest.context"
 
 
@@ -266,17 +267,17 @@ class TempestContextTestCase(test.TestCase):
         client.create_subnet.side_effect = [{"subnet": {"id": "subid1"}}]
         client.list_networks.return_value = {"networks": []}
 
-        network = self.context._create_network_resources()
-        self.assertEqual("nid1", network["id"])
-        self.assertEqual("nid1", self.context._created_networks[0]["id"])
-        self.assertEqual("rid1",
-                         self.context._created_networks[0]["router_id"])
-        self.assertEqual("subid1",
-                         self.context._created_networks[0]["subnets"][0])
+        net_topo = self.context._create_network_resources()
 
-    @mock.patch("rally_openstack.common.wrappers.network.NeutronWrapper.ext_gw_mode_enabled",  # noqa E501
-                new_callable=mock.PropertyMock, return_value=True)
-    def test__create_network_resources_public_network_override(self, mock_ext_gw_mode_enabled):  # noqa E501
+        self.assertEqual("nid1", net_topo["network"]["id"])
+        self.assertEqual("rid1", net_topo["routers"][0]["id"])
+        self.assertEqual("subid1", net_topo["subnets"][0]["id"])
+
+    @mock.patch("%s.neutron.NeutronService.supports_extension" % PATH)
+    def test__create_network_resources_public_network_override(
+            self, mock_supports_extension):
+        mock_supports_extension.return_value = True
+
         client = self.context.clients.neutron()
         conf = self.context.conf
 
@@ -348,15 +349,16 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("", self.context.conf.get("orchestration",
                                                    "instance_type"))
 
-    @mock.patch("rally_openstack.common.wrappers."
-                "network.NeutronWrapper.delete_network")
-    def test__cleanup_network_resources(
-            self, mock_neutron_wrapper_delete_network):
-        self.context._created_networks = [{"name": "net-12345"}]
+    @mock.patch("%s.neutron.NeutronService.delete_network_topology" % PATH)
+    def test__cleanup_network_resources(self, mock_delete_network_topology):
+        self.context._created_networks = [{"network": {"name": "net-12345"}}]
         self.context.conf.set("compute", "fixed_network_name", "net-12345")
 
         self.context._cleanup_network_resources()
-        self.assertEqual(1, mock_neutron_wrapper_delete_network.call_count)
+
+        mock_delete_network_topology.assert_called_once_with(
+            self.context._created_networks[0]
+        )
         self.assertEqual("", self.context.conf.get("compute",
                                                    "fixed_network_name"))
 

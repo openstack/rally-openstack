@@ -3,11 +3,8 @@
         {
             "args": {
                 "subnet_update_args": {
-                    "enable_dhcp": false,
-                    "name": "_subnet_updated"
+                    "enable_dhcp": false
                 },
-                "network_create_args": {},
-                "subnet_create_args": {},
                 "subnet_cidr_start": "1.4.0.0/16",
                 "subnets_per_network": 2
             },

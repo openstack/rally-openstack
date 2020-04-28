@@ -16,8 +16,8 @@
 from rally.common import logging
 from rally.common import validation
 
-from rally_openstack.common import osclients
-from rally_openstack.common.wrappers import network
+from rally_openstack.common.services.network import neutron
+from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
 
 
@@ -50,68 +50,33 @@ def _rule_to_key(rule):
         "port_range_max",
         "port_range_min",
         "protocol",
-        "remote_ip_prefix",
-        "security_group_id"
+        "remote_ip_prefix"
     ]
     return "_".join([_normalize_rule_value(x, rule.get(x))
                      for x in comparison_keys])
 
 
-def _prepare_open_secgroup(credential, secgroup_name):
-    """Generate secgroup allowing all tcp/udp/icmp access.
-
-    In order to run tests on instances it is necessary to have SSH access.
-    This function generates a secgroup which allows all tcp/udp/icmp access.
-
-    :param credential: clients credential
-    :param secgroup_name: security group name
-
-    :returns: dict with security group details
-    """
-    neutron = osclients.Clients(credential).neutron()
-    security_groups = neutron.list_security_groups()["security_groups"]
-    rally_open = [sg for sg in security_groups if sg["name"] == secgroup_name]
-    if not rally_open:
-        descr = "Allow ssh access to VMs created by Rally"
-        rally_open = neutron.create_security_group(
-            {"security_group": {"name": secgroup_name,
-                                "description": descr}})["security_group"]
-    else:
-        rally_open = rally_open[0]
-
-    rules_to_add = [
-        {
-            "protocol": "tcp",
-            "port_range_max": 65535,
-            "port_range_min": 1,
-            "remote_ip_prefix": "0.0.0.0/0",
-            "direction": "ingress",
-            "security_group_id": rally_open["id"]
-        },
-        {
-            "protocol": "udp",
-            "port_range_max": 65535,
-            "port_range_min": 1,
-            "remote_ip_prefix": "0.0.0.0/0",
-            "direction": "ingress",
-            "security_group_id": rally_open["id"]
-        },
-        {
-            "protocol": "icmp",
-            "remote_ip_prefix": "0.0.0.0/0",
-            "direction": "ingress",
-            "security_group_id": rally_open["id"]
-        }
-    ]
-
-    existing_rules = set(
-        _rule_to_key(r) for r in rally_open.get("security_group_rules", []))
-    for new_rule in rules_to_add:
-        if _rule_to_key(new_rule) not in existing_rules:
-            neutron.create_security_group_rule(
-                {"security_group_rule": new_rule})
-
-    return rally_open
+_RULES_TO_ADD = [
+    {
+        "protocol": "tcp",
+        "port_range_max": 65535,
+        "port_range_min": 1,
+        "remote_ip_prefix": "0.0.0.0/0",
+        "direction": "ingress"
+    },
+    {
+        "protocol": "udp",
+        "port_range_max": 65535,
+        "port_range_min": 1,
+        "remote_ip_prefix": "0.0.0.0/0",
+        "direction": "ingress"
+    },
+    {
+        "protocol": "icmp",
+        "remote_ip_prefix": "0.0.0.0/0",
+        "direction": "ingress"
+    }
+]
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -120,27 +85,48 @@ class AllowSSH(context.OpenStackContext):
     """Sets up security groups for all users to access VM via SSH."""
 
     def setup(self):
-        admin_or_user = (self.context.get("admin")
-                         or self.context.get("users")[0])
+        client = neutron.NeutronService(
+            clients=self.context["users"][0]["credential"].clients(),
+            name_generator=self.generate_random_name,
+            atomic_inst=self.atomic_actions()
+        )
 
-        net_wrapper = network.wrap(
-            osclients.Clients(admin_or_user["credential"]),
-            self, config=self.config)
-        use_sg, msg = net_wrapper.supports_extension("security-group")
-        if not use_sg:
-            LOG.info("Security group context is disabled: %s" % msg)
+        if not client.supports_extension("security-group", silent=True):
+            LOG.info("Security group context is disabled.")
             return
 
         secgroup_name = self.generate_random_name()
+        secgroups_per_tenant = {}
+        for user, tenant_id in self._iterate_per_tenants():
+            client = neutron.NeutronService(
+                clients=user["credential"].clients(),
+                name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions()
+            )
+            secgroup = client.create_security_group(
+                name=secgroup_name,
+                description="Allow ssh access to VMs created by Rally")
+            secgroups_per_tenant[tenant_id] = secgroup
+
+            existing_rules = set(
+                _rule_to_key(rule)
+                for rule in secgroup.get("security_group_rules", []))
+            for new_rule in _RULES_TO_ADD:
+                if _rule_to_key(new_rule) not in existing_rules:
+                    secgroup.setdefault("security_group_rules", [])
+                    secgroup["security_group_rules"].append(
+                        client.create_security_group_rule(
+                            security_group_id=secgroup["id"], **new_rule)
+                    )
+
         for user in self.context["users"]:
-            user["secgroup"] = _prepare_open_secgroup(user["credential"],
-                                                      secgroup_name)
+            user["secgroup"] = secgroups_per_tenant[user["tenant_id"]]
 
     def cleanup(self):
-        for user, tenant_id in self._iterate_per_tenants():
-            with logging.ExceptionLogger(
-                    LOG,
-                    "Unable to delete security group: %s."
-                    % user["secgroup"]["name"]):
-                clients = osclients.Clients(user["credential"])
-                clients.neutron().delete_security_group(user["secgroup"]["id"])
+        resource_manager.cleanup(
+            names=["neutron.security_group"],
+            admin=self.context.get("admin"),
+            users=self.context["users"],
+            task_id=self.get_owner_id(),
+            superclass=self.__class__
+        )

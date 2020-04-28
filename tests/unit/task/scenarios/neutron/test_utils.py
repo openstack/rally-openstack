@@ -19,6 +19,7 @@ import ddt
 import netaddr
 
 from rally import exceptions
+from rally_openstack.common import consts
 from rally_openstack.task.scenarios.neutron import utils
 from tests.unit import test
 
@@ -251,6 +252,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
                                        "neutron.create_router")
 
     def test_create_router_with_ext_gw(self):
+        self._clients.credential.permission = consts.EndpointPermission.ADMIN
         net_id = "ext-net"
         self._nc.list_networks.return_value = {
             "networks": [{"id": net_id, "router:external": True}]

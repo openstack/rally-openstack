@@ -61,7 +61,7 @@ class NetworkWrapper(object, metaclass=abc.ABCMeta):
     START_IPV6_CIDR = "dead:beaf::/64"
     SERVICE_IMPL = None
 
-    def __init__(self, clients, owner, config=None, atomics=None):
+    def __init__(self, clients, owner, config=None):
         """Returns available network wrapper instance.
 
         :param clients: rally.plugins.openstack.osclients.Clients instance
@@ -74,6 +74,7 @@ class NetworkWrapper(object, metaclass=abc.ABCMeta):
                        recognized, 'start_cidr' and 'start_ipv6_cidr'.
         :returns: NetworkWrapper subclass instance
         """
+        self.clients = clients
         if hasattr(clients, self.SERVICE_IMPL):
             self.client = getattr(clients, self.SERVICE_IMPL)()
         else:
@@ -122,6 +123,10 @@ class NeutronWrapper(NetworkWrapper):
         class _SingleClientWrapper(object):
             def neutron(_self):
                 return self.client
+
+            @property
+            def credential(_self):
+                return self.clients.credential
 
         self.neutron = neutron.NeutronService(
             clients=_SingleClientWrapper(),

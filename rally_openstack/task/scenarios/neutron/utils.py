@@ -42,6 +42,31 @@ class NeutronBaseScenario(scenario.OpenStackScenario):
                 name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions()
             )
+        if hasattr(self, "_admin_clients"):
+            self.admin_neutron = neutron.NeutronService(
+                clients=self._admin_clients,
+                name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions()
+            )
+
+    def _get_or_create_network(self, **network_create_args):
+        """Get a network from context, or create a new one.
+
+        This lets users either create networks with the 'network'
+        context, provide existing networks with the 'existing_network'
+        context, or let the scenario create a default network for
+        them.
+        """
+
+        if "networks" in self.context["tenant"]:
+            networks = self.context["tenant"]["networks"]
+            net_idx = self.context["iteration"] % len(networks)
+            return networks[net_idx]
+        else:
+            LOG.warning("Running this scenario without either the "
+                        "'network@openstack' or 'existing_network@openstack' "
+                        "context is deprecated since Rally-OpenStack 2.0.0.")
+            return self.neutron.create_network(**network_create_args)
 
 
 class NeutronScenario(NeutronBaseScenario):

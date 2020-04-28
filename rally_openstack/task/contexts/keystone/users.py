@@ -27,7 +27,7 @@ from rally_openstack.common import consts
 from rally_openstack.common import credential
 from rally_openstack.common import osclients
 from rally_openstack.common.services.identity import identity
-from rally_openstack.common.wrappers import network
+from rally_openstack.common.services.network import neutron
 from rally_openstack.task import context
 
 
@@ -35,8 +35,8 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 
-RESOURCE_MANAGEMENT_WORKERS_DESCR = ("The number of concurrent threads to use "
-                                     "for serving users context.")
+RESOURCE_MANAGEMENT_WORKERS_DESCR = (
+    "The number of concurrent threads to use for serving users context.")
 PROJECT_DOMAIN_DESCR = "ID of domain in which projects will be created."
 USER_DOMAIN_DESCR = "ID of domain in which users will be created."
 
@@ -135,30 +135,6 @@ class UserGenerator(context.OpenStackContext):
                 for key, value in self.DEFAULT_FOR_NEW_USERS.items():
                     self.config.setdefault(key, value)
 
-    def _remove_default_security_group(self):
-        """Delete default security group for tenants."""
-        clients = osclients.Clients(self.credential)
-
-        if consts.Service.NEUTRON not in clients.services().values():
-            return
-
-        use_sg, msg = network.wrap(clients, self).supports_extension(
-            "security-group")
-        if not use_sg:
-            LOG.debug("Security group context is disabled: %s" % msg)
-            return
-
-        for user, tenant_id in self._iterate_per_tenants():
-            with logging.ExceptionLogger(
-                    LOG, "Unable to delete default security group"):
-                uclients = osclients.Clients(user["credential"])
-                security_groups = uclients.neutron()\
-                    .list_security_groups(tenant_id=tenant_id)
-                default = [sg for sg in security_groups["security_groups"]
-                           if sg["name"] == "default"]
-                if default:
-                    clients.neutron().delete_security_group(default[0]["id"])
-
     def _create_tenants(self, threads):
         tenants = collections.deque()
 
@@ -237,36 +213,6 @@ class UserGenerator(context.OpenStackContext):
         broker.run(publish, consume, threads)
         return list(users)
 
-    def _get_consumer_for_deletion(self, func_name):
-        def consume(cache, resource_id):
-            if "client" not in cache:
-                clients = osclients.Clients(self.credential)
-                cache["client"] = identity.Identity(clients)
-            getattr(cache["client"], func_name)(resource_id)
-        return consume
-
-    def _delete_tenants(self):
-        threads = self.config["resource_management_workers"]
-
-        def publish(queue):
-            for tenant_id in self.context["tenants"]:
-                queue.append(tenant_id)
-
-        broker.run(publish, self._get_consumer_for_deletion("delete_project"),
-                   threads)
-        self.context["tenants"] = {}
-
-    def _delete_users(self):
-        threads = self.config["resource_management_workers"]
-
-        def publish(queue):
-            for user in self.context["users"]:
-                queue.append(user["id"])
-
-        broker.run(publish, self._get_consumer_for_deletion("delete_user"),
-                   threads)
-        self.context["users"] = []
-
     def create_users(self):
         """Create tenants and users, using the broker pattern."""
 
@@ -330,6 +276,54 @@ class UserGenerator(context.OpenStackContext):
             self.use_existing_users()
         else:
             self.create_users()
+
+    def _remove_default_security_group(self):
+        """Delete default security group for tenants."""
+
+        admin_client = neutron.NeutronService(
+            clients=osclients.Clients(self.credential),
+            atomic_inst=self.atomic_actions()
+        )
+
+        if not admin_client.supports_extension("security-group", silent=True):
+            LOG.debug("Security group context is disabled.")
+            return
+
+        security_groups = admin_client.list_security_groups(name="default")
+        for security_group in security_groups:
+            if security_group["tenant_id"] not in self.context["tenants"]:
+                continue
+            admin_client.delete_security_group(security_group["id"])
+
+    def _get_consumer_for_deletion(self, func_name):
+        def consume(cache, resource_id):
+            if "client" not in cache:
+                clients = osclients.Clients(self.credential)
+                cache["client"] = identity.Identity(clients)
+            getattr(cache["client"], func_name)(resource_id)
+        return consume
+
+    def _delete_tenants(self):
+        threads = self.config["resource_management_workers"]
+
+        def publish(queue):
+            for tenant_id in self.context["tenants"]:
+                queue.append(tenant_id)
+
+        broker.run(publish, self._get_consumer_for_deletion("delete_project"),
+                   threads)
+        self.context["tenants"] = {}
+
+    def _delete_users(self):
+        threads = self.config["resource_management_workers"]
+
+        def publish(queue):
+            for user in self.context["users"]:
+                queue.append(user["id"])
+
+        broker.run(publish, self._get_consumer_for_deletion("delete_user"),
+                   threads)
+        self.context["users"] = []
 
     def cleanup(self):
         """Delete tenants and users, using the broker pattern."""

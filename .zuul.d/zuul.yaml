@@ -58,6 +58,9 @@
               - .zuul.d/zuul.yaml
               - rally-jobs/neutron-trunk.yaml
               - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/network
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/contexts/network
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
@@ -105,6 +108,9 @@
             files:
               - rally-jobs/neutron-trunk.yaml
               - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/network
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/contexts/network
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks

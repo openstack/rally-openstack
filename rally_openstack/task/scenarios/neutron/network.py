@@ -28,13 +28,16 @@ LOG = logging.getLogger(__name__)
 """Scenarios for Neutron."""
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_list_networks",
                     platform="openstack")
-class CreateAndListNetworks(utils.NeutronScenario):
+class CreateAndListNetworks(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None):
         """Create a network and then list all networks.
@@ -49,17 +52,20 @@ class CreateAndListNetworks(utils.NeutronScenario):
 
         :param network_create_args: dict, POST /v2.0/networks request options
         """
-        self._create_network(network_create_args or {})
-        self._list_networks()
+        self.neutron.create_network(**(network_create_args or {}))
+        self.neutron.list_networks()
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_show_network",
                     platform="openstack")
-class CreateAndShowNetwork(utils.NeutronScenario):
+class CreateAndShowNetwork(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None):
         """Create a network and show network details.
@@ -68,17 +74,23 @@ class CreateAndShowNetwork(utils.NeutronScenario):
 
         :param network_create_args: dict, POST /v2.0/networks request options
         """
-        network = self._create_network(network_create_args or {})
-        self._show_network(network)
+        network = self.neutron.create_network(**(network_create_args or {}))
+        self.neutron.get_network(network["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_update_args")
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_update_networks",
                     platform="openstack")
-class CreateAndUpdateNetworks(utils.NeutronScenario):
+class CreateAndUpdateNetworks(utils.NeutronBaseScenario):
 
     def run(self, network_update_args, network_create_args=None):
         """Create and update a network.
@@ -88,16 +100,19 @@ class CreateAndUpdateNetworks(utils.NeutronScenario):
         :param network_update_args: dict, PUT /v2.0/networks update request
         :param network_create_args: dict, POST /v2.0/networks request options
         """
-        network = self._create_network(network_create_args or {})
-        self._update_network(network, network_update_args)
+        network = self.neutron.create_network(**(network_create_args or {}))
+        self.neutron.update_network(network["id"], **network_update_args)
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_delete_networks",
                     platform="openstack")
-class CreateAndDeleteNetworks(utils.NeutronScenario):
+class CreateAndDeleteNetworks(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None):
         """Create and delete a network.
@@ -106,10 +121,16 @@ class CreateAndDeleteNetworks(utils.NeutronScenario):
 
         :param network_create_args: dict, POST /v2.0/networks request options
         """
-        network = self._create_network(network_create_args or {})
-        self._delete_network(network["network"])
+        network = self.neutron.create_network(**(network_create_args or {}))
+        self.neutron.delete_network(network["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -118,7 +139,7 @@ class CreateAndDeleteNetworks(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_list_subnets",
                     platform="openstack")
-class CreateAndListSubnets(utils.NeutronScenario):
+class CreateAndListSubnets(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None, subnet_create_args=None,
             subnet_cidr_start=None, subnets_per_network=1):
@@ -133,12 +154,23 @@ class CreateAndListSubnets(utils.NeutronScenario):
         :param subnet_cidr_start: str, start value for subnets CIDR
         :param subnets_per_network: int, number of subnets for one network
         """
-        network = self._create_network(network_create_args or {})
-        self._create_subnets(network, subnet_create_args, subnet_cidr_start,
-                             subnets_per_network)
-        self._list_subnets()
+        network = self.neutron.create_network(**(network_create_args or {}))
+        for _ in range(subnets_per_network):
+            self.neutron.create_subnet(network["id"],
+                                       start_cidr=subnet_cidr_start,
+                                       **(subnet_create_args or {}))
+        self.neutron.list_subnets()
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_update_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -147,7 +179,7 @@ class CreateAndListSubnets(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_update_subnets",
                     platform="openstack")
-class CreateAndUpdateSubnets(utils.NeutronScenario):
+class CreateAndUpdateSubnets(utils.NeutronBaseScenario):
 
     def run(self, subnet_update_args, network_create_args=None,
             subnet_create_args=None, subnet_cidr_start=None,
@@ -165,14 +197,24 @@ class CreateAndUpdateSubnets(utils.NeutronScenario):
         :param subnet_cidr_start: str, start value for subnets CIDR
         :param subnets_per_network: int, number of subnets for one network
         """
-        network = self._create_network(network_create_args or {})
-        subnets = self._create_subnets(network, subnet_create_args,
-                                       subnet_cidr_start, subnets_per_network)
-
+        network = self.neutron.create_network(**(network_create_args or {}))
+        subnets = []
+        for _ in range(subnets_per_network):
+            subnets.append(
+                self.neutron.create_subnet(
+                    network["id"], start_cidr=subnet_cidr_start,
+                    **(subnet_create_args or {}))
+            )
         for subnet in subnets:
-            self._update_subnet(subnet, subnet_update_args)
+            self.neutron.update_subnet(subnet["id"], **subnet_update_args)
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -181,7 +223,7 @@ class CreateAndUpdateSubnets(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_show_subnets",
                     platform="openstack")
-class CreateAndShowSubnets(utils.NeutronScenario):
+class CreateAndShowSubnets(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None,
             subnet_create_args=None, subnet_cidr_start=None,
@@ -198,14 +240,24 @@ class CreateAndShowSubnets(utils.NeutronScenario):
         :param subnet_cidr_start: str, start value for subnets CIDR
         :param subnets_per_network: int, number of subnets for one network
         """
-        network = self._get_or_create_network(network_create_args)
-        subnets = self._create_subnets(network, subnet_create_args,
-                                       subnet_cidr_start, subnets_per_network)
-
+        network = self._get_or_create_network(**(network_create_args or {}))
+        subnets = []
+        for _ in range(subnets_per_network):
+            subnets.append(
+                self.neutron.create_subnet(
+                    network["id"], start_cidr=subnet_cidr_start,
+                    **(subnet_create_args or {}))
+            )
         for subnet in subnets:
-            self._show_subnet(subnet)
+            self.neutron.get_subnet(subnet["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -213,7 +265,7 @@ class CreateAndShowSubnets(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_delete_subnets",
                     platform="openstack")
-class CreateAndDeleteSubnets(utils.NeutronScenario):
+class CreateAndDeleteSubnets(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None, subnet_create_args=None,
             subnet_cidr_start=None, subnets_per_network=1):
@@ -228,14 +280,27 @@ class CreateAndDeleteSubnets(utils.NeutronScenario):
         :param subnet_cidr_start: str, start value for subnets CIDR
         :param subnets_per_network: int, number of subnets for one network
         """
-        network = self._get_or_create_network(network_create_args)
-        subnets = self._create_subnets(network, subnet_create_args,
-                                       subnet_cidr_start, subnets_per_network)
-
+        network = self._get_or_create_network(**(network_create_args or {}))
+        subnets = []
+        for _ in range(subnets_per_network):
+            subnets.append(
+                self.neutron.create_subnet(
+                    network["id"], start_cidr=subnet_cidr_start,
+                    **(subnet_create_args or {}))
+            )
         for subnet in subnets:
-            self._delete_subnet(subnet)
+            self.neutron.delete_subnet(subnet["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="router_create_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -244,7 +309,7 @@ class CreateAndDeleteSubnets(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_list_routers",
                     platform="openstack")
-class CreateAndListRouters(utils.NeutronScenario):
+class CreateAndListRouters(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None, subnet_create_args=None,
             subnet_cidr_start=None, subnets_per_network=1,
@@ -261,12 +326,28 @@ class CreateAndListRouters(utils.NeutronScenario):
         :param subnets_per_network: int, number of subnets for one network
         :param router_create_args: dict, POST /v2.0/routers request options
         """
-        self._create_network_structure(network_create_args, subnet_create_args,
-                                       subnet_cidr_start, subnets_per_network,
-                                       router_create_args)
-        self._list_routers()
+        subnet_create_args = dict(subnet_create_args or {})
+        subnet_create_args["start_cidr"] = subnet_cidr_start
+
+        self.neutron.create_network_topology(
+            network_create_args=(network_create_args or {}),
+            router_create_args=(router_create_args or {}),
+            router_per_subnet=True,
+            subnet_create_args=subnet_create_args,
+            subnets_count=subnets_per_network
+        )
+        self.neutron.list_routers()
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="router_create_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services", services=[consts.Service.NEUTRON])
@@ -274,7 +355,7 @@ class CreateAndListRouters(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_show_routers",
                     platform="openstack")
-class CreateAndShowRouters(utils.NeutronScenario):
+class CreateAndShowRouters(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None, subnet_create_args=None,
             subnet_cidr_start=None, subnets_per_network=1,
@@ -291,14 +372,33 @@ class CreateAndShowRouters(utils.NeutronScenario):
         :param subnets_per_network: int, number of subnets for each network
         :param router_create_args: dict, POST /v2.0/routers request options
         """
-        network, subnets, routers = self._create_network_structure(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
+        subnet_create_args = dict(subnet_create_args or {})
+        subnet_create_args["start_cidr"] = subnet_cidr_start
 
-        for router in routers:
-            self._show_router(router)
+        net_topo = self.neutron.create_network_topology(
+            network_create_args=(network_create_args or {}),
+            router_create_args=(router_create_args or {}),
+            router_per_subnet=True,
+            subnet_create_args=subnet_create_args,
+            subnets_count=subnets_per_network
+        )
+
+        for router in net_topo["routers"]:
+            self.neutron.get_router(router["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="router_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="router_update_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -306,7 +406,7 @@ class CreateAndShowRouters(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_update_routers",
                     platform="openstack")
-class CreateAndUpdateRouters(utils.NeutronScenario):
+class CreateAndUpdateRouters(utils.NeutronBaseScenario):
 
     def run(self, router_update_args, network_create_args=None,
             subnet_create_args=None, subnet_cidr_start=None,
@@ -324,14 +424,30 @@ class CreateAndUpdateRouters(utils.NeutronScenario):
         :param subnets_per_network: int, number of subnets for one network
         :param router_create_args: dict, POST /v2.0/routers request options
         """
-        network, subnets, routers = self._create_network_structure(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
+        subnet_create_args = dict(subnet_create_args or {})
+        subnet_create_args["start_cidr"] = subnet_cidr_start
 
-        for router in routers:
-            self._update_router(router, router_update_args)
+        net_topo = self.neutron.create_network_topology(
+            network_create_args=(network_create_args or {}),
+            router_create_args=(router_create_args or {}),
+            router_per_subnet=True,
+            subnet_create_args=subnet_create_args,
+            subnets_count=subnets_per_network
+        )
+
+        for router in net_topo["routers"]:
+            self.neutron.update_router(router["id"], **router_update_args)
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="subnet_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="router_create_args")
 @validation.add("number", param_name="subnets_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -339,7 +455,7 @@ class CreateAndUpdateRouters(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_delete_routers",
                     platform="openstack")
-class CreateAndDeleteRouters(utils.NeutronScenario):
+class CreateAndDeleteRouters(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None, subnet_create_args=None,
             subnet_cidr_start=None, subnets_per_network=1,
@@ -356,24 +472,38 @@ class CreateAndDeleteRouters(utils.NeutronScenario):
         :param subnets_per_network: int, number of subnets for one network
         :param router_create_args: dict, POST /v2.0/routers request options
         """
-        network, subnets, routers = self._create_network_structure(
-            network_create_args, subnet_create_args, subnet_cidr_start,
-            subnets_per_network, router_create_args)
+        subnet_create_args = dict(subnet_create_args or {})
+        subnet_create_args["start_cidr"] = subnet_cidr_start
+
+        net_topo = self.neutron.create_network_topology(
+            network_create_args=(network_create_args or {}),
+            router_create_args=(router_create_args or {}),
+            router_per_subnet=True,
+            subnet_create_args=subnet_create_args,
+            subnets_count=subnets_per_network
+        )
 
         for e in range(subnets_per_network):
-            router = routers[e]
-            subnet = subnets[e]
-            self._remove_interface_router(subnet["subnet"], router["router"])
-            self._delete_router(router)
+            router = net_topo["routers"][e]
+            subnet = net_topo["subnets"][e]
+            self.neutron.remove_interface_from_router(subnet_id=subnet["id"],
+                                                      router_id=router["id"])
+            self.neutron.delete_router(router["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="router_create_args")
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.set_and_clear_router_gateway",
                     platform="openstack")
-class SetAndClearRouterGateway(utils.NeutronScenario):
+class SetAndClearRouterGateway(utils.NeutronBaseScenario):
 
     def run(self, enable_snat=True, network_create_args=None,
             router_create_args=None):
@@ -390,12 +520,21 @@ class SetAndClearRouterGateway(utils.NeutronScenario):
         """
         network_create_args = network_create_args or {}
         router_create_args = router_create_args or {}
-        ext_net = self._create_network(network_create_args)
-        router = self._create_router(router_create_args)
-        self._add_gateway_router(router, ext_net, enable_snat)
-        self._remove_gateway_router(router)
+
+        ext_net = self.neutron.create_network(**network_create_args)
+        router = self.neutron.create_router(**router_create_args)
+        self.neutron.add_gateway_to_router(router_id=router["id"],
+                                           network_id=ext_net["id"],
+                                           enable_snat=enable_snat)
+        self.neutron.remove_gateway_from_router(router["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="port_create_args")
 @validation.add("number", param_name="ports_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -404,7 +543,7 @@ class SetAndClearRouterGateway(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_list_ports",
                     platform="openstack")
-class CreateAndListPorts(utils.NeutronScenario):
+class CreateAndListPorts(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None,
             port_create_args=None, ports_per_network=1):
@@ -415,13 +554,22 @@ class CreateAndListPorts(utils.NeutronScenario):
         :param port_create_args: dict, POST /v2.0/ports request options
         :param ports_per_network: int, number of ports for one network
         """
-        network = self._get_or_create_network(network_create_args)
+        network = self._get_or_create_network(**(network_create_args or {}))
         for i in range(ports_per_network):
-            self._create_port(network, port_create_args or {})
+            self.neutron.create_port(network["id"], **(port_create_args or {}))
 
-        self._list_ports()
+        self.neutron.list_ports()
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="port_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="port_update_args")
 @validation.add("number", param_name="ports_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -430,7 +578,7 @@ class CreateAndListPorts(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_update_ports",
                     platform="openstack")
-class CreateAndUpdatePorts(utils.NeutronScenario):
+class CreateAndUpdatePorts(utils.NeutronBaseScenario):
 
     def run(self, port_update_args, network_create_args=None,
             port_create_args=None, ports_per_network=1):
@@ -445,12 +593,19 @@ class CreateAndUpdatePorts(utils.NeutronScenario):
         :param port_create_args: dict, POST /v2.0/ports request options
         :param ports_per_network: int, number of ports for one network
         """
-        network = self._get_or_create_network(network_create_args)
+        network = self._get_or_create_network(**(network_create_args or {}))
         for i in range(ports_per_network):
-            port = self._create_port(network, port_create_args)
-            self._update_port(port, port_update_args)
+            port = self.neutron.create_port(
+                network["id"], **(port_create_args or {}))
+            self.neutron.update_port(port["id"], **port_update_args)
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="port_create_args")
 @validation.add("number", param_name="ports_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -459,7 +614,7 @@ class CreateAndUpdatePorts(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_show_ports",
                     platform="openstack")
-class CreateAndShowPorts(utils.NeutronScenario):
+class CreateAndShowPorts(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None,
             port_create_args=None, ports_per_network=1):
@@ -473,21 +628,20 @@ class CreateAndShowPorts(utils.NeutronScenario):
         :param port_create_args: dict, POST /v2.0/ports request options
         :param ports_per_network: int, number of ports for one network
         """
-        network_create_args = network_create_args or {}
-        port_create_args = port_create_args or {}
-
-        network = self._get_or_create_network(network_create_args)
+        network = self._get_or_create_network(**(network_create_args or {}))
         for i in range(ports_per_network):
-            port = self._create_port(network, port_create_args)
-            msg = "Port isn't created"
-            self.assertTrue(port, err_msg=msg)
+            port = self.neutron.create_port(
+                network["id"], **(port_create_args or {}))
 
-            port_info = self._show_port(port)
-            msg = "Created port and Showed port isn't equal"
-            self.assertEqual(port["port"]["id"], port_info["port"]["id"],
-                             err_msg=msg)
+            self.neutron.get_port(port["id"])
 
 
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="network_create_args")
+@validation.add("restricted_parameters",
+                param_names="name",
+                subdict="port_create_args")
 @validation.add("number", param_name="ports_per_network", minval=1,
                 integer_only=True)
 @validation.add("required_services",
@@ -495,7 +649,7 @@ class CreateAndShowPorts(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_delete_ports",
                     platform="openstack")
-class CreateAndDeletePorts(utils.NeutronScenario):
+class CreateAndDeletePorts(utils.NeutronBaseScenario):
 
     def run(self, network_create_args=None,
             port_create_args=None, ports_per_network=1):
@@ -509,10 +663,12 @@ class CreateAndDeletePorts(utils.NeutronScenario):
         :param port_create_args: dict, POST /v2.0/ports request options
         :param ports_per_network: int, number of ports for one network
         """
-        network = self._get_or_create_network(network_create_args)
+        network = self._get_or_create_network(**(network_create_args or {}))
         for i in range(ports_per_network):
-            port = self._create_port(network, port_create_args)
-            self._delete_port(port)
+            port = self.neutron.create_port(
+                network["id"], **(port_create_args or {}))
+
+            self.neutron.delete_port(port["id"])
 
 
 @validation.add("number", param_name="ports_per_network", minval=1,
@@ -527,7 +683,7 @@ class CreateAndDeletePorts(utils.NeutronScenario):
                              "network@openstack": {}},
                     name="NeutronNetworks.create_and_bind_ports",
                     platform="openstack")
-class CreateAndBindPorts(utils.NeutronScenario):
+class CreateAndBindPorts(utils.NeutronBaseScenario):
 
     def run(self, ports_per_network=1):
         """Bind a given number of ports.
@@ -558,29 +714,17 @@ class CreateAndBindPorts(utils.NeutronScenario):
 
         tenant_id = self.context["tenant"]["id"]
         for network in self.context["tenants"][tenant_id]["networks"]:
-            wrapped_network = {"network": network}
-
-            self._create_subnet(
-                wrapped_network,
-                start_cidr="10.2.0.0/24",
-                subnet_create_args={},
-            )
-            self._create_subnet(
-                wrapped_network,
-                start_cidr="2001:db8:1:1::/64",
-                subnet_create_args={},
-            )
+            self.neutron.create_subnet(network_id=network["id"], ip_version=4)
+            self.neutron.create_subnet(network_id=network["id"], ip_version=6)
 
             for i in range(ports_per_network):
-                port = self._create_port(wrapped_network, port_create_args={})
+                port = self.neutron.create_port(network_id=network["id"])
                 # port bind needs admin role
-                self._update_port(
-                    port,
-                    port_update_args={
-                        "device_owner": "compute:nova",
-                        "device_id": "ba805478-85ff-11e9-a2e4-2b8dea218fc8",
-                        "binding:host_id": host_to_bind,
-                    },
+                self.admin_neutron.update_port(
+                    port_id=port["id"],
+                    device_owner="compute:nova",
+                    device_id="ba805478-85ff-11e9-a2e4-2b8dea218fc8",
+                    **{"binding:host_id": host_to_bind},
                 )
 
 
@@ -591,7 +735,7 @@ class CreateAndBindPorts(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_list_floating_ips",
                     platform="openstack")
-class CreateAndListFloatingIps(utils.NeutronScenario):
+class CreateAndListFloatingIps(utils.NeutronBaseScenario):
 
     def run(self, floating_network=None, floating_ip_args=None):
         """Create and list floating IPs.
@@ -603,8 +747,9 @@ class CreateAndListFloatingIps(utils.NeutronScenario):
         :param floating_ip_args: dict, POST /floatingips request options
         """
         floating_ip_args = floating_ip_args or {}
-        self._create_floatingip(floating_network, **floating_ip_args)
-        self._list_floating_ips()
+        self.neutron.create_floatingip(floating_network=floating_network,
+                                       **floating_ip_args)
+        self.neutron.list_floatingips()
 
 
 @validation.add("required_services",
@@ -614,7 +759,7 @@ class CreateAndListFloatingIps(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronNetworks.create_and_delete_floating_ips",
                     platform="openstack")
-class CreateAndDeleteFloatingIps(utils.NeutronScenario):
+class CreateAndDeleteFloatingIps(utils.NeutronBaseScenario):
 
     def run(self, floating_network=None, floating_ip_args=None):
         """Create and delete floating IPs.
@@ -626,9 +771,9 @@ class CreateAndDeleteFloatingIps(utils.NeutronScenario):
         :param floating_ip_args: dict, POST /floatingips request options
         """
         floating_ip_args = floating_ip_args or {}
-        floating_ip = self._create_floatingip(floating_network,
-                                              **floating_ip_args)
-        self._delete_floating_ip(floating_ip["floatingip"])
+        floatingip = self.neutron.create_floatingip(
+            floating_network=floating_network, **floating_ip_args)
+        self.neutron.delete_floatingip(floatingip["id"])
 
 
 @validation.add("required_services",
@@ -639,7 +784,7 @@ class CreateAndDeleteFloatingIps(utils.NeutronScenario):
     context={"cleanup@openstack": ["neutron"]},
     name="NeutronNetworks.associate_and_dissociate_floating_ips",
     platform="openstack")
-class AssociateAndDissociateFloatingIps(utils.NeutronScenario):
+class AssociateAndDissociateFloatingIps(utils.NeutronBaseScenario):
 
     def run(self, floating_network=None):
         """Associate and dissociate floating IPs.
@@ -658,40 +803,31 @@ class AssociateAndDissociateFloatingIps(utils.NeutronScenario):
 
         :param floating_network: str, external network for floating IP creation
         """
-        floating_ip = self._create_floatingip(
-            floating_network)
+        floating_network = self.neutron.find_network(floating_network,
+                                                     external=True)
+        floating_ip = self.neutron.create_floatingip(
+            floating_network=floating_network)
 
-        private_network = self._create_network(
-            network_create_args={})
-        subnet = self._create_subnet(
-            network=private_network,
-            subnet_create_args={})
-        port = self._create_port(
-            network=private_network,
-            port_create_args={})
+        private_network = self.neutron.create_network()
+        subnet = self.neutron.create_subnet(network_id=private_network["id"])
+        port = self.neutron.create_port(network_id=private_network["id"])
 
-        router = self._create_router(
-            router_create_args={})
-        floating_network_id = self._get_network_id(floating_network)
-        self._add_gateway_router(
-            router,
-            {"network": {"id": floating_network_id}})
-        self._add_interface_router(
-            subnet["subnet"],
-            router["router"])
+        router = self.neutron.create_router()
+        self.neutron.add_gateway_to_router(
+            router["id"], network_id=floating_network["id"])
+        self.neutron.add_interface_to_router(
+            subnet_id=subnet["id"], router_id=router["id"])
 
-        self._associate_floating_ip(
-            floatingip=floating_ip["floatingip"],
-            port=port["port"])
-        self._dissociate_floating_ip(
-            floatingip=floating_ip["floatingip"])
+        self.neutron.associate_floatingip(
+            floatingip_id=floating_ip["id"], port_id=port["id"])
+        self.neutron.dissociate_floatingip(floatingip_id=floating_ip["id"])
 
 
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(name="NeutronNetworks.list_agents", platform="openstack")
-class ListAgents(utils.NeutronScenario):
+class ListAgents(utils.NeutronBaseScenario):
 
     def run(self, agent_args=None):
         """List all neutron agents.
@@ -702,7 +838,7 @@ class ListAgents(utils.NeutronScenario):
         :param agent_args: dict, POST /v2.0/agents request options
         """
         agent_args = agent_args or {}
-        self._list_agents(**agent_args)
+        self.neutron.list_agents(**agent_args)
 
 
 @validation.add("required_services",
@@ -712,7 +848,7 @@ class ListAgents(utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron"]},
                     name="NeutronSubnets.delete_subnets",
                     platform="openstack")
-class DeleteSubnets(utils.NeutronScenario):
+class DeleteSubnets(utils.NeutronBaseScenario):
 
     def run(self):
         """Delete a subnet that belongs to each precreated network.
@@ -733,4 +869,4 @@ class DeleteSubnets(utils.NeutronScenario):
         for network in self.context["tenants"][tenant_id]["networks"]:
             # delete one of subnets based on the user sequential number
             subnet_id = network["subnets"][number]
-            self._delete_subnet({"subnet": {"id": subnet_id}})
+            self.neutron.delete_subnet(subnet_id)

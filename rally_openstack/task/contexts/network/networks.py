@@ -17,17 +17,15 @@ from rally.common import logging
 from rally.common import validation
 
 from rally_openstack.common import consts
-from rally_openstack.common import osclients
-from rally_openstack.common.wrappers import network as network_wrapper
+from rally_openstack.common.services.network import neutron
+from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
 
 
 LOG = logging.getLogger(__name__)
 
 
-# NOTE(andreykurilin): admin is used only by cleanup
-@validation.add("required_platform", platform="openstack", admin=True,
-                users=True)
+@validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="network", platform="openstack", order=350)
 class Network(context.OpenStackContext):
     """Create networking resources.
@@ -67,7 +65,13 @@ class Network(context.OpenStackContext):
                 "type": "object",
                 "properties": {
                     "external": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "Create a new external router."
+                    },
+                    "enable_snat": {
+                        "type": "boolean",
+                        "description": "Whether to enable SNAT for a router "
+                                       "if there is following extension or not"
                     },
                     "external_gateway_info": {
                         "description": "The external gateway information .",
@@ -90,7 +94,6 @@ class Network(context.OpenStackContext):
         "networks_per_tenant": 1,
         "subnets_per_network": 1,
         "network_create_args": {},
-        "dns_nameservers": None,
         "router": {"external": True},
         "dualstack": False
     }
@@ -100,27 +103,47 @@ class Network(context.OpenStackContext):
         #               multithreading/multiprocessing, it is likely the
         #               sockets are left open. This problem is eliminated by
         #               creating a connection in setup and cleanup separately.
-        net_wrapper = network_wrapper.wrap(
-            osclients.Clients(self.context["admin"]["credential"]),
-            self,
-            config=self.config
-        )
-        kwargs = {}
-        if self.config["dns_nameservers"] is not None:
-            kwargs["dns_nameservers"] = self.config["dns_nameservers"]
+
         for user, tenant_id in self._iterate_per_tenants():
             self.context["tenants"][tenant_id]["networks"] = []
             self.context["tenants"][tenant_id]["subnets"] = []
 
+            client = neutron.NeutronService(
+                user["credential"].clients(),
+                name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions()
+            )
+            network_create_args = self.config["network_create_args"].copy()
+            subnet_create_args = {
+                "start_cidr": (self.config["start_cidr"]
+                               if not self.config["dualstack"] else None)}
+            if "dns_nameservers" in self.config:
+                dns_nameservers = self.config["dns_nameservers"]
+                subnet_create_args["dns_nameservers"] = dns_nameservers
+
+            router_create_args = dict(self.config["router"] or {})
+            if not router_create_args:
+                # old behaviour - empty dict means no router create
+                router_create_args = None
+            elif "external" in router_create_args:
+                external = router_create_args.pop("external")
+                router_create_args["discover_external_gw"] = external
+
             for i in range(self.config["networks_per_tenant"]):
-                network_create_args = self.config["network_create_args"].copy()
-                net_infra = net_wrapper._create_network_infrastructure(
-                    tenant_id,
-                    dualstack=self.config["dualstack"],
-                    subnets_num=self.config["subnets_per_network"],
+
+                net_infra = client.create_network_topology(
                     network_create_args=network_create_args,
-                    router_create_args=self.config["router"],
-                    **kwargs)
+                    subnet_create_args=subnet_create_args,
+                    subnets_dualstack=self.config["dualstack"],
+                    subnets_count=self.config["subnets_per_network"],
+                    router_create_args=router_create_args)
+
+                if net_infra["routers"]:
+                    router_id = net_infra["routers"][0]["id"]
+                else:
+                    router_id = None
+                net_infra["network"]["router_id"] = router_id
+
                 self.context["tenants"][tenant_id]["networks"].append(
                     net_infra["network"]
                 )
@@ -129,12 +152,13 @@ class Network(context.OpenStackContext):
                 )
 
     def cleanup(self):
-        net_wrapper = network_wrapper.wrap(
-            osclients.Clients(self.context["admin"]["credential"]),
-            self, config=self.config)
-        for tenant_id, tenant_ctx in self.context["tenants"].items():
-            for network in tenant_ctx.get("networks", []):
-                with logging.ExceptionLogger(
-                        LOG,
-                        "Failed to delete network for tenant %s" % tenant_id):
-                    net_wrapper.delete_network(network)
+        resource_manager.cleanup(
+            names=[
+                "neutron.subnet", "neutron.network", "neutron.router",
+                "neutron.port"
+            ],
+            admin=self.context.get("admin"),
+            users=self.context.get("users", []),
+            task_id=self.get_owner_id(),
+            superclass=self.__class__
+        )
