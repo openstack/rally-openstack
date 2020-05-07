@@ -16,13 +16,20 @@ import copy
 import datetime as dt
 from unittest import mock
 
-from dateutil import parser
-
 from rally import exceptions
 from rally_openstack.task.scenarios.ceilometer import utils
 from tests.unit import test
 
 CEILOMETER_UTILS = "rally_openstack.task.scenarios.ceilometer.utils"
+
+
+def get_dt_diff(dt1, dt2):
+    """Returns a diff between to datetime objects in seconds."""
+    if isinstance(dt1, str):
+        dt1 = dt.datetime.strptime(dt1, "%Y-%m-%dT%H:%M:%S")
+    if isinstance(dt2, str):
+        dt2 = dt.datetime.strptime(dt2, "%Y-%m-%dT%H:%M:%S")
+    return (dt1 - dt2).seconds
 
 
 class CeilometerScenarioTestCase(test.ScenarioTestCase):
@@ -44,8 +51,8 @@ class CeilometerScenarioTestCase(test.ScenarioTestCase):
                     "resource_id": "fake_uuid",
                     "timestamp": test_timestamp.isoformat()}
         self.assertEqual(expected, result[0][0])
-        samples_int = (parser.parse(result[0][0]["timestamp"])
-                       - parser.parse(result[0][1]["timestamp"])).seconds
+        samples_int = get_dt_diff(result[0][0]["timestamp"],
+                                  result[0][1]["timestamp"])
         self.assertEqual(60, samples_int)
 
     @mock.patch("%s.uuid.uuid4" % CEILOMETER_UTILS)
@@ -63,8 +70,8 @@ class CeilometerScenarioTestCase(test.ScenarioTestCase):
                     "resource_id": "fake_uuid",
                     "timestamp": test_timestamp.isoformat()}
         self.assertEqual(expected, result[0][0])
-        samples_int = (parser.parse(result[0][-1]["timestamp"])
-                       - parser.parse(result[1][0]["timestamp"])).seconds
+        samples_int = get_dt_diff(result[0][-1]["timestamp"],
+                                  result[1][0]["timestamp"])
         # NOTE(idegtiarov): here we check that interval between last sample in
         # first batch and first sample in second batch is equal 60 sec.
         self.assertEqual(60, samples_int)

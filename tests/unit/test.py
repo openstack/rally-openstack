@@ -18,7 +18,7 @@ import os
 from unittest import mock
 import uuid
 
-from oslotest import base
+import testtools
 
 from rally.common import cfg
 from rally.common import db
@@ -41,7 +41,7 @@ class DatabaseFixture(cfg.fixture.Config):
         db.schema_create()
 
 
-class TestCase(base.BaseTestCase):
+class TestCase(testtools.TestCase):
     """Test case base class for all unit tests."""
 
     def setUp(self):
