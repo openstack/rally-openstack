@@ -65,8 +65,6 @@ class DocstringsTestCase(test.TestCase):
     _HAS_VALID_DEFINITIONS = []
 
     def _validate_rst(self, plugin_name, text, msg_buffer):
-        # need to wait till the next release of rally
-        return
         parsed_docstring = _parse_rst(text)
         for item in parsed_docstring:
             if (isinstance(item, nodes.definition_list)

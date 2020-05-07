@@ -648,6 +648,7 @@ class AssociateAndDissociateFloatingIps(utils.NeutronScenario):
         "openstack floating ip unset" commands performance.
         Because of the prerequisites for "floating ip set/unset" we also
         measure the performance of the following commands:
+
           * "openstack network create"
           * "openstack subnet create"
           * "openstack port create"

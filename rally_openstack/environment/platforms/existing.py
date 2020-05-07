@@ -263,55 +263,44 @@ class OpenStack(platform.Platform):
     def create_spec_from_sys_environ(cls, sys_environ):
         """Create a spec based on system environment.
 
-        .. envvar:: OS_AUTH_URL
-            The auth url for OpenStack cluster. Supported both versioned and
-            unversioned urls.
+        * OS_AUTH_URL - The auth url for OpenStack cluster. Supported both
+          versioned and unversioned urls.
 
-        .. envvar:: OS_USERNAME
-            A user name with admin role to use.
+        * OS_USERNAME - A user name with admin role to use.
 
-        .. envvar:: OS_PASSWORD
-            A password for selected user.
+        * OS_PASSWORD - A password for selected user.
 
-        .. envvar:: OS_PROJECT_NAME
-            Project name to scope to
+        * OS_PROJECT_NAME - Project name to scope to
 
-        .. envvar:: OS_TENANT_NAME
-            Project name to scope to (an alternative for $OS_PROJECT_NAME)
+        * OS_TENANT_NAME - Project name to scope to (an alternative for
+          $OS_PROJECT_NAME)
 
-        .. envvar:: OS_USER_DOMAIN_NAME
-            User domain name (in case of Keystone V3)
+        * OS_USER_DOMAIN_NAME - User domain name (in case of Keystone V3)
 
-        .. envvar:: OS_PROJECT_DOMAIN_NAME
-            Domain name containing project (in case of Keystone V3)
+        * OS_PROJECT_DOMAIN_NAME - Domain name containing project (in case of
+          Keystone V3)
 
-        .. envvar:: OS_ENDPOINT_TYPE
-             Type of endpoint. Valid endpoint types: admin, public, internal
+        * OS_ENDPOINT_TYPE - Type of endpoint. Valid endpoint types: admin,
+          public, internal
 
-        .. envvar:: OS_INTERFACE
-             Type of endpoint (an alternative for $OS_INTERFACE)
+        * OS_INTERFACE - Type of endpoint (an alternative for OS_ENDPOINT_TYPE)
 
-        .. envvar:: OS_REGION_NAME
-             Authentication region name
+        * OS_REGION_NAME - Authentication region name
 
-        .. envvar:: OS_CACERT
-             A path to CA certificate bundle file
+        * OS_CACERT - A path to CA certificate bundle file
 
-        .. envvar:: OS_CERT
-             A path to Client certificate bundle file
+        * OS_CERT - A path to Client certificate bundle file
 
-        .. envvar:: OS_KEY
-             A path to Client certificate key file
+        * OS_KEY - A path to Client certificate key file
 
-        .. envvar:: OS_INSECURE
-             Disable server certificate verification
+        * OS_INSECURE - Disable server certificate verification
 
-        .. envvar:: OSPROFILER_HMAC_KEY
-             HMAC key to use for encrypting context while using osprofiler
+        * OSPROFILER_HMAC_KEY - HMAC key to use for encrypting context while
+          using osprofiler
 
-        .. envvar:: OSPROFILER_CONN_STR
-             A connection string for OSProfiler collector to grep profiling
-             results while building html task reports
+        * OSPROFILER_CONN_STR - A connection string for OSProfiler collector
+          to grep profiling results while building html task reports
+
         """
 
         from oslo_utils import strutils
@@ -383,9 +372,12 @@ class OpenStack(platform.Platform):
     @classmethod
     def _get_doc(cls):
         doc = cls.__doc__.strip()
-        doc += "\n **Create a spec based on system environment.**\n"
-        # cut the first line since we already included the first line of it.
-        doc += "\n".join(
-            [line.strip() for line in
-             cls.create_spec_from_sys_environ.__doc__.split("\n")][1:])
+
+        env_vars_docs = cls.create_spec_from_sys_environ.__doc__
+        env_vars_description = "\n".join(
+            line for line in env_vars_docs.split("\n")[1:]
+        )
+        doc += (f"\n **The following environment variables are expected for "
+                f"creation a Rally environment using sustem environment "
+                f"variables**\n{env_vars_description}")
         return doc

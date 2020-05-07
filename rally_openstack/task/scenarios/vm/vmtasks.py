@@ -566,14 +566,17 @@ class CheckDesignateDNSResolving(vm_utils.VMScenario):
         """Try to resolve hostname from VM against existing designate DNS.
 
         - requires zone context with set_zone_in_network parameter
-            zones:
-                set_zone_in_network: True
+
+            > zones:
+            >  set_zone_in_network: True
+
         - designate IP should be in default dns_nameservers list for new
-        networks or it can be specified in a network context
-            network:
-                dns_nameservers:
-                   - 8.8.8.8
-                   - 192.168.210.45
+          networks or it can be specified in a network context
+
+            > network:
+            >     dns_nameservers:
+            >       - 8.8.8.8
+            >       - 192.168.210.45
 
         :param image: glance image name to use for the vm
         :param flavor: VM flavor name
