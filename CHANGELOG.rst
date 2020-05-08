@@ -16,8 +16,8 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-[unreleased]
-------------
+[2.0.0] - 2020-05-08
+--------------------
 
 Added
 ~~~~~
@@ -53,23 +53,39 @@ Deprecated
 
 * a huge project restructure had happened. Old paths are deprecated now.
 
-        rally_openstack.cfg         ->  rally_openstack.common.cfg
-        rally_openstack.cleanup     ->  rally_openstack.task.cleanup
-        rally_openstack.consts      ->  rally_openstack.common.consts
-        rally_openstack.contexts    ->  rally_openstack.task.contexts
-        rally_openstack.credential  ->  rally_openstack.common.credential
-        rally_openstack.embedcharts ->  rally_openstack.task.ui.charts
-        rally_openstack.exceptions  ->  rally_openstack.common.exceptions
-        rally_openstack.hook        ->  rally_openstack.task.hooks
-        rally_openstack.osclients   ->  rally_openstack.common.osclients
-        rally_openstack.platforms   ->  rally_openstack.environment.platforms
-        rally_openstack.scenario    ->  rally_openstack.task.scenario
-        rally_openstack.scenarios   ->  rally_openstack.task.scenarios
-        rally_openstack.service     ->  rally_openstack.common.service
-        rally_openstack.services    ->  rally_openstack.common.services
-        rally_openstack.types       ->  rally_openstack.task.types
-        rally_openstack.validators  ->  rally_openstack.common.validators
-        rally_openstack.wrappers    ->  rally_openstack.common.wrappers
+    rally_openstack.cfg         ->  rally_openstack.common.cfg
+
+    rally_openstack.cleanup     ->  rally_openstack.task.cleanup
+
+    rally_openstack.consts      ->  rally_openstack.common.consts
+
+    rally_openstack.contexts    ->  rally_openstack.task.contexts
+
+    rally_openstack.credential  ->  rally_openstack.common.credential
+
+    rally_openstack.embedcharts ->  rally_openstack.task.ui.charts
+
+    rally_openstack.exceptions  ->  rally_openstack.common.exceptions
+
+    rally_openstack.hook        ->  rally_openstack.task.hooks
+
+    rally_openstack.osclients   ->  rally_openstack.common.osclients
+
+    rally_openstack.platforms   ->  rally_openstack.environment.platforms
+
+    rally_openstack.scenario    ->  rally_openstack.task.scenario
+
+    rally_openstack.scenarios   ->  rally_openstack.task.scenarios
+
+    rally_openstack.service     ->  rally_openstack.common.service
+
+    rally_openstack.services    ->  rally_openstack.common.services
+
+    rally_openstack.types       ->  rally_openstack.task.types
+
+    rally_openstack.validators  ->  rally_openstack.common.validators
+
+    rally_openstack.wrappers    ->  rally_openstack.common.wrappers
 
 
 Removed
@@ -95,7 +111,7 @@ Removed
 
 * *api_versions* argument of cleanup manager.
 
-[1.7.0] - 2020-12-25
+[1.7.0] - 2019-12-25
 --------------------
 
 Added
