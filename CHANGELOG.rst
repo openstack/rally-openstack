@@ -43,7 +43,7 @@ Changed
   switched to use `docker image <https://hub.docker.com/r/xrally/xrally>`_ as
   a base user that brings use python 3.6 and ubuntu bionic.
 
-* Bump min supported Rally framework version (rally>=3.0.0)
+* Bump min supported Rally framework version to 3.1.0 (rally>=3.1.0)
 
 * Extend *network@openstack* context to save information about created subnets
   and *existing_network@openstack* context with listing subnets.
