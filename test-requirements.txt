@@ -16,4 +16,6 @@ coverage!=4.4                                          # Apache License, Version
 ddt!=1.4.0                                             # MIT
 testtools                                              # MIT
 
+# docs
 docutils
+Pygments
