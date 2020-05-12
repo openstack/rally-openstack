@@ -537,6 +537,7 @@ class DDLoadTest(BootRuncommandDelete):
             wait_for_ping=wait_for_ping, max_log_length=max_log_length,
             **kwargs)
 
+
 @types.convert(image={"type": "glance_image"},
                flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",

@@ -62,6 +62,7 @@ class CreateAndDeleteShare(utils.ManilaScenario):
         self.sleep_between(min_sleep, max_sleep)
         self._delete_share(share)
 
+
 @types.convert(image={"type": "glance_image"},
                flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
