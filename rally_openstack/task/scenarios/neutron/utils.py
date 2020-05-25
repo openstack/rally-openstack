@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import random
 
 from rally.common import cfg
@@ -22,7 +21,7 @@ from rally import exceptions
 from rally.task import atomic
 from rally.task import utils
 
-from rally_openstack.common.wrappers import network as network_wrapper
+from rally_openstack.common.services.network import neutron
 from rally_openstack.task import scenario
 
 
@@ -32,7 +31,20 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-class NeutronScenario(scenario.OpenStackScenario):
+class NeutronBaseScenario(scenario.OpenStackScenario):
+    """Base class for Neutron scenarios with basic atomic actions."""
+
+    def __init__(self, *args, **kwargs):
+        super(NeutronBaseScenario, self).__init__(*args, **kwargs)
+        if hasattr(self, "_clients"):
+            self.neutron = neutron.NeutronService(
+                clients=self._clients,
+                name_generator=self.generate_random_name,
+                atomic_inst=self.atomic_actions()
+            )
+
+
+class NeutronScenario(NeutronBaseScenario):
     """Base class for Neutron scenarios with basic atomic actions."""
 
     # TODO(rkiran): modify in case LBaaS-v2 requires
@@ -51,12 +63,11 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param kwargs: dict, network options
         :returns: str, Neutron network-id
         """
-        networks = self._list_networks()
-        for net in networks:
-            if (net["name"] == network) or (net["id"] == network):
-                return net["id"]
-        raise exceptions.NotFoundException(
-            message="Network %s not found." % network)
+        try:
+            return self.neutron.find_network(network)["id"]
+        except exceptions.GetResourceFailure:
+            raise exceptions.NotFoundException(
+                message="Network %s not found." % network)
 
     @property
     def _ext_gw_mode_enabled(self):
@@ -64,39 +75,32 @@ class NeutronScenario(scenario.OpenStackScenario):
 
         Without this extension, we can't pass the enable_snat parameter.
         """
-        return any(
-            e["alias"] == "ext-gw-mode"
-            for e in self.clients("neutron").list_extensions()["extensions"])
+        return self.neutron.supports_extension("ext-gw-mode", silent=True)
 
-    @atomic.action_timer("neutron.create_network")
     def _create_network(self, network_create_args):
         """Create neutron network.
 
         :param network_create_args: dict, POST /v2.0/networks request options
         :returns: neutron network dict
         """
-        network_create_args["name"] = self.generate_random_name()
-        return self.clients("neutron").create_network(
-            {"network": network_create_args})
+        network_create_args.pop("name", None)
+        return {"network": self.neutron.create_network(**network_create_args)}
 
-    @atomic.action_timer("neutron.list_networks")
     def _list_networks(self, **kwargs):
         """Return user networks list.
 
         :param kwargs: network list options
         """
-        return self.clients("neutron").list_networks(**kwargs)["networks"]
+        return self.neutron.list_networks(**kwargs)
 
-    @atomic.action_timer("neutron.list_agents")
     def _list_agents(self, **kwargs):
         """Fetches agents.
 
         :param kwargs: neutron agent list options
         :returns: user agents list
         """
-        return self.clients("neutron").list_agents(**kwargs)["agents"]
+        return self.neutron.list_agents(**kwargs)
 
-    @atomic.action_timer("neutron.update_network")
     def _update_network(self, network, network_update_args):
         """Update the network.
 
@@ -107,11 +111,9 @@ class NeutronScenario(scenario.OpenStackScenario):
         :returns: updated neutron network dict
         """
         network_update_args["name"] = self.generate_random_name()
-        body = {"network": network_update_args}
-        return self.clients("neutron").update_network(
-            network["network"]["id"], body)
+        return {"network": self.neutron.update_network(
+            network["network"]["id"], **network_update_args)}
 
-    @atomic.action_timer("neutron.show_network")
     def _show_network(self, network, **kwargs):
         """show network details.
 
@@ -119,18 +121,16 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param kwargs: dict, POST /v2.0/networks show options
         :returns: details of the network
         """
-        return self.clients("neutron").show_network(
-            network["network"]["id"], **kwargs)
+        network = self.neutron.get_network(network["network"]["id"], **kwargs)
+        return {"network": network}
 
-    @atomic.action_timer("neutron.delete_network")
     def _delete_network(self, network):
         """Delete neutron network.
 
         :param network: Network object
         """
-        self.clients("neutron").delete_network(network["id"])
+        self.neutron.delete_network(network["id"])
 
-    @atomic.action_timer("neutron.create_subnet")
     def _create_subnet(self, network, subnet_create_args, start_cidr=None):
         """Create neutron subnet.
 
@@ -138,27 +138,17 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param subnet_create_args: POST /v2.0/subnets request options
         :returns: neutron subnet dict
         """
-        network_id = network["network"]["id"]
 
-        if not subnet_create_args.get("cidr"):
-            start_cidr = start_cidr or "10.2.0.0/24"
-            subnet_create_args["cidr"] = (
-                network_wrapper.generate_cidr(start_cidr=start_cidr))
+        subnet_create_args.pop("name", None)
+        subnet_create_args["network_id"] = network["network"]["id"]
+        subnet_create_args["start_cidr"] = start_cidr
 
-        subnet_create_args["network_id"] = network_id
-        subnet_create_args["name"] = self.generate_random_name()
-        subnet_create_args["ip_version"] = netaddr.IPNetwork(
-            subnet_create_args["cidr"]).version
+        return {"subnet": self.neutron.create_subnet(**subnet_create_args)}
 
-        return self.clients("neutron").create_subnet(
-            {"subnet": subnet_create_args})
-
-    @atomic.action_timer("neutron.list_subnets")
     def _list_subnets(self):
         """Returns user subnetworks list."""
-        return self.clients("neutron").list_subnets()["subnets"]
+        return self.neutron.list_subnets()
 
-    @atomic.action_timer("neutron.show_subnet")
     def _show_subnet(self, subnet, **kwargs):
         """show subnet details.
 
@@ -166,10 +156,8 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param kwargs: Optional additional arguments for subnet show
         :returns: details of the subnet
         """
-        return self.clients("neutron").show_subnet(subnet["subnet"]["id"],
-                                                   **kwargs)
+        return {"subnet": self.neutron.get_subnet(subnet["subnet"]["id"])}
 
-    @atomic.action_timer("neutron.update_subnet")
     def _update_subnet(self, subnet, subnet_update_args):
         """Update the neutron subnet.
 
@@ -180,46 +168,35 @@ class NeutronScenario(scenario.OpenStackScenario):
         :returns: updated neutron subnet dict
         """
         subnet_update_args["name"] = self.generate_random_name()
-        body = {"subnet": subnet_update_args}
-        return self.clients("neutron").update_subnet(
-            subnet["subnet"]["id"], body)
+        return {"subnet": self.neutron.update_subnet(
+            subnet["subnet"]["id"], **subnet_update_args)}
 
-    @atomic.action_timer("neutron.delete_subnet")
     def _delete_subnet(self, subnet):
         """Delete neutron subnet
 
         :param subnet: Subnet object
         """
-        self.clients("neutron").delete_subnet(subnet["subnet"]["id"])
+        self.neutron.delete_subnet(subnet["subnet"]["id"])
 
-    @atomic.action_timer("neutron.create_router")
     def _create_router(self, router_create_args, external_gw=False):
         """Create neutron router.
 
         :param router_create_args: POST /v2.0/routers request options
         :returns: neutron router dict
         """
-        router_create_args["name"] = self.generate_random_name()
+        router_create_args.pop("name", None)
+        if ("tenant_id" in router_create_args
+                and "project_id" not in router_create_args):
+            router_create_args["project_id"] = router_create_args.pop(
+                "tenant_id")
 
-        if external_gw:
-            for network in self._list_networks():
-                if network.get("router:external"):
-                    external_network = network
-                    gw_info = {"network_id": external_network["id"]}
-                    if self._ext_gw_mode_enabled:
-                        gw_info["enable_snat"] = True
-                    router_create_args.setdefault("external_gateway_info",
-                                                  gw_info)
+        return {"router": self.neutron.create_router(
+            discover_external_gw=external_gw, **router_create_args)}
 
-        return self.clients("neutron").create_router(
-            {"router": router_create_args})
-
-    @atomic.action_timer("neutron.list_routers")
     def _list_routers(self):
         """Returns user routers list."""
-        return self.clients("neutron").list_routers()["routers"]
+        return self.neutron.list_routers()
 
-    @atomic.action_timer("neutron.show_router")
     def _show_router(self, router, **kwargs):
         """Show information of a given router.
 
@@ -227,18 +204,16 @@ class NeutronScenario(scenario.OpenStackScenario):
         :kwargs: dict, POST /v2.0/routers show options
         :return: details of the router
         """
-        return self.clients("neutron").show_router(
-            router["router"]["id"], **kwargs)
+        return {"router": self.neutron.get_router(
+            router["router"]["id"], **kwargs)}
 
-    @atomic.action_timer("neutron.delete_router")
     def _delete_router(self, router):
         """Delete neutron router
 
         :param router: Router object
         """
-        self.clients("neutron").delete_router(router["router"]["id"])
+        self.neutron.delete_router(router["router"]["id"])
 
-    @atomic.action_timer("neutron.update_router")
     def _update_router(self, router, router_update_args):
         """Update the neutron router.
 
@@ -249,11 +224,9 @@ class NeutronScenario(scenario.OpenStackScenario):
         :returns: updated neutron router dict
         """
         router_update_args["name"] = self.generate_random_name()
-        body = {"router": router_update_args}
-        return self.clients("neutron").update_router(
-            router["router"]["id"], body)
+        return {"router": self.neutron.update_router(
+            router["router"]["id"], **router_update_args)}
 
-    @atomic.action_timer("neutron.create_port")
     def _create_port(self, network, port_create_args):
         """Create neutron port.
 
@@ -261,16 +234,13 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param port_create_args: POST /v2.0/ports request options
         :returns: neutron port dict
         """
-        port_create_args["network_id"] = network["network"]["id"]
-        port_create_args["name"] = self.generate_random_name()
-        return self.clients("neutron").create_port({"port": port_create_args})
+        return {"port": self.neutron.create_port(
+            network_id=network["network"]["id"], **port_create_args)}
 
-    @atomic.action_timer("neutron.list_ports")
     def _list_ports(self):
         """Return user ports list."""
-        return self.clients("neutron").list_ports()["ports"]
+        return self.neutron.list_ports()
 
-    @atomic.action_timer("neutron.show_port")
     def _show_port(self, port, **params):
         """Return user port details.
 
@@ -278,9 +248,8 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param params: neutron port show options
         :returns: neutron port dict
         """
-        return self.clients("neutron").show_port(port["port"]["id"], **params)
+        return {"port": self.neutron.get_port(port["port"]["id"], **params)}
 
-    @atomic.action_timer("neutron.update_port")
     def _update_port(self, port, port_update_args):
         """Update the neutron port.
 
@@ -291,16 +260,15 @@ class NeutronScenario(scenario.OpenStackScenario):
         :returns: updated neutron port dict
         """
         port_update_args["name"] = self.generate_random_name()
-        body = {"port": port_update_args}
-        return self.clients("neutron").update_port(port["port"]["id"], body)
+        return {"port": self.neutron.update_port(port["port"]["id"],
+                                                 **port_update_args)}
 
-    @atomic.action_timer("neutron.delete_port")
     def _delete_port(self, port):
         """Delete neutron port.
 
         :param port: Port object
         """
-        self.clients("neutron").delete_port(port["port"]["id"])
+        self.neutron.delete_port(port["port"]["id"])
 
     @logging.log_deprecated_args(
         "network_create_args is deprecated; use the network context instead",
@@ -356,10 +324,16 @@ class NeutronScenario(scenario.OpenStackScenario):
         :parm subnet_cidr_start: str, start value for subnets CIDR
         :returns: tuple of result network and subnets list
         """
-        network = self._create_network(network_create_args or {})
-        subnets = self._create_subnets(network, subnet_create_args,
-                                       subnet_cidr_start, subnets_per_network)
-        return network, subnets
+        subnet_create_args = dict(subnet_create_args or {})
+        subnet_create_args["start_cidr"] = subnet_cidr_start
+
+        net_topo = self.neutron.create_network_topology(
+            network_create_args=(network_create_args or {}),
+            subnet_create_args=subnet_create_args,
+            subnets_count=subnets_per_network
+        )
+        subnets = [{"subnet": s} for s in net_topo["subnets"]]
+        return {"network": net_topo["network"]}, subnets
 
     def _create_network_structure(self, network_create_args=None,
                                   subnet_create_args=None,
@@ -375,41 +349,39 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param router_create_args: dict, POST /v2.0/routers request options
         :returns: tuple of (network, subnets, routers)
         """
-        network = self._create_network(network_create_args or {})
-        subnets = self._create_subnets(network, subnet_create_args,
-                                       subnet_cidr_start,
-                                       subnets_per_network)
 
-        routers = []
-        for subnet in subnets:
-            router = self._create_router(router_create_args or {})
-            self._add_interface_router(subnet["subnet"],
-                                       router["router"])
-            routers.append(router)
+        subnet_create_args = dict(subnet_create_args or {})
+        subnet_create_args["start_cidr"] = subnet_cidr_start
 
-        return (network, subnets, routers)
+        net_topo = self.neutron.create_network_topology(
+            network_create_args=(network_create_args or {}),
+            router_create_args=(router_create_args or {}),
+            router_per_subnet=True,
+            subnet_create_args=subnet_create_args,
+            subnets_count=subnets_per_network
+        )
+        return ({"network": net_topo["network"]},
+                [{"subnet": s} for s in net_topo["subnets"]],
+                [{"router": r} for r in net_topo["routers"]])
 
-    @atomic.action_timer("neutron.add_interface_router")
     def _add_interface_router(self, subnet, router):
         """Connect subnet to router.
 
         :param subnet: dict, neutron subnet
         :param router: dict, neutron router
         """
-        self.clients("neutron").add_interface_router(
-            router["id"], {"subnet_id": subnet["id"]})
+        self.neutron.add_interface_to_router(router_id=router["id"],
+                                             subnet_id=subnet["id"])
 
-    @atomic.action_timer("neutron.remove_interface_router")
     def _remove_interface_router(self, subnet, router):
         """Remove subnet from router
 
         :param subnet: dict, neutron subnet
         :param router: dict, neutron router
         """
-        self.clients("neutron").remove_interface_router(
-            router["id"], {"subnet_id": subnet["id"]})
+        self.neutron.remove_interface_from_router(
+            router_id=router["id"], subnet_id=subnet["id"])
 
-    @atomic.action_timer("neutron.add_gateway_router")
     def _add_gateway_router(self, router, ext_net, enable_snat=None):
         """Set the external network gateway for a router.
 
@@ -417,21 +389,18 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param ext_net: external network for the gateway
         :param enable_snat: True if enable snat, None to avoid update
         """
-        gw_info = {"network_id": ext_net["network"]["id"]}
-        if enable_snat is not None:
-            if self._ext_gw_mode_enabled:
-                gw_info["enable_snat"] = enable_snat
-        self.clients("neutron").add_gateway_router(
-            router["router"]["id"], gw_info)
+        self.neutron.add_gateway_to_router(
+            router_id=router["router"]["id"],
+            network_id=ext_net["network"]["id"],
+            enable_snat=enable_snat
+        )
 
-    @atomic.action_timer("neutron.remove_gateway_router")
     def _remove_gateway_router(self, router):
         """Removes an external network gateway from the specified router.
 
         :param router: dict, neutron router
         """
-        self.clients("neutron").remove_gateway_router(
-            router["router"]["id"])
+        self.neutron.remove_gateway_from_router(router["router"]["id"])
 
     @atomic.action_timer("neutron.create_pool")
     def _create_lb_pool(self, subnet_id, **pool_create_args):
@@ -533,7 +502,6 @@ class NeutronScenario(scenario.OpenStackScenario):
         body = {"vip": vip_update_args}
         return self.clients("neutron").update_vip(vip["vip"]["id"], body)
 
-    @atomic.action_timer("neutron.create_floating_ip")
     def _create_floatingip(self, floating_network, **floating_ip_args):
         """Create floating IP with floating_network.
 
@@ -541,40 +509,21 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param floating_ip_args: dict, POST /floatingips create options
         :returns: dict, neutron floating IP
         """
-        from neutronclient.common import exceptions as ne
-        floating_network_id = self._get_network_id(
-            floating_network)
-        args = {"floating_network_id": floating_network_id}
 
-        if not CONF.openstack.pre_newton_neutron:
-            args["description"] = self.generate_random_name()
-        args.update(floating_ip_args)
-        try:
-            return self.clients("neutron").create_floatingip(
-                {"floatingip": args})
-        except ne.BadRequest as e:
-            error = "%s" % e
-            if "Unrecognized attribute" in error and "'description'" in error:
-                LOG.info("It looks like you have Neutron API of pre-Newton "
-                         "OpenStack release. Setting "
-                         "openstack.pre_newton_neutron option via Rally "
-                         "configuration should fix an issue.")
-            raise
+        return {"floatingip": self.neutron.create_floatingip(
+            floating_network=floating_network, **floating_ip_args)}
 
-    @atomic.action_timer("neutron.list_floating_ips")
     def _list_floating_ips(self, **kwargs):
         """Return floating IPs list."""
-        return self.clients("neutron").list_floatingips(**kwargs)
+        return {"floatingips": self.neutron.list_floatingips(**kwargs)}
 
-    @atomic.action_timer("neutron.delete_floating_ip")
     def _delete_floating_ip(self, floating_ip):
         """Delete floating IP.
 
         :param dict, floating IP object
         """
-        return self.clients("neutron").delete_floatingip(floating_ip["id"])
+        return self.neutron.delete_floatingip(floating_ip["id"])
 
-    @atomic.action_timer("neutron.associate_floating_ip")
     def _associate_floating_ip(self, floatingip, port):
         """Associate floating IP with port.
 
@@ -582,20 +531,18 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param port: port dict
         :returns: updated floating IP dict
         """
-        return self.clients("neutron").update_floatingip(
-            floatingip["id"],
-            {"floatingip": {"port_id": port["id"]}})["floatingip"]
+        return self.neutron.associate_floatingip(
+            port_id=port["id"],
+            floatingip_id=floatingip["id"])
 
-    @atomic.action_timer("neutron.dissociate_floating_ip")
     def _dissociate_floating_ip(self, floatingip):
         """Dissociate floating IP from ports.
 
         :param floatingip: floating IP dict
         :returns: updated floating IP dict
         """
-        return self.clients("neutron").update_floatingip(
-            floatingip["id"],
-            {"floatingip": {"port_id": None}})["floatingip"]
+        return self.neutron.dissociate_floatingip(
+            floatingip_id=floatingip["id"])
 
     @atomic.action_timer("neutron.create_healthmonitor")
     def _create_v1_healthmonitor(self, **healthmonitor_create_args):
@@ -648,7 +595,6 @@ class NeutronScenario(scenario.OpenStackScenario):
         return self.clients("neutron").update_health_monitor(
             healthmonitor["health_monitor"]["id"], body)
 
-    @atomic.action_timer("neutron.create_security_group")
     def _create_security_group(self, **security_group_create_args):
         """Create Neutron security-group.
 
@@ -657,24 +603,21 @@ class NeutronScenario(scenario.OpenStackScenario):
         :returns: dict, neutron security-group
         """
         security_group_create_args["name"] = self.generate_random_name()
-        return self.clients("neutron").create_security_group(
-            {"security_group": security_group_create_args})
+        return {"security_group": self.neutron.create_security_group(
+            **security_group_create_args)}
 
-    @atomic.action_timer("neutron.delete_security_group")
     def _delete_security_group(self, security_group):
         """Delete Neutron security group.
 
         :param security_group: dict, neutron security_group
         """
-        return self.clients("neutron").delete_security_group(
+        return self.neutron.delete_security_group(
             security_group["security_group"]["id"])
 
-    @atomic.action_timer("neutron.list_security_groups")
     def _list_security_groups(self, **kwargs):
         """Return list of Neutron security groups."""
-        return self.clients("neutron").list_security_groups(**kwargs)
+        return {"security_groups": self.neutron.list_security_groups(**kwargs)}
 
-    @atomic.action_timer("neutron.show_security_group")
     def _show_security_group(self, security_group, **kwargs):
         """Show security group details.
 
@@ -682,10 +625,9 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param kwargs: Optional additional arguments for security_group show
         :returns: security_group details
         """
-        return self.clients("neutron").show_security_group(
-            security_group["security_group"]["id"], **kwargs)
+        return {"security_group": self.neutron.get_security_group(
+            security_group["security_group"]["id"], **kwargs)}
 
-    @atomic.action_timer("neutron.update_security_group")
     def _update_security_group(self, security_group,
                                **security_group_update_args):
         """Update Neutron security-group.
@@ -696,9 +638,9 @@ class NeutronScenario(scenario.OpenStackScenario):
         :returns: dict, updated neutron security-group
         """
         security_group_update_args["name"] = self.generate_random_name()
-        body = {"security_group": security_group_update_args}
-        return self.clients("neutron").update_security_group(
-            security_group["security_group"]["id"], body)
+        return {"security_group": self.neutron.update_security_group(
+            security_group["security_group"]["id"],
+            **security_group_update_args)}
 
     def update_loadbalancer_resource(self, lb):
         try:
@@ -857,7 +799,6 @@ class NeutronScenario(scenario.OpenStackScenario):
         return self.clients("neutron").list_bgpvpn_router_assocs(
             bgpvpn["bgpvpn"]["id"], **kwargs)
 
-    @atomic.action_timer("neutron.create_security_group_rule")
     def _create_security_group_rule(self, security_group_id,
                                     **security_group_rule_args):
         """Create Neutron security-group-rule.
@@ -867,25 +808,19 @@ class NeutronScenario(scenario.OpenStackScenario):
               /v2.0/security-group-rules request options
         :returns: dict, neutron security-group-rule
         """
-        security_group_rule_args["security_group_id"] = security_group_id
-        if "direction" not in security_group_rule_args:
-            security_group_rule_args["direction"] = "ingress"
-        if "protocol" not in security_group_rule_args:
-            security_group_rule_args["protocol"] = "tcp"
+        return {"security_group_rule": self.neutron.create_security_group_rule(
+            security_group_id, **security_group_rule_args
+        )}
 
-        return self.clients("neutron").create_security_group_rule(
-            {"security_group_rule": security_group_rule_args})
-
-    @atomic.action_timer("neutron.list_security_group_rules")
     def _list_security_group_rules(self, **kwargs):
         """List all security group rules.
 
         :param kwargs: Optional additional arguments for roles list
         :return: list of security group rules
         """
-        return self.clients("neutron").list_security_group_rules(**kwargs)
+        result = self.neutron.list_security_group_rules(**kwargs)
+        return {"security_group_rules": result}
 
-    @atomic.action_timer("neutron.show_security_group_rule")
     def _show_security_group_rule(self, security_group_rule, **kwargs):
         """Show information of a given security group rule.
 
@@ -893,17 +828,15 @@ class NeutronScenario(scenario.OpenStackScenario):
         :param kwargs: Optional additional arguments for roles list
         :return: details of security group rule
         """
-        return self.clients("neutron").show_security_group_rule(
-            security_group_rule, **kwargs)
+        return {"security_group_rule": self.neutron.get_security_group_rule(
+            security_group_rule, **kwargs)}
 
-    @atomic.action_timer("neutron.delete_security_group_rule")
     def _delete_security_group_rule(self, security_group_rule):
         """Delete a given security group rule.
 
         :param security_group_rule: id of security group rule
         """
-        self.clients("neutron").delete_security_group_rule(
-            security_group_rule)
+        self.neutron.delete_security_group_rule(security_group_rule)
 
     @atomic.action_timer("neutron.delete_trunk")
     def _delete_trunk(self, trunk_port):
@@ -918,10 +851,6 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _list_trunks(self, **kwargs):
         return self.clients("neutron").list_trunks(**kwargs)["trunks"]
 
-    @atomic.action_timer("neutron.list_ports_by_device_id")
-    def _list_ports_by_device_id(self, device_id):
-        return self.clients("neutron").list_ports(device_id=device_id)
-
     @atomic.action_timer("neutron.list_subports_by_trunk")
     def _list_subports_by_trunk(self, trunk_id):
         return self.clients("neutron").trunk_get_subports(trunk_id)
@@ -930,3 +859,6 @@ class NeutronScenario(scenario.OpenStackScenario):
     def _add_subports_to_trunk(self, trunk_id, subports):
         return self.clients("neutron").trunk_add_subports(
             trunk_id, {"sub_ports": subports})
+
+    def _list_ports_by_device_id(self, device_id):
+        return self.neutron.list_ports(device_id=device_id)

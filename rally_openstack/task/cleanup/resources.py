@@ -20,6 +20,7 @@ from rally.task import utils as task_utils
 from rally_openstack.common.services.identity import identity
 from rally_openstack.common.services.image import glance_v2
 from rally_openstack.common.services.image import image
+from rally_openstack.common.services.network import neutron
 from rally_openstack.task.cleanup import base
 
 
@@ -201,13 +202,11 @@ _neutron_order = get_order(300)
 
 @base.resource(service=None, resource=None, admin_required=True)
 class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
-    # Neutron has the best client ever, so we need to override everything
 
-    def supports_extension(self, extension):
-        exts = self._manager().list_extensions().get("extensions", [])
-        if any(ext.get("alias") == extension for ext in exts):
-            return True
-        return False
+    @property
+    def _neutron(self):
+        return neutron.NeutronService(
+            self._admin_required and self.admin or self.user)
 
     def _manager(self):
         client = self._admin_required and self.admin or self.user
@@ -220,7 +219,10 @@ class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
         return self.raw_resource["name"]
 
     def delete(self):
-        delete_method = getattr(self._manager(), "delete_%s" % self._resource)
+        key = "delete_%s" % self._resource
+        delete_method = getattr(
+            self._neutron, key, getattr(self._manager(), key)
+        )
         delete_method(self.id())
 
     @property
@@ -242,7 +244,7 @@ class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
 class NeutronLbaasV1Mixin(NeutronMixin):
 
     def list(self):
-        if self.supports_extension("lbaas"):
+        if self._neutron.supports_extension("lbaas", silent=True):
             return super(NeutronLbaasV1Mixin, self).list()
         return []
 
@@ -268,7 +270,7 @@ class NeutronV1Pool(NeutronLbaasV1Mixin):
 class NeutronLbaasV2Mixin(NeutronMixin):
 
     def list(self):
-        if self.supports_extension("lbaasv2"):
+        if self._neutron.supports_extension("lbaasv2", silent=True):
             return super(NeutronLbaasV2Mixin, self).list()
         return []
 
@@ -373,7 +375,7 @@ class OctaviaHealthMonitors(OctaviaMixIn):
                admin_required=True, perform_for_admin_only=True)
 class NeutronBgpvpn(NeutronMixin):
     def list(self):
-        if self.supports_extension("bgpvpn"):
+        if self._neutron.supports_extension("bgpvpn", silent=True):
             return self._manager().list_bgpvpns()["bgpvpns"]
         return []
 
@@ -414,20 +416,23 @@ class NeutronPort(NeutronMixin):
     # NOTE(andreykurilin): port is the kind of resource that can be created
     #   automatically. In this case it doesn't have name field which matches
     #   our resource name templates.
-    ROUTER_INTERFACE_OWNERS = ("network:router_interface",
-                               "network:router_interface_distributed",
-                               "network:ha_router_replicated_interface")
-
-    ROUTER_GATEWAY_OWNER = "network:router_gateway"
 
     def __init__(self, *args, **kwargs):
         super(NeutronPort, self).__init__(*args, **kwargs)
         self._cache = {}
 
+    @property
+    def ROUTER_INTERFACE_OWNERS(self):
+        return self._neutron.ROUTER_INTERFACE_OWNERS
+
+    @property
+    def ROUTER_GATEWAY_OWNER(self):
+        return self._neutron.ROUTER_GATEWAY_OWNER
+
     def _get_resources(self, resource):
         if resource not in self._cache:
-            resources = getattr(self._manager(), "list_%s" % resource)()
-            self._cache[resource] = [r for r in resources[resource]
+            resources = getattr(self._neutron, "list_%s" % resource)()
+            self._cache[resource] = [r for r in resources
                                      if r["tenant_id"] == self.tenant_uuid]
         return self._cache[resource]
 
@@ -455,23 +460,11 @@ class NeutronPort(NeutronMixin):
                                      self.raw_resource.get("name", ""))
 
     def delete(self):
-        device_owner = self.raw_resource["device_owner"]
-        if (device_owner in self.ROUTER_INTERFACE_OWNERS
-                or device_owner == self.ROUTER_GATEWAY_OWNER):
-            if device_owner == self.ROUTER_GATEWAY_OWNER:
-                self._manager().remove_gateway_router(
-                    self.raw_resource["device_id"])
-
-            self._manager().remove_interface_router(
-                self.raw_resource["device_id"], {"port_id": self.id()})
-        else:
-            from neutronclient.common import exceptions as neutron_exceptions
-            try:
-                self._manager().delete_port(self.id())
-            except neutron_exceptions.PortNotFoundClient:
-                # Port can be already auto-deleted, skip silently
-                LOG.debug("Port %s was not deleted. Skip silently because "
-                          "port can be already auto-deleted." % self.id())
+        found = self._neutron.delete_port(self.raw_resource)
+        if not found:
+            # Port can be already auto-deleted, skip silently
+            LOG.debug(f"Port {self.id()} was not deleted. Skip silently "
+                      f"because port can be already auto-deleted.")
 
 
 @base.resource("neutron", "subnet", order=next(_neutron_order),

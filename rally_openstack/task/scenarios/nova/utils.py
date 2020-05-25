@@ -23,13 +23,15 @@ from rally.task import utils
 from rally_openstack.common.services.image import image as image_service
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
+from rally_openstack.task.scenarios.neutron import utils as neutron_utils
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__file__)
 
 
-class NovaScenario(scenario.OpenStackScenario):
+class NovaScenario(neutron_utils.NeutronBaseScenario,
+                   scenario.OpenStackScenario):
     """Base class for Nova scenarios with basic atomic actions."""
 
     @atomic.action_timer("nova.list_servers")
@@ -633,37 +635,18 @@ class NovaScenario(scenario.OpenStackScenario):
         :param fixed_address: The fixedIP address the FloatingIP is to be
                associated with (optional)
         """
-        with atomic.ActionTimer(self, "neutron.list_ports"):
-            ports = self.clients("neutron").list_ports(device_id=server.id)
-            port = ports["ports"][0]
+        if isinstance(address, dict):
+            floating_ip = self.neutron.associate_floatingip(
+                device_id=server.id, fixed_ip_address=fixed_address,
+                floatingip_id=address["id"])
+        else:
+            floating_ip = self.neutron.associate_floatingip(
+                device_id=server.id, fixed_ip_address=fixed_address,
+                floating_ip_address=address)
 
-        fip = address
-        if not isinstance(address, dict):
-            LOG.warning(
-                "The argument 'address' of "
-                "NovaScenario._associate_floating_ip method accepts a "
-                "dict-like representation of floating ip. Transmitting a "
-                "string with just an IP is deprecated.")
-            with atomic.ActionTimer(self, "neutron.list_floating_ips"):
-                all_fips = self.clients("neutron").list_floatingips(
-                    tenant_id=self.context["tenant"]["id"])
-            filtered_fip = [f for f in all_fips["floatingips"]
-                            if f["floating_ip_address"] == address]
-            if not filtered_fip:
-                raise exceptions.NotFoundException(
-                    "There is no floating ip with '%s' address." % address)
-            fip = filtered_fip[0]
-        # the first case: fip object is returned from network wrapper
-        # the second case: from neutronclient directly
-        fip_ip = fip.get("ip", fip.get("floating_ip_address", None))
-        fip_update_dict = {"port_id": port["id"]}
-        if fixed_address:
-            fip_update_dict["fixed_ip_address"] = fixed_address
-        self.clients("neutron").update_floatingip(
-            fip["id"], {"floatingip": fip_update_dict}
-        )
         utils.wait_for(server,
-                       is_ready=self.check_ip_address(fip_ip),
+                       is_ready=self.check_ip_address(
+                           floating_ip["floating_ip_address"]),
                        update_resource=utils.get_from_manager())
         # Update server data
         server.addresses = server.manager.get(server.id).addresses
@@ -675,32 +658,19 @@ class NovaScenario(scenario.OpenStackScenario):
         :param server: The :class:`Server` to add an IP to.
         :param address: The dict-like representation of FloatingIP to remove
         """
-        fip = address
-        if not isinstance(fip, dict):
-            LOG.warning(
-                "The argument 'address' of "
-                "NovaScenario._dissociate_floating_ip method accepts a "
-                "dict-like representation of floating ip. Transmitting a "
-                "string with just an IP is deprecated.")
-            with atomic.ActionTimer(self, "neutron.list_floating_ips"):
-                all_fips = self.clients("neutron").list_floatingips(
-                    tenant_id=self.context["tenant"]["id"]
-                )
-            filtered_fip = [f for f in all_fips["floatingips"]
-                            if f["floating_ip_address"] == address]
-            if not filtered_fip:
-                raise exceptions.NotFoundException(
-                    "There is no floating ip with '%s' address." % address)
-            fip = filtered_fip[0]
-        self.clients("neutron").update_floatingip(
-            fip["id"], {"floatingip": {"port_id": None}}
-        )
-        # the first case: fip object is returned from network wrapper
-        # the second case: from neutronclient directly
-        fip_ip = fip.get("ip", fip.get("floating_ip_address", None))
+        if isinstance(address, dict):
+            floating_ip = self.neutron.dissociate_floatingip(
+                floatingip_id=address["id"]
+            )
+        else:
+            floating_ip = self.neutron.dissociate_floatingip(
+                floating_ip_address=address
+            )
+
         utils.wait_for(
             server,
-            is_ready=self.check_ip_address(fip_ip, must_exist=False),
+            is_ready=self.check_ip_address(
+                floating_ip["floating_ip_address"], must_exist=False),
             update_resource=utils.get_from_manager()
         )
         # Update server data
