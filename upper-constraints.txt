@@ -48,7 +48,7 @@ openstacksdk===0.46.0
 os-client-config===2.1.0
 os-faults===0.2.7
 os-service-types===1.7.0
-osc-lib===2.0.0
+osc-lib===2.1.0
 oslo.concurrency===4.0.2
 oslo.config===8.0.2
 oslo.context===3.0.2
