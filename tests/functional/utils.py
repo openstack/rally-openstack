@@ -111,6 +111,7 @@ class Rally(object):
         if self.config_opts:
             self.config_filename = os.path.join(self.tmp_dir, "conf")
             config = configparser.RawConfigParser()
+            config.optionxform = str
             for section, opts in self.config_opts.items():
                 if section.lower() != "default":
                     config.add_section(section)
