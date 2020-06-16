@@ -16,6 +16,17 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[unreleased]
+------------
+
+Fixed
+~~~~~
+
+* [verification component] Make config parser case sensitivity in
+  TempestContext and TempestConfigfileManager.
+
+  `Launchpad-bug #1881456 <https://launchpad.net/bugs/1881456>`_
+
 [2.0.0] - 2020-05-08
 --------------------
 
