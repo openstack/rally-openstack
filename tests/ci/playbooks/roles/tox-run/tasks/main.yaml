@@ -7,4 +7,4 @@
       set -e
       cd /opt/stack/rally-openstack
       export REQUESTS_CA_BUNDLE=/opt/stack/data/ca-bundle.pem
-      tox -e {{ rally_tox_env }}
+      tox -e {{ tox_env }}

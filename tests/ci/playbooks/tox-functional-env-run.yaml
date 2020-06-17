@@ -12,4 +12,4 @@
     rally_task: "rally-jobs/simple-job.yaml"
   roles:
     - prepare-for-rally-task
-    - run-rally-tox
+    - tox-run
