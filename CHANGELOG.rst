@@ -19,6 +19,13 @@ Changelog
 [unreleased]
 ------------
 
+Changed
+~~~~~~~
+
+* Location of rally-openstack code with docs and samples inside the docker
+  image changed from /rally/xrally_opentstack to /rally/xrally_openstack
+  (there was a typo in work openstack)
+
 Fixed
 ~~~~~
 
