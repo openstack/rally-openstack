@@ -25,9 +25,10 @@ class DesignateQuotasTestCase(test.TestCase):
         quotas = designate_quotas.DesignateQuotas(clients)
         tenant_id = mock.MagicMock()
         quotas_values = {
-            "domains": 5,
-            "domain_recordsets": 20,
-            "domain_records": 20,
+            "api_export_size": 5,
+            "zones": 5,
+            "zones_recordsets": 20,
+            "zones_records": 20,
             "recordset_records": 20,
         }
         quotas.update(tenant_id, **quotas_values)
@@ -43,7 +44,8 @@ class DesignateQuotasTestCase(test.TestCase):
 
     def test_get(self):
         tenant_id = "tenant_id"
-        quotas = {"domains": -1, "domain_recordsets": 2, "domain_records": 3,
+        quotas = {"api_export_size": -1, "zones": -1,
+                  "zones_recordsets": 2, "zones_records": 3,
                   "recordset_records": 3}
         clients = mock.MagicMock()
         clients.designate.return_value.quotas.get.return_value = quotas

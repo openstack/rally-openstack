@@ -12,9 +12,9 @@
             "context": {
                 "quotas": {
                     "designate": {
-                        "domains": 100,
-                        "domain_recordsets": 2000,
-                        "domain_records": 2000,
+                        "zones": 100,
+                        "zones_recordsets": 2000,
+                        "zones_records": 2000,
                         "recordset_records": 2000
                     }
                 },

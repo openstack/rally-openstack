@@ -911,7 +911,6 @@ class OSClientsTestCase(test.TestCase):
     @ddt.data(
         {},
         {"version": "2"},
-        {"version": "1"},
         {"version": None}
     )
     @ddt.unpack
@@ -944,16 +943,10 @@ class OSClientsTestCase(test.TestCase):
 
             mock_keystone_get_session.assert_called_once_with()
 
-            if version == "2":
-                mock_designate.client.Client.assert_called_once_with(
-                    version,
-                    endpoint_override=url.__iadd__.return_value,
-                    session="fake_session")
-            elif version == "1":
-                mock_designate.client.Client.assert_called_once_with(
-                    version,
-                    endpoint=url.__iadd__.return_value,
-                    session="fake_session")
+            mock_designate.client.Client.assert_called_once_with(
+                default,
+                endpoint_override=url.__iadd__.return_value,
+                session="fake_session")
 
             key = "designate"
             if version is not None:

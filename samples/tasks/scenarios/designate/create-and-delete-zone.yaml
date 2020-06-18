@@ -8,9 +8,9 @@
       context:
         quotas:
           designate:
-            domains: 100
-            domain_recordsets: 500
-            domain_records: 2000
+            zones: 100
+            zones_recordsets: 500
+            zones_records: 2000
             recordset_records: 2000
         users:
           tenants: 2
