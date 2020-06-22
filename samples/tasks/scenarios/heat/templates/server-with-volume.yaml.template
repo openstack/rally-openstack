@@ -19,6 +19,9 @@ parameters:
     constraints:
       - range: { min: 1, max: 1024 }
         description: must be between 1 and 1024 Gb.
+  cidr:
+    type: string
+    default: 11.11.11.0/24
 
 resources:
   server:
@@ -26,6 +29,19 @@ resources:
     properties:
       image: {get_param: image}
       flavor: {get_param: flavor}
+      networks:
+        - port: { get_resource: server_port }
+  server_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: {get_resource: private_net}
+  private_net:
+    type: OS::Neutron::Net
+  private_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: {get_param: cidr}
   cinder_volume:
     type: OS::Cinder::Volume
     properties:
