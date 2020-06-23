@@ -752,7 +752,7 @@
 
 # Role required for users to be able to create Swift containers
 # (string value)
-#swift_operator_role = Member
+#swift_operator_role = member
 
 # User role that has reseller admin (string value)
 #swift_reseller_admin_role = ResellerAdmin

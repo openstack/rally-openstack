@@ -41,7 +41,7 @@ OPTS = {"openstack": [
                     "itself if the values for the corresponding config "
                     "options are not specified in the Tempest config file"),
     cfg.StrOpt("swift_operator_role",
-               default="Member",
+               default="member",
                deprecated_group="tempest",
                help="Role required for users "
                     "to be able to create Swift containers"),
