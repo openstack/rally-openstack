@@ -223,5 +223,11 @@ class VMScenario(nova_utils.NovaScenario):
         pkey = pkey if pkey else self.context["user"]["keypair"]["private"]
         ssh = sshutils.SSH(username, server_ip, port=port,
                            pkey=pkey, password=password)
-        self._wait_for_ssh(ssh, timeout, interval)
-        return self._run_command_over_ssh(ssh, command)
+        try:
+            self._wait_for_ssh(ssh, timeout, interval)
+            return self._run_command_over_ssh(ssh, command)
+        finally:
+            try:
+                ssh.close()
+            except AttributeError:
+                pass
