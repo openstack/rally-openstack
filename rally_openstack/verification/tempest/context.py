@@ -154,7 +154,8 @@ class TempestContext(context.VerifierContext):
             if helper_method:
                 res = helper_method(*args, **kwargs)
                 if res:
-                    value = res["name"] if "network" in option else res.id
+                    value = res["network"]["name"] if ("network" in
+                                                       option) else res.id
             LOG.debug("Setting value '%s' to option '%s'." % (value, option))
             self.conf.set(section, option, value)
             LOG.debug("Option '{opt}' is configured. "
