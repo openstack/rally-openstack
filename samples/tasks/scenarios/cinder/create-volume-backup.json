@@ -17,7 +17,7 @@
                     "tenants": 1,
                     "users_per_tenant": 1
                 },
-                "roles": ["Member"]
+                "roles": ["member"]
             },
             "sla": {
                 "failure_rate": {
