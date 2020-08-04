@@ -72,7 +72,8 @@
         #- rally-task-senlin
         #- rally-task-octavia:
         #    voting: false
-        - rally-task-telemetry
+        - rally-task-telemetry:
+            voting: false
         - rally-task-watcher:
             # watcher-api did not start last time
             voting: false
@@ -114,7 +115,6 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-        - rally-task-telemetry
         - rally-task-zaqar
         - rally-verify-tempest
     post:

@@ -13,7 +13,7 @@ pytest-html                                            # Mozilla Public License 
 pytest-xdist                                           # MIT
 
 coverage!=4.4                                          # Apache License, Version 2.0
-ddt!=1.4.0                                             # MIT
+ddt                                                    # MIT
 testtools                                              # MIT
 
 # docs
