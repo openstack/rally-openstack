@@ -41,9 +41,7 @@
         "image": {
           "name": "^cirros.*-disk$"
         },
-        "create_floating_ip_args": {
-          "ext_network": "ext_network_name"
-        }
+        "floating_network": "ext_network_name"
       },
       "context": {
         "users": {
