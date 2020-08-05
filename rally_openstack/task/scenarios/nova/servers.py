@@ -901,31 +901,46 @@ class BootAndRebuildServer(utils.NovaScenario):
         self._delete_server(server)
 
 
+@logging.log_deprecated_args(
+    "Use 'floating_network' for additional instance parameters.",
+    "2.1.0", ["create_floating_ip_args"], once=True)
 @types.convert(image={"type": "glance_image"},
                flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack", users=True)
-@validation.add("required_contexts", contexts=("network"))
+@validation.add("required_contexts", contexts=["network"])
 @scenario.configure(
     context={"cleanup@openstack": ["nova", "neutron.floatingip"]},
     name="NovaServers.boot_and_associate_floating_ip",
     platform="openstack")
 class BootAndAssociateFloatingIp(utils.NovaScenario):
 
-    def run(self, image, flavor, create_floating_ip_args=None, **kwargs):
+    def run(self, image, flavor, floating_network=None,
+            create_floating_ip_args=None, **kwargs):
         """Boot a server and associate a floating IP to it.
 
         :param image: image to be used to boot an instance
         :param flavor: flavor to be used to boot an instance
-        :param create_floating_ip_args: Optional additional arguments for
-                                        floating ip creation
+        :param floating_network: external network associated with floating IP.
+        :param create_floating_ip_args: Optional additional dict for specifying
+            external network associated with floating IP ('ext_network' key).
         :param kwargs: Optional additional arguments for server creation
         """
-        create_floating_ip_args = create_floating_ip_args or {}
+        if floating_network is None and create_floating_ip_args:
+            if "ext_network" in create_floating_ip_args:
+                # the old way (network wrapper)
+                floating_network = create_floating_ip_args["ext_network"]
+            elif "floating_network" in create_floating_ip_args:
+                # the semi-old way - the time when network wrapper was replaced
+                #   by network service, but this compatibility layer was not
+                #   provided
+                floating_network = create_floating_ip_args["floating_network"]
         server = self._boot_server(image, flavor, **kwargs)
-        floatingip = self.neutron.create_floatingip(**create_floating_ip_args)
+        floatingip = self.neutron.create_floatingip(
+            floating_network=floating_network
+        )
         self._associate_floating_ip(server, floatingip)
 
 
@@ -1083,20 +1098,24 @@ class BootServerFromVolumeSnapshot(utils.NovaScenario,
                           **kwargs)
 
 
+@logging.log_deprecated_args(
+    "Use 'floating_network' for additional instance parameters.",
+    "2.1.0", ["create_floating_ip_args"], once=True)
 @types.convert(image={"type": "glance_image"},
                flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack", users=True)
-@validation.add("required_contexts", contexts=("network"))
+@validation.add("required_contexts", contexts=["network"])
 @scenario.configure(
     context={"cleanup@openstack": ["nova", "neutron.floatingip"]},
     name="NovaServers.boot_server_associate_and_dissociate_floating_ip",
     platform="openstack")
 class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
 
-    def run(self, image, flavor, create_floating_ip_args=None, **kwargs):
+    def run(self, image, flavor, floating_network=None,
+            create_floating_ip_args=None, **kwargs):
         """Boot a server associate and dissociate a floating IP from it.
 
         The scenario first boot a server and create a floating IP. then
@@ -1105,14 +1124,24 @@ class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
 
         :param image: image to be used to boot an instance
         :param flavor: flavor to be used to boot an instance
-        :param create_floating_ip_args: Optional additional arguments for
-                                        floating ip creation
+        :param floating_network: external network associated with floating IP.
+        :param create_floating_ip_args: Optional additional dict for specifying
+            external network associated with floating IP ('ext_network' key).
         :param kwargs: Optional additional arguments for server creation
         """
-
-        create_floating_ip_args = create_floating_ip_args or {}
+        if floating_network is None and create_floating_ip_args:
+            if "ext_network" in create_floating_ip_args:
+                # the old way (network wrapper)
+                floating_network = create_floating_ip_args["ext_network"]
+            elif "floating_network" in create_floating_ip_args:
+                # the semi-old way - the time when network wrapper was replaced
+                #   by network service, but this compatibility layer was not
+                #   provided
+                floating_network = create_floating_ip_args["floating_network"]
         server = self._boot_server(image, flavor, **kwargs)
-        floatingip = self.neutron.create_floatingip(**create_floating_ip_args)
+        floatingip = self.neutron.create_floatingip(
+            floating_network=floating_network
+        )
         self._associate_floating_ip(server, floatingip)
         self._dissociate_floating_ip(server, floatingip)
 
@@ -1123,7 +1152,7 @@ class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack", users=True)
-@validation.add("required_contexts", contexts=("network"))
+@validation.add("required_contexts", contexts=["network"])
 @scenario.configure(context={"cleanup@openstack": ["nova"]},
                     name="NovaServers.boot_server_and_list_interfaces",
                     platform="openstack")
