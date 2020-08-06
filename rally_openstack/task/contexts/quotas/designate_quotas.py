@@ -20,15 +20,19 @@ class DesignateQuotas(object):
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "domains": {
+            "api_export_size": {
                 "type": "integer",
                 "minimum": 1
             },
-            "domain_recordsets": {
+            "zones": {
                 "type": "integer",
                 "minimum": 1
             },
-            "domain_records": {
+            "zones_recordsets": {
+                "type": "integer",
+                "minimum": 1
+            },
+            "zones_records": {
                 "type": "integer",
                 "minimum": 1
             },

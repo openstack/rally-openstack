@@ -678,7 +678,7 @@ class Murano(OSClient):
 
 
 @configure("designate", default_version="2", default_service_type="dns",
-           supported_versions=["1", "2"])
+           supported_versions=["2"])
 class Designate(OSClient):
     """Wrapper for DesignateClient which returns authenticated native client.
 
@@ -694,11 +694,8 @@ class Designate(OSClient):
         api_url += "/v%s" % version
 
         session = self.keystone.get_session()[0]
-        if version == "2":
-            return client.Client(version, session=session,
-                                 endpoint_override=api_url)
         return client.Client(version, session=session,
-                             endpoint=api_url)
+                             endpoint_override=api_url)
 
 
 @configure("trove", default_version="1.0", supported_versions=["1.0"],
