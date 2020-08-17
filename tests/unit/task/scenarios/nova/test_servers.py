@@ -920,7 +920,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
             server, "novnc")
 
     def test_boot_and_associate_floating_ip(self):
-        clients = mock.MagicMock()
+        clients = mock.MagicMock(credential=mock.MagicMock(api_info={}))
         neutronclient = clients.neutron.return_value
         floatingip = "floatingip"
         neutronclient.create_floatingip.return_value = {
@@ -994,7 +994,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
         )
 
     def test_boot_server_associate_and_dissociate_floating_ip(self):
-        clients = mock.MagicMock()
+        clients = mock.MagicMock(credential=mock.MagicMock(api_info={}))
         neutronclient = clients.neutron.return_value
         floatingip = "floatingip"
         neutronclient.create_floatingip.return_value = {

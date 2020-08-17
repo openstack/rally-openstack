@@ -69,11 +69,29 @@ class OpenStack(platform.Platform):
             "api_info": {
                 "type": "object",
                 "patternProperties": {
-                    "^[a-z]+$": {
+                    "^(?!neutron)([a-z]+)$": {
                         "type": "object",
                         "properties": {
                             "version": VERSION_SCHEMA,
                             "service_type": {"type": "string"}
+                        },
+                        "minProperties": 1,
+                        "additionalProperties": False
+                    },
+                    "^neutron$": {
+                        "type": "object",
+                        "properties": {
+                            "version": VERSION_SCHEMA,
+                            "service_type": {"type": "string"},
+                            "pre_newton": {
+                                "type": "boolean",
+                                "description": "Whether Neutron API is older "
+                                               "then OpenStack Newton or not. "
+                                               "Based on this option, some "
+                                               "external fields for "
+                                               "identifying resources can be "
+                                               "applied."
+                            }
                         },
                         "minProperties": 1,
                         "additionalProperties": False

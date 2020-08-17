@@ -136,7 +136,9 @@ class VMScenarioTestCase(test.ScenarioTestCase):
             addresses={"foo_net": [{"addr": "foo_ip"}]},
             tenant_id="foo_tenant"
         )
-        scenario = utils.VMScenario(self.context, clients=mock.MagicMock())
+        scenario = utils.VMScenario(
+            self.context,
+            clients=mock.MagicMock(credential=mock.MagicMock(api_info={})))
 
         scenario._boot_server = mock.Mock(return_value=server)
         scenario._delete_server = mock.Mock()

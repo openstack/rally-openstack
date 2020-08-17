@@ -19,6 +19,38 @@ Changelog
 [unreleased]
 ------------
 
+Added
+~~~~~
+
+* openstack.pre_newton_neutron config option can be configured via environment
+  spec.
+
+  .. code-block:: json
+
+    {
+         "openstack": {
+             "api_info": {
+                 "neutron": {"pre_newton": true}
+             },
+             "auth_url": "http://example.net:5000/v3/",
+             "region_name": "RegionOne",
+             "endpoint_type": "public",
+             "admin": {
+                 "username": "admin",
+                 "password": "myadminpass",
+                 "user_domain_name": "admin",
+                 "project_name": "admin",
+                 "project_domain_name": "admin"
+             },
+             "https_insecure": false,
+             "https_cacert": "",
+         }
+    }
+
+  Reminder: Based on this option, Rally will use or not some external fields
+  that can help to identify own resources during cleanup.
+
+
 Changed
 ~~~~~~~
 
@@ -69,8 +101,9 @@ Added
 Changed
 ~~~~~~~
 
-* `docker image <https://hub.docker.com/r/xrally/xrally-openstack>`_ is
-  switched to use `docker image <https://hub.docker.com/r/xrally/xrally>`_ as
+* `xrally-openstack docker image
+  <https://hub.docker.com/r/xrally/xrally-openstack>`_ is switched to use
+  `xrally/xrally docker image <https://hub.docker.com/r/xrally/xrally>`_ as
   a base user that brings use python 3.6 and ubuntu bionic.
 
 * Bump min supported Rally framework version to 3.1.0 (rally>=3.1.0)
@@ -203,7 +236,7 @@ Fixed
 * Handling of errors while cleaning up octavia resources
 * Missing project_id key for several Octavia API calls
 
-  `Launchpad-bug #1819284 <https://launchpad.net/bugs/1833235>`_
+  `Launchpad-bug #1833235 <https://launchpad.net/bugs/1833235>`_
 
 [1.5.0] - 2019-05-29
 --------------------

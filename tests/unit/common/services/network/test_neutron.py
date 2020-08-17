@@ -15,6 +15,7 @@
 from unittest import mock
 
 from rally import exceptions
+from rally_openstack.common import credential
 from rally_openstack.common.services.network import neutron
 from tests.unit import test
 
@@ -25,7 +26,13 @@ PATH = "rally_openstack.common.services.network.neutron"
 class NeutronServiceTestCase(test.TestCase):
     def setUp(self):
         super(NeutronServiceTestCase, self).setUp()
-        self.clients = mock.MagicMock()
+        self.clients = mock.MagicMock(
+            credential=credential.OpenStackCredential(
+                auth_url="example.com",
+                username="root",
+                password="changeme"
+            )
+        )
         self.nc = self.clients.neutron.return_value
         self.atomic_inst = []
 
@@ -820,6 +827,24 @@ class NeutronServiceTestCase(test.TestCase):
             **{"router:external": True})
         self.nc.create_floatingip.reset_mock()
         self.nc.list_networks.reset_mock()
+
+    def test_create_floatingip_pre_newton(self):
+        self.clients.credential.api_info["neutron"] = {"pre_newton": True}
+        floatingip = "foo"
+        self.nc.create_floatingip.return_value = {"floatingip": floatingip}
+        floating_network = {"id": "net-id"}
+
+        self.assertEqual(
+            floatingip,
+            self.neutron.create_floatingip(floating_network=floating_network)
+        )
+        self.nc.create_floatingip.assert_called_once_with(
+            {
+                "floatingip": {"floating_network_id": floating_network["id"]}
+            }
+        )
+        # generate random name should not be called
+        self.assertEqual(0, self.name_generator_count)
 
     @mock.patch("%s.LOG.info" % PATH)
     def test_create_floatingip_failure(self, mock_log_info):

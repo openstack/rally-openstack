@@ -29,6 +29,7 @@ class NeutronNetworksTestCase(test.TestCase):
         super(NeutronNetworksTestCase, self).setUp()
         patch = mock.patch("rally_openstack.common.osclients.Clients")
         self.clients = patch.start().return_value
+        self.clients.credential.api_info = {}
         self.addCleanup(patch.stop)
 
         self.nc = self.clients.neutron.return_value

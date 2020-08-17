@@ -948,8 +948,10 @@ class NeutronService(service.Service):
                     "networks found.")
             net_id = ext_networks[0]["id"]
 
-        description = None
-        if not CONF.openstack.pre_newton_neutron:
+        description = _NONE
+        api_info = self._clients.credential.api_info.get("neutron", {})
+        if (not api_info.get("pre_newton", False)
+                and not CONF.openstack.pre_newton_neutron):
             description = self.generate_random_name()
 
         body = _clean_dict(
