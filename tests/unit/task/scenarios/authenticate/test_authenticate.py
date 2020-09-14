@@ -39,7 +39,7 @@ class AuthenticateTestCase(test.ScenarioTestCase):
         # force glanceclient to actually make the API call, and this
         # results in a bunch of call().__iter__() and call().__len__()
         # calls that aren't matched if we use assert_has_calls().
-        self.assertItemsEqual(
+        self.assertCountEqual(
             self.clients("glance").images.list.call_args_list,
             [mock.call(name=mock.ANY)] * 5)
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
@@ -88,7 +88,7 @@ class AuthenticateTestCase(test.ScenarioTestCase):
     def test_validate_heat(self):
         scenario_inst = authenticate.ValidateHeat()
         scenario_inst.run(5)
-        self.assertItemsEqual(
+        self.assertCountEqual(
             self.clients("heat").stacks.list.call_args_list,
             [mock.call(limit=0)] * 5)
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
@@ -97,7 +97,7 @@ class AuthenticateTestCase(test.ScenarioTestCase):
     def test_validate_monasca(self):
         scenario_inst = authenticate.ValidateMonasca()
         scenario_inst.run(5)
-        self.assertItemsEqual(
+        self.assertCountEqual(
             self.clients("monasca").metrics.list.call_args_list,
             [mock.call(limit=0)] * 5)
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
