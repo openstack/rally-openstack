@@ -368,6 +368,14 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
             timeout=CONF.openstack.nova_server_shelve_timeout,
             check_interval=CONF.openstack.nova_server_shelve_poll_interval
         )
+        utils.wait_for_status(
+            server,
+            ready_statuses=["None"],
+            status_attr="OS-EXT-STS:task_state",
+            update_resource=utils.get_from_manager(),
+            timeout=CONF.openstack.nova_server_shelve_timeout,
+            check_interval=CONF.openstack.nova_server_shelve_poll_interval
+        )
 
     @atomic.action_timer("nova.unshelve_server")
     def _unshelve_server(self, server):

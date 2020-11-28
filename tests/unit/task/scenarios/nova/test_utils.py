@@ -223,13 +223,23 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         nova_scenario = utils.NovaScenario(context=self.context)
         nova_scenario._shelve_server(self.server)
         self.server.shelve.assert_called_once_with()
-        self.mock_wait_for_status.mock.assert_called_once_with(
-            self.server,
-            ready_statuses=["SHELVED_OFFLOADED"],
-            update_resource=self.mock_get_from_manager.mock.return_value,
-            check_interval=CONF.openstack.nova_server_shelve_poll_interval,
-            timeout=CONF.openstack.nova_server_shelve_timeout)
-        self.mock_get_from_manager.mock.assert_called_once_with()
+        self.mock_wait_for_status.mock.assert_has_calls([
+            mock.call(
+                self.server,
+                ready_statuses=["SHELVED_OFFLOADED"],
+                update_resource=self.mock_get_from_manager.mock.return_value,
+                check_interval=CONF.openstack.nova_server_shelve_poll_interval,
+                timeout=CONF.openstack.nova_server_shelve_timeout
+            ),
+            mock.call(
+                self.server,
+                ready_statuses=["None"],
+                status_attr="OS-EXT-STS:task_state",
+                update_resource=self.mock_get_from_manager.mock.return_value,
+                check_interval=CONF.openstack.nova_server_shelve_poll_interval,
+                timeout=CONF.openstack.nova_server_shelve_timeout)]
+        )
+        self.assertEqual(2, self.mock_get_from_manager.mock.call_count)
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.shelve_server")
 
