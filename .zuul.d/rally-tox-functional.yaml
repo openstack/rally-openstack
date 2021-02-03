@@ -20,5 +20,4 @@
       devstack_localrc:
         USE_PYTHON3: true
       tox_env: "functional"
-    pre-run: tests/ci/playbooks/tox-install.yaml
     run: tests/ci/playbooks/tox-functional-env-run.yaml

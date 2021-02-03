@@ -169,9 +169,6 @@ class Nova(ResourceManager):
     def list_hypervisors(self):
         return self.client.hypervisors.list()
 
-    def list_agents(self):
-        return self.client.agents.list()
-
     def list_keypairs(self):
         return self.client.keypairs.list()
 
