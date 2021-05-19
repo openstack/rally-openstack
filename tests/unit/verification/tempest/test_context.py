@@ -369,7 +369,7 @@ class TempestContextTestCase(test.TestCase):
     def test_setup(self, mock_create_dir,
                    mock__create_tempest_roles, mock__configure_option,
                    mock_open):
-        verifier = mock.Mock(env=self.env)
+        verifier = mock.Mock(env=self.env, version="27.1.0")
         verifier.manager.home_dir = "/p/a/t/h"
 
         # case #1: no neutron and heat
@@ -387,8 +387,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual(
             [mock.call("DEFAULT", "log_file", "/p/a/t/h/tempest.log"),
              mock.call("oslo_concurrency", "lock_path", "/p/a/t/h/lock_files"),
-             mock.call("scenario", "img_dir", "/p/a/t/h"),
-             mock.call("scenario", "img_file", ctx.image_name,
+             mock.call("scenario", "img_file", "/p/a/t/h/" + ctx.image_name,
                        helper_method=ctx._download_image),
              mock.call("compute", "image_ref",
                        helper_method=ctx._discover_or_create_image),
@@ -427,8 +426,7 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual([
             mock.call("DEFAULT", "log_file", "/p/a/t/h/tempest.log"),
             mock.call("oslo_concurrency", "lock_path", "/p/a/t/h/lock_files"),
-            mock.call("scenario", "img_dir", "/p/a/t/h"),
-            mock.call("scenario", "img_file", ctx.image_name,
+            mock.call("scenario", "img_file", "/p/a/t/h/" + ctx.image_name,
                       helper_method=ctx._download_image),
             mock.call("compute", "image_ref",
                       helper_method=ctx._discover_or_create_image),
@@ -449,3 +447,16 @@ class TempestContextTestCase(test.TestCase):
                       flv_ram=config.CONF.openstack.heat_instance_type_ram,
                       flv_disk=config.CONF.openstack.heat_instance_type_disk)
         ], mock__configure_option.call_args_list)
+
+        # case 3: tempest is old.
+        verifier.version = "17.0.0"
+        ctx = context.TempestContext({"verifier": verifier})
+        ctx.conf = mock.Mock()
+        ctx.setup()
+        mock__configure_option.assert_has_calls(
+            [
+                mock.call("scenario", "img_dir", "/p/a/t/h"),
+                mock.call("scenario", "img_file", ctx.image_name,
+                          helper_method=ctx._download_image)
+            ]
+        )

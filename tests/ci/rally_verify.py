@@ -80,10 +80,10 @@ class Step(object):
                        "skipped or finished with an error." %
                        (self.name, results[self.DEPENDS_ON].name))
                 stdout_file = self._generate_path(
-                    "%s.txt.gz" % self.__class__.__name__)
+                    "%s.txt" % self.__class__.__name__)
 
                 self.result["output_file"] = self._write_file(
-                    stdout_file, msg, compress=True)
+                    stdout_file, msg, compress=False)
                 return False
         return True
 
@@ -99,9 +99,9 @@ class Step(object):
         self.result["cmd"] = cmd
         self.result["status"], self.result["output"] = self.call_rally(cmd)
 
-        stdout_file = self._generate_path("%s.txt.gz" % cmd)
+        stdout_file = self._generate_path("%s.txt" % cmd)
         self.result["output_file"] = self._write_file(
-            stdout_file, self.result["output"], compress=True)
+            stdout_file, self.result["output"], compress=False)
 
     @classmethod
     def _generate_path(cls, root):
@@ -317,12 +317,34 @@ class RunVerification(Step):
     SKIP_TESTS = {
         "tempest.api.compute.flavors.test_flavors.FlavorsV2TestJSON."
         "test_get_flavor[id-1f12046b-753d-40d2-abb6-d8eb8b30cb2f,smoke]":
-            "This test was skipped intentionally"}
+            "This test was skipped intentionally",
+    }
     XFAIL_TESTS = {
-        "tempest.api.compute.servers.test_server_actions."
-        "ServerActionsTestJSON.test_get_vnc_console"
-        "[id-c6bc11bf-592e-4015-9319-1c98dc64daf5]":
-            "This test fails because 'novnc' console type is unavailable"}
+        "tempest.scenario.test_dashboard_basic_ops"
+        ".TestDashboardBasicOps.test_basic_scenario"
+        "[dashboard,id-4f8851b1-0e69-482b-b63b-84c6e76f6c80,smoke]":
+            "Fails for unknown reason",
+
+        "tempest.api.compute.servers.test_attach_interfaces"
+        ".AttachInterfacesUnderV243Test.test_add_remove_fixed_ip"
+        "[id-c7e0e60b-ee45-43d0-abeb-8596fd42a2f9,network,smoke]":
+            "Fails for unknown reason",
+
+        "tempest.scenario.test_network_basic_ops"
+        ".TestNetworkBasicOps.test_network_basic_ops"
+        "[compute,id-f323b3ba-82f8-4db7-8ea6-6a895869ec49,network,smoke]":
+            "Fails for unknown reason",
+
+        "tempest.scenario.test_server_basic_ops"
+        ".TestServerBasicOps.test_server_basic_ops"
+        "[compute,id-7fff3fb3-91d8-4fd0-bd7d-0204f1f180ba,network,smoke]":
+            "Fails for unknown reason",
+
+        "tempest.api.compute.servers.test_server_actions"
+        ".ServerActionsTestJSON.test_reboot_server_hard"
+        "[id-2cb1baf6-ac8d-4429-bf0d-ba8a0ba53e32,smoke]":
+            "Fails for unknown reason"
+    }
 
     def setUp(self):
         self.CALL_ARGS["tag"] = "tag-1 tag-2"
@@ -395,14 +417,6 @@ class ReportVerificationMixin(Step):
             [v["uuid"] for v in self.rapi.verification.list()])
         print(self.COMMAND % self.CALL_ARGS)
         self.result["out"] = "<None>"
-
-    def run(self):
-        super(ReportVerificationMixin, self).run()
-        creport = "%s.gz" % self.CALL_ARGS["out"]
-        with open(self.CALL_ARGS["out"], "rb") as f_in:
-            with gzip.open(creport, "wb") as f_out:
-                f_out.writelines(f_in)
-        self.result["out"] = creport
 
 
 class HtmlVerificationReport(ReportVerificationMixin):

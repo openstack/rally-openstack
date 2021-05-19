@@ -64,6 +64,20 @@ class TempestContext(context.VerifierContext):
         self._created_flavors = []
         self._created_networks = []
 
+    def _configure_img_options(self):
+        try:
+            tempest_major_version = int(self.verifier.version.split(".", 1)[0])
+        except ValueError:
+            # use latest flow by default
+            tempest_major_version = 27
+        if tempest_major_version < 27:
+            self._configure_option("scenario", "img_dir", self.data_dir)
+            img_file = self.image_name
+        else:
+            img_file = self.data_dir + "/" + self.image_name
+        self._configure_option("scenario", "img_file", img_file,
+                               helper_method=self._download_image)
+
     def setup(self):
         self.conf.read(self.conf_path)
 
@@ -75,9 +89,7 @@ class TempestContext(context.VerifierContext):
                                os.path.join(self.data_dir, "tempest.log"))
         self._configure_option("oslo_concurrency", "lock_path",
                                os.path.join(self.data_dir, "lock_files"))
-        self._configure_option("scenario", "img_dir", self.data_dir)
-        self._configure_option("scenario", "img_file", self.image_name,
-                               helper_method=self._download_image)
+        self._configure_img_options()
         self._configure_option("compute", "image_ref",
                                helper_method=self._discover_or_create_image)
         self._configure_option("compute", "image_ref_alt",
