@@ -19,7 +19,8 @@
               - rally_openstack/task/cleanup/resources.py
               - rally_openstack/task/scenarios/barbican
               - tests/ci/playbooks
-        - rally-task-cinder
+        - rally-task-cinder:
+            voting: false
         - rally-task-designate:
             files:
               - .zuul.d/zuul.yaml
@@ -78,7 +79,8 @@
             # watcher-api did not start last time
             voting: false
         - rally-task-zaqar
-        - rally-verify-tempest
+        - rally-verify-tempest:
+            voting: false
     gate:
       jobs:
         - rally-tox-cover
@@ -99,7 +101,6 @@
               - rally_openstack/task/cleanup/resources.py
               - rally_openstack/task/scenarios/barbican
               - tests/ci/playbooks
-        - rally-task-cinder
         #- rally-task-heat
         - rally-task-ironic
         - rally-task-keystone-glance-swift
@@ -116,7 +117,6 @@
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
         - rally-task-zaqar
-        - rally-verify-tempest
     post:
       jobs:
         - rally-openstack-docker-build-and-push:

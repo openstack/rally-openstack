@@ -3,4 +3,33 @@
     parent: rally-task-at-devstack
     vars:
       rally_task: rally-jobs/neutron.yaml
-
+      devstack_localrc:
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch,linuxbridge
+        Q_AGENT: openvswitch
+      devstack_services:
+        neutron-trunk: true
+        # Cinder services
+        c-api: true
+        c-bak: true
+        c-sch: true
+        c-vol: true
+        cinder: true
+        # Swift services
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        # OVN services
+        ovn-controller: false
+        ovn-northd: false
+        ovs-vswitchd: false
+        ovsdb-server: false
+        q-ovn-metadata-agent: false
+        # Neutron services
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-metering: true
+        q-svc: true
