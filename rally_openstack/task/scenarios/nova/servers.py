@@ -938,9 +938,16 @@ class BootAndAssociateFloatingIp(utils.NovaScenario):
                 #   provided
                 floating_network = create_floating_ip_args["floating_network"]
         server = self._boot_server(image, flavor, **kwargs)
-        floatingip = self.neutron.create_floatingip(
-            floating_network=floating_network
-        )
+        floatingip = None
+        if create_floating_ip_args is not None and "subnet_id" in create_floating_ip_args:
+            floatingip = self.neutron.create_floatingip(
+                floating_network=floating_network, **create_floating_ip_args
+            )
+        else:
+            floatingip = self.neutron.create_floatingip(
+                floating_network=floating_network
+            )
+
         self._associate_floating_ip(server, floatingip)
 
 
