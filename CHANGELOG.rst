@@ -16,6 +16,15 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+
+unreleased
+----------
+
+Fixed
+~~~~~
+
+Compatibility with Tempest >= 27
+
 [2.1.0] - 2020-11-03
 --------------------
 
