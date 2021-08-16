@@ -218,7 +218,6 @@ class BootRuncommandDelete(vm_utils.VMScenario, cinder_utils.CinderBasic):
                     "local_path": "/home/user/work/cve/sh-1.0/bin/sh"
                 }
 
-
         :param volume_args: volume args for booting server from volume
         :param floating_network: external network name, for floating ip
         :param port: ssh port for SSH connection
@@ -229,14 +228,16 @@ class BootRuncommandDelete(vm_utils.VMScenario, cinder_utils.CinderBasic):
                                would like to retrieve
         :param kwargs: extra arguments for booting the server
         """
-        if volume_args:
-            volume = self.cinder.create_volume(volume_args["size"],
-                                               imageRef=None)
-            kwargs["block_device_mapping"] = {"vdrally": "%s:::1" % volume.id}
-
         if not image:
             image = self.context["tenant"]["custom_image"]["id"]
 
+        if volume_args:
+            availibility_zone = None
+            if volume_args['availability_zone']:
+                availability_zone = volume_args['availability_zone']
+            volume = self.cinder.create_volume(volume_args["size"],
+                                               imageRef=image,availability_zone=availability_zone)
+            kwargs["block_device_mapping"] = {"vdrally": "%s:::1" % volume.id}
         server, fip = self._boot_server_with_fip(
             image, flavor, use_floating_ip=use_floating_ip,
             floating_network=floating_network, create_floating_ip_args=create_floating_ip_args,
