@@ -238,7 +238,7 @@ OPTS = {"openstack": [
                  deprecated_group="benchmark",
                  help="Server resize timeout"),
     cfg.FloatOpt("nova_server_resize_poll_interval",
-                 default=5.0,
+                 default=4.0,
                  deprecated_group="benchmark",
                  help="Server resize poll interval"),
     # "resize_confirm": (0, 200, 2)
