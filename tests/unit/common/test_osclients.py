@@ -676,29 +676,6 @@ class OSClientsTestCase(test.TestCase):
         self.assertRaises(exceptions.RallyException,
                           osclients.Manila.validate_version, "foo")
 
-    @mock.patch("%s.Ceilometer._get_endpoint" % PATH)
-    def test_ceilometer(self, mock_ceilometer__get_endpoint):
-        fake_ceilometer = fakes.FakeCeilometerClient()
-        mock_ceilometer = mock.MagicMock()
-        mock_ceilometer__get_endpoint.return_value = "http://fake.to:2/fake"
-        mock_keystoneauth1 = mock.MagicMock()
-        mock_ceilometer.client.get_client = mock.MagicMock(
-            return_value=fake_ceilometer)
-        self.assertNotIn("ceilometer", self.clients.cache)
-        with mock.patch.dict("sys.modules",
-                             {"ceilometerclient": mock_ceilometer,
-                              "keystoneauth1": mock_keystoneauth1}):
-            client = self.clients.ceilometer()
-            self.assertEqual(fake_ceilometer, client)
-            kw = {
-                "session": mock_keystoneauth1.session.Session(),
-                "endpoint_override": mock_ceilometer__get_endpoint.return_value
-            }
-            mock_ceilometer.client.get_client.assert_called_once_with("2",
-                                                                      **kw)
-            self.assertEqual(fake_ceilometer,
-                             self.clients.cache["ceilometer"])
-
     def test_gnocchi(self):
         fake_gnocchi = fakes.FakeGnocchiClient()
         mock_gnocchi = mock.MagicMock()

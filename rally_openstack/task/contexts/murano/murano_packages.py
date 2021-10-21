@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import io
 import os
 import zipfile
 
@@ -62,9 +63,11 @@ class PackageGenerator(context.OpenStackContext):
             if is_config_app_dir:
                 self.context["tenants"][tenant_id]["murano_ctx"] = zip_name
             # TODO(astudenov): use self.generate_random_name()
+            with open(zip_name, "rb") as f:
+                file = io.BytesIO(f.read())
             package = clients.murano().packages.create(
                 {"categories": ["Web"], "tags": ["tag"]},
-                {"file": open(zip_name, "rb")})
+                {"file": file})
 
             self.context["tenants"][tenant_id]["packages"].append(package)
 

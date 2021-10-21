@@ -17,8 +17,22 @@ Changelog
    was missed or can be improved, feel free to change it!
 
 
-unreleased
-----------
+[2.2.0] - 2021-10-21
+--------------------
+
+Changed
+~~~~~~~
+
+* Switch docker image to rally 3.3.0 base.
+* Update upper-constraints file
+
+Removed
+~~~~~~~
+
+Ceilometer service was splitted into Gnocchi, Aodh, Panko long time ago.
+We kept ceilometer api plugins for backward compatibility, but it is time to
+go forward (ceilometerclient was deprecated and is not compatible with modern
+python libraries).
 
 Fixed
 ~~~~~

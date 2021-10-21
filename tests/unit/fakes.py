@@ -21,7 +21,6 @@ import string
 from unittest import mock
 import uuid
 
-from ceilometerclient import exc as ceilometer_exc
 from glanceclient import exc
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exceptions
@@ -810,87 +809,10 @@ class FakeMetricManager(FakeManager):
         return [metric]
 
 
-class FakeAlarmManager(FakeManager):
-
-    def get(self, alarm_id):
-        alarm = self.find(alarm_id=alarm_id)
-        if alarm:
-            return [alarm]
-        raise ceilometer_exc.HTTPNotFound(
-            "Alarm with %s not found" % (alarm_id))
-
-    def update(self, alarm_id, **fake_alarm_dict_diff):
-        alarm = self.get(alarm_id)[0]
-        for attr, value in fake_alarm_dict_diff.items():
-            setattr(alarm, attr, value)
-        return alarm
-
-    def create(self, **kwargs):
-        alarm = FakeAlarm(self, **kwargs)
-        return self._cache(alarm)
-
-    def delete(self, alarm_id):
-        alarm = self.find(alarm_id=alarm_id)
-        if alarm is not None:
-            alarm.status = "DELETED"
-            del self.cache[alarm.id]
-            self.resources_order.remove(alarm.id)
-
-    def get_state(self, alarm_id):
-        alarm = self.find(alarm_id=alarm_id)
-        if alarm is not None:
-            return getattr(alarm, "state", "fake-alarm-state")
-
-    def get_history(self, alarm_id):
-        return ["fake-alarm-history"]
-
-    def set_state(self, alarm_id, state):
-        alarm = self.find(alarm_id=alarm_id)
-        if alarm is not None:
-            return setattr(alarm, "state", state)
-
-
-class FakeSampleManager(FakeManager):
-
-    def create(self, **kwargs):
-        sample = FakeSample(self, **kwargs)
-        return [self._cache(sample)]
-
-    def list(self):
-        return ["fake-samples"]
-
-
-class FakeMeterManager(FakeManager):
-
-    def list(self):
-        return ["fake-meter"]
-
-
 class FakeMetricsManager(FakeManager):
 
     def list(self):
         return ["fake-metric"]
-
-
-class FakeCeilometerResourceManager(FakeManager):
-
-    def get(self, resource_id):
-        return ["fake-resource-info"]
-
-    def list(self):
-        return ["fake-resource"]
-
-
-class FakeStatisticsManager(FakeManager):
-
-    def list(self, meter):
-        return ["%s-statistics" % meter]
-
-
-class FakeQueryManager(FakeManager):
-
-    def query(self, filter, orderby, limit):
-        return ["fake-query-result"]
 
 
 class FakeQueuesManager(FakeManager):
@@ -1139,19 +1061,6 @@ class FakeKeystoneClient(object):
 
     def delete_user(self, uuid):
         return self.users.delete(uuid)
-
-
-class FakeCeilometerClient(object):
-
-    def __init__(self):
-        self.alarms = FakeAlarmManager()
-        self.meters = FakeMeterManager()
-        self.resources = FakeCeilometerResourceManager()
-        self.statistics = FakeStatisticsManager()
-        self.samples = FakeSampleManager()
-        self.query_alarms = FakeQueryManager()
-        self.query_samples = FakeQueryManager()
-        self.query_alarm_history = FakeQueryManager()
 
 
 class FakeGnocchiClient(object):
@@ -1620,7 +1529,6 @@ class FakeClients(object):
         self._sahara = None
         self._heat = None
         self._designate = None
-        self._ceilometer = None
         self._zaqar = None
         self._trove = None
         self._mistral = None
@@ -1684,11 +1592,6 @@ class FakeClients(object):
         if not self._designate:
             self._designate = FakeDesignateClient()
         return self._designate
-
-    def ceilometer(self):
-        if not self._ceilometer:
-            self._ceilometer = FakeCeilometerClient()
-        return self._ceilometer
 
     def monasca(self):
         if not self._monasca:

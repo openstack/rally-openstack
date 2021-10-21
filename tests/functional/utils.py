@@ -71,9 +71,10 @@ class Rally(object):
 
     def __init__(self, force_new_db=False, plugin_path=None, config_opts=None):
         if not os.path.exists(self.ENV_FILE):
-            subprocess.call(["rally", "--log-file", "/dev/null",
-                             "env", "show", "--only-spec"],
-                            stdout=open(self.ENV_FILE, "w"))
+            with open(self.ENV_FILE, "w") as f:
+                subprocess.call(["rally", "--log-file", "/dev/null",
+                                 "env", "show", "--only-spec"],
+                                stdout=f)
         with open(self.ENV_FILE) as f:
             self.env_spec = json.loads(f.read())
             print(self.env_spec)

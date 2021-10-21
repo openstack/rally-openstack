@@ -12,7 +12,6 @@ kubernetes                                             # Apache License Version 
 os-faults>=0.2.0                                       # Apache Software License
 osprofiler                                             # Apache Software License
 python-barbicanclient                                  # Apache Software License
-python-ceilometerclient                                # Apache Software License
 python-cinderclient!=4.0.0                             # Apache Software License
 python-designateclient                                 # Apache License, Version 2.0
 python-heatclient                                      # Apache Software License

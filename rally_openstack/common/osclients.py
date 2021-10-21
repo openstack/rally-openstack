@@ -550,24 +550,6 @@ class Manila(OSClient):
         return manila_client
 
 
-@configure("ceilometer", default_version="2", default_service_type="metering",
-           supported_versions=["1", "2"])
-class Ceilometer(OSClient):
-    """Wrapper for CeilometerClient which returns authenticated native client.
-
-    """
-
-    def create_client(self, version=None, service_type=None):
-        """Return ceilometer client."""
-        from ceilometerclient import client as ceilometer
-
-        client = ceilometer.get_client(
-            self.choose_version(version),
-            session=self.keystone.get_session()[0],
-            endpoint_override=self._get_endpoint(service_type))
-        return client
-
-
 @configure("gnocchi", default_service_type="metric", default_version="1",
            supported_versions=["1"])
 class Gnocchi(OSClient):
