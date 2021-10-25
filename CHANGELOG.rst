@@ -17,7 +17,7 @@ Changelog
    was missed or can be improved, feel free to change it!
 
 
-[2.2.0] - 2021-10-21
+[2.2.0] - 2021-10-25
 --------------------
 
 Changed
