@@ -3,13 +3,15 @@
     parent: rally-task-at-devstack
     required-projects:
       - name: openstack/devstack
-      - name: openstack/devstack-gate
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/magnum
       - name: openstack/python-magnumclient
       - name: openstack/heat
     vars:
+      devstack_localrc:
+        # TODO(frickler): drop this once heat no longer needs it
+        KEYSTONE_ADMIN_ENDPOINT: true
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         magnum: https://opendev.org/openstack/magnum

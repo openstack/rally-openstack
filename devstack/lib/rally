@@ -43,36 +43,19 @@ OSPROFILER_CONNECTION_STRING=${OSPROFILER_CONNECTION_STRING:-""}
 # Creates a configuration file for the current deployment
 # Uses the following variables:
 #
-# - ``ADMIN_PASSWORD``, ``KEYSTONE_SERVICE_PROTOCOL``,
-#   ``KEYSTONE_SERVICE_HOST``, ``KEYSTONE_SERVICE_PORT``,
-#   ``IDENTITY_API_VERSION`` - must be defined
+# - ``ADMIN_PASSWORD``, ``REGION_NAME``
+#   ``OS_AUTH_URL``
 #   ``OSPROFILER_HMAC_KEYS`` - optional, for integration with osprofiler
 #   ``OSPROFILER_CONNECTION_STRING`` - optional, if this is set together with
 #       OSPROFILER_HMAC_KEYS rally html report will use osprofiler api to
 #       generate html report for each trace and embed it as iframe to our
-#       native html repor
+#       native html report
 #   ``RALLY_OSPROFILER_CHART`` - optional, a path to store osprofiler's reports
 #
 
 # _create_deployment_config filename
 function _create_deployment_config() {
-if [[ "$IDENTITY_API_VERSION" == 2.0 ]]
-then
-    cat >$1 <<EOF
-{
-    "openstack": {
-        "auth_url": "$OS_AUTH_URL",
-        "region_name": "$REGION_NAME",
-        "admin": {
-            "username": "admin",
-            "password": "$ADMIN_PASSWORD",
-            "tenant_name": "admin",
-        }
-EOF
-fi
-if [[ "$IDENTITY_API_VERSION" == 3 ]]
-then
-    cat >$1 <<EOF
+cat >$1 <<EOF
 {
     "openstack": {
         "auth_url": "$OS_AUTH_URL",
@@ -85,7 +68,6 @@ then
             "project_domain_name": "Default"
         },
 EOF
-fi
 
 # Now add osprofiler config if necessary
 if [[ ! -z "$OSPROFILER_HMAC_KEYS" ]]; then

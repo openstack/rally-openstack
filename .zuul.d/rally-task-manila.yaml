@@ -3,6 +3,9 @@
     parent: rally-task-at-devstack
     vars:
       rally_task: rally-jobs/manila.yaml
+      devstack_localrc:
+        # TODO(frickler): drop this once heat no longer needs it
+        KEYSTONE_ADMIN_ENDPOINT: true
       devstack_services:
         # disable redundant services for the job
         ceilometer-acentral: false
@@ -27,7 +30,6 @@
     vars:
       rally_task: rally-jobs/manila-no-ss.yaml
       devstack_localrc:
-        USE_PYTHON3: true
         LIBS_FROM_GIT: python-manilaclient
         SHARE_DRIVER: manila.tests.share.drivers.dummy.DummyDriver
         MANILA_ENABLED_BACKENDS: alpha,beta,gamma
@@ -59,7 +61,6 @@
     vars:
       rally_task: rally-jobs/manila.yaml
       devstack_localrc:
-        USE_PYTHON3: true
         LIBS_FROM_GIT: python-manilaclient
         SHARE_DRIVER: manila.tests.share.drivers.dummy.DummyDriver
         MANILA_ENABLED_BACKENDS: alpha,beta,gamma

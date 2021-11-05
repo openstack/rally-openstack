@@ -3,7 +3,6 @@
     description: A Rally job for checking Octavia Plugin
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack/devstack-gate
       - name: openstack/diskimage-builder
       - name: openstack/octavia
       - name: openstack/octavia-lib
