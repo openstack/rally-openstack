@@ -44,7 +44,7 @@ OSPROFILER_CONNECTION_STRING=${OSPROFILER_CONNECTION_STRING:-""}
 # Uses the following variables:
 #
 # - ``ADMIN_PASSWORD``, ``REGION_NAME``
-#   ``OS_AUTH_URL``
+#   ``KEYSTONE_SERVICE_URI``
 #   ``OSPROFILER_HMAC_KEYS`` - optional, for integration with osprofiler
 #   ``OSPROFILER_CONNECTION_STRING`` - optional, if this is set together with
 #       OSPROFILER_HMAC_KEYS rally html report will use osprofiler api to
@@ -58,7 +58,7 @@ function _create_deployment_config() {
 cat >$1 <<EOF
 {
     "openstack": {
-        "auth_url": "$OS_AUTH_URL",
+        "auth_url": "$KEYSTONE_SERVICE_URI",
         "region_name": "$REGION_NAME",
         "admin": {
             "username": "admin",
