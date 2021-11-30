@@ -46,6 +46,7 @@ def _rule_to_key(rule):
     # NOTE(andreykurilin): there are more actual comparison keys, but this set
     #   should be enough for us.
     comparison_keys = [
+        "ethertype",
         "direction",
         "port_range_max",
         "port_range_min",
@@ -58,6 +59,7 @@ def _rule_to_key(rule):
 
 _RULES_TO_ADD = [
     {
+        "ethertype": "IPv4",
         "protocol": "tcp",
         "port_range_max": 65535,
         "port_range_min": 1,
@@ -65,6 +67,15 @@ _RULES_TO_ADD = [
         "direction": "ingress"
     },
     {
+        "ethertype": "IPv6",
+        "protocol": "tcp",
+        "port_range_max": 65535,
+        "port_range_min": 1,
+        "remote_ip_prefix": "::/0",
+        "direction": "ingress"
+    },
+    {
+        "ethertype": "IPv4",
         "protocol": "udp",
         "port_range_max": 65535,
         "port_range_min": 1,
@@ -72,8 +83,23 @@ _RULES_TO_ADD = [
         "direction": "ingress"
     },
     {
+        "ethertype": "IPv6",
+        "protocol": "udp",
+        "port_range_max": 65535,
+        "port_range_min": 1,
+        "remote_ip_prefix": "::/0",
+        "direction": "ingress"
+    },
+    {
+        "ethertype": "IPv4",
         "protocol": "icmp",
         "remote_ip_prefix": "0.0.0.0/0",
+        "direction": "ingress"
+    },
+    {
+        "ethertype": "IPv6",
+        "protocol": "ipv6-icmp",
+        "remote_ip_prefix": "::/0",
         "direction": "ingress"
     }
 ]
