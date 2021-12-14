@@ -1,4 +1,4 @@
-{%- set cirros_image_url = "http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img" %}
+{%- set cirros_image_url = "https://github.com/cirros-dev/cirros/releases/download/0.5.2/cirros-0.5.2-x86_64-disk.img" %}
 {% set image_name = "^(cirros.*-disk|TestVM)$" %}
 {% set flavor_name = "m1.tiny" %}
 {% set volume_type = "" %}
@@ -378,7 +378,6 @@
     -
       title: NovaServers.boot_and_get_console_url tests
       workloads:
-      {% for s in ("novnc", "xvpvnc") %}
         -
           scenario:
             NovaServers.boot_and_get_console_url:
@@ -386,7 +385,7 @@
                 name: "{{flavor_name}}"
               image:
                 name: "{{image_name}}"
-              console_type: {{s}}
+              console_type: novnc
           runner:
             constant:
               times: 4
@@ -395,8 +394,6 @@
             users:
               tenants: 2
               users_per_tenant: 2
-      {% endfor %}
-
     -
       title: NovaServers.resize_server tests
       workloads:
@@ -874,14 +871,6 @@
         users:
           tenants: 2
           users_per_tenant: 2
-    -
-      title: NovaAgents.list_agents tests
-      scenario:
-        NovaAgents.list_agents: {}
-      runner:
-        constant:
-          concurrency: 2
-          times: 4
     -
       title: NovaAggregates.list_aggregates tests
       scenario:

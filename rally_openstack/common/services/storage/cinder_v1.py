@@ -317,6 +317,16 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
         """
         return self._impl.create_volume_type(name=name)
 
+    def update_volume_type(self, volume_type, name=None,
+                           description=None, is_public=None):
+        raise NotImplementedError("Cinder V1 doesn't support this method.")
+
+    def add_type_access(self, volume_type, project):
+        raise NotImplementedError("Cinder V1 doesn't support this method.")
+
+    def list_type_access(self, volume_type):
+        raise NotImplementedError("Cinder V1 doesn't support this method.")
+
     def restore_backup(self, backup_id, volume_id=None):
         """Restore the given backup.
 

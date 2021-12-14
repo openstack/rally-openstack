@@ -203,7 +203,7 @@ class ManilaScenario(scenario.OpenStackScenario):
         :param share: :class:`Share`
         :param new_size: new size of the share
         """
-        share.extend(new_size)
+        self.clients("manila").shares.extend(share, new_size)
         utils.wait_for_status(
             share,
             ready_statuses=["available"],

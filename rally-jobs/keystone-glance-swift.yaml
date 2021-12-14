@@ -1,4 +1,4 @@
-{%- set cirros_image_url = "https://github.com/cirros-dev/cirros/releases/download/0.3.5/cirros-0.3.5-x86_64-disk.img" %}
+{%- set cirros_image_url = "https://github.com/cirros-dev/cirros/releases/download/0.5.2/cirros-0.5.2-x86_64-disk.img" %}
 ---
   KeystoneBasic.authenticate_user_and_validate_token:
     -

@@ -365,3 +365,17 @@ class UnifiedCinderV1ServiceTestCase(test.TestCase):
                                                                   volume_id=1)
         self.service._unify_volume.assert_called_once_with(
             self.service._impl.restore_backup.return_value)
+
+    def test_not_implemented_methods(self):
+        self.assertRaises(
+            NotImplementedError,
+            self.service.update_volume_type, "type"
+        )
+        self.assertRaises(
+            NotImplementedError,
+            self.service.list_type_access, "type"
+        )
+        self.assertRaises(
+            NotImplementedError,
+            self.service.add_type_access, "type", project="project"
+        )
