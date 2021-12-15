@@ -2,11 +2,14 @@
     name: rally-task-watcher
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack/devstack
-      - name: openstack/rally
-      - name: openstack/rally-openstack
-      - name: openstack/watcher
-      - name: openstack/python-watcherclient
+      - openstack/ceilometer
+      - openstack/python-openstackclient
+      - openstack/python-watcherclient
+      - openstack/watcher
+      - openstack/watcher-tempest-plugin
+      - openstack/tempest
+      - openstack/rally
+      - openstack/rally-openstack
     vars:
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
@@ -15,14 +18,8 @@
         watcher-api: true
         watcher-decision-engine: true
         watcher-applier: true
-        # disable redundant services for the job
-        ceilometer-acentral: false
-        ceilometer-acompute: false
-        ceilometer-alarm-evaluator: false
-        ceilometer-alarm-notifier: false
-        ceilometer-anotification: false
-        ceilometer-api: false
-        ceilometer-collector: false
-        horizon: false
-        tempest: false
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
       rally_task: rally-jobs/watcher.yaml

@@ -623,6 +623,14 @@ class UnifiedCinderMixinTestCase(test.TestCase):
         self.service._unify_transfer.assert_called_once_with(
             "transfer")
 
+    def test_update_volume_type(self):
+        self.assertEqual(self.service._impl.update_volume_type.return_value,
+                         self.service.update_volume_type("volume_type"))
+        self.service._impl.update_volume_type.assert_called_once_with(
+            volume_type="volume_type", name=None, description=None,
+            is_public=None
+        )
+
     def test_get_volume_type(self):
         self.assertEqual(self.service._impl.get_volume_type.return_value,
                          self.service.get_volume_type("volume_type"))
@@ -634,6 +642,19 @@ class UnifiedCinderMixinTestCase(test.TestCase):
                          self.service.delete_volume_type("volume_type"))
         self.service._impl.delete_volume_type.assert_called_once_with(
             "volume_type")
+
+    def test_add_type_access(self):
+        self.assertEqual(self.service._impl.add_type_access.return_value,
+                         self.service.add_type_access(volume_type="some_type",
+                                                      project="some_project"))
+        self.service._impl.add_type_access.assert_called_once_with(
+            volume_type="some_type", project="some_project")
+
+    def test_list_type_access(self):
+        self.assertEqual(self.service._impl.list_type_access.return_value,
+                         self.service.list_type_access("some_type"))
+        self.service._impl.list_type_access.assert_called_once_with(
+            "some_type")
 
     def test_set_volume_type_keys(self):
         self.assertEqual(self.service._impl.set_volume_type_keys.return_value,

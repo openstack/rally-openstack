@@ -109,7 +109,8 @@ class ManilaScenarioTestCase(test.ScenarioTestCase):
 
         self.scenario._extend_share(fake_share, new_size)
 
-        fake_share.extend.assert_called_with(new_size)
+        self.clients("manila").shares.extend.assert_called_once_with(
+            fake_share, new_size)
 
         self.mock_wait_for_status.mock.assert_called_once_with(
             fake_share,

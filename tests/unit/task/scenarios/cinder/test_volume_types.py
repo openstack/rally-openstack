@@ -18,9 +18,6 @@ from rally import exceptions as rally_exceptions
 from rally_openstack.task.scenarios.cinder import volume_types
 from tests.unit import test
 
-CINDER_V2_PATH = ("rally_openstack.common.services.storage"
-                  ".cinder_v2.CinderV2Service")
-
 
 class CinderVolumeTypesTestCase(test.ScenarioTestCase):
 
@@ -157,23 +154,21 @@ class CinderVolumeTypesTestCase(test.ScenarioTestCase):
             description=description, is_public=is_public)
         mock_service.list_types.assert_called_once_with()
 
-    @mock.patch("%s.create_volume_type" % CINDER_V2_PATH)
-    @mock.patch("%s.update_volume_type" % CINDER_V2_PATH)
-    def test_create_and_update_volume_type(self, mock_update_volume_type,
-                                           mock_create_volume_type):
+    def test_create_and_update_volume_type(self):
+        mock_service = self.mock_cinder.return_value
         scenario = volume_types.CreateAndUpdateVolumeType(self._get_context())
         fake_type = mock.MagicMock()
         fake_type.name = "any"
         create_description = "test create"
         update_description = "test update"
-        mock_create_volume_type.return_value = fake_type
+        mock_service.create_volume_type.return_value = fake_type
         scenario.run(description=create_description,
                      update_description=update_description)
 
-        mock_create_volume_type.assert_called_once_with(
+        mock_service.create_volume_type.assert_called_once_with(
             description=create_description,
             is_public=True)
-        mock_update_volume_type.assert_called_once_with(
+        mock_service.update_volume_type.assert_called_once_with(
             fake_type, name="any",
             description=update_description,
             is_public=None)
@@ -292,19 +287,16 @@ class CinderVolumeTypesTestCase(test.ScenarioTestCase):
         mock_service.update_encryption_type.assert_called_once_with(
             "fake_id", specs=update_specs)
 
-    @mock.patch("%s.list_type_access" % CINDER_V2_PATH)
-    @mock.patch("%s.add_type_access" % CINDER_V2_PATH)
-    @mock.patch("%s.create_volume_type" % CINDER_V2_PATH)
-    def test_create_volume_type_add_and_list_type_access(
-        self, mock_create_volume_type, mock_add_type_access,
-            mock_list_type_access):
+    def test_create_volume_type_add_and_list_type_access(self):
+        mock_service = self.mock_cinder.return_value
         scenario = volume_types.CreateVolumeTypeAddAndListTypeAccess(
             self._get_context())
         fake_type = mock.Mock()
-        mock_create_volume_type.return_value = fake_type
+        mock_service.create_volume_type.return_value = fake_type
 
         scenario.run(description=None, is_public=False)
-        mock_create_volume_type.assert_called_once_with(
+        mock_service.create_volume_type.assert_called_once_with(
             description=None, is_public=False)
-        mock_add_type_access.assert_called_once_with(fake_type, project="fake")
-        mock_list_type_access.assert_called_once_with(fake_type)
+        mock_service.add_type_access.assert_called_once_with(
+            fake_type, project="fake")
+        mock_service.list_type_access.assert_called_once_with(fake_type)

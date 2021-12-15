@@ -651,6 +651,42 @@ class UnifiedCinderMixin(object):
         """
         return self._impl.delete_volume_type(volume_type)
 
+    def update_volume_type(self, volume_type, name=None,
+                           description=None, is_public=None):
+        """Update the name and/or description for a volume type.
+
+        :param volume_type: The ID or an instance of the :class:`VolumeType`
+                            to update.
+        :param name: if None, updates name by generating random name.
+                     else updates name with provided name
+        :param description: Description of the volume type.
+        :rtype: :class:`VolumeType`
+        """
+        return self._impl.update_volume_type(
+            volume_type=volume_type, name=name, description=description,
+            is_public=is_public
+        )
+
+    def add_type_access(self, volume_type, project):
+        """Add a project to the given volume type access list.
+
+        :param volume_type: Volume type name or ID to add access for the given
+                            project
+        :project: Project ID to add volume type access for
+        :return: An instance of cinderclient.apiclient.base.TupleWithMeta
+        """
+        return self._impl.add_type_access(
+            volume_type=volume_type, project=project
+        )
+
+    def list_type_access(self, volume_type):
+        """Print access information about the given volume type
+
+        :param volume_type: Filter results by volume type name or ID
+        :return: VolumeTypeAccess of specific project
+        """
+        return self._impl.list_type_access(volume_type)
+
     def set_volume_type_keys(self, volume_type, metadata):
         """Set extra specs on a volume type.
 

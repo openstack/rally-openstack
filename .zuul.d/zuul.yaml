@@ -78,7 +78,8 @@
         - rally-task-watcher:
             # watcher-api did not start last time
             voting: false
-        - rally-task-zaqar
+        - rally-task-zaqar:
+            voting: false
         - rally-verify-tempest
     gate:
       jobs:
@@ -115,7 +116,6 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-        - rally-task-zaqar
         - rally-verify-tempest
     post:
       jobs:

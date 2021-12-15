@@ -16,7 +16,6 @@ from rally.common import logging
 from rally.task import validation
 
 from rally_openstack.common import consts
-from rally_openstack.common.services.storage import cinder_v2
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 
@@ -72,7 +71,7 @@ class CreateAndGetVolumeType(cinder_utils.CinderBasic):
 @scenario.configure(context={"admin_cleanup@openstack": ["cinder"]},
                     name="CinderVolumeTypes.create_and_update_volume_type",
                     platform="openstack")
-class CreateAndUpdateVolumeType(scenario.OpenStackScenario):
+class CreateAndUpdateVolumeType(cinder_utils.CinderBasic):
 
     def run(self, description=None, is_public=True, update_name=False,
             update_description=None, update_is_public=None):
@@ -85,15 +84,11 @@ class CreateAndUpdateVolumeType(scenario.OpenStackScenario):
         :param update_description: update Description of the volume type
         :param update_is_public: update Volume type visibility
         """
-        service = cinder_v2.CinderV2Service(self._admin_clients,
-                                            self.generate_random_name,
-                                            atomic_inst=self.atomic_actions())
-
-        volume_type = service.create_volume_type(
+        volume_type = self.admin_cinder.create_volume_type(
             description=description,
             is_public=is_public)
 
-        service.update_volume_type(
+        self.admin_cinder.update_volume_type(
             volume_type,
             name=volume_type.name if not update_name else False,
             description=update_description,
@@ -388,7 +383,7 @@ class CreateAndUpdateEncryptionType(cinder_utils.CinderBasic):
     context={"admin_cleanup@openstack": ["cinder"]},
     name="CinderVolumeTypes.create_volume_type_add_and_list_type_access",
     platform="openstack")
-class CreateVolumeTypeAddAndListTypeAccess(scenario.OpenStackScenario):
+class CreateVolumeTypeAddAndListTypeAccess(cinder_utils.CinderBasic):
 
     def run(self, description=None, is_public=False):
         """Add and list volume type access for the given project.
@@ -399,11 +394,10 @@ class CreateVolumeTypeAddAndListTypeAccess(scenario.OpenStackScenario):
         :param description: Description of the volume type
         :param is_public: Volume type visibility
         """
-        service = cinder_v2.CinderV2Service(self._admin_clients,
-                                            self.generate_random_name,
-                                            atomic_inst=self.atomic_actions())
-        volume_type = service.create_volume_type(description=description,
-                                                 is_public=is_public)
-        service.add_type_access(volume_type,
-                                project=self.context["tenant"]["id"])
-        service.list_type_access(volume_type)
+        volume_type = self.admin_cinder.create_volume_type(
+            description=description, is_public=is_public
+        )
+        self.admin_cinder.add_type_access(
+            volume_type, project=self.context["tenant"]["id"]
+        )
+        self.admin_cinder.list_type_access(volume_type)

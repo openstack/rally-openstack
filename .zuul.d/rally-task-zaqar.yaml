@@ -2,7 +2,6 @@
     name: rally-task-zaqar
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack/devstack
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/zaqar
@@ -12,3 +11,5 @@
         rally-openstack: https://opendev.org/openstack/rally-openstack
         zaqar: https://opendev.org/openstack/zaqar
       rally_task: rally-jobs/zaqar.yaml
+      devstack_localrc:
+        ZAQAR_BACKEND: redis

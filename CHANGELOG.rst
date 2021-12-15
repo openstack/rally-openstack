@@ -17,6 +17,22 @@ Changelog
    was missed or can be improved, feel free to change it!
 
 
+[unreleased]
+------------
+
+Removed
+~~~~~~~
+
+* Nova API doesn't include listing agents for a long time, so no need to
+  provide *NovaAgents.list_agents* scenario any more.
+
+Fixed
+~~~~~
+
+* Two cinder scenarios *CinderVolumeTypes.create_and_update_volume_type* and
+  *CinderVolumeTypes.create_volume_type_add_and_list_type_access* were
+  incompatible with Cinder API v3
+
 [2.2.0] - 2021-10-25
 --------------------
 
