@@ -178,20 +178,19 @@ class CinderV3Service(service.Service, cinder_common.CinderMixin):
         return self._get_client().volume_types.create(**kwargs)
 
     @atomic.action_timer("cinder_v3.update_volume_type")
-    def update_volume_type(self, volume_type, update_name=False,
+    def update_volume_type(self, volume_type, name=None,
                            description=None, is_public=None):
         """Update the name and/or description for a volume type.
 
         :param volume_type: The ID or a instance of the :class:`VolumeType`
                             to update.
-        :param update_name: if True, can update name by generating random name.
-                            if False, don't update name.
+        :param name: if None, name cannot be updated.
+                     else updates name with provided name
         :param description: Description of the volume type.
+        :param is_public:
         :rtype: :class:`VolumeType`
         """
-        name = None
-        if update_name:
-            name = self.generate_random_name()
+
         return self._get_client().volume_types.update(
             volume_type=volume_type, name=name, description=description,
             is_public=is_public)
@@ -202,7 +201,7 @@ class CinderV3Service(service.Service, cinder_common.CinderMixin):
 
         :param volume_type: Volume type name or ID to add access for the given
                             project
-        :project: Project ID to add volume type access for
+        :param project: Project ID to add volume type access for
         :return: An instance of cinderclient.apiclient.base.TupleWithMeta
         """
         return self._get_client().volume_type_access.add_project_access(
