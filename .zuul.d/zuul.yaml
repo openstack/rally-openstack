@@ -6,10 +6,11 @@
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-py38
+        - rally-tox-py39
         - rally-dsvm-tox-functional
         - rally-openstack-docker-build
         - rally-task-basic-with-existing-users
-        - rally-task-simple-job
+        #- rally-task-simple-job
         - rally-task-barbican:
             files:
               - .zuul.d/zuul.yaml
@@ -88,10 +89,11 @@
         - rally-tox-py36
         - rally-tox-py37
         - rally-tox-py38
+        - rally-tox-py39
         - rally-dsvm-tox-functional
         - rally-openstack-docker-build
         - rally-task-basic-with-existing-users
-        - rally-task-simple-job
+        #- rally-task-simple-job
         - rally-task-barbican:
             files:
               - .zuul.d/zuul.yaml

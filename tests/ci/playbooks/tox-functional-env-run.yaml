@@ -11,6 +11,5 @@
     # pass a check at 'prepare-for-rally-task' role.
     rally_task: "rally-jobs/simple-job.yaml"
   roles:
-    - tox-install
     - prepare-for-rally-task
     - tox-run
