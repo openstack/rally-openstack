@@ -600,7 +600,7 @@ class CheckDesignateDNSResolving(vm_utils.VMScenario):
             key_name=self.context["user"]["keypair"]["name"],
             **kwargs)
 
-        script = f"cloud-init status -w; systemd-resolve --status; "\
+        script = f"cloud-init status -w; resolvectl status; "\
                  f"dig $(hostname).{zone}"
 
         command = {
