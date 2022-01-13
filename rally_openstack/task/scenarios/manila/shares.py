@@ -124,7 +124,7 @@ class CreateShareAndAccessFromVM(utils.ManilaScenario, vm_utils.VMScenario):
             **kwargs)
         self._allow_access_share(share, "ip", fip["ip"], "rw")
         mount_opt = "-t nfs -o nfsvers=4.1,proto=tcp"
-        script = f"cloud-init status -w;" \
+        script = f"sudo cloud-init status -w;" \
                  f"sudo mount {mount_opt} {location[0]} /mnt || exit 1;" \
                  f"sudo touch /mnt/testfile || exit 2"
 
