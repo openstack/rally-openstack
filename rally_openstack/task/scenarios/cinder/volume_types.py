@@ -81,18 +81,26 @@ class CreateAndUpdateVolumeType(cinder_utils.CinderBasic):
         :param is_public: Volume type visibility
         :param update_name: if True, can update name by generating random name.
                             if False, don't update name.
-        :param update_description: update Description of the volume type
+        :param update_description: a description to set while update
         :param update_is_public: update Volume type visibility
         """
         volume_type = self.admin_cinder.create_volume_type(
             description=description,
             is_public=is_public)
 
+        updated_name = self.generate_random_name() if update_name else None
+        if not update_name and not update_description and not update_is_public:
+            LOG.warning("Something should be updated.")
+            # transmit at least some value to update api call
+            updated_name = volume_type.name
+
+        updated_is_public = not is_public if update_is_public else None
+
         self.admin_cinder.update_volume_type(
             volume_type,
-            name=volume_type.name if not update_name else False,
+            name=updated_name,
             description=update_description,
-            is_public=update_is_public)
+            is_public=updated_is_public)
 
 
 @validation.add("required_services", services=[consts.Service.CINDER])

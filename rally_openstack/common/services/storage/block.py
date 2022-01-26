@@ -377,10 +377,10 @@ class BlockStorage(service.UnifiedService):
 
         :param volume_type: Volume type name or ID to add access for the given
                             project
-        :project: Project ID to add volume type access for
+        :param project: Project ID to add volume type access for
         :return: An instance of cinderclient.apiclient.base.TupleWithMeta
         """
-        return self._impl.update_volume_type(
+        return self._impl.add_type_access(
             volume_type=volume_type, project=project
         )
 
@@ -391,7 +391,7 @@ class BlockStorage(service.UnifiedService):
         :param volume_type: Filter results by volume type name or ID
         :return: VolumeTypeAccess of specific project
         """
-        return self._impl.volume_type_access.list(volume_type)
+        return self._impl.list_type_access(volume_type)
 
     @service.should_be_overridden
     def get_volume_type(self, volume_type):

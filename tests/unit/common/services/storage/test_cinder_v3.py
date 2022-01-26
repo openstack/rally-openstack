@@ -240,10 +240,12 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
             return_value=name)
         description = "test update"
 
-        result = self.service.update_volume_type(volume_type,
-                                                 description=description,
-                                                 update_name=True,
-                                                 is_public=None)
+        result = self.service.update_volume_type(
+            volume_type,
+            description=description,
+            name=self.service.generate_random_name(),
+            is_public=None
+        )
         self.assertEqual(
             self.cinder.volume_types.update.return_value,
             result)

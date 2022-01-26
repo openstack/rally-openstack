@@ -182,12 +182,11 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
 
         :param volume_type: The ID or an instance of the :class:`VolumeType`
                             to update.
-        :param name: if None, updates name by generating random name.
+        :param name: if None, name cannot be updated.
                      else updates name with provided name
         :param description: Description of the volume type.
         :rtype: :class:`VolumeType`
         """
-        name = name or self.generate_random_name()
 
         return self._get_client().volume_types.update(volume_type, name,
                                                       description, is_public)

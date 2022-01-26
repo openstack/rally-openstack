@@ -169,9 +169,12 @@ class CinderVolumeTypesTestCase(test.ScenarioTestCase):
             description=create_description,
             is_public=True)
         mock_service.update_volume_type.assert_called_once_with(
-            fake_type, name="any",
+            fake_type,
             description=update_description,
-            is_public=None)
+            # update_is_public and update_name are not specified, so should
+            # not be used
+            is_public=None, name=None
+        )
 
     def test_create_volume_type_and_encryption_type(self):
         mock_service = self.mock_cinder.return_value
