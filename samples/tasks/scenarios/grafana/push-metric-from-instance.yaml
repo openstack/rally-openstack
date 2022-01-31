@@ -34,7 +34,7 @@
             vcpus: 1
         images:
           image_name: {{ image_name }}
-          image_url: http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img
+          image_url: http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
           disk_format: qcow2
           container_format: bare
           visibility: public

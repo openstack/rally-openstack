@@ -764,7 +764,7 @@
 #watcher_audit_launch_timeout = 300
 
 # image URL (string value)
-#img_url = http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img
+#img_url = http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
 
 # Image disk format to use when creating the image (string value)
 #img_disk_format = qcow2

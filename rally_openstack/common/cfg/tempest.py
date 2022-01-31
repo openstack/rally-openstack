@@ -18,7 +18,7 @@ from rally.common import cfg
 OPTS = {"openstack": [
     cfg.StrOpt("img_url",
                default="http://download.cirros-cloud.net/"
-                       "0.3.5/cirros-0.3.5-x86_64-disk.img",
+                       "0.5.2/cirros-0.5.2-x86_64-disk.img",
                deprecated_group="tempest",
                help="image URL"),
     cfg.StrOpt("img_disk_format",
@@ -59,11 +59,11 @@ OPTS = {"openstack": [
                deprecated_group="tempest",
                help="Role for Heat template-defined users"),
     cfg.IntOpt("flavor_ref_ram",
-               default="64",
+               default="128",
                deprecated_group="tempest",
                help="Primary flavor RAM size used by most of the test cases"),
     cfg.IntOpt("flavor_ref_alt_ram",
-               default="128",
+               default="192",
                deprecated_group="tempest",
                help="Alternate reference flavor RAM size used by test that "
                "need two flavors, like those that resize an instance"),
@@ -77,7 +77,7 @@ OPTS = {"openstack": [
                "tests that need two flavors, like those that resize an "
                "instance"),
     cfg.IntOpt("heat_instance_type_ram",
-               default="64",
+               default="128",
                deprecated_group="tempest",
                help="RAM size flavor used for orchestration test cases"),
     cfg.IntOpt("heat_instance_type_disk",

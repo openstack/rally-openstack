@@ -84,7 +84,7 @@ class ServerGeneratorTestCase(test.ScenarioTestCase):
                     "auto_assign_nic": True,
                     "servers_per_tenant": 5,
                     "image": {
-                        "name": "cirros-0.3.4-x86_64-uec",
+                        "name": "cirros-0.5.2-x86_64-uec",
                     },
                     "flavor": {
                         "name": "m1.tiny",
@@ -148,7 +148,7 @@ class ServerGeneratorTestCase(test.ScenarioTestCase):
                 "servers": {
                     "servers_per_tenant": 5,
                     "image": {
-                        "name": "cirros-0.3.4-x86_64-uec",
+                        "name": "cirros-0.5.2-x86_64-uec",
                     },
                     "flavor": {
                         "name": "m1.tiny",
