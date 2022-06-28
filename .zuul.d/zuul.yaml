@@ -7,9 +7,9 @@
         - rally-tox-py37
         - rally-tox-py38
         - rally-tox-py39
-        - rally-dsvm-tox-functional
+        #- rally-dsvm-tox-functional
         - rally-openstack-docker-build
-        - rally-task-basic-with-existing-users
+        #- rally-task-basic-with-existing-users
         #- rally-task-simple-job
         - rally-task-barbican:
             files:
@@ -53,7 +53,7 @@
         #- rally-task-monasca
         - rally-task-murano:
             voting: false
-        - rally-task-neutron
+        #- rally-task-neutron
         - rally-task-neutron-trunk:
             files:
               - .zuul.d/zuul.yaml
@@ -67,8 +67,8 @@
               - tests/ci/playbooks
         - rally-task-neutron-with-extensions:
             voting: false
-        - rally-task-nova:
-            voting: false
+        #- rally-task-nova:
+        #    voting: false
         # it did not work for a long time
         #- rally-task-senlin
         #- rally-task-octavia:
@@ -80,7 +80,7 @@
             voting: false
         - rally-task-zaqar:
             voting: false
-        - rally-verify-tempest
+        #- rally-verify-tempest
     gate:
       jobs:
         - rally-tox-cover
@@ -89,9 +89,9 @@
         - rally-tox-py37
         - rally-tox-py38
         - rally-tox-py39
-        - rally-dsvm-tox-functional
+        #- rally-dsvm-tox-functional
         - rally-openstack-docker-build
-        - rally-task-basic-with-existing-users
+        #- rally-task-basic-with-existing-users
         #- rally-task-simple-job
         - rally-task-barbican:
             files:
@@ -107,7 +107,7 @@
         - rally-task-ironic
         - rally-task-keystone-glance-swift
         - rally-task-mistral
-        - rally-task-neutron
+        #- rally-task-neutron
         - rally-task-neutron-trunk:
             files:
               - rally-jobs/neutron-trunk.yaml
@@ -118,7 +118,7 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-        - rally-verify-tempest
+        #- rally-verify-tempest
     post:
       jobs:
         - rally-openstack-docker-build-and-push:

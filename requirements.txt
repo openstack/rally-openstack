@@ -6,7 +6,7 @@ requests!=2.20.0,!=2.24.0                              # Apache License, Version
 rally>=3.1.0                                           # Apache License, Version 2.0
 
 # OpenStack related
-gnocchiclient!=7.0.7                                   # Apache Software License
+gnocchiclient                                          # Apache Software License
 keystoneauth1                                          # Apache Software License
 kubernetes                                             # Apache License Version 2.0
 os-faults>=0.2.0                                       # Apache Software License

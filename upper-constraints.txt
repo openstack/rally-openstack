@@ -23,7 +23,7 @@ fasteners===0.14.1
 filelock===3.3.1
 fixtures===3.0.0
 futurist===2.4.0
-gnocchiclient===7.0.6
+gnocchiclient===7.0.7
 google-auth===2.3.0
 greenlet===1.1.2
 idna===3.3
