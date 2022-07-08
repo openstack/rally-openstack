@@ -5,7 +5,7 @@
       rally_task: rally-jobs/neutron.yaml
       devstack_localrc:
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
-        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch,linuxbridge
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         Q_AGENT: openvswitch
       devstack_services:
         neutron-trunk: true
