@@ -15,11 +15,9 @@
 
 """List and compare most used OpenStack cloud resources."""
 
-import argparse
 import io
 import json
 import subprocess
-import sys
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -596,7 +594,7 @@ def check_resource(resources_mgs, compare_with, json_output):
 
 
 @plugins.ensure_plugins_are_loaded
-def main(json_output, compare_with):
+def do_it(json_output, compare_with):
 
     out = subprocess.check_output(
         ["rally", "env", "show", "--only-spec", "--env", "devstack"])
@@ -622,7 +620,7 @@ def ansible_main():
         )
     )
 
-    rc, json_result = main(
+    rc, json_result = do_it(
         json_output=module.params.get("json_output"),
         compare_with=module.params.get("compare_with")
     )
@@ -636,31 +634,5 @@ def ansible_main():
     module.exit_json(rc=0, changed=True, resources=json_result)
 
 
-def cli_main():
-    parser = argparse.ArgumentParser(
-        description=("Save list of OpenStack cloud resources or compare "
-                     "with previously saved list."))
-
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--dump-list",
-                       type=str,
-                       metavar="<path/to/output/list.json>",
-                       help="dump resources to given file in JSON format")
-    group.add_argument("--compare-with-list",
-                       type=str,
-                       metavar="<path/to/existent/list.json>",
-                       help=("compare current resources with a list from "
-                             "given JSON file"))
-    args = parser.parse_args()
-
-    rc, _json_result = main(
-        json_output=args.dump_list, compare_with=args.compare_with_list)
-
-    return rc
-
-
 if __name__ == "__main__":
-    if sys.stdin.isatty():
-        cli_main()
-    else:
-        ansible_main()
+    ansible_main()
