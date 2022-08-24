@@ -491,6 +491,61 @@ class BootServerAttachCreatedVolumeAndResize(utils.NovaScenario,
             self._delete_server(server, force=force_delete)
 
 
+@types.convert(image={"type": "glance_image"},
+               flavor={"type": "nova_flavor"})
+@validation.add("image_valid_on_flavor", flavor_param="flavor",
+                image_param="image")
+@validation.add("required_services", services=[consts.Service.NOVA,
+                                               consts.Service.CINDER])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["cinder", "nova"]},
+    name="NovaServers.boot_server_attach_created_volume_and_extend",
+    platform="openstack")
+class BootServerAttachCreatedVolumeAndExtend(utils.NovaScenario,
+                                             cinder_utils.CinderBasic):
+
+    def run(self, image, flavor, volume_size, new_volume_size, min_sleep=0,
+            max_sleep=0, force_delete=False, do_delete=True,
+            boot_server_kwargs=None, create_volume_kwargs=None):
+        """Create a VM from image, attach a volume then extend volume
+
+        Simple test to create a VM and attach a volume, then extend the
+        volume while its running, detach the volume then delete volume
+        and VM.
+
+        Optional 'min_sleep' and 'max_sleep' parameters allow the scenario
+        to simulate a pause between attaching a volume and running resize
+        (of random duration from range [min_sleep, max_sleep]).
+
+        :param image: Glance image name to use for the VM
+        :param flavor: VM flavor name
+        :param volume_size: volume size (in GB)
+        :param new_volume_size: new volume size (in GB)
+        :param min_sleep: Minimum sleep time in seconds (non-negative)
+        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param force_delete: True if force_delete should be used
+        :param do_delete: True if resources needs to be deleted explicitly
+                        else use rally cleanup to remove resources
+        :param boot_server_kwargs: optional arguments for VM creation
+        :param create_volume_kwargs: optional arguments for volume creation
+        """
+        boot_server_kwargs = boot_server_kwargs or {}
+        create_volume_kwargs = create_volume_kwargs or {}
+
+        server = self._boot_server(image, flavor, **boot_server_kwargs)
+        volume = self.cinder.create_volume(volume_size, **create_volume_kwargs)
+
+        self._attach_volume(server, volume)
+        self.sleep_between(min_sleep, max_sleep)
+        self.cinder.extend_volume(volume, new_size=new_volume_size)
+
+        if do_delete:
+            self._detach_volume(server, volume)
+            self.cinder.delete_volume(volume)
+            self._delete_server(server, force=force_delete)
+
+
 @validation.add("number", param_name="volume_num", minval=1,
                 integer_only=True)
 @validation.add("number", param_name="volume_size", minval=1,

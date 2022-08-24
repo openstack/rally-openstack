@@ -481,6 +481,28 @@
           tenants: 2
           users_per_tenant: 1
     -
+      title: NovaServers.boot_server_attach_created_volume_and_extend tests
+      scenario:
+        NovaServers.boot_server_attach_created_volume_and_extend:
+          flavor:
+            name: {{flavor_name}}
+          image:
+            name: {{image_name}}
+          volume_size: 1
+          new_volume_size: 2
+          force_delete: false
+          do_delete: true
+          boot_server_kwargs: {}
+          create_volume_kwargs: {}
+      runner:
+        constant:
+          times: 2
+          concurrency: 2
+      contexts:
+        users:
+          tenants: 2
+          users_per_tenant: 1
+    -
       title: NovaServers.boot_server_from_volume_and_resize tests
       scenario:
         NovaServers.boot_server_from_volume_and_resize:

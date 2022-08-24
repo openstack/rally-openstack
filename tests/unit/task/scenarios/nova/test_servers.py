@@ -568,6 +568,46 @@ class NovaServersTestCase(test.ScenarioTestCase):
                                                             force=False)
 
     @mock.patch("rally_openstack.common.services.storage.block.BlockStorage")
+    def test_boot_server_attach_created_volume_and_extend(
+            self, mock_block_storage, do_delete=False):
+        fake_volume = mock.MagicMock()
+        fake_server = mock.MagicMock()
+        flavor = mock.MagicMock()
+        fake_attachment = mock.MagicMock()
+
+        cinder = mock_block_storage.return_value
+        cinder.create_volume.return_value = fake_volume
+
+        scenario = servers.BootServerAttachCreatedVolumeAndExtend(
+            self.context, clients=mock.Mock())
+        scenario.generate_random_name = mock.MagicMock(return_value="name")
+        scenario._boot_server = mock.MagicMock(return_value=fake_server)
+        scenario._attach_volume = mock.MagicMock(return_value=fake_attachment)
+        scenario._detach_volume = mock.MagicMock()
+        scenario._delete_server = mock.MagicMock()
+        scenario.sleep_between = mock.MagicMock()
+
+        volume_size = 10
+        new_volume_size = 20
+        scenario.run("img", flavor, volume_size, new_volume_size,
+                     min_sleep=10, max_sleep=20, do_delete=do_delete)
+
+        scenario._boot_server.assert_called_once_with("img", flavor)
+        cinder.create_volume.assert_called_once_with(volume_size)
+        scenario._attach_volume.assert_called_once_with(fake_server,
+                                                        fake_volume)
+        scenario.sleep_between.assert_called_once_with(10, 20)
+        cinder.extend_volume.assert_called_once_with(
+            fake_volume, new_size=new_volume_size)
+
+        if do_delete:
+            scenario._detach_volume.assert_called_once_with(fake_server,
+                                                            fake_volume)
+            cinder.delete_volume.assert_called_once_with(fake_volume)
+            scenario._delete_server.assert_called_once_with(fake_server,
+                                                            force=False)
+
+    @mock.patch("rally_openstack.common.services.storage.block.BlockStorage")
     def test_list_attachments(self, mock_block_storage):
         mock_volume_service = mock_block_storage.return_value
         fake_volume = mock.MagicMock()
