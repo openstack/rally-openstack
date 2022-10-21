@@ -45,13 +45,13 @@
 
 - name: Check the existence of custom plugins
   stat:
-    path: '{{ zuul.project.src_dir }}/rally-jobs/plugins'
+    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs/plugins'
   register: custom_plugins_stat
 
 - name: Copy custom plugins, if they are presented
   become: True
   become_user: stack
-  command: cp -r {{ zuul.project.src_dir }}/rally-jobs/plugins {{ rally_home_dir }}/
+  command: cp -r {{ custom_plugins_stat.stat.path }} {{ rally_home_dir }}/
   when: custom_plugins_stat.stat.exists == True
 
 - name: Create a directory for extra files
@@ -65,13 +65,13 @@
 
 - name: Check the existence of extra files
   stat:
-    path: '{{ zuul.project.src_dir }}/rally-jobs/extra'
+    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs/extra'
   register: extra_files_stat
 
 - name: Copy extra files, if they are presented
   become: True
   become_user: stack
-  command: cp -r {{ zuul.project.src_dir }}/rally-jobs/extra {{ rally_home_dir }}/
+  command: cp -r {{ extra_files_stat.stat.path }} {{ rally_home_dir }}/
   when: extra_files_stat.stat.exists == True
 
 - name: Check the existence of fake image
@@ -145,7 +145,7 @@
 
 - name: Check the existence of rally_task
   stat:
-    path: '{{ zuul.project.src_dir }}/{{ rally_task }}'
+    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/{{ rally_task }}'
   register: rally_task_file_stat
 
 - name: Fail if Rally task file is missed.
@@ -156,18 +156,18 @@
 - name: Copy task file
   become: True
   become_user: stack
-  command: cp "{{ zuul.project.src_dir }}/{{ rally_task }}" "{{ rally_home_dir }}/task.yaml"
+  command: cp "{{ rally_task_file_stat.stat.path }}" "{{ rally_home_dir }}/task.yaml"
   when: rally_task_file_stat.stat.exists == True
 
 - name: Check the existence of task_args_file
   stat:
-    path: '{{ zuul.project.src_dir }}/{{ rally_task_args_file }}'
+    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/{{ rally_task_args_file }}'
   register: task_args_file_stat
 
 - name: Copy task_args_file
   become: True
   become_user: stack
-  command: cp "{{ zuul.project.src_dir }}/{{ rally_task_args_file }}" "{{ rally_home_dir }}/task_args_file.yaml"
+  command: cp "{{ task_args_file_stat.stat.path }}" "{{ rally_home_dir }}/task_args_file.yaml"
   when: task_args_file_stat.stat.exists == True
 
 - name: Create an empty task_args_file
