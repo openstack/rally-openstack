@@ -28,11 +28,11 @@ class DesignateQuotas(object):
                 "type": "integer",
                 "minimum": 1
             },
-            "zones_recordsets": {
+            "zone_recordsets": {
                 "type": "integer",
                 "minimum": 1
             },
-            "zones_records": {
+            "zone_records": {
                 "type": "integer",
                 "minimum": 1
             },
