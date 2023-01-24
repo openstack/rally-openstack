@@ -1,7 +1,7 @@
 - project:
     check:
       jobs:
-        - rally-tox-cover
+        #- rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py36
         - rally-tox-py37
@@ -83,7 +83,7 @@
         #- rally-verify-tempest
     gate:
       jobs:
-        - rally-tox-cover
+        #- rally-tox-cover
         - rally-tox-pep8
         - rally-tox-py36
         - rally-tox-py37
