@@ -472,7 +472,7 @@ class BlockStorage(service.UnifiedService):
 
     @service.should_be_overridden
     def delete_encryption_type(self, volume_type):
-        """Delete the encryption type information for the specified volume type.
+        """Delete the encryption type information for the specified volume type
 
         :param volume_type: the volume type whose encryption type information
                             must be deleted
@@ -481,7 +481,7 @@ class BlockStorage(service.UnifiedService):
 
     @service.should_be_overridden
     def update_encryption_type(self, volume_type, specs):
-        """Update the encryption type information for the specified volume type.
+        """Update the encryption type information for the specified volume type
 
         :param volume_type: the volume type whose encryption type information
                             will be updated

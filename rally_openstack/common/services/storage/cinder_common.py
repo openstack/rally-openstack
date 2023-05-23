@@ -367,7 +367,7 @@ class CinderMixin(object):
         with atomic.ActionTimer(self, aname):
             tuple_res = self._get_client().volume_types.delete(
                 volume_type)
-            return (tuple_res[0].status_code == 202)
+            return tuple_res[0].status_code == 202
 
     def set_volume_type_keys(self, volume_type, metadata):
         """Set extra specs on a volume type.
@@ -438,7 +438,7 @@ class CinderMixin(object):
                 search_opts)
 
     def delete_encryption_type(self, volume_type):
-        """Delete the encryption type information for the specified volume type.
+        """Delete the encryption type information for the specified volume type
 
         :param volume_type: the volume type whose encryption type information
                             must be deleted
@@ -452,7 +452,7 @@ class CinderMixin(object):
                     "EncryptionType Deletion Failed")
 
     def update_encryption_type(self, volume_type, specs):
-        """Update the encryption type information for the specified volume type.
+        """Update the encryption type information for the specified volume type
 
         :param volume_type: the volume type whose encryption type information
                             must be updated
@@ -746,7 +746,7 @@ class UnifiedCinderMixin(object):
                     search_opts=search_opts)]
 
     def delete_encryption_type(self, volume_type):
-        """Delete the encryption type information for the specified volume type.
+        """Delete the encryption type information for the specified volume type
 
         :param volume_type: the volume type whose encryption type information
                             must be deleted
@@ -754,7 +754,7 @@ class UnifiedCinderMixin(object):
         return self._impl.delete_encryption_type(volume_type)
 
     def update_encryption_type(self, volume_type, specs):
-        """Update the encryption type information for the specified volume type.
+        """Update the encryption type information for the specified volume type
 
         :param volume_type: the volume type whose encryption type information
                             must be updated

@@ -46,6 +46,17 @@ class RallyJobsTestCase(test.TestCase):
             return job_name, job_cfg
         return job, None
 
+    @staticmethod
+    def _tox_job_sorter(job_name):
+        python_maj_version = 0
+        python_min_version = 0
+        _rally, _tox, job_name = job_name.split("-", 3)
+        if job_name.startswith("py"):
+            python_maj_version = int(job_name[2])
+            python_min_version = int(job_name[3:])
+            job_name = "py"
+        return job_name, python_maj_version, python_min_version
+
     def _check_order_of_jobs(self, pipeline):
         jobs = self.project_cfg[pipeline]["jobs"]
 
@@ -64,8 +75,10 @@ class RallyJobsTestCase(test.TestCase):
 
         jobs_names = [self._parse_job(job)[0] for job in jobs]
 
-        tox_jobs = sorted(job for job in jobs_names
-                          if job.startswith("rally-tox"))
+        tox_jobs = sorted(
+            (job for job in jobs_names if job.startswith("rally-tox-")),
+            key=self._tox_job_sorter
+        )
         for i, job in enumerate(tox_jobs):
             if job != jobs[i]:
                 self.fail(error_message % (job, jobs[i]))

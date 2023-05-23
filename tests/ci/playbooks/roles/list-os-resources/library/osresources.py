@@ -491,7 +491,7 @@ class CloudResources(object):
 
     def compare(self, with_list):
         def make_uuid(res):
-            return"%s.%s:%s" % (
+            return "%s.%s:%s" % (
                 res["cls"], res["resource_name"],
                 ";".join(["%s=%s" % (k, v)
                           for k, v in sorted(res["id"].items())]))

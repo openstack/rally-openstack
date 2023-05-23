@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import unittest
 
 from tests.functional import utils
@@ -22,7 +21,7 @@ class TaskTestCase(unittest.TestCase):
 
     def test_specify_version_by_deployment(self):
         rally = utils.Rally()
-        deployment = json.loads(rally("deployment config"))
+        deployment = rally("deployment config", getjson=True)
         deployment["openstack"]["api_info"] = {
             "fakedummy": {
                 "version": "2",
@@ -52,7 +51,7 @@ class TaskTestCase(unittest.TestCase):
 
     def test_specify_version_by_deployment_with_existing_users(self):
         rally = utils.Rally()
-        deployment = json.loads(rally("deployment config"))
+        deployment = rally("deployment config", getjson=True)
         deployment["openstack"]["users"] = [deployment["openstack"]["admin"]]
         deployment["openstack"]["api_info"] = {
             "fakedummy": {

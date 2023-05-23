@@ -12,7 +12,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import json
 import re
 
 import testtools
@@ -46,8 +46,9 @@ class DeploymentTestCase(testtools.TestCase):
         rally = utils.Rally()
         rally.env.update(TEST_ENV)
         rally("deployment create --name t_create_env --fromenv")
+        existing_conf = rally("deployment config", getjson=True)
         with open("/tmp/.tmp.deployment", "w") as f:
-            f.write(rally("deployment config"))
+            f.write(json.dumps(existing_conf))
         rally("deployment create --name t_create_file "
               "--filename /tmp/.tmp.deployment")
         self.assertIn("t_create_file", rally("deployment list"))

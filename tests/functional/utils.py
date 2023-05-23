@@ -201,9 +201,10 @@ class Rally(object):
         try:
             if no_logs or getjson:
                 cmd = self.args + ["--log-file", "/dev/null"] + cmd
-                with open(os.devnull, "w") as DEVNULL:
-                    output = encodeutils.safe_decode(subprocess.check_output(
-                        cmd, stderr=DEVNULL, env=self.env))
+                output = encodeutils.safe_decode(
+                    subprocess.check_output(
+                        cmd, stderr=subprocess.DEVNULL, env=self.env)
+                )
             else:
                 cmd = self.args + cmd
                 output = encodeutils.safe_decode(subprocess.check_output(

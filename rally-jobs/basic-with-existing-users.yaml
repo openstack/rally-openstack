@@ -111,25 +111,3 @@
           sla:
             failure_rate:
               max: 0
-
-    - title: Test VMTask scenario
-      workloads:
-        -
-          scenario:
-            VMTasks.dd_load_test:
-              flavor:
-                name: "m1.tiny"
-              image:
-                name: {{image_name}}
-              floating_network: "public"
-              force_delete: false
-              username: "cirros"
-          contexts:
-            network: {}
-          runner:
-            constant:
-              times: 2
-              concurrency: 2
-          sla:
-            failure_rate:
-              max: 0

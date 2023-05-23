@@ -60,7 +60,7 @@ def generate_mac():
 
 
 def setup_dict(data, required=None, defaults=None):
-    """Setup and validate dict scenario_base. on mandatory keys and default data.
+    """Setup and validate dict scenario_base on mandatory keys and default data
 
     This function reduces code that constructs dict objects
     with specific schema (e.g. for API data).

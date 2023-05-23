@@ -37,7 +37,7 @@ CONF = cfg.CONF
 class CreateAndListTrunks(neutron_utils.NeutronScenario):
 
     def run(self, network_create_args=None, subport_count=10):
-        """Create and a given number of trunks with subports and list all trunks
+        """Create a given number of trunks with subports and list all trunks.
 
         :param network_create_args: dict, POST /v2.0/networks request
                                     options. Deprecated.

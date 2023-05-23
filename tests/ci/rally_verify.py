@@ -325,25 +325,10 @@ class RunVerification(Step):
         "[dashboard,id-4f8851b1-0e69-482b-b63b-84c6e76f6c80,smoke]":
             "Fails for unknown reason",
 
-        "tempest.api.compute.servers.test_attach_interfaces"
-        ".AttachInterfacesUnderV243Test.test_add_remove_fixed_ip"
-        "[id-c7e0e60b-ee45-43d0-abeb-8596fd42a2f9,network,smoke]":
-            "Fails for unknown reason",
-
-        "tempest.scenario.test_network_basic_ops"
-        ".TestNetworkBasicOps.test_network_basic_ops"
-        "[compute,id-f323b3ba-82f8-4db7-8ea6-6a895869ec49,network,smoke]":
-            "Fails for unknown reason",
-
         "tempest.scenario.test_server_basic_ops"
         ".TestServerBasicOps.test_server_basic_ops"
         "[compute,id-7fff3fb3-91d8-4fd0-bd7d-0204f1f180ba,network,smoke]":
             "Fails for unknown reason",
-
-        "tempest.api.compute.servers.test_server_actions"
-        ".ServerActionsTestJSON.test_reboot_server_hard"
-        "[id-2cb1baf6-ac8d-4429-bf0d-ba8a0ba53e32,smoke]":
-            "Fails for unknown reason"
     }
 
     def setUp(self):
