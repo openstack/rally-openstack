@@ -11,8 +11,8 @@
         quotas:
           designate:
             zones: 100
-            zones_recordsets: 2000
-            zones_records: 2000
+            zone_recordsets: 2000
+            zone_records: 2000
             recordset_records: 2000
         users:
           tenants: 2
