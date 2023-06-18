@@ -3,11 +3,7 @@
 
 requests!=2.20.0,!=2.24.0                              # Apache License, Version 2.0
 
-# keep until commit
-# https://github.com/openstack/rally/commit/14d449b2f1bc51416053d1e6bdd1a5cd915e527a
-# is included in new rally version (>3.3)
-SQLAlchemy<2.0.0                                       # MIT
-rally>=3.1.0                                           # Apache License, Version 2.0
+rally>=3.4.0                                           # Apache License, Version 2.0
 
 # OpenStack related
 gnocchiclient                                          # Apache Software License
