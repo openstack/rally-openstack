@@ -31,7 +31,6 @@ class NeutronTrunkTestCase(test.ScenarioTestCase):
         scenario._create_trunk = mock.MagicMock()
         scenario._list_subports_by_trunk = mock.MagicMock()
         scenario._update_port = mock.Mock()
-        scenario._list_ports_by_device_id = mock.Mock()
         scenario.run(network_create_args=network_create_args,
                      subport_count=subport_count)
         scenario._create_network.assert_called_once_with(
@@ -40,9 +39,7 @@ class NeutronTrunkTestCase(test.ScenarioTestCase):
             [mock.call(net, {})
              for _ in range(subport_count + 1)])
         self.assertEqual(1, scenario._create_trunk.call_count)
-        self.assertEqual(1, scenario._update_port.call_count)
         self.assertEqual(1, scenario._list_subports_by_trunk.call_count)
-        self.assertEqual(1, scenario._list_ports_by_device_id.call_count)
 
     def test_boot_server_with_subports(self):
         img_name = "img"
