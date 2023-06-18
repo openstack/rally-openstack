@@ -20,6 +20,11 @@ Changelog
 [unreleased]
 ------------
 
+Changed
+~~~~~~~
+
+* Bumped min required version of Rally to 3.4.0.
+
 Removed
 ~~~~~~~
 

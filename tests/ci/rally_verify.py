@@ -324,11 +324,6 @@ class RunVerification(Step):
         ".TestDashboardBasicOps.test_basic_scenario"
         "[dashboard,id-4f8851b1-0e69-482b-b63b-84c6e76f6c80,smoke]":
             "Fails for unknown reason",
-
-        "tempest.scenario.test_server_basic_ops"
-        ".TestServerBasicOps.test_server_basic_ops"
-        "[compute,id-7fff3fb3-91d8-4fd0-bd7d-0204f1f180ba,network,smoke]":
-            "Fails for unknown reason",
     }
 
     def setUp(self):
