@@ -361,7 +361,7 @@ def update_upper_constraints():
                            include_comments=False,
                            dependency_cls=UpperConstraint)
 
-    our_uc = [UpperConstraint(package_name=p.project_name)
+    our_uc = [UpperConstraint(package_name=p.project_name, version=p.version)
               for p in pkg_resources.working_set
               # do not include the current package at u-c
               if p.project_name != "rally-openstack"]

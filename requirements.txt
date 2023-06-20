@@ -28,7 +28,7 @@ python-novaclient                                      # Apache License, Version
 python-octaviaclient                                   # Apache Software License
 python-saharaclient                                    # Apache License, Version 2.0
 python-senlinclient                                    # Apache Software License
-python-swiftclient                                     # Apache Software License
+python-swiftclient                                     # Apache License, Version 2.0
 python-troveclient                                     # Apache Software License
 python-watcherclient                                   # Apache Software License
 python-zaqarclient                                     # Apache Software License
