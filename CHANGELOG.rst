@@ -20,6 +20,10 @@ Changelog
 [unreleased]
 ------------
 
+Deprecated
+~~~~~~~~~~
+This is the last release with support of Python 3.6 and Python 3.7
+
 Changed
 ~~~~~~~
 
