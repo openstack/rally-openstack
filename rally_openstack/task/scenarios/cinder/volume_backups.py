@@ -37,7 +37,7 @@ from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 class CreateIncrementalVolumeBackup(cinder_utils.CinderBasic):
     def run(self, size, do_delete=True, create_volume_kwargs=None,
             create_backup_kwargs=None):
-        """Create a incremental volume backup.
+        """Create an incremental volume backup.
 
         The scenario first create a volume, the create a backup, the backup
         is full backup. Because Incremental backup must be based on the

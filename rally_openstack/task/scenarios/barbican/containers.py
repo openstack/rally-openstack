@@ -26,7 +26,7 @@ from rally_openstack.task.scenarios.barbican import utils
 @scenario.configure(name="BarbicanContainers.list")
 class BarbicanContainersList(utils.BarbicanBase):
     def run(self):
-        """List secrets."""
+        """List Containers."""
         self.admin_barbican.list_container()
 
 

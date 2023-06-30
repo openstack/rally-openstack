@@ -26,7 +26,7 @@ from rally_openstack.task.scenarios.barbican import utils
 @scenario.configure(name="BarbicanOrders.list")
 class BarbicanOrdersList(utils.BarbicanBase):
     def run(self):
-        """List secrets."""
+        """List Orders."""
         self.admin_barbican.orders_list()
 
 
