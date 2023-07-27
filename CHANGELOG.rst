@@ -17,8 +17,8 @@ Changelog
    was missed or can be improved, feel free to change it!
 
 
-[unreleased]
-------------
+[2.3.0] - 2023-07-27
+--------------------
 
 Deprecated
 ~~~~~~~~~~
@@ -28,6 +28,7 @@ Changed
 ~~~~~~~
 
 * Bumped min required version of Rally to 3.4.0.
+* Switch docker image to rally 3.4.0 base.
 
 Removed
 ~~~~~~~
