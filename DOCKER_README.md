@@ -10,8 +10,8 @@ Rally-OpenStack is a package of Rally plugins for OpenStack platform.
 First of all, you need to pull the container. We suggest to use the last
 tagged version:
 
-    # pull the 2.2.0 image (the latest release at the point of writing the note)
-    $ docker pull xrally/xrally-openstack:2.2.0
+    # pull the 2.3.0 image (the latest release at the point of writing the note)
+    $ docker pull xrally/xrally-openstack:2.3.0
 
 **WARNING: never attach folders and volumes to `/rally` inside the container. It can break everything.**
 
@@ -27,7 +27,7 @@ docker volumes or mount the directory.
 * use docker volumes. It is the easiest way. You just need to do something like:
 
       $ docker volume create --name rally_volume
-      $ docker run -v rally_volume:/home/rally/.rally xrally/xrally-openstack:2.2.0 env create --name "foo"
+      $ docker run -v rally_volume:/home/rally/.rally xrally/xrally-openstack:2.3.0 env create --name "foo"
 
 * mount outer directory inside the container
 
@@ -44,10 +44,10 @@ docker volumes or mount the directory.
       $ sudo chown 65500 /var/lib/rally_container
 
       # As opposed to mounting docker image, you must initialize rally database*
-      $ docker run -v /var/lib/rally_container:/home/rally/.rally xrally/xrally-openstack:2.2.0 db create
+      $ docker run -v /var/lib/rally_container:/home/rally/.rally xrally/xrally-openstack:2.3.0 db create
 
       # And finally, you can start doing your things.*
-      $ docker run -v /var/lib/rally_container:/home/rally/.rally xrally/xrally-openstack:2.2.0 env create --name "foo"
+      $ docker run -v /var/lib/rally_container:/home/rally/.rally xrally/xrally-openstack:2.3.0 env create --name "foo"
 
 Have fun!
 
