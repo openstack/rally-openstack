@@ -17,7 +17,7 @@ Changelog
    was missed or can be improved, feel free to change it!
 
 
-[2.3.0] - 2023-07-27
+[2.3.0] - 2023-08-01
 --------------------
 
 Deprecated
