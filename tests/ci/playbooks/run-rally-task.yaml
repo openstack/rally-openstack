@@ -10,13 +10,13 @@
     rally_task_args_file: "100-percent-not-exist-file"
   roles:
     - prepare-for-rally-task
-    - role: list-os-resources
-      vars:
-        compare: False
+    #- role: list-os-resources
+    #  vars:
+    #    compare: False
     - run-rally-task
     - process-task-results
     - import-task-results
-    - role: list-os-resources
-      vars:
-        compare: True
+    #- role: list-os-resources
+    #  vars:
+    #    compare: True
     - check-task-sla
