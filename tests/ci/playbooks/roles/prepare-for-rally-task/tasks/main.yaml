@@ -140,7 +140,7 @@
 
       if rally deployment check | grep 'nova' | grep 'Available' > /dev/null;
       then
-          nova flavor-create m1.nano 42 64 0 1
+          openstack flavor create --id 42 --ram 64 --disk 0 --vcpus 1 m1.nano
       fi
 
 - name: Check the existence of rally_task
