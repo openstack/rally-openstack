@@ -16,6 +16,13 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+unreleased
+----------
+
+Removed
+~~~~~~~
+
+Support of Python 3.6 and Python 3.7
 
 [2.3.0] - 2023-08-01
 --------------------
