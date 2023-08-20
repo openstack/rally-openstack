@@ -1,21 +1,21 @@
 - hosts: all
   roles:
-    - run-devstack
+  - run-devstack
 
 - hosts: controller
   tasks:
-    - name: Prepare env deployment for tempest
-      shell:
-        cmd: |
-          . /opt/stack/.rally/openrc admin admin
-          export OS_CACERT=/opt/stack/data/ca-bundle.pem
-          rally env create --from-sysenv --name tempest
-          rally env check
-        executable: /bin/bash
+  - name: Prepare env deployment for tempest
+    shell:
+      cmd: |
+        . /opt/stack/.rally/openrc admin admin
+        export OS_CACERT=/opt/stack/data/ca-bundle.pem
+        rally env create --from-sysenv --name tempest
+        rally env check
+      executable: /bin/bash
 
-    - name: Run Rally verify
-      shell:
-        cmd: |
-          cd {{ zuul.project.src_dir }}
-          python3 tests/ci/rally_verify.py
-        executable: /bin/bash
+  - name: Run Rally verify
+    shell: |
+      . /opt/stack/data/venv/bin/activate
+      python3 tests/ci/rally_verify.py
+    args:
+      chdir: "{{ zuul.project.src_dir }}"
