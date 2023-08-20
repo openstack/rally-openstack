@@ -10,6 +10,43 @@
     # this task will not be launched, but we need to specify something real to
     # pass a check at 'prepare-for-rally-task' role.
     rally_task: "rally-jobs/simple-job.yaml"
-  roles:
-    - prepare-for-rally-task
-    - tox-run
+    pip_install: "/opt/stack/rally-openstack/.tox/{{ tox_env }}/bin/pip install"
+  tasks:
+    - name: "Trigger prepare tasks of rally-task-at-devstack zuul job"
+      import_role:
+        name: prepare-for-rally-task
+
+    - block:
+
+      - name: "Precreate a virtualenv for tox {{ tox_env }}"
+        command: tox -e {{ tox_env }} --notest
+        args:
+          chdir: /opt/stack/rally-openstack
+
+      - name: Check rally db connection
+        command: rally db show
+        register: rally_db_connection
+
+      # DevStack enables a special tool for MySQL performance counting. Since
+      #   it is enabled globally, rally.conf includes it as well.
+      #   tox -e functional utils reuse the same config file and fails
+      #   if there is no this tool inside the venv
+      - name: Inject dbcounter plugin if needed
+        command: "{{ pip_install }} /opt/stack/devstack/tools/dbcounter"
+        when: "'plugin=dbcounter' in rally_db_connection.stdout"
+
+      - name: Install python lib for interacting with MySQL
+        command: "{{ pip_install }} PyMySQL>=0.7.6"
+        when: "'pymysql' in rally_db_connection.stdout"
+
+      - name: Run tox command
+        shell: |
+          set -e
+
+          export REQUESTS_CA_BUNDLE=/opt/stack/data/ca-bundle.pem
+
+          tox -e {{ tox_env }}
+        args:
+          chdir: /opt/stack/rally-openstack
+      become: True
+      become_user: stack

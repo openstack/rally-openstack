@@ -76,7 +76,12 @@ class Rally(object):
                                  "env", "show", "--only-spec"],
                                 stdout=f)
         with open(self.ENV_FILE) as f:
-            self.env_spec = json.loads(f.read())
+            data = f.read()
+            try:
+                self.env_spec = json.loads(data)
+            except ValueError:
+                print(f"JSON file that failed to load: {data}")
+                raise
             print(self.env_spec)
 
         # NOTE(sskripnick): we should change home dir to avoid races
@@ -133,7 +138,11 @@ class Rally(object):
              write_report=False)
 
     def __del__(self):
-        shutil.rmtree(self.tmp_dir)
+        # Rally object may fail before initialization of tmp_dir attribute
+        try:
+            shutil.rmtree(self.tmp_dir)
+        except AttributeError:
+            pass
 
     def _safe_make_dirs(self, dirs):
         try:
