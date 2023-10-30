@@ -24,6 +24,13 @@ Removed
 
 Support of Python 3.6 and Python 3.7
 
+Fixed
+~~~~~
+
+* Manila scenarios can not use "share_networks" context
+
+  `Launchpad-bug #2040486 <https://launchpad.net/bugs/2040486>`_
+
 [2.3.0] - 2023-08-01
 --------------------
 

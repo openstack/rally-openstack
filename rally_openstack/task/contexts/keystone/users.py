@@ -245,6 +245,7 @@ class UserGenerator(context.OpenStackContext):
         LOG.debug("Using existing users for OpenStack platform.")
         api_info = copy.deepcopy(self.env["platforms"]["openstack"].get(
             "api_info", {}))
+        self.context["config"]["existing_users"] = self.existing_users
         for user_credential in self.existing_users:
             user_credential = copy.deepcopy(user_credential)
             if "api_info" in user_credential:
