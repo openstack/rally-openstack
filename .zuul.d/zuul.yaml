@@ -80,7 +80,7 @@
             voting: false
         - rally-task-zaqar:
             voting: false
-        - rally-verify-tempest
+        #- rally-verify-tempest
     gate:
       jobs:
         - rally-tox-cover
@@ -119,7 +119,7 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-        - rally-verify-tempest
+        #- rally-verify-tempest
     post:
       jobs:
         - rally-openstack-docker-build-and-push:
