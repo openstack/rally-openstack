@@ -19,11 +19,13 @@ import subprocess
 
 import yaml
 
+from rally.common.io import subunit_v2
 from rally import exceptions
 from rally.plugins.verification import testr
 from rally.verification import manager
 from rally.verification import utils
 
+import rally_openstack
 from rally_openstack.verification.tempest import config
 from rally_openstack.verification.tempest import consts
 
@@ -215,3 +217,33 @@ class TempestManager(testr.TestrLauncher):
                     return "tempest.%s" % parsed_pattern[1]
 
         return pattern  # it is just a regex
+
+    def run(self, context):
+        """Run tests."""
+
+        if rally_openstack.__rally_version__ >= (3, 4, 1):
+            return super().run(context)
+
+        testr_cmd = context["testr_cmd"]
+        stream = subprocess.Popen(testr_cmd, env=self.run_environ,
+                                  cwd=self.repo_dir,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT)
+        xfail_list = context.get("xfail_list")
+        skip_list = context.get("skip_list")
+
+        class SubunitV2StreamResult(subunit_v2.SubunitV2StreamResult):
+            def status(self, *args, **kwargs):
+                if isinstance(kwargs.get("file_bytes"), memoryview):
+                    kwargs["file_bytes"] = kwargs["file_bytes"].tobytes()
+                return super().status(*args, **kwargs)
+
+        results = SubunitV2StreamResult(
+            xfail_list, skip_list, live=True, logger_name=self.verifier.name
+        )
+        subunit_v2.v2.ByteStreamToStreamResult(
+            stream.stdout, "non-subunit").run(results)
+
+        stream.wait()
+
+        return results
