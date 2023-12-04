@@ -47,7 +47,7 @@
             voting: false
         - rally-task-manila-ss:
             voting: false
-        #- rally-task-mistral
+        - rally-task-mistral
         # it did not work for a long time. try to re-configure it
         #- rally-task-monasca
         #- rally-task-murano:
@@ -103,7 +103,7 @@
         #- rally-task-heat
         #- rally-task-ironic
         - rally-task-keystone-glance-swift
-        #- rally-task-mistral
+        - rally-task-mistral
         - rally-task-neutron
         - rally-task-neutron-trunk:
             files:
