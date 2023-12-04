@@ -31,6 +31,10 @@ Fixed
 
   `Launchpad-bug #2040486 <https://launchpad.net/bugs/2040486>`_
 
+* ``confirm`` argument of ``NovaServers.resize_server`` scenario
+  cannot be passed any longer due to more strict validation from
+  python-novaclient library.
+
 [2.3.0] - 2023-08-01
 --------------------
 

@@ -372,7 +372,8 @@ class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
                     name="NovaServers.resize_server", platform="openstack")
 class ResizeServer(utils.NovaScenario):
 
-    def run(self, image, flavor, to_flavor, force_delete=False, **kwargs):
+    def run(self, image, flavor, to_flavor, confirm=True,
+            force_delete=False, **kwargs):
         """Boot a server, then resize and delete it.
 
         This test will confirm the resize by default,
@@ -381,13 +382,13 @@ class ResizeServer(utils.NovaScenario):
         :param image: image to be used to boot an instance
         :param flavor: flavor to be used to boot an instance
         :param to_flavor: flavor to be used to resize the booted instance
+        :param confirm: perform resize confirm action right after requesting
+            a resize. If False, resize revert action will be performed.
         :param force_delete: True if force_delete should be used
         :param kwargs: Optional additional arguments for server creation
         """
         server = self._boot_server(image, flavor, **kwargs)
         self._resize(server, to_flavor)
-        # by default we confirm
-        confirm = kwargs.get("confirm", True)
         if confirm:
             self._resize_confirm(server)
         else:

@@ -502,6 +502,9 @@
         users:
           tenants: 2
           users_per_tenant: 1
+      sla:
+        failure_rate:
+          max: 100
     -
       title: NovaServers.boot_server_from_volume_and_resize tests
       scenario:

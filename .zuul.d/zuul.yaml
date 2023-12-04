@@ -66,8 +66,7 @@
               - tests/ci/playbooks
         - rally-task-neutron-with-extensions:
             voting: false
-        #- rally-task-nova:
-        #    voting: false
+        - rally-task-nova
         # it did not work for a long time
         #- rally-task-senlin
         #- rally-task-octavia:
@@ -115,6 +114,7 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
+        - rally-task-nova
         - rally-verify-tempest
     post:
       jobs:
