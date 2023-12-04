@@ -35,6 +35,11 @@ Fixed
   cannot be passed any longer due to more strict validation from
   python-novaclient library.
 
+* Neutron ports cleanup does not use API filtering by project_id which causes
+  redundant load to the cloud.
+
+* Nova server cleanup fails to list resources due to wrong marker.
+
 [2.3.0] - 2023-08-01
 --------------------
 

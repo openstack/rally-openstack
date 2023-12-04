@@ -144,7 +144,33 @@ _nova_order = get_order(200)
 class NovaServer(base.ResourceManager):
     def list(self):
         """List all servers."""
-        return self._manager().list(limit=-1)
+        from novaclient import exceptions as nova_exc
+
+        nc = self._manager()
+
+        all_servers = []
+
+        marker = None
+        bad_markers = []
+        while True:
+            try:
+                servers = nc.list(marker=marker)
+            except nova_exc.BadRequest as e:
+                if f"marker [{marker}] not found" not in e.message:
+                    raise
+                LOG.error(f"Ignoring '{e.message}' error to fetch more "
+                          f"servers for cleanup.")
+                bad_markers.append(marker)
+                servers = []
+            else:
+                bad_markers = []
+
+            all_servers.extend(servers)
+            if not servers and (not bad_markers
+                                or len(bad_markers) == len(all_servers)):
+                break
+            marker = all_servers[-(len(bad_markers) + 1)].id
+        return all_servers
 
     def delete(self):
         if getattr(self.raw_resource, "OS-EXT-STS:locked", False):
@@ -431,7 +457,8 @@ class NeutronPort(NeutronMixin):
 
     def _get_resources(self, resource):
         if resource not in self._cache:
-            resources = getattr(self._neutron, "list_%s" % resource)()
+            getter = getattr(self._neutron, "list_%s" % resource)
+            resources = getter(tenant_id=self.tenant_uuid)
             self._cache[resource] = [r for r in resources
                                      if r["tenant_id"] == self.tenant_uuid]
         return self._cache[resource]

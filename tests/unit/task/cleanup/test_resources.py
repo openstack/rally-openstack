@@ -15,6 +15,7 @@
 
 import copy
 from unittest import mock
+import uuid
 
 import ddt
 from neutronclient.common import exceptions as neutron_exceptions
@@ -77,12 +78,41 @@ class MagnumMixinTestCase(test.TestCase):
 class NovaServerTestCase(test.TestCase):
 
     def test_list(self):
-        server = resources.NovaServer()
-        server._manager = mock.MagicMock()
+        class Server(object):
+            def __init__(self, id=None):
+                self.id = id or str(uuid.uuid4())
 
-        server.list()
+        manager_cls = mock.Mock()
+        manager = manager_cls.return_value
 
-        server._manager.return_value.list.assert_called_once_with(limit=-1)
+        server1 = Server(id=1)
+        server2 = Server(id=2)
+        server3 = Server(id=3)
+        server4 = Server(id=4)
+
+        manager.list.side_effect = (
+            [server1, server2, server3],
+            # simulate marker error
+            nova_exc.BadRequest(code=400, message="marker [3] not found"),
+            nova_exc.BadRequest(code=400, message="marker [2] not found"),
+            # valid response
+            [server4],
+            # fetching is completed
+            []
+        )
+
+        servers_res = resources.NovaServer()
+        servers_res._manager = manager_cls
+
+        self.assertEqual(
+            [server1, server2, server3, server4],
+            servers_res.list()
+        )
+
+        self.assertEqual(
+            [mock.call(marker=m) for m in (None, 3, 2, 1, 4)],
+            manager.list.call_args_list
+        )
 
     def test_delete(self):
         server = resources.NovaServer()
@@ -460,7 +490,8 @@ class NeutronPortTestCase(test.TestCase):
             {"tenant_id": tenant_uuid, "id": "id7",
              "device_owner": "network:dhcp",
              "device_id": "asdasdasd"},
-            # the case when port is from another tenant
+            # the case when port is from another tenant. it should not be
+            #   here as we are filtering by tenant id, but anyway.
             {"tenant_id": "wrong tenant", "id": "id8", "name": "foo"},
             # WTF port without any parent and name
             {"tenant_id": tenant_uuid, "id": "id9", "device_owner": ""},
@@ -496,8 +527,8 @@ class NeutronPortTestCase(test.TestCase):
         user = mock.Mock(neutron=neutron)
         self.assertEqual(expected_ports, resources.NeutronPort(
             user=user, tenant_uuid=tenant_uuid).list())
-        neutron.list_ports.assert_called_once_with()
-        neutron.list_routers.assert_called_once_with()
+        neutron.list_ports.assert_called_once_with(tenant_id=tenant_uuid)
+        neutron.list_routers.assert_called_once_with(tenant_id=tenant_uuid)
 
 
 @ddt.ddt
