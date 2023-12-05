@@ -649,6 +649,16 @@ class OSClientsTestCase(test.TestCase):
                 "3", **kw)
             self.assertEqual(fake_cinder, self.clients.cache["cinder"])
 
+    def test_cinder_validate_version(self):
+        osclients.Cinder.validate_version("2")
+        osclients.Cinder.validate_version("3")
+        osclients.Cinder.validate_version("3.0")
+        osclients.Cinder.validate_version("3.10")
+        self.assertRaises(exceptions.RallyException,
+                          osclients.Cinder.validate_version, "foo")
+        self.assertRaises(exceptions.RallyException,
+                          osclients.Cinder.validate_version, "3.1000")
+
     @mock.patch("%s.Manila._get_endpoint" % PATH)
     def test_manila(self, mock_manila__get_endpoint):
         mock_manila = mock.MagicMock()

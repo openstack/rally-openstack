@@ -505,12 +505,32 @@ class Heat(OSClient):
         return client
 
 
-@configure("cinder", default_version="3", default_service_type="block-storage",
-           supported_versions=["1", "2", "3"])
+@configure("cinder", default_version="3", default_service_type="block-storage")
 class Cinder(OSClient):
     """Wrapper for CinderClient which returns an authenticated native client.
 
     """
+
+    @classmethod
+    def validate_version(cls, version):
+        from cinderclient import api_versions
+        from cinderclient import exceptions as cinder_exc
+
+        version = str(version)
+        if version in api_versions.REPLACEMENT_VERSIONS:
+            LOG.warning(
+                f"Version {version} is not supported by Cinder. Switching "
+                f"to {api_versions.REPLACEMENT_VERSIONS[version]}."
+            )
+            version = api_versions.REPLACEMENT_VERSIONS[version]
+
+        try:
+            version_obj = api_versions.get_api_version(version)
+            if version_obj > api_versions.APIVersion(api_versions.MAX_VERSION):
+                raise cinder_exc.UnsupportedVersion()
+        except cinder_exc.UnsupportedVersion:
+            raise exceptions.RallyException(
+                "Version string '%s' is unsupported." % version) from None
 
     def create_client(self, version=None, service_type=None):
         """Return cinder client."""

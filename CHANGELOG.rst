@@ -19,6 +19,11 @@ Changelog
 unreleased
 ----------
 
+Added
+~~~~~
+
+* Support for specifying microversions for Cinder service.
+
 Removed
 ~~~~~~~
 
