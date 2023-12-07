@@ -17,5 +17,7 @@
         KEYSTONE_ADMIN_ENDPOINT: true
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
+      rally_home_dir: '/opt/stack/.rally'
+      rally_results_dir: '/opt/stack/.rally/results'
     run: tests/ci/playbooks/run-rally-task.yaml
     post-run: tests/ci/playbooks/post-rally-task.yaml

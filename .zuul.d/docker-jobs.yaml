@@ -40,6 +40,7 @@
       docker_repository: "xrally/xrally-openstack"
       rally_plugin_name: "Dummy.openstack"
       rally_package_name: "rally-openstack"
+      rally_results_dir: "{{ zuul.project.src_dir }}/.test_results/"
 
 - job:
     name: rally-openstack-docker-build-and-push
@@ -59,3 +60,4 @@
       docker_repository: "xrally/xrally-openstack"
       rally_plugin_name: "Dummy.openstack"
       rally_package_name: "rally-openstack"
+      rally_results_dir: "{{ zuul.project.src_dir }}/.test_results/"

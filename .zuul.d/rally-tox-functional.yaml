@@ -20,4 +20,9 @@
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
       tox_env: "functional"
+      rally_home_dir: '/opt/stack/.rally'
+      rally_results_dir: '/opt/stack/.rally/results/'
+      html_report: 'tox_func_report.html'
+      non_default_html_report: 'tox_func_report.html'
     run: tests/ci/playbooks/tox-functional-env-run.yaml
+    post-run: tests/ci/playbooks/fetch-html-and-json-reports.yaml

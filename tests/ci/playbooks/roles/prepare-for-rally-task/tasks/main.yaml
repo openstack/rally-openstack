@@ -11,7 +11,7 @@
   become: True
   become_user: stack
   file:
-    path: '{{ rally_home_dir }}/results'
+    path: '{{ rally_results_dir }}'
     state: directory
     owner: stack
     group: stack
@@ -20,7 +20,7 @@
   become: True
   become_user: stack
   file:
-    path: '{{ rally_home_dir }}/results/{{ RALLY_OSPROFILER_CHART }}'
+    path: '{{ rally_results_dir }}/{{ RALLY_OSPROFILER_CHART }}'
     state: directory
     owner: stack
     group: stack
