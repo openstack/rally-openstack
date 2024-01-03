@@ -556,7 +556,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
          "context": {"tenant": {"networks":
                                 [mock.MagicMock(), mock.MagicMock()]}}})
     @ddt.unpack
-    @mock.patch("random.choice", side_effect=lambda l: l[0])
+    @mock.patch("random.choice", side_effect=lambda items: items[0])
     def test_get_or_create_network(self, mock_random_choice,
                                    network_create_args=None, context=None):
         self.scenario.context = context

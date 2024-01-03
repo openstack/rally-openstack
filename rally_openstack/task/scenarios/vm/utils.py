@@ -109,7 +109,7 @@ class VMScenario(nova_utils.NovaScenario):
         if interpreter:
             if isinstance(interpreter, str):
                 interpreter = [interpreter]
-            elif type(interpreter) != list:
+            elif not isinstance(interpreter, list):
                 raise ValueError("command 'interpreter' value must be str "
                                  "or list type")
             cmd.extend(interpreter)
@@ -118,7 +118,7 @@ class VMScenario(nova_utils.NovaScenario):
         if remote_path:
             if isinstance(remote_path, str):
                 remote_path = [remote_path]
-            elif type(remote_path) != list:
+            elif not isinstance(remote_path, list):
                 raise ValueError("command 'remote_path' value must be str "
                                  "or list type")
             cmd.extend(remote_path)
