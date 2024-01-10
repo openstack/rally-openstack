@@ -138,13 +138,13 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
             expected_kwargs["nics"] = (nova_scenario._pick_random_nic.
                                        return_value)
 
-        expected_secgroups = set()
-        if "security_groups" in kwargs:
-            expected_secgroups.update(kwargs["security_groups"])
+        expected_secgroups = kwargs.get("security_groups", [])
         if "secgroup" in context["user"]:
-            expected_secgroups.add(context["user"]["secgroup"]["name"])
+            expected_secgroups.append(
+                context["user"]["secgroup"]["name"]
+            )
         if expected_secgroups:
-            expected_kwargs["security_groups"] = list(expected_secgroups)
+            expected_kwargs["security_groups"] = expected_secgroups
 
         self.clients("nova").servers.create.assert_called_once_with(
             nova_scenario.generate_random_name.return_value,
