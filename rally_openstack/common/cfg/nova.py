@@ -16,6 +16,12 @@
 from rally.common import cfg
 
 OPTS = {"openstack": [
+    cfg.IntOpt(
+        "nova_servers_list_page_size",
+        default=None,
+        min=1,
+        help="Page size to use while listing servers"
+    ),
     # prepoll delay, timeout, poll interval
     # "start": (0, 300, 1)
     cfg.FloatOpt("nova_server_start_prepoll_delay",

@@ -22,6 +22,7 @@ from rally_openstack.common.services.image import glance_v2
 from rally_openstack.common.services.image import image
 from rally_openstack.common.services.network import neutron
 from rally_openstack.task.cleanup import base
+from rally_openstack.task.scenarios.nova import utils as nova_utils
 
 
 CONF = cfg.CONF
@@ -144,33 +145,13 @@ _nova_order = get_order(200)
 class NovaServer(base.ResourceManager):
     def list(self):
         """List all servers."""
-        from novaclient import exceptions as nova_exc
-
-        nc = self._manager()
-
-        all_servers = []
-
-        marker = None
-        bad_markers = []
-        while True:
-            try:
-                servers = nc.list(marker=marker)
-            except nova_exc.BadRequest as e:
-                if f"marker [{marker}] not found" not in e.message:
-                    raise
-                LOG.error(f"Ignoring '{e.message}' error to fetch more "
-                          f"servers for cleanup.")
-                bad_markers.append(marker)
-                servers = []
-            else:
-                bad_markers = []
-
-            all_servers.extend(servers)
-            if not servers and (not bad_markers
-                                or len(bad_markers) == len(all_servers)):
-                break
-            marker = all_servers[-(len(bad_markers) + 1)].id
-        return all_servers
+        clients = (self._admin_required and self.admin or self.user)
+        nc = getattr(clients, self._service)()
+        return nova_utils.list_servers(
+            nc,
+            # we need details to get locked states
+            detailed=True
+        )
 
     def delete(self):
         if getattr(self.raw_resource, "OS-EXT-STS:locked", False):

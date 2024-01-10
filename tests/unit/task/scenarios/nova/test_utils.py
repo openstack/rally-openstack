@@ -16,6 +16,7 @@
 from unittest import mock
 
 import ddt
+from novaclient import exceptions as nova_exc
 
 from rally.common import cfg
 from rally import exceptions as rally_exceptions
@@ -50,7 +51,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__list_servers(self):
         servers_list = []
-        self.clients("nova").servers.list.return_value = servers_list
+        self.clients("nova").servers._list.return_value = servers_list
         nova_scenario = utils.NovaScenario(self.context)
         return_servers_list = nova_scenario._list_servers(True)
         self.assertEqual(servers_list, return_servers_list)
@@ -1286,3 +1287,96 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
             "fake_aggregate", fake_metadata)
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.aggregate_set_metadata")
+
+    def test_list_servers(self):
+
+        class ServersManager(object):
+            def __init__(self):
+                self._list = mock.Mock()
+
+        class NovaClient(object):
+            def __init__(self):
+                self.servers = ServersManager()
+
+        s1 = fakes.FakeServer()
+        s2 = fakes.FakeServer()
+        s3 = fakes.FakeServer()
+        s4 = fakes.FakeServer()
+        s5 = fakes.FakeServer()
+        s6 = fakes.FakeServer()
+
+        # case #1 pagination ends with bad marker error
+        nc = NovaClient()
+
+        nc.servers._list.side_effect = (
+            [s1, s2, s3],
+            [s4, s5],
+            nova_exc.BadRequest(400, f"marker [{s5.id}] not found"),
+            [s5, s6],
+            nova_exc.BadRequest(400, f"marker [{s6.id}] not found"),
+            nova_exc.BadRequest(400, f"marker [{s5.id}] not found")
+        )
+        self.assertEqual([s1, s2, s3, s4, s5, s6], utils.list_servers(nc))
+
+        self.assertEqual(
+            [
+                mock.call(
+                    "/servers/detail",
+                    response_key="servers",
+                    filters={}
+                ),
+                mock.call(
+                    "/servers/detail",
+                    response_key="servers",
+                    filters={"marker": s3.id}
+                ),
+                mock.call(
+                    "/servers/detail",
+                    response_key="servers",
+                    filters={"marker": s5.id}
+                ),
+                mock.call(
+                    "/servers/detail",
+                    response_key="servers",
+                    filters={"marker": s4.id}
+                ),
+                mock.call(
+                    "/servers/detail",
+                    response_key="servers",
+                    filters={"marker": s6.id}
+                ),
+                mock.call(
+                    "/servers/detail",
+                    response_key="servers",
+                    filters={"marker": s5.id}
+                )
+            ],
+            nc.servers._list.call_args_list
+        )
+
+        # case #2 pagination ends without any errors + limit
+        CONF.set_override("nova_servers_list_page_size", 2, "openstack")
+        nc = NovaClient()
+
+        nc.servers._list.side_effect = (
+            [s1, s2, s3],
+            [s4, s5],
+            []
+        )
+        self.assertEqual([s1, s2, s3, s4, s5],
+                         utils.list_servers(nc, detailed=False))
+
+        self.assertEqual(
+            [
+                mock.call("/servers",
+                          response_key="servers",
+                          filters={"limit": 2}),
+                mock.call("/servers",
+                          response_key="servers",
+                          filters={"marker": s3.id, "limit": 2}),
+                mock.call("/servers",
+                          response_key="servers",
+                          filters={"marker": s5.id, "limit": 2})
+            ],
+            nc.servers._list.call_args_list
+        )

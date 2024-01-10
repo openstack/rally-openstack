@@ -30,6 +30,64 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__file__)
 
 
+def list_servers(client, detailed=True):
+    """List nova servers with pagination
+
+    :param client: novaclient instance
+    :param detailed: Whether to request detailed server view or not
+    """
+    from novaclient import exceptions as nova_exc
+
+    base_url = f"/servers{'/detail' if detailed else ''}"
+
+    all_servers = []
+    all_ids = []
+
+    last_success_marker = None
+    marker = None
+
+    bad_markers_count = 0
+
+    while True:
+        filters = {}
+
+        if marker:
+            filters["marker"] = marker
+        if CONF.openstack.nova_servers_list_page_size:
+            filters["limit"] = CONF.openstack.nova_servers_list_page_size
+
+        try:
+            servers = client.servers._list(
+                f"{base_url}", response_key="servers",
+                filters=filters
+            )
+        except nova_exc.BadRequest as e:
+            if f"marker [{marker}] not found" not in e.message:
+                raise
+            LOG.error(f"Ignoring '{e.message}' error to fetch more "
+                      f"servers for cleanup.")
+            bad_markers_count += 1
+
+            if bad_markers_count == len(all_servers):
+                break
+            marker = all_servers[-(bad_markers_count + 1)].id
+            if marker == last_success_marker:
+                break
+            continue
+
+        bad_markers_count = 0
+        last_success_marker = marker
+        marker = servers[-1].id if servers else None
+
+        all_servers.extend(s for s in servers if s.id not in all_ids)
+        all_ids.extend(s.id for s in servers)
+
+        if not servers:
+            break
+
+    return all_servers
+
+
 class NovaScenario(neutron_utils.NeutronBaseScenario,
                    scenario.OpenStackScenario):
     """Base class for Nova scenarios with basic atomic actions."""
@@ -37,7 +95,7 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
     @atomic.action_timer("nova.list_servers")
     def _list_servers(self, detailed=True):
         """Returns user servers list."""
-        return self.clients("nova").servers.list(detailed)
+        return list_servers(self.clients("nova"), detailed=detailed)
 
     def _pick_random_nic(self):
         """Choose one network from existing ones."""

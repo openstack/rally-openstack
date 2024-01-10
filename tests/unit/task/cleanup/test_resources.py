@@ -15,7 +15,6 @@
 
 import copy
 from unittest import mock
-import uuid
 
 import ddt
 from neutronclient.common import exceptions as neutron_exceptions
@@ -77,42 +76,22 @@ class MagnumMixinTestCase(test.TestCase):
 
 class NovaServerTestCase(test.TestCase):
 
-    def test_list(self):
-        class Server(object):
-            def __init__(self, id=None):
-                self.id = id or str(uuid.uuid4())
+    @mock.patch(BASE + ".nova_utils.list_servers")
+    def test_list(self, mock_list_servers):
 
-        manager_cls = mock.Mock()
-        manager = manager_cls.return_value
+        user_clients = mock.Mock()
+        admin_clients = mock.Mock()
 
-        server1 = Server(id=1)
-        server2 = Server(id=2)
-        server3 = Server(id=3)
-        server4 = Server(id=4)
-
-        manager.list.side_effect = (
-            [server1, server2, server3],
-            # simulate marker error
-            nova_exc.BadRequest(code=400, message="marker [3] not found"),
-            nova_exc.BadRequest(code=400, message="marker [2] not found"),
-            # valid response
-            [server4],
-            # fetching is completed
-            []
+        servers_res = resources.NovaServer(
+            admin=admin_clients, user=user_clients
         )
 
-        servers_res = resources.NovaServer()
-        servers_res._manager = manager_cls
-
         self.assertEqual(
-            [server1, server2, server3, server4],
+            mock_list_servers.return_value,
             servers_res.list()
         )
-
-        self.assertEqual(
-            [mock.call(marker=m) for m in (None, 3, 2, 1, 4)],
-            manager.list.call_args_list
-        )
+        mock_list_servers.assert_called_once_with(user_clients.nova(),
+                                                  detailed=True)
 
     def test_delete(self):
         server = resources.NovaServer()

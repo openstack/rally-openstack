@@ -24,6 +24,8 @@ Added
 
 * Support for specifying microversions for Cinder service.
 * Support Python 3.11
+* ``nova_servers_list_page_size`` configuration option to limit the size of
+  pages during listing Nova Servers
 
 Removed
 ~~~~~~~
