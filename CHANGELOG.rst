@@ -23,6 +23,7 @@ Added
 ~~~~~
 
 * Support for specifying microversions for Cinder service.
+* Support Python 3.11
 
 Removed
 ~~~~~~~
