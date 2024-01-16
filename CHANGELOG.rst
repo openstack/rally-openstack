@@ -30,6 +30,11 @@ Removed
 
 Support of Python 3.6 and Python 3.7
 
+Changed
+~~~~~~~
+
+Bump docker image to use Rally 4.0.0
+
 Fixed
 ~~~~~
 
@@ -56,7 +61,7 @@ This is the last release with support of Python 3.6 and Python 3.7
 Changed
 ~~~~~~~
 
-* Bumped min required version of Rally to 3.4.0.
+* Bump min required version of Rally to 3.4.0.
 * Switch docker image to rally 3.4.0 base.
 
 Removed
