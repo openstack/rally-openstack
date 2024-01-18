@@ -18,9 +18,9 @@ import os
 from unittest import mock
 import uuid
 
+from oslo_config import fixture as cfg_fixture  # noqa N311
 import testtools
 
-from rally.common import cfg
 from rally.common import db
 from rally import plugins
 
@@ -30,7 +30,7 @@ from tests.unit import fakes
 plugins.load()
 
 
-class DatabaseFixture(cfg.fixture.Config):
+class DatabaseFixture(cfg_fixture.Config):
     """Create clean DB before starting test."""
     def setUp(self):
         super(DatabaseFixture, self).setUp()
