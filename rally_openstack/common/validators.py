@@ -469,9 +469,10 @@ class ValidateHeatTemplateValidator(validation.Validator):
                 self.fail("No file found by the given path %s" % template_path)
             with open(template_path, "r") as f:
                 try:
+                    template_file = f.read()
                     for user in context["users"]:
                         clients = user["credential"].clients()
-                        clients.heat().stacks.validate(template=f.read())
+                        clients.heat().stacks.validate(template=template_file)
                 except Exception as e:
                     self.fail("Heat template validation failed on %(path)s. "
                               "Original error message: %(msg)s." %

@@ -53,6 +53,8 @@ Fixed
 
 * Nova server cleanup fails to list resources due to wrong marker.
 
+* Heat template validation when multi users.
+
 [2.3.0] - 2023-08-01
 --------------------
 
