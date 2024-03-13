@@ -551,8 +551,8 @@ class ManilaSharesTestCase(test.ScenarioTestCase):
     def test_set_and_delete_metadata(self, params, iteration, share_number):
         scenario = shares.SetAndDeleteMetadata()
         share_list = [{"id": "fake_share_%s_id" % d} for d in range(3)]
-        scenario.context = {"tenant": {"shares": share_list}}
-        scenario.context["iteration"] = iteration
+        scenario.context = {"tenant": {"shares": share_list},
+                            "iteration": iteration}
         scenario._set_metadata = mock.MagicMock()
         scenario._delete_metadata = mock.MagicMock()
         expected_set_params = {

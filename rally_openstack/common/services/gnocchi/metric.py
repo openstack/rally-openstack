@@ -58,9 +58,9 @@ class GnocchiService(service.Service):
         :param metric_pattern: Wildcard of metric name to match
         :param archive_policy_name: Archive policy name
         """
-        archive_policy_rule = {"name": name}
-        archive_policy_rule["metric_pattern"] = metric_pattern
-        archive_policy_rule["archive_policy_name"] = archive_policy_name
+        archive_policy_rule = {"name": name,
+                               "metric_pattern": metric_pattern,
+                               "archive_policy_name": archive_policy_name}
         return self._clients.gnocchi().archive_policy_rule.create(
             archive_policy_rule)
 
