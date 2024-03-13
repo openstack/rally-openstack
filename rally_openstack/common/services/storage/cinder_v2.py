@@ -155,7 +155,6 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
                   "description": description,
                   "container": container,
                   "incremental": incremental,
-                  "force": force,
                   "snapshot_id": snapshot_id}
         backup = self._get_client().backups.create(volume_id, **kwargs)
         return self._wait_available_volume(backup)
