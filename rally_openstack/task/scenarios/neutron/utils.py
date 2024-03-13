@@ -545,7 +545,7 @@ class NeutronScenario(NeutronBaseScenario):
     def _delete_floating_ip(self, floating_ip):
         """Delete floating IP.
 
-        :param dict, floating IP object
+        :param floating_ip: floating IP object
         """
         return self.neutron.delete_floatingip(floating_ip["id"])
 

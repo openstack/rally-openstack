@@ -609,7 +609,7 @@ class UnifiedCinderMixin(object):
 
         Returns when the backup is actually deleted.
 
-        :param backup: backup instance
+        :param snapshot: backup instance
         """
         self._impl.delete_snapshot(snapshot)
 

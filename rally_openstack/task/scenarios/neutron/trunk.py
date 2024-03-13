@@ -41,7 +41,6 @@ class CreateAndListTrunks(neutron_utils.NeutronScenario):
 
         :param network_create_args: dict, POST /v2.0/networks request
                                     options. Deprecated.
-        :param trunk_count: int, number of trunk ports
         :param subport_count: int, number of subports per trunk
         """
         net = self._create_network(network_create_args or {})

@@ -38,7 +38,7 @@ class BarbicanService(service.Service):
         :param bit_length: The bit length of this secret key
         :param mode: the algorigthm mode used with this secret key
         :param secret_type: The secret type for this secret key
-        :param exipration: the expiration time of the secret in ISO8601
+        :param expiration: the expiration time of the secret in ISO8601
            format
         :returns: a new secret object
         """
@@ -56,7 +56,7 @@ class BarbicanService(service.Service):
     def get_secret(self, secret_ref):
         """Get the secret.
 
-        :param secret_name: The name of the secret.
+        :param secret_ref: The name of the secret.
         """
         secret = self._clients.barbican().secrets.get(secret_ref)
         # secret is lazy, its properties would be filled with real

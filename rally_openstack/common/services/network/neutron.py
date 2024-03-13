@@ -716,6 +716,7 @@ class NeutronService(service.Service):
                               external_fixed_ips=None):
         """Adds an external network gateway to the specified router.
 
+        :param network_id: Network ID
         :param router_id: Router ID
         :param enable_snat: whether SNAT should occur on the external gateway
             or not

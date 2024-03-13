@@ -47,6 +47,7 @@ class CreateUser(KeystoneBasic):
     def run(self, name_length=10, **kwargs):
         """Create a keystone user with random name.
 
+        :param name_length: the length of name
         :param kwargs: Other optional parameters to create users like
                          "tenant_id", "enabled".
         """
@@ -65,6 +66,7 @@ class CreateDeleteUser(KeystoneBasic):
     def run(self, name_length=10, **kwargs):
         """Create a keystone user with random name and then delete it.
 
+        :param name_length: the length of name
         :param kwargs: Other optional parameters to create users like
                          "tenant_id", "enabled".
         """
@@ -103,6 +105,7 @@ class CreateTenant(KeystoneBasic):
     def run(self, name_length=10, **kwargs):
         """Create a keystone tenant with random name.
 
+        :param name_length: the length of name
         :param kwargs: Other optional parameters
         """
         self.admin_keystone.create_project(**kwargs)
@@ -134,6 +137,7 @@ class CreateTenantWithUsers(KeystoneBasic):
         """Create a keystone tenant and several users belonging to it.
 
         :param users_per_tenant: number of users to create for the tenant
+        :param name_length: the length of name
         :param kwargs: Other optional parameters for tenant creation
         :returns: keystone tenant instance
         """
@@ -154,6 +158,7 @@ class CreateAndListUsers(KeystoneBasic):
     def run(self, name_length=10, **kwargs):
         """Create a keystone user with random name and list all users.
 
+        :param name_length: the length of name
         :param kwargs: Other optional parameters to create users like
                          "tenant_id", "enabled".
         """
@@ -175,6 +180,7 @@ class CreateAndListTenants(KeystoneBasic):
     def run(self, name_length=10, **kwargs):
         """Create a keystone tenant with random name and list all tenants.
 
+        :param name_length: the length of name
         :param kwargs: Other optional parameters
         """
         self.admin_keystone.create_project(**kwargs)
@@ -273,6 +279,7 @@ class CreateAndDeleteService(KeystoneBasic):
     def run(self, name=None, service_type=None, description=None):
         """Create and delete service.
 
+        :param name: name of the service
         :param service_type: type of the service
         :param description: description of the service
         """
@@ -293,6 +300,7 @@ class CreateUpdateAndDeleteTenant(KeystoneBasic):
     def run(self, name_length=None, **kwargs):
         """Create, update and delete tenant.
 
+        :param name_length: the length of name
         :param kwargs: Other optional parameters for tenant creation
         """
         project = self.admin_keystone.create_project(**kwargs)
@@ -332,6 +340,7 @@ class CreateAndListServices(KeystoneBasic):
     def run(self, name=None, service_type=None, description=None):
         """Create and list services.
 
+        :param name: name of the service
         :param service_type: type of the service
         :param description: description of the service
         """

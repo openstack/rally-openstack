@@ -175,7 +175,7 @@ class NeutronWrapper(NetworkWrapper):
         """Create neutron router.
 
         :param external: bool, whether to set setup external_gateway_info
-        :param **kwargs: POST /v2.0/routers request options
+        :param kwargs: POST /v2.0/routers request options
         :returns: neutron router dict
         """
         kwargs.pop("name", None)
@@ -190,7 +190,7 @@ class NeutronWrapper(NetworkWrapper):
 
         :param tenant_id: str, pool tenant id
         :param subnet_id: str, neutron subnet-id
-        :param **kwargs: extra options
+        :param kwargs: extra options
         :returns: neutron lb-pool dict
         """
         pool_args = {
@@ -337,7 +337,7 @@ class NeutronWrapper(NetworkWrapper):
         """Create neutron port.
 
         :param network_id: neutron network id
-        :param **kwargs: POST /v2.0/ports request options
+        :param kwargs: POST /v2.0/ports request options
         :returns: neutron port dict
         """
         return self.neutron.create_port(network_id=network_id, **kwargs)
@@ -349,7 +349,7 @@ class NeutronWrapper(NetworkWrapper):
         :param ext_network: floating network name or dict
         :param tenant_id: str tenant id
         :param port_id: str port id
-        :param **kwargs: for compatibility, not used here
+        :param kwargs: for compatibility, not used here
         :returns: floating IP dict
         """
         if not tenant_id:
@@ -367,7 +367,7 @@ class NeutronWrapper(NetworkWrapper):
         """Delete floating IP.
 
         :param fip_id: int floating IP id
-        :param **kwargs: for compatibility, not used here
+        :param kwargs: for compatibility, not used here
         """
         self.neutron.delete_floatingip(fip_id)
 

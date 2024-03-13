@@ -33,6 +33,7 @@ class CreateQueue(zutils.ZaqarScenario):
     def run(self, name_length=None, **kwargs):
         """Create a Zaqar queue with a random name.
 
+        :param name_length: Length of the name
         :param kwargs: other optional parameters to create queues like
                        "metadata"
         """
@@ -53,6 +54,7 @@ class ProducerConsumer(zutils.ZaqarScenario):
         Creates a Zaqar queue with random name, sends a set of messages
         and then retrieves an iterator containing those.
 
+        :param name_length: Length of the name
         :param min_msg_count: min number of messages to be posted
         :param max_msg_count: max number of messages to be posted
         :param kwargs: other optional parameters to create queues like

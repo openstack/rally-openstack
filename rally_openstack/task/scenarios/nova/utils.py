@@ -543,7 +543,7 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
     def _delete_server_group(self, group_id):
         """Delete a specific server group.
 
-        :param id: The ID of the :class:`ServerGroup` to delete
+        :param group_id: The ID of the :class:`ServerGroup` to delete
 
         :returns: An instance of novaclient.base.TupleWithMeta
         """
@@ -1322,7 +1322,7 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
 
         :param server: The :class:`Server` (or its ID) to attach to.
         :param port_id: The port to attach.
-        :param network_id: the Network to attach
+        :param net_id: the Network to attach
         :param fixed_ip: the Fix_ip to attach
         :returns the server that has attach interface
         """
