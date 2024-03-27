@@ -132,8 +132,7 @@ class GlanceV2Service(service.Service, glance_common.GlanceMixin):
         :param visibility: Filter in images for the specified visibility
         :param owner: Filter in images for tenant ID
         """
-        filters = {}
-        filters["status"] = status
+        filters = {"status": status}
         if visibility:
             filters["visibility"] = visibility
         if owner:

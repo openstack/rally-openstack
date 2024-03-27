@@ -34,9 +34,9 @@ class GnocchiServiceTestCase(test.TestCase):
         definition = [{"granularity": "0:00:01", "timespan": "1:00:00"}]
         aggregation_methods = [
             "std", "count", "95pct", "min", "max", "sum", "median", "mean"]
-        archive_policy = {"name": "fake_name"}
-        archive_policy["definition"] = definition
-        archive_policy["aggregation_methods"] = aggregation_methods
+        archive_policy = {"name": "fake_name",
+                          "definition": definition,
+                          "aggregation_methods": aggregation_methods}
 
         self.assertEqual(
             self.service.create_archive_policy(
@@ -65,9 +65,9 @@ class GnocchiServiceTestCase(test.TestCase):
                                        "gnocchi.list_archive_policy")
 
     def test__create_archive_policy_rule(self):
-        archive_policy_rule = {"name": "fake_name"}
-        archive_policy_rule["metric_pattern"] = "cpu_*"
-        archive_policy_rule["archive_policy_name"] = "low"
+        archive_policy_rule = {"name": "fake_name",
+                               "metric_pattern": "cpu_*",
+                               "archive_policy_name": "low"}
 
         self.assertEqual(
             self.service.create_archive_policy_rule(
@@ -129,10 +129,10 @@ class GnocchiServiceTestCase(test.TestCase):
                                        "gnocchi.get_measures")
 
     def test__create_metric(self):
-        param = {"name": "fake_name"}
-        param["archive_policy_name"] = "fake_archive_policy"
-        param["unit"] = "fake_unit"
-        param["resource_id"] = "fake_resource_id"
+        param = {"name": "fake_name",
+                 "archive_policy_name": "fake_archive_policy",
+                 "unit": "fake_unit",
+                 "resource_id": "fake_resource_id"}
         self.assertEqual(
             self.service.create_metric(
                 name="fake_name",

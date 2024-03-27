@@ -127,9 +127,8 @@ class SenlinScenario(scenario.OpenStackScenario):
 
         :returns: object of profile created
         """
-        attrs = {}
-        attrs["spec"] = spec
-        attrs["name"] = self.generate_random_name()
+        attrs = {"spec": spec,
+                 "name": self.generate_random_name()}
         if metadata:
             attrs["metadata"] = metadata
 
