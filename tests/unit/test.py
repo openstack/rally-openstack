@@ -15,11 +15,11 @@
 
 import fixtures
 import os
+import unittest
 from unittest import mock
 import uuid
 
 from oslo_config import fixture as cfg_fixture  # noqa N311
-import testtools
 
 from rally.common import db
 from rally import plugins
@@ -41,15 +41,28 @@ class DatabaseFixture(cfg_fixture.Config):
         db.schema_create()
 
 
-class TestCase(testtools.TestCase):
+class TestCase(fixtures.TestWithFixtures, unittest.TestCase):
     """Test case base class for all unit tests."""
 
     def setUp(self):
         super(TestCase, self).setUp()
         self.addCleanup(mock.patch.stopall)
 
+    # TODO(andreykurilin): port existing code to use 'standard' flow
+    def assertRaises(
+        self,
+        expected_exception,
+        callable,
+        *args,
+        **kwargs,
+    ):
+        with super().assertRaises(expected_exception) as ctx:
+            callable(*args, **kwargs)
+        return ctx.exception
+
     def _test_atomic_action_timer(self, atomic_actions, name, count=1,
-                                  parent=[]):
+                                  parent=None):
+        parent = parent or []
 
         if parent:
             is_found = False
@@ -75,9 +88,6 @@ class TestCase(testtools.TestCase):
                           " is %(actual_count)d."
                           % {"name": name, "count": count,
                              "actual_count": actual_count})
-
-    def assertSequenceEqual(self, iterable_1, iterable_2, msg=None):
-        self.assertEqual(tuple(iterable_1), tuple(iterable_2), msg)
 
 
 class DBTestCase(TestCase):

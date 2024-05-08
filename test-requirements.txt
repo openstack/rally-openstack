@@ -15,8 +15,7 @@ pytest-xdist                                           # MIT
 
 coverage!=4.4                                          # Apache-2.0
 ddt                                                    # MIT
-testtools                                              # MIT
 
 # docs
-docutils                                               # public domain, Python, 2-Clause BSD, GPL 3 (see COPYING.txt)
+docutils                                               # BSD License/GNU General Public License (GPL)/Python Software Foundation License
 Pygments                                               # BSD-2-Clause

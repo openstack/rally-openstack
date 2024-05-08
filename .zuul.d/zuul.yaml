@@ -20,6 +20,7 @@
               - rally_openstack/task/cleanup/resources.py
               - rally_openstack/task/scenarios/barbican
               - tests/ci/playbooks
+            voting: false
         - rally-task-cinder
         - rally-task-designate:
             files:
@@ -51,9 +52,6 @@
         - rally-task-mistral
         # it did not work for a long time. try to re-configure it
         #- rally-task-monasca
-        #- rally-task-murano:
-        #    voting: false
-        - rally-task-neutron
         - rally-task-neutron-trunk:
             files:
               - .zuul.d/zuul.yaml
@@ -68,8 +66,6 @@
         - rally-task-neutron-with-extensions:
             voting: false
         - rally-task-nova
-        # it did not work for a long time
-        #- rally-task-senlin
         #- rally-task-octavia:
         #    voting: false
         - rally-task-telemetry:
@@ -91,15 +87,15 @@
         - rally-openstack-docker-build
         #- rally-task-basic-with-existing-users
         - rally-task-simple-job
-        - rally-task-barbican:
-            files:
-              - .zuul.d/zuul.yaml
-              - rally-jobs/barbican.yaml
-              - rally_openstack/common/osclients.py
-              - rally_openstack/common/services/key_manager
-              - rally_openstack/task/cleanup/resources.py
-              - rally_openstack/task/scenarios/barbican
-              - tests/ci/playbooks
+        #- rally-task-barbican:
+        #    files:
+        #      - .zuul.d/zuul.yaml
+        #      - rally-jobs/barbican.yaml
+        #      - rally_openstack/common/osclients.py
+        #      - rally_openstack/common/services/key_manager
+        #      - rally_openstack/task/cleanup/resources.py
+        #      - rally_openstack/task/scenarios/barbican
+        #      - tests/ci/playbooks
         - rally-task-cinder
         #- rally-task-heat
         #- rally-task-ironic

@@ -14,12 +14,12 @@ import fnmatch
 import io
 import os
 import re
+import unittest
 
 import rally_openstack
-import testtools
 
 
-class TestFormat(testtools.TestCase):
+class TestFormat(unittest.TestCase):
     def _check_lines_wrapping(self, doc_file, raw):
         code_block = False
         text_inside_simple_tables = False

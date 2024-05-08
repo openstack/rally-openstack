@@ -50,8 +50,9 @@ class RallyJobsTestCase(test.TestCase):
     def _tox_job_sorter(job_name):
         python_maj_version = 0
         python_min_version = 0
-        _rally, _tox, job_name = job_name.split("-", 3)
+        _rally, _tox, job_name = job_name.split("-", 2)
         if job_name.startswith("py"):
+            job_name = job_name.split("-", 1)[0]
             python_maj_version = int(job_name[2])
             python_min_version = int(job_name[3:])
             job_name = "py"

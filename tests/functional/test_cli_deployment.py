@@ -14,8 +14,7 @@
 #    under the License.
 import json
 import re
-
-import testtools
+import unittest
 
 from tests.functional import utils
 
@@ -28,7 +27,7 @@ TEST_ENV = {
 }
 
 
-class DeploymentTestCase(testtools.TestCase):
+class DeploymentTestCase(unittest.TestCase):
 
     def test_create_fromenv_list_show(self):
         # NOTE(andreykurilin): `rally deployment create --fromenv` is
@@ -82,12 +81,12 @@ class DeploymentTestCase(testtools.TestCase):
               "--filename %s" % file.filename)
         self.assertIn("t_create_file_debug", rally("deployment list"))
         self.assertEqual(config, rally("deployment config", getjson=True))
-        e = self.assertRaises(utils.RallyCliError, rally,
-                              "--debug deployment check")
+        with self.assertRaises(utils.RallyCliError) as e_ctx:
+            rally("--debug deployment check")
         self.assertIn(
             "AuthenticationFailed: Could not find versioned identity "
             "endpoints when attempting to authenticate.",
-            e.output)
+            e_ctx.exception.output)
 
     def test_use(self):
         rally = utils.Rally()

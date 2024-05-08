@@ -35,7 +35,7 @@ Support of Python 3.6 and Python 3.7
 Changed
 ~~~~~~~
 
-Bump docker image to use Rally 4.0.0
+Bump docker image to use Rally 4.1.0
 
 Fixed
 ~~~~~
@@ -54,6 +54,16 @@ Fixed
 * Nova server cleanup fails to list resources due to wrong marker.
 
 * Heat template validation when multi users.
+
+Deprecated
+~~~~~~~~~~
+
+Deprecate plugins of the following projects as they are marked as retired by
+OpenStack governance.
+
+* `Murano <https://review.opendev.org/c/openstack/governance/+/919358>`_
+* `Sahara <https://review.opendev.org/c/openstack/governance/+/919374>`_
+* `Senlin <https://review.opendev.org/c/openstack/governance/+/919347>`_
 
 [2.3.0] - 2023-08-01
 --------------------
