@@ -21,24 +21,6 @@
               tenants: 2
               users_per_tenant: 2
         -
-          scenario:
-            CinderVolumes.create_volume:
-              size:
-                min: 1
-                max: 2
-          runner:
-            constant:
-              times: 2
-              concurrency: 2
-          contexts:
-            users:
-              tenants: 2
-              users_per_tenant: 2
-            api_versions:
-              cinder:
-                version: 3
-                service_name: cinderv3
-        -
           description: "Create a volume from the specified image."
           scenario:
             CinderVolumes.create_volume:
