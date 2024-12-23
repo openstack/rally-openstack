@@ -166,7 +166,8 @@ class BootServerFromVolumeAndDelete(utils.NovaScenario,
                                     cinder_utils.CinderBasic):
 
     def run(self, image, flavor, volume_size, volume_type=None,
-            min_sleep=0, max_sleep=0, force_delete=False, **kwargs):
+            min_sleep=0, max_sleep=0, force_delete=False,
+            create_volume_kwargs=None, boot_server_kwargs=None, **kwargs):
         """Boot a server from volume and then delete it.
 
         The scenario first creates a volume and then a server.
@@ -182,14 +183,21 @@ class BootServerFromVolumeAndDelete(utils.NovaScenario,
         :param min_sleep: Minimum sleep time in seconds (non-negative)
         :param max_sleep: Maximum sleep time in seconds (non-negative)
         :param force_delete: True if force_delete should be used
+        :param boot_server_kwargs: optional arguments for VM creation
+        :param create_volume_kwargs: optional arguments for volume creation
         :param kwargs: Optional additional arguments for server creation
+                       (deprecated)
         """
+        boot_server_kwargs = boot_server_kwargs or kwargs
+        create_volume_kwargs = create_volume_kwargs or {}
+
         volume = self.cinder.create_volume(volume_size, imageRef=image,
-                                           volume_type=volume_type)
+                                           volume_type=volume_type,
+                                           **create_volume_kwargs)
         block_device_mapping = {"vda": "%s:::0" % volume.id}
         server = self._boot_server(None, flavor,
                                    block_device_mapping=block_device_mapping,
-                                   **kwargs)
+                                   **boot_server_kwargs)
         self.sleep_between(min_sleep, max_sleep)
         self._delete_server(server, force=force_delete)
 
@@ -339,7 +347,9 @@ class BootServer(utils.NovaScenario):
 class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
 
     def run(self, image, flavor, volume_size,
-            volume_type=None, auto_assign_nic=False, **kwargs):
+            volume_type=None, auto_assign_nic=False,
+            create_volume_kwargs=None, boot_server_kwargs=None,
+            **kwargs):
         """Boot a server from volume.
 
         The scenario first creates a volume and then a server.
@@ -351,14 +361,22 @@ class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
         :param volume_type: specifies volume type when there are
                             multiple backends
         :param auto_assign_nic: True if NICs should be assigned
+        :param boot_server_kwargs: optional arguments for VM creation
+        :param create_volume_kwargs: optional arguments for volume creation
         :param kwargs: Optional additional arguments for server creation
+                       (deprecated)
         """
+
+        boot_server_kwargs = boot_server_kwargs or kwargs
+        create_volume_kwargs = create_volume_kwargs or {}
+
         volume = self.cinder.create_volume(volume_size, imageRef=image,
-                                           volume_type=volume_type)
+                                           volume_type=volume_type,
+                                           **create_volume_kwargs)
         block_device_mapping = {"vda": "%s:::0" % volume.id}
         self._boot_server(None, flavor, auto_assign_nic=auto_assign_nic,
                           block_device_mapping=block_device_mapping,
-                          **kwargs)
+                          **boot_server_kwargs)
 
 
 @types.convert(image={"type": "glance_image"},
@@ -794,7 +812,8 @@ class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
 
     def run(self, image, flavor, volume_size, volume_type=None,
             block_migration=False, disk_over_commit=False, force_delete=False,
-            min_sleep=0, max_sleep=0, **kwargs):
+            min_sleep=0, max_sleep=0, create_volume_kwargs=None,
+            boot_server_kwargs=None, **kwargs):
         """Boot a server from volume and then migrate it.
 
         The scenario first creates a volume and a server booted from
@@ -817,14 +836,21 @@ class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
         :param force_delete: True if force_delete should be used
         :param min_sleep: Minimum sleep time in seconds (non-negative)
         :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param boot_server_kwargs: optional arguments for VM creation
+        :param create_volume_kwargs: optional arguments for volume creation
         :param kwargs: Optional additional arguments for server creation
+                       (deprecated)
         """
+        boot_server_kwargs = boot_server_kwargs or kwargs
+        create_volume_kwargs = create_volume_kwargs or {}
+
         volume = self.cinder.create_volume(volume_size, imageRef=image,
-                                           volume_type=volume_type)
+                                           volume_type=volume_type,
+                                           **create_volume_kwargs)
         block_device_mapping = {"vda": "%s:::0" % volume.id}
         server = self._boot_server(None, flavor,
                                    block_device_mapping=block_device_mapping,
-                                   **kwargs)
+                                   **boot_server_kwargs)
         self.sleep_between(min_sleep, max_sleep)
 
         self._live_migrate(server, block_migration, disk_over_commit)
@@ -1129,7 +1155,8 @@ class BootServerFromVolumeSnapshot(utils.NovaScenario,
                                    cinder_utils.CinderBasic):
 
     def run(self, image, flavor, volume_size, volume_type=None,
-            auto_assign_nic=False, **kwargs):
+            auto_assign_nic=False, create_volume_kwargs=None,
+            boot_server_kwargs=None, **kwargs):
         """Boot a server from a snapshot.
 
         The scenario first creates a volume and creates a
@@ -1143,15 +1170,22 @@ class BootServerFromVolumeSnapshot(utils.NovaScenario,
         :param volume_type: specifies volume type when there are
                             multiple backends
         :param auto_assign_nic: True if NICs should be assigned
+        :param boot_server_kwargs: optional arguments for VM creation
+        :param create_volume_kwargs: optional arguments for volume creation
         :param kwargs: Optional additional arguments for server creation
+                       (deprecated)
         """
+        boot_server_kwargs = boot_server_kwargs or kwargs
+        create_volume_kwargs = create_volume_kwargs or {}
+
         volume = self.cinder.create_volume(volume_size, imageRef=image,
-                                           volume_type=volume_type)
+                                           volume_type=volume_type,
+                                           **create_volume_kwargs)
         snapshot = self.cinder.create_snapshot(volume.id, force=False)
         block_device_mapping = {"vda": "%s:snap::1" % snapshot.id}
         self._boot_server(None, flavor, auto_assign_nic=auto_assign_nic,
                           block_device_mapping=block_device_mapping,
-                          **kwargs)
+                          **boot_server_kwargs)
 
 
 @logging.log_deprecated_args(
