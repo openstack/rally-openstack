@@ -77,7 +77,7 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     BLOCK_STORAGE = "block-storage"
     VOLUME = "volume"
     VOLUMEV2 = "volumev2"
-    VOLUMEV3 = "volumev3"
+    VOLUMEV3 = "block-storage"
     SHARE = "share"
     EC2 = "ec2"
     IMAGE = "image"
