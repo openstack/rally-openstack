@@ -6,11 +6,11 @@
     -
       args:
         network_create_args: {}
-        subport_count: 10
+        subport_count: 5
       runner:
         type: "constant"
-        times: 100
-        concurrency: 10
+        times: 10
+        concurrency: 5
       context:
         users:
           tenants: 3

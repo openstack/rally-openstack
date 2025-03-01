@@ -5,18 +5,19 @@
 - hosts: controller
   vars:
     rally_home_dir: '/opt/stack/.rally'
-    rally_fake_image_path: '{{ rally_home_dir }}/extra/fake-image.img'
+    rally_dummy_qcow2_image: "{{ rally_home_dir }}/extra/dummy_image.qcow2"
+    rally_dummy_raw_image: "{{ rally_home_dir }}/extra/dummy_image.raw"
     rally_results_dir: '{{ rally_home_dir }}/results'
     rally_task_args_file: "100-percent-not-exist-file"
   roles:
     - prepare-for-rally-task
-    #- role: list-os-resources
-    #  vars:
-    #    compare: False
+    # - role: list-os-resources
+    #   vars:
+    #     compare: False
     - run-rally-task
     - process-task-results
     - import-task-results
-    #- role: list-os-resources
-    #  vars:
-    #    compare: True
+    # - role: list-os-resources
+    #   vars:
+    #     compare: True
     - check-task-sla

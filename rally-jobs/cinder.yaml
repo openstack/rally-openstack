@@ -134,7 +134,7 @@
             roles:
               - admin
             images:
-              image_url: "~/.rally/extra/fake-image.img"
+              image_url: "~/.rally/extra/dummy_image.raw"
               disk_format: "raw"
               container_format: "bare"
               images_per_tenant: 1

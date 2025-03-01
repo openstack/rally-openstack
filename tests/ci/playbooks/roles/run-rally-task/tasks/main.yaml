@@ -1,5 +1,5 @@
 - name: Run Rally task
-  become: True
+  become: true
   become_user: stack
   shell:
     cmd: |
@@ -10,10 +10,10 @@
       rally --rally-debug task start --task {{ rally_home_dir }}/task.yaml #--task-args-file {{ rally_home_dir }}/task_args_file.yaml
     executable: /bin/bash
   register: command_result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Check rally task exit code
-  become: True
+  become: true
   become_user: stack
   shell:
     cmd: |

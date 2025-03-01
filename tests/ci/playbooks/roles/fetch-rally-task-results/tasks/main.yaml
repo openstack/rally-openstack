@@ -1,5 +1,7 @@
 - name: Change the status message
-  become: yes
+  become: true
+  vars:
+    os_rally_src: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
   shell:
     cmd: |
       set -e
@@ -10,7 +12,7 @@
       fi
 
       if [ "$MSG" != "OK" ]; then
-        sed -i -- "s/var errorMessage = null\;/var errorMessage = \'$MSG\';/g" {{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html
+        sed -i -- "s/var errorMessage = null\;/var errorMessage = \'$MSG\';/g" {{ os_rally_src }}/tests/ci/pages/task-index.html
       fi
 
 - name: Check the existence of results dir
@@ -19,15 +21,15 @@
   register: results_dir_stat
 
 - name: Gzip custom plugins
-  become: yes
+  become: true
   become_user: stack
   shell: "tar -czf {{ rally_results_dir }}/plugins.tar.gz ./plugins"
   args:
     chdir: '{{ rally_home_dir }}'
-  when: results_dir_stat.stat.exists == True
+  when: results_dir_stat.stat.exists
 
 - name: Copy Rally results
-  become: yes
+  become: true
   synchronize:
     src: '{{ rally_results_dir }}'
     dest: '{{ zuul.executor.log_root }}'
@@ -39,10 +41,10 @@
       - --include=*/
       - --exclude=*
       - --prune-empty-dirs
-  when: results_dir_stat.stat.exists == True
+  when: results_dir_stat.stat.exists
 
 - name: Put index.html in the right place
-  become: yes
+  become: true
   synchronize:
     src: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/task-index.html"
     dest: '{{ zuul.executor.log_root }}/index.html'

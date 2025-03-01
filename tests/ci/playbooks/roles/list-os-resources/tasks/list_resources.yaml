@@ -1,9 +1,9 @@
 - name: Save available OpenStack resources before Rally launch
-  become: yes
+  become: true
   become_user: stack
   osresources:
     json_output: "{{ resources_at_start_dest }}"
-  ignore_errors: yes
+  ignore_errors: true
   register: command_result
 
 - name: Fail if there is an error while executing previos command (for rally-openstack project)

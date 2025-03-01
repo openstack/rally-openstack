@@ -4,7 +4,6 @@
 
 - hosts: controller
   vars:
-    rally_fake_image_path: '{{ rally_home_dir }}/extra/fake-image.img'
     rally_task_args_file: "100-percent-not-exist-file"
     # this task will not be launched, but we need to specify something real to
     # pass a check at 'prepare-for-rally-task' role.

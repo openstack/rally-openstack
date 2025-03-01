@@ -1,5 +1,5 @@
 - name: Create Rally home directory
-  become: True
+  become: true
   become_user: stack
   file:
     path: '{{ rally_home_dir }}'
@@ -8,7 +8,7 @@
     group: stack
 
 - name: Create directory for Rally results
-  become: True
+  become: true
   become_user: stack
   file:
     path: '{{ rally_results_dir }}'
@@ -17,7 +17,7 @@
     group: stack
 
 - name: Create directory for OSProfiler reports
-  become: True
+  become: true
   become_user: stack
   file:
     path: '{{ rally_results_dir }}/{{ RALLY_OSPROFILER_CHART }}'
@@ -26,7 +26,7 @@
     group: stack
 
 - name: Extend Rally config with
-  become: True
+  become: true
   become_user: stack
   shell:
     executable: /bin/bash
@@ -35,7 +35,7 @@
       echo "osprofiler_chart_mode={{ RALLY_OSPROFILER_CHART }}" >> /etc/rally/rally.conf
 
 - name: Create a directory for custom plugins
-  become: True
+  become: true
   become_user: stack
   file:
     path: '{{ rally_home_dir }}/plugins'
@@ -49,13 +49,13 @@
   register: custom_plugins_stat
 
 - name: Copy custom plugins, if they are presented
-  become: True
+  become: true
   become_user: stack
   command: cp -r {{ custom_plugins_stat.stat.path }} {{ rally_home_dir }}/
-  when: custom_plugins_stat.stat.exists == True
+  when: custom_plugins_stat.stat.exists
 
 - name: Create a directory for extra files
-  become: True
+  become: true
   become_user: stack
   file:
     path: '{{ rally_home_dir }}/extra'
@@ -69,26 +69,25 @@
   register: extra_files_stat
 
 - name: Copy extra files, if they are presented
-  become: True
+  become: true
   become_user: stack
   command: cp -r {{ extra_files_stat.stat.path }} {{ rally_home_dir }}/
-  when: extra_files_stat.stat.exists == True
+  when: extra_files_stat.stat.exists
 
-- name: Check the existence of fake image
-  stat:
-    path: '{{ rally_fake_image_path }}'
-  register: fake_image_stat
+- name: Create dummy raw image
+  include_tasks: "create_dummy_image.yaml"
+  vars:
+    dummy_image_type: "raw"
+    path_to_dummy_image: "{{ rally_dummy_raw_image }}"
 
-- name: Create a fake image
-  become: True
-  become_user: stack
-  file:
-    path: '{{ rally_fake_image_path }}'
-    state: touch
-  when: fake_image_stat.stat.exists == False
+- name: Create dummy qcow2 image
+  include_tasks: "create_dummy_image.yaml"
+  vars:
+    dummy_image_type: "qcow2"
+    path_to_dummy_image: "{{ rally_dummy_qcow2_image }}"
 
 - name: List glance, cinder, neutron resources
-  become: True
+  become: true
   become_user: stack
   shell:
     executable: /bin/bash
@@ -111,25 +110,25 @@
       fi
 
 - name: Print Rally environment config
-  become: True
+  become: true
   become_user: stack
   command: "rally env show --only-spec"
 
 - include_tasks: prepare-env-with-existing-users.yaml
-  when: rally_use_existing_users == True
+  when: rally_use_existing_users
 
 - name: Check Environment works
-  become: True
+  become: true
   become_user: stack
   command: "rally --debug env check"
 
 - name: Print Environment info
-  become: True
+  become: true
   become_user: stack
   command: "rally env info"
 
 - name: Create nova flavor
-  become: True
+  become: true
   become_user: stack
   shell:
     executable: /bin/sh
@@ -151,13 +150,13 @@
 - name: Fail if Rally task file is missed.
   fail:
     msg: "'{{ rally_task }}' Rally task file is missed."
-  when: rally_task_file_stat.stat.exists != True
+  when: not rally_task_file_stat.stat.exists
 
 - name: Copy task file
-  become: True
+  become: true
   become_user: stack
   command: cp "{{ rally_task_file_stat.stat.path }}" "{{ rally_home_dir }}/task.yaml"
-  when: rally_task_file_stat.stat.exists == True
+  when: rally_task_file_stat.stat.exists
 
 - name: Check the existence of task_args_file
   stat:
@@ -165,13 +164,13 @@
   register: task_args_file_stat
 
 - name: Copy task_args_file
-  become: True
+  become: true
   become_user: stack
   command: cp "{{ task_args_file_stat.stat.path }}" "{{ rally_home_dir }}/task_args_file.yaml"
-  when: task_args_file_stat.stat.exists == True
+  when: task_args_file_stat.stat.exists
 
 - name: Create an empty task_args_file
-  become: True
+  become: true
   become_user: stack
   command: echo "{}" > "{{ rally_home_dir }}/task_args_file.yaml"
-  when: task_args_file_stat.stat.exists == False
+  when: not task_args_file_stat.stat.exists

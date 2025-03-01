@@ -1,0 +1,13 @@
+- name: Check the existence of dummy image
+  stat:
+    path: '{{ path_to_dummy_image }}'
+  register: dummy_image_stat
+  when: path_to_dummy_image
+
+- name: Create a dummy image
+  become: true
+  become_user: stack
+  shell: "qemu-img create -f {{ dummy_image_type }} {{ path_to_dummy_image }} 100M"
+  when:
+    - path_to_dummy_image
+    - not dummy_image_stat.stat.exists

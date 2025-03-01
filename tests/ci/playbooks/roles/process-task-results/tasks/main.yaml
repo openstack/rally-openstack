@@ -1,5 +1,5 @@
 - name: Generate a HTML report
-  become: True
+  become: true
   become_user: stack
   shell:
     executable: /bin/bash
@@ -9,31 +9,31 @@
       rally task report --html-static --out report.html
 
 - name: Show detailed info about task
-  become: True
+  become: true
   become_user: stack
   shell: "rally task detailed > {{ rally_results_dir }}/detailed.txt"
 
 - name: Show detailed info (with per-iteration data) about task
-  become: True
+  become: true
   become_user: stack
   shell: "rally task detailed --iterations-data > {{ rally_results_dir }}/detailed_with_iterations.txt"
 
 - name: Generate a JSON report
-  become: True
+  become: true
   become_user: stack
   command: rally task report --json --out {{ rally_results_dir }}/report.json
 
 - name: Produce an old results file
-  become: True
+  become: true
   become_user: stack
   shell: "rally task results > {{ rally_results_dir }}/results.json"
 
 - name: Make a JUnit report
-  become: True
+  become: true
   become_user: stack
   command: rally task export --type junit-xml --to {{ rally_results_dir }}/junit.xml
 
 - name: Make an ElasticSearch file
-  become: True
+  become: true
   become_user: stack
   command: rally task export --type elastic --to {{ rally_results_dir }}/elasticsearch.txt

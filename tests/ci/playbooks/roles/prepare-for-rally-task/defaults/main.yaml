@@ -1,4 +1,6 @@
-rally_use_existing_users: False
+rally_dummy_qcow2_image: ""
+rally_dummy_raw_image: ""
+rally_use_existing_users: false
 existing_users_env_spec: '{{ rally_home_dir }}/env-with-existing-users-config'
 projects_count: 2
 users_per_project: 1
