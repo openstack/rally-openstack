@@ -145,10 +145,6 @@ class FakeGoal(FakeResource):
     pass
 
 
-class FakeMurano(FakeResource):
-    pass
-
-
 class FakeFloatingIP(FakeResource):
     pass
 
@@ -483,14 +479,6 @@ class FakeGoalManager(FakeManager):
         for key in self.resources_order:
             if self.cache[key].name == resource_name:
                 return self.cache[key]
-
-
-class FakePackageManager(FakeManager):
-
-    def create(self, package_descr, package_arch, package_class=FakeMurano):
-        package = self._cache(package_class(self))
-        package.name = list(package_arch.keys())[0]
-        return package
 
 
 class FakeFloatingIPsManager(FakeManager):
@@ -975,12 +963,6 @@ class FakeGlanceClient(object):
     def __init__(self, version="1"):
         self.images = FakeImageManager()
         self.version = version
-
-
-class FakeMuranoClient(object):
-
-    def __init__(self):
-        self.packages = FakePackageManager()
 
 
 class FakeCinderClient(object):
@@ -1533,7 +1515,6 @@ class FakeClients(object):
         self._trove = None
         self._mistral = None
         self._swift = None
-        self._murano = None
         self._monasca = None
         self._ec2 = None
         self._senlin = None
@@ -1617,11 +1598,6 @@ class FakeClients(object):
         if not self._swift:
             self._swift = FakeSwiftClient()
         return self._swift
-
-    def murano(self):
-        if not self._murano:
-            self._murano = FakeMuranoClient()
-        return self._murano
 
     def ec2(self):
         if not self._ec2:

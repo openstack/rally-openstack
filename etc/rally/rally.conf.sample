@@ -487,14 +487,6 @@
 # (floating point value)
 #monasca_metric_create_prepoll_delay = 15.0
 
-# A timeout in seconds for an environment deploy (integer value)
-# Deprecated group/name - [benchmark]/deploy_environment_timeout
-#murano_deploy_environment_timeout = 1200
-
-# Deploy environment check interval in seconds (integer value)
-# Deprecated group/name - [benchmark]/deploy_environment_check_interval
-#murano_deploy_environment_check_interval = 5
-
 # Time to sleep after start before polling for status (floating point
 # value)
 #nova_server_start_prepoll_delay = 0.0

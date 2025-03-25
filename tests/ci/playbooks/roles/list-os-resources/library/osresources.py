@@ -359,17 +359,6 @@ class Sahara(ResourceManager):
         return self.client.node_group_templates.list()
 
 
-class Murano(ResourceManager):
-
-    REQUIRED_SERVICE = consts.Service.MURANO
-
-    def list_environments(self):
-        return self.client.environments.list()
-
-    def list_packages(self):
-        return self.client.packages.list(include_disabled=True)
-
-
 class Designate(ResourceManager):
 
     REQUIRED_SERVICE = consts.Service.DESIGNATE
@@ -562,8 +551,6 @@ def check_resource(resources_mgs, compare_with, json_output):
                 or (resource["cls"] == "cinder"
                     and resource["resource_name"] == "volume"
                     and resource["id"].get("name") in volume_names)
-
-                or resource["cls"] == "murano"
 
                 # Glance has issues with uWSGI integration...
                 # or resource["cls"] == "glance"

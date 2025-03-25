@@ -660,25 +660,6 @@ class Zaqar(OSClient):
         return client
 
 
-@configure("murano", default_version="1",
-           default_service_type="application-catalog",
-           supported_versions=["1"])
-class Murano(OSClient):
-    """Wrapper for MuranoClient which returns an authenticated native client.
-
-    """
-
-    def create_client(self, version=None, service_type=None):
-        """Return Murano client."""
-        from muranoclient import client as murano
-
-        client = murano.Client(self.choose_version(version),
-                               endpoint=self._get_endpoint(service_type),
-                               token=self.keystone.auth_ref.auth_token)
-
-        return client
-
-
 @configure("designate", default_version="2", default_service_type="dns",
            supported_versions=["2"])
 class Designate(OSClient):

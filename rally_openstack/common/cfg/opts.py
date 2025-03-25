@@ -21,7 +21,6 @@ from rally_openstack.common.cfg import magnum
 from rally_openstack.common.cfg import manila
 from rally_openstack.common.cfg import mistral
 from rally_openstack.common.cfg import monasca
-from rally_openstack.common.cfg import murano
 from rally_openstack.common.cfg import neutron
 from rally_openstack.common.cfg import nova
 from rally_openstack.common.cfg import octavia
@@ -46,7 +45,7 @@ def list_opts():
 
     opts = {}
     for l_opts in (cinder.OPTS, heat.OPTS, ironic.OPTS, magnum.OPTS,
-                   manila.OPTS, mistral.OPTS, monasca.OPTS, murano.OPTS,
+                   manila.OPTS, mistral.OPTS, monasca.OPTS,
                    nova.OPTS, osclients.OPTS, profiler.OPTS, sahara.OPTS,
                    vm.OPTS, glance.OPTS, watcher.OPTS, tempest.OPTS,
                    keystone_roles.OPTS, keystone_users.OPTS, cleanup.OPTS,

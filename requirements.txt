@@ -21,7 +21,6 @@ python-keystoneclient!=2.1.0                           # Apache Software License
 python-magnumclient                                    # Apache Software License
 python-manilaclient                                    # Apache Software License
 python-mistralclient!=3.2.0                            # Apache Software License
-python-muranoclient                                    # Apache License, Version 2.0
 python-monascaclient                                   # Apache Software License
 python-neutronclient                                   # Apache Software License
 python-novaclient                                      # Apache License, Version 2.0

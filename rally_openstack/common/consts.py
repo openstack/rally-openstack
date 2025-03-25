@@ -62,7 +62,6 @@ class _Service(utils.ImmutableMixin, utils.EnumMixin):
     SAHARA = "sahara"
     SWIFT = "swift"
     MISTRAL = "mistral"
-    MURANO = "murano"
     IRONIC = "ironic"
     GNOCCHI = "gnocchi"
     MAGNUM = "magnum"
@@ -96,7 +95,6 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     DATA_PROCESSING_MOS = "data_processing"
     OBJECT_STORE = "object-store"
     WORKFLOW_EXECUTION = "workflowv2"
-    APPLICATION_CATALOG = "application-catalog"
     BARE_METAL = "baremetal"
     METRIC = "metric"
     CONTAINER_INFRA = "container-infra"
@@ -130,7 +128,6 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
             self.DATA_PROCESSING_MOS: _Service.SAHARA,
             self.OBJECT_STORE: _Service.SWIFT,
             self.WORKFLOW_EXECUTION: _Service.MISTRAL,
-            self.APPLICATION_CATALOG: _Service.MURANO,
             self.BARE_METAL: _Service.IRONIC,
             self.METRIC: _Service.GNOCCHI,
             self.CONTAINER_INFRA: _Service.MAGNUM,

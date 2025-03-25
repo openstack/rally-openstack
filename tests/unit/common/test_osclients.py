@@ -877,23 +877,6 @@ class OSClientsTestCase(test.TestCase):
              "some_service": "__unknown__"},
             clients.services())
 
-    def test_murano(self):
-        fake_murano = fakes.FakeMuranoClient()
-        mock_murano = mock.Mock()
-        mock_murano.client.Client.return_value = fake_murano
-        self.assertNotIn("murano", self.clients.cache)
-        with mock.patch.dict("sys.modules", {"muranoclient": mock_murano}):
-            client = self.clients.murano()
-            self.assertEqual(fake_murano, client)
-            self.service_catalog.url_for.assert_called_once_with(
-                service_type="application-catalog",
-                region_name=self.credential.region_name
-            )
-            kw = {"endpoint": self.service_catalog.url_for.return_value,
-                  "token": self.auth_ref.auth_token}
-            mock_murano.client.Client.assert_called_once_with("1", **kw)
-            self.assertEqual(fake_murano, self.clients.cache["murano"])
-
     @mock.patch("%s.Keystone.get_session" % PATH)
     @ddt.data(
         {},

@@ -16,6 +16,14 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+Unreleased
+----------
+
+Removed
+~~~~~~~
+
+* Removed all support for the retired Murano project
+
 [3.0.0] - 2024-05-23
 --------------------
 

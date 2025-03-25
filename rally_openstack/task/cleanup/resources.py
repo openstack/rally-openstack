@@ -872,25 +872,6 @@ class MistralExecutions(SynchronizedDeletion, base.ResourceManager):
         #   after workflow deletion.
         return self.raw_resource.workflow_name
 
-# MURANO
-
-
-_murano_order = get_order(1200)
-
-
-@base.resource("murano", "environments", tenant_resource=True,
-               order=next(_murano_order))
-class MuranoEnvironments(SynchronizedDeletion, base.ResourceManager):
-    pass
-
-
-@base.resource("murano", "packages", tenant_resource=True,
-               order=next(_murano_order))
-class MuranoPackages(base.ResourceManager):
-    def list(self):
-        return filter(lambda x: x.name != "Core library",
-                      super(MuranoPackages, self).list())
-
 
 # IRONIC
 
