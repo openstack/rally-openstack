@@ -279,17 +279,6 @@ class Cinder(ResourceManager):
         return self.client.qos_specs.list()
 
 
-class Senlin(ResourceManager):
-
-    REQUIRED_SERVICE = consts.Service.SENLIN
-
-    def list_clusters(self):
-        return self.client.clusters()
-
-    def list_profiles(self):
-        return self.client.profiles()
-
-
 class Manila(ResourceManager):
 
     REQUIRED_SERVICE = consts.Service.MANILA

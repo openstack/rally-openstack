@@ -818,10 +818,6 @@
 # Number of cleanup threads to run (integer value)
 #cleanup_threads = 20
 
-# Time in seconds to wait for senlin action to finish. (floating point
-# value)
-#senlin_action_timeout = 3600
-
 # Neutron create loadbalancer timeout (floating point value)
 #neutron_create_loadbalancer_timeout = 500.0
 

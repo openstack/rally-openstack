@@ -26,6 +26,8 @@ Removed
 * Removed all support for the retired Murano project
 * Removed all support for the retired Sahara project
 
+* Removed all support for the retired Senlin project
+
 [3.0.0] - 2024-05-23
 --------------------
 

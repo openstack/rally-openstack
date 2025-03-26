@@ -57,7 +57,6 @@ class _Service(utils.ImmutableMixin, utils.EnumMixin):
     CEILOMETER = "ceilometer"
     MONASCA = "monasca"
     S3 = "s3"
-    SENLIN = "senlin"
     TROVE = "trove"
     SWIFT = "swift"
     MISTRAL = "mistral"
@@ -82,7 +81,6 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     CLOUD = "cloudformation"
     ORCHESTRATION = "orchestration"
     IDENTITY = "identity"
-    CLUSTERING = "clustering"
     COMPUTE = "compute"
     NETWORK = "network"
     DNS = "dns"
@@ -101,7 +99,6 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
 
     def __init__(self):
         self.__names = {
-            self.CLUSTERING: _Service.SENLIN,
             self.COMPUTE: _Service.NOVA,
             # unversioned endpoint of Cinder
             self.BLOCK_STORAGE: _Service.CINDER,

@@ -26,7 +26,6 @@ from rally_openstack.common.cfg import nova
 from rally_openstack.common.cfg import octavia
 from rally_openstack.common.cfg import osclients
 from rally_openstack.common.cfg import profiler
-from rally_openstack.common.cfg import senlin
 from rally_openstack.common.cfg import vm
 from rally_openstack.common.cfg import watcher
 
@@ -48,7 +47,7 @@ def list_opts():
                    nova.OPTS, osclients.OPTS, profiler.OPTS,
                    vm.OPTS, glance.OPTS, watcher.OPTS, tempest.OPTS,
                    keystone_roles.OPTS, keystone_users.OPTS, cleanup.OPTS,
-                   senlin.OPTS, neutron.OPTS, octavia.OPTS,
+                   neutron.OPTS, octavia.OPTS,
                    osprofilerchart.OPTS):
         for category, opt in l_opts.items():
             opts.setdefault(category, [])

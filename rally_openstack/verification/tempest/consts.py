@@ -18,7 +18,6 @@ from rally.common import utils
 
 class _TempestApiTestSets(utils.ImmutableMixin, utils.EnumMixin):
     BAREMETAL = "baremetal"
-    CLUSTERING = "clustering"
     COMPUTE = "compute"
     DATABASE = "database"
     IDENTITY = "identity"

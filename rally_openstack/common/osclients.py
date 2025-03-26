@@ -729,24 +729,6 @@ class Monasca(OSClient):
         return client
 
 
-@configure("senlin", default_version="1", default_service_type="clustering",
-           supported_versions=["1"])
-class Senlin(OSClient):
-    """Wrapper for SenlinClient which returns an authenticated native client.
-
-    """
-
-    def create_client(self, version=None, service_type=None):
-        """Return senlin client."""
-        from senlinclient import client as senlin
-
-        return senlin.Client(
-            self.choose_version(version),
-            **self._get_auth_info(project_name_key="project_name",
-                                  cacert_key="cert",
-                                  endpoint_type="interface"))
-
-
 @configure("magnum", default_version="1", supported_versions=["1"],
            default_service_type="container-infra",)
 class Magnum(OSClient):

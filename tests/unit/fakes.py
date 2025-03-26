@@ -1441,13 +1441,6 @@ class FakeEC2Client(object):
         pass
 
 
-class FakeSenlinClient(object):
-
-    def __init__(self):
-        # TODO(Yanyan Hu):Fake interfaces of senlinclient.
-        pass
-
-
 class FakeMagnumClient(object):
 
     def __init__(self):
@@ -1484,7 +1477,6 @@ class FakeClients(object):
         self._swift = None
         self._monasca = None
         self._ec2 = None
-        self._senlin = None
         self._watcher = None
         self._barbican = None
         self._credential = credential_ or FakeCredential(
@@ -1565,11 +1557,6 @@ class FakeClients(object):
         if not self._ec2:
             self._ec2 = FakeEC2Client()
         return self._ec2
-
-    def senlin(self):
-        if not self._senlin:
-            self._senlin = FakeSenlinClient()
-        return self._senlin
 
     def watcher(self):
         if not self._watcher:
