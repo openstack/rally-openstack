@@ -610,36 +610,6 @@ class Ironic(OSClient):
         return client
 
 
-@configure("sahara", default_version="1.1", supported_versions=["1.0", "1.1"],
-           default_service_type="data-processing")
-class Sahara(OSClient):
-    """Wrapper for SaharaClient which returns an authenticated native client.
-
-    """
-
-    # NOTE(andreykurilin): saharaclient supports "1.0" version and doesn't
-    # support "1". `choose_version` and `validate_version` methods are written
-    # as a hack to covert 1 -> 1.0, which can simplify setting saharaclient
-    # for end-users.
-    def choose_version(self, version=None):
-        return float(super(Sahara, self).choose_version(version))
-
-    @classmethod
-    def validate_version(cls, version):
-        super(Sahara, cls).validate_version(float(version))
-
-    def create_client(self, version=None, service_type=None):
-        """Return Sahara client."""
-        from saharaclient import client as sahara
-
-        client = sahara.Client(
-            self.choose_version(version),
-            session=self.keystone.get_session()[0],
-            sahara_url=self._get_endpoint(service_type))
-
-        return client
-
-
 @configure("zaqar", default_version="1.1", default_service_type="messaging",
            supported_versions=["1", "1.1"])
 class Zaqar(OSClient):

@@ -351,14 +351,6 @@ class Ironic(ResourceManager):
         return self.client.node.list()
 
 
-class Sahara(ResourceManager):
-
-    REQUIRED_SERVICE = consts.Service.SAHARA
-
-    def list_node_group_templates(self):
-        return self.client.node_group_templates.list()
-
-
 class Designate(ResourceManager):
 
     REQUIRED_SERVICE = consts.Service.DESIGNATE

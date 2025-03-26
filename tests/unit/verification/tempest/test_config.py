@@ -76,18 +76,6 @@ class TempestConfigfileManagerTestCase(test.TestCase):
         for item in expected:
             self.assertIn(item, result)
 
-    @ddt.data("data_processing", "data-processing")
-    def test__configure_data_processing(self, service_type):
-        self.tempest.available_services = ["sahara"]
-
-        self.tempest.clients.services.return_value = {
-            service_type: "sahara"}
-        self.tempest.conf.add_section("data-processing")
-        self.tempest._configure_data_processing()
-        self.assertEqual(service_type,
-                         self.tempest.conf.get("data-processing",
-                                               "catalog_type"))
-
     @ddt.data(
         # The prefix "ex_" is abbreviation of "expected"
         # case #1: both versions are discoverable; version is in the auth_url
@@ -247,15 +235,14 @@ class TempestConfigfileManagerTestCase(test.TestCase):
             self.assertIn(item, result)
 
     def test__configure_service_available(self):
-        available_services = ("nova", "cinder", "glance", "sahara")
+        available_services = ("nova", "cinder", "glance")
         self.tempest.available_services = available_services
         self.tempest.conf.add_section("service_available")
         self.tempest._configure_service_available()
 
         expected = (
             ("neutron", "False"), ("heat", "False"), ("nova", "True"),
-            ("swift", "False"), ("cinder", "True"), ("sahara", "True"),
-            ("glance", "True"))
+            ("swift", "False"), ("cinder", "True"), ("glance", "True"))
         result = self.tempest.conf.items("service_available")
         for item in expected:
             self.assertIn(item, result)

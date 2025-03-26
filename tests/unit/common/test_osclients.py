@@ -757,25 +757,6 @@ class OSClientsTestCase(test.TestCase):
             mock_ironic.client.get_client.assert_called_once_with("1", **kw)
             self.assertEqual(fake_ironic, self.clients.cache["ironic"])
 
-    @mock.patch("%s.Sahara._get_endpoint" % PATH)
-    def test_sahara(self, mock_sahara__get_endpoint):
-        fake_sahara = fakes.FakeSaharaClient()
-        mock_sahara = mock.MagicMock()
-        mock_sahara.client.Client = mock.MagicMock(return_value=fake_sahara)
-        mock_sahara__get_endpoint.return_value = "http://fake.to:2/fake"
-        mock_keystoneauth1 = mock.MagicMock()
-        self.assertNotIn("sahara", self.clients.cache)
-        with mock.patch.dict("sys.modules",
-                             {"saharaclient": mock_sahara,
-                              "keystoneauth1": mock_keystoneauth1}):
-            client = self.clients.sahara()
-            self.assertEqual(fake_sahara, client)
-            kw = {
-                "session": mock_keystoneauth1.session.Session(),
-                "sahara_url": mock_sahara__get_endpoint.return_value}
-            mock_sahara.client.Client.assert_called_once_with(1.1, **kw)
-            self.assertEqual(fake_sahara, self.clients.cache["sahara"])
-
     def test_zaqar(self):
         fake_zaqar = fakes.FakeZaqarClient()
         mock_zaqar = mock.MagicMock()

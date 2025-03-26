@@ -706,24 +706,6 @@
 # Enable or disable osprofiler to trace the scenarios (boolean value)
 #enable_profiler = true
 
-# A timeout in seconds for a cluster create operation (integer value)
-#sahara_cluster_create_timeout = 1800
-
-# A timeout in seconds for a cluster delete operation (integer value)
-#sahara_cluster_delete_timeout = 900
-
-# Cluster status polling interval in seconds (integer value)
-#sahara_cluster_check_interval = 5
-
-# A timeout in seconds for a Job Execution to complete (integer value)
-#sahara_job_execution_timeout = 600
-
-# Job Execution status polling interval in seconds (integer value)
-#sahara_job_check_interval = 5
-
-# Amount of workers one proxy should serve to. (integer value)
-#sahara_workers_per_proxy = 20
-
 # Interval between checks when waiting for a VM to become pingable
 # (floating point value)
 #vm_ping_poll_interval = 1.0

@@ -67,15 +67,6 @@ class TempestConfigfileManager(object):
         self.conf.set(section_name, "admin_domain_name",
                       self.credential.user_domain_name or "Default")
 
-    # Sahara has two service types: 'data_processing' and 'data-processing'.
-    # 'data_processing' is deprecated, but it can be used in previous OpenStack
-    # releases. So we need to configure the 'catalog_type' option to support
-    # environments where 'data_processing' is used as service type for Sahara.
-    def _configure_data_processing(self, section_name="data-processing"):
-        if "sahara" in self.available_services:
-            self.conf.set(section_name, "catalog_type",
-                          self._get_service_type_by_service_name("sahara"))
-
     def _configure_identity(self, section_name="identity"):
         self.conf.set(section_name, "region",
                       self.credential.region_name)
@@ -190,7 +181,7 @@ class TempestConfigfileManager(object):
 
     def _configure_service_available(self, section_name="service_available"):
         services = ["cinder", "glance", "heat", "ironic", "neutron", "nova",
-                    "sahara", "swift"]
+                    "swift"]
         for service in services:
             # Convert boolean to string because ConfigParser fails
             # on attempt to get option with boolean value

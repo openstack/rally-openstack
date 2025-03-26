@@ -25,7 +25,6 @@ python-monascaclient                                   # Apache Software License
 python-neutronclient                                   # Apache Software License
 python-novaclient                                      # Apache License, Version 2.0
 python-octaviaclient                                   # Apache Software License
-python-saharaclient                                    # Apache License, Version 2.0
 python-senlinclient                                    # Apache Software License
 python-swiftclient                                     # Apache License, Version 2.0
 python-troveclient                                     # Apache Software License

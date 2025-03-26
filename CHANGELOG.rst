@@ -24,7 +24,7 @@ Removed
 
 * Support for Python3.8 is dropped
 * Removed all support for the retired Murano project
-
+* Removed all support for the retired Sahara project
 
 [3.0.0] - 2024-05-23
 --------------------

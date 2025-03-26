@@ -57,9 +57,6 @@ class RallyJobsTestCase(test.TestCase):
                      and f.endswith(".yaml")
                      and not f.endswith("_args.yaml"))}
 
-        # TODO(andreykurilin): figure out why it fails
-        files -= {"rally-mos.yaml", "sahara-clusters.yaml"}
-
         for filename in files:
             full_path = os.path.join(self.rally_jobs_path, filename)
 

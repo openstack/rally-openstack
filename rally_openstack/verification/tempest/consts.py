@@ -20,7 +20,6 @@ class _TempestApiTestSets(utils.ImmutableMixin, utils.EnumMixin):
     BAREMETAL = "baremetal"
     CLUSTERING = "clustering"
     COMPUTE = "compute"
-    DATA_PROCESSING = "data_processing"
     DATABASE = "database"
     IDENTITY = "identity"
     IMAGE = "image"

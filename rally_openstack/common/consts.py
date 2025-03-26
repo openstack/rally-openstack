@@ -59,7 +59,6 @@ class _Service(utils.ImmutableMixin, utils.EnumMixin):
     S3 = "s3"
     SENLIN = "senlin"
     TROVE = "trove"
-    SAHARA = "sahara"
     SWIFT = "swift"
     MISTRAL = "mistral"
     IRONIC = "ironic"
@@ -91,8 +90,6 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     MONITORING = "monitoring"
     S3 = "s3"
     DATABASE = "database"
-    DATA_PROCESSING = "data-processing"
-    DATA_PROCESSING_MOS = "data_processing"
     OBJECT_STORE = "object-store"
     WORKFLOW_EXECUTION = "workflowv2"
     BARE_METAL = "baremetal"
@@ -124,8 +121,6 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
             self.MONITORING: _Service.MONASCA,
             self.S3: _Service.S3,
             self.DATABASE: _Service.TROVE,
-            self.DATA_PROCESSING: _Service.SAHARA,
-            self.DATA_PROCESSING_MOS: _Service.SAHARA,
             self.OBJECT_STORE: _Service.SWIFT,
             self.WORKFLOW_EXECUTION: _Service.MISTRAL,
             self.BARE_METAL: _Service.IRONIC,

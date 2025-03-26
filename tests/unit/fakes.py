@@ -1408,38 +1408,6 @@ class FakeIronicClient(object):
         pass
 
 
-class FakeSaharaClient(object):
-
-    def __init__(self):
-        self.job_executions = mock.MagicMock()
-        self.jobs = mock.MagicMock()
-        self.job_binary_internals = mock.MagicMock()
-        self.job_binaries = mock.MagicMock()
-        self.data_sources = mock.MagicMock()
-
-        self.clusters = mock.MagicMock()
-        self.cluster_templates = mock.MagicMock()
-        self.node_group_templates = mock.MagicMock()
-
-        self.setup_list_methods()
-
-    def setup_list_methods(self):
-        mock_with_id = mock.MagicMock()
-        mock_with_id.id = 42
-
-        # First call of list returns a list with one object, the next should
-        # empty after delete.
-        self.job_executions.list.side_effect = [[mock_with_id], []]
-        self.jobs.list.side_effect = [[mock_with_id], []]
-        self.job_binary_internals.list.side_effect = [[mock_with_id], []]
-        self.job_binaries.list.side_effect = [[mock_with_id], []]
-        self.data_sources.list.side_effect = [[mock_with_id], []]
-
-        self.clusters.list.side_effect = [[mock_with_id], []]
-        self.cluster_templates.list.side_effect = [[mock_with_id], []]
-        self.node_group_templates.list.side_effect = [[mock_with_id], []]
-
-
 class FakeZaqarClient(object):
 
     def __init__(self):
@@ -1508,7 +1476,6 @@ class FakeClients(object):
         self._cinder = None
         self._neutron = None
         self._octavia = None
-        self._sahara = None
         self._heat = None
         self._designate = None
         self._zaqar = None
@@ -1558,11 +1525,6 @@ class FakeClients(object):
         if not self._octavia:
             self._octavia = FakeOctaviaClient()
         return self._octavia
-
-    def sahara(self):
-        if not self._sahara:
-            self._sahara = FakeSaharaClient()
-        return self._sahara
 
     def heat(self):
         if not self._heat:
