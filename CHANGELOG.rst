@@ -16,17 +16,27 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-Unreleased
-----------
+[unreleased]
+------------
+
+Added
+~~~~~
+
+* CI jobs for checking compatibility with python 3.12
 
 Removed
 ~~~~~~~
 
-* Support for Python3.8 is dropped
+* Support for Python 3.8 is dropped
 * Removed all support for the retired Murano project
 * Removed all support for the retired Sahara project
-
 * Removed all support for the retired Senlin project
+
+Changed
+~~~~~~~
+
+* Implements pep-517 (pyproject.toml) and replaces pbr dependency
+  with setuptools-scm
 
 [3.0.0] - 2024-05-23
 --------------------

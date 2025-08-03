@@ -1,0 +1,56 @@
+[project]
+name = "rally-openstack"
+description = "Rally plugins for OpenStack platform"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+readme = "README.rst"
+license = { text = "Apache License, Version 2.0"}
+classifiers = [
+    "Environment :: OpenStack",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://docs.openstack.org/rally/latest/"
+
+[build-system]
+requires = [
+    "setuptools>=64",
+    "setuptools_scm>=8"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rally_openstack*"]
+exclude = ["tests"]
+
+[project.entry-points."rally_plugins"]
+path = "rally_openstack"
+options = "rally_openstack.common.cfg.opts:list_opts"
+
+[project.entry-points."oslo.config.opts"]
+rally_openstack = "rally_openstack.common.cfg.opts:list_opts"

@@ -12,17 +12,37 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import pbr.version
+from importlib.metadata import version as _version
+
 from rally.common import version as __rally_version__
 
 from rally_openstack import _compat
 
-__rally_version__ = __rally_version__.version_info.semantic_version()
-__rally_version__ = __rally_version__.version_tuple()
 
-__version_info__ = pbr.version.VersionInfo("rally-openstack")
-__version__ = __version_info__.version_string()
-__version_tuple__ = __version_info__.semantic_version().version_tuple()
+if hasattr(__rally_version__, "__version_tuple__"):
+    __rally_version__ = __rally_version__.__version_tuple__
+else:
+    __rally_version__ = __rally_version__.version_info.semantic_version()
+    __rally_version__ = __rally_version__.version_tuple()
+
+try:
+    # Try to get version from installed package metadata
+    __version__ = _version("rally-openstack")
+except Exception:
+    # Fallback to setuptools_scm for development installs
+    try:
+        from setuptools_scm import get_version  # type: ignore[import-untyped]
+
+        __version__ = get_version()
+    except Exception:
+        # Final fallback - this should rarely happen
+        __version__ = "0.0.0"
+
+
+__version_tuple__ = tuple(
+    int(p) if p.isdigit() else p
+    for p in __version__.replace("-", ".").split(".")
+)
 
 
 # WARNING: IF YOU ARE LOOKING FOR SOME PHYSICALLY UNEXISTING MODULES THAT CAN
