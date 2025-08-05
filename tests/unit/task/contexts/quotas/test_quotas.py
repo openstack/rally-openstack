@@ -101,7 +101,7 @@ class QuotasTestCase(test.TestCase):
         cinder_quo = mock_cinder_quotas.return_value
         ctx = copy.deepcopy(self.context)
         if ex_users:
-            ctx["existing_users"] = None
+            ctx["config"]["existing_users"] = None
         ctx["config"]["quotas"] = {
             "cinder": {
                 "volumes": self.unlimited,
@@ -138,7 +138,7 @@ class QuotasTestCase(test.TestCase):
         nova_quo = mock_nova_quotas.return_value
         ctx = copy.deepcopy(self.context)
         if ex_users:
-            ctx["existing_users"] = None
+            ctx["config"]["existing_users"] = None
 
         ctx["config"]["quotas"] = {
             "nova": {
@@ -185,7 +185,7 @@ class QuotasTestCase(test.TestCase):
         neutron_quo = mock_neutron_quotas.return_value
         ctx = copy.deepcopy(self.context)
         if ex_users:
-            ctx["existing_users"] = None
+            ctx["config"]["existing_users"] = None
 
         ctx["config"]["quotas"] = {
             "neutron": {

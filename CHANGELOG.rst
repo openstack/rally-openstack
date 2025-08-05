@@ -38,6 +38,11 @@ Changed
 * Implements pep-517 (pyproject.toml) and replaces pbr dependency
   with setuptools-scm
 
+Fixed
+~~~~~
+
+* Fix restoring quotas bug while rally cleanup
+
 [3.0.0] - 2024-05-23
 --------------------
 
