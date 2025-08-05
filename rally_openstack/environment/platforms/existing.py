@@ -321,7 +321,7 @@ class OpenStack(platform.Platform):
 
         """
 
-        from oslo_utils import strutils
+        from oslo_utils import strutils  # type: ignore[import-untyped]
 
         required_env_vars = ["OS_AUTH_URL", "OS_USERNAME", "OS_PASSWORD"]
         missing_env_vars = [v for v in required_env_vars if

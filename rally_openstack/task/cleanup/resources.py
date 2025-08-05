@@ -60,7 +60,6 @@ class QuotaMixin(SynchronizedDeletion, base.ResourceManager):
 _magnum_order = get_order(80)
 
 
-@base.resource(service=None, resource=None)
 class MagnumMixin(base.ResourceManager):
 
     def id(self):
@@ -171,7 +170,6 @@ class NovaAggregate(SynchronizedDeletion, base.ResourceManager):
 _neutron_order = get_order(300)
 
 
-@base.resource(service=None, resource=None, admin_required=True)
 class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
 
     @property

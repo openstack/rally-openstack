@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from __future__ import annotations
+
 from rally.common import cfg
 from rally.common import logging
 from rally.common import utils as rutils
@@ -115,15 +117,19 @@ class ImageGenerator(context.OpenStackContext):
 
     DEFAULT_CONFIG = {"images_per_tenant": 1}
 
+    config: dict
+
     def setup(self):
         image_url = self.config.get("image_url")
         disk_format = self.config.get("disk_format")
         container_format = self.config.get("container_format")
-        images_per_tenant = self.config.get("images_per_tenant")
+        images_per_tenant: int = self.config["images_per_tenant"]
         visibility = self.config.get("visibility", "private")
         min_disk = self.config.get("min_disk", 0)
         min_ram = self.config.get("min_ram", 0)
-        image_args = self.config.get("image_args", {})
+        image_args: dict[str, str | int | bool] = self.config.get(
+            "image_args", {}
+        )
 
         if "image_type" in self.config:
             LOG.warning("The 'image_type' argument is deprecated since "

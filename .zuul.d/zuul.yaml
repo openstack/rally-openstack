@@ -2,6 +2,7 @@
     check:
       jobs:
         - rally-tox-cover
+        - rally-tox-mypy
         - rally-tox-pep8
         - rally-tox-py310
         - rally-tox-py311
@@ -75,6 +76,7 @@
     gate:
       jobs:
         - rally-tox-cover
+        - rally-tox-mypy
         - rally-tox-pep8
         - rally-tox-py310
         - rally-tox-py311

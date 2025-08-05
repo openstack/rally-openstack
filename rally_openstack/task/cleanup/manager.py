@@ -14,6 +14,7 @@
 #    under the License.
 
 import time
+import typing as t
 
 from rally.common import broker
 from rally.common import logging
@@ -189,7 +190,9 @@ def list_resource_names(admin_required=None):
                            True -> returns only admin ResourceManagers
                            False -> returns only non admin ResourceManagers
     """
-    res_mgrs = discover.itersubclasses(base.ResourceManager)
+    res_mgrs: t.Iterable[type[base.ResourceManager]] = discover.itersubclasses(
+        base.ResourceManager
+    )
     if admin_required is not None:
         res_mgrs = filter(lambda cls: cls._admin_required == admin_required,
                           res_mgrs)

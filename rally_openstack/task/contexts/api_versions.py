@@ -10,6 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import random
 
 from rally.common import validation
@@ -226,6 +228,8 @@ class OpenStackAPIVersions(context.OpenStackContext):
         "minProperties": 1,
         "additionalProperties": False
     }
+
+    config: dict[str, dict[str, str | int]]
 
     def setup(self):
         # FIXME(andreykurilin): move all checks to validate method.

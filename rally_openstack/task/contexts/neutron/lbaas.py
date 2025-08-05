@@ -51,6 +51,8 @@ class Lbaas(context.OpenStackContext):
         "lbaas_version": 1
     }
 
+    config: dict
+
     def setup(self):
         net_wrapper = network_wrapper.wrap(
             osclients.Clients(self.context["admin"]["credential"]),

@@ -241,11 +241,17 @@ class OSClient(plugin.Plugin):
         return self.cache[key]
 
     @classmethod
-    def get(cls, name, **kwargs):
-        # NOTE(boris-42): Remove this after we finish rename refactoring.
-        kwargs.pop("platform", None)
-        kwargs.pop("namespace", None)
-        return super(OSClient, cls).get(name, platform="openstack", **kwargs)
+    def get(
+        cls,
+        name: str,
+        platform: str = "openstack",  # type: ignore[override]
+        allow_hidden: bool = False
+    ) -> type["OSClient"]:
+        return super(OSClient, cls).get(
+            name,
+            platform=platform,
+            allow_hidden=allow_hidden
+        )
 
 
 @configure("keystone", supported_versions=("2", "3"))

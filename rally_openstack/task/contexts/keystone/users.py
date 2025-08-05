@@ -13,13 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import collections
 import copy
+import typing as t
 import uuid
 
 from rally.common import broker
 from rally.common import cfg
 from rally.common import logging
+from rally.common import utils
 from rally.common import validation
 from rally import exceptions
 
@@ -131,7 +135,7 @@ class UserGenerator(context.OpenStackContext):
                            or cfg.CONF.openstack.user_domain)
             self.DEFAULT_FOR_NEW_USERS["project_domain"] = project_domain
             self.DEFAULT_FOR_NEW_USERS["user_domain"] = user_domain
-            with self.config.unlocked():
+            with t.cast(utils.LockedDict, self.config).unlocked():
                 for key, value in self.DEFAULT_FOR_NEW_USERS.items():
                     self.config.setdefault(key, value)
 
@@ -156,8 +160,8 @@ class UserGenerator(context.OpenStackContext):
         # NOTE(msdubov): consume() will fill the tenants list in the closure.
         broker.run(publish, consume, threads)
         tenants_dict = {}
-        for t in tenants:
-            tenants_dict[t["id"]] = t
+        for tenant in tenants:
+            tenants_dict[tenant["id"]] = tenant
 
         return tenants_dict
 

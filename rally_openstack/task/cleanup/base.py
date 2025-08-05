@@ -13,9 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
 
 from rally.common import cfg
 from rally.task import utils
+
+import typing as t
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    R = t.TypeVar("R", bound="ResourceManager")
 
 CONF = cfg.CONF
 
@@ -38,10 +44,18 @@ class NoName(object):
         return "<NoName %s resource>" % self.resource_type
 
 
-def resource(service, resource, order=0, admin_required=False,
-             perform_for_admin_only=False, tenant_resource=False,
-             max_attempts=3, timeout=CONF.openstack.resource_deletion_timeout,
-             interval=1, threads=CONF.openstack.cleanup_threads):
+def resource(
+    service: str,
+    resource: str,
+    order: int = 0,
+    admin_required: bool = False,
+    perform_for_admin_only: bool = False,
+    tenant_resource: bool = False,
+    max_attempts: int = 3,
+    timeout: float = CONF.openstack.resource_deletion_timeout,
+    interval: int = 1,
+    threads: int = CONF.openstack.cleanup_threads
+) -> t.Callable[[type[R]], type[R]]:
     """Decorator that overrides resource specification.
 
     Just put it on top of your resource class and specify arguments that you
@@ -63,7 +77,7 @@ def resource(service, resource, order=0, admin_required=False,
                     simultaneously
     """
 
-    def inner(cls):
+    def inner(cls: type[R]) -> type[R]:
         # TODO(boris-42): This can be written better I believe =)
         cls._service = service
         cls._resource = resource
@@ -81,7 +95,7 @@ def resource(service, resource, order=0, admin_required=False,
     return inner
 
 
-@resource(service=None, resource=None)
+@resource(service="", resource="")
 class ResourceManager(object):
     """Base class for cleanup plugins for specific resources.
 
@@ -91,6 +105,17 @@ class ResourceManager(object):
     If project python client is very specific, you can override delete(),
     list() and is_deleted() methods to make them fit to your case.
     """
+
+    _service: str
+    _resource: str
+    _order: int
+    _admin_required: bool
+    _perform_for_admin_only: bool
+    _tenant_resource: bool
+    _max_attempts: int
+    _timeout: float
+    _interval: int
+    _threads: int
 
     def __init__(self, resource=None, admin=None, user=None, tenant_uuid=None):
         self.admin = admin

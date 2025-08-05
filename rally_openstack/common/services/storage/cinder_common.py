@@ -25,7 +25,7 @@ from rally_openstack.common.services.storage import block
 CONF = block.CONF
 
 
-class CinderMixin(object):
+class CinderMixin(atomic.ActionTimerMixin):
 
     def _get_client(self):
         return self._clients.cinder(self.version)

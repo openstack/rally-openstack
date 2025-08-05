@@ -62,7 +62,7 @@ class FaultInjectionHook(hook.HookAction):
         return extra_config.get("cloud_config")
 
     def run(self):
-        import os_faults
+        import os_faults  # type: ignore[import-untyped]
 
         # get cloud configuration
         cloud_config = self.get_cloud_config()

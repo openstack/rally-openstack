@@ -98,6 +98,8 @@ class Network(context.OpenStackContext):
         "dualstack": False
     }
 
+    config: dict
+
     def setup(self):
         # NOTE(rkiran): Some clients are not thread-safe. Thus during
         #               multithreading/multiprocessing, it is likely the

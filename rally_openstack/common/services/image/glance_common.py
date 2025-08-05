@@ -18,7 +18,7 @@ from rally.task import atomic
 from rally_openstack.common.services.image import image as image_service
 
 
-class GlanceMixin(object):
+class GlanceMixin(atomic.ActionTimerMixin):
 
     def _get_client(self):
         return self._clients.glance(self.version)

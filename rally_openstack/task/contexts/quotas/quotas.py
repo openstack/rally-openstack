@@ -47,6 +47,8 @@ class Quotas(context.OpenStackContext):
         }
     }
 
+    config: dict[str, dict[str, int]]
+
     def __init__(self, ctx):
         super(Quotas, self).__init__(ctx)
         self.clients = osclients.Clients(

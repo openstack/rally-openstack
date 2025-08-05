@@ -14,16 +14,17 @@
 
 from importlib.metadata import version as _version
 
-from rally.common import version as __rally_version__
+from rally.common import version as _rally_version
 
 from rally_openstack import _compat
 
 
-if hasattr(__rally_version__, "__version_tuple__"):
-    __rally_version__ = __rally_version__.__version_tuple__
+if hasattr(_rally_version, "__version_tuple__"):
+    __rally_version__ = _rally_version.__version_tuple__
 else:
-    __rally_version__ = __rally_version__.version_info.semantic_version()
-    __rally_version__ = __rally_version__.version_tuple()
+    __rally_version__ = (
+        _rally_version.version_info.semantic_version().version_tuple()
+    )
 
 try:
     # Try to get version from installed package metadata

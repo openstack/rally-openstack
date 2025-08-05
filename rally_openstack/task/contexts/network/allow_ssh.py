@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 from rally.common import logging
 from rally.common import validation
 
@@ -57,7 +59,7 @@ def _rule_to_key(rule):
                      for x in comparison_keys])
 
 
-_RULES_TO_ADD = [
+_RULES_TO_ADD: list[dict[str, str | int]] = [
     {
         "ethertype": "IPv4",
         "protocol": "tcp",

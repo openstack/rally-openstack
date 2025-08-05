@@ -1,0 +1,7 @@
+mypy
+# Type stubs for external packages
+types-jsonschema
+types-netaddr
+types-PyYAML
+types-requests
+types-setuptools

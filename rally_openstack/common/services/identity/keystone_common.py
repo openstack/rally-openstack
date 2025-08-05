@@ -18,7 +18,7 @@ from rally_openstack.common import osclients
 from rally_openstack.common.services.identity import identity
 
 
-class UnifiedKeystoneMixin(object):
+class UnifiedKeystoneMixin:
     @staticmethod
     def _unify_service(service):
         return identity.Service(id=service.id, name=service.name)
@@ -90,7 +90,7 @@ class UnifiedKeystoneMixin(object):
         return self._impl.validate_token(token)
 
 
-class KeystoneMixin(object):
+class KeystoneMixin(atomic.ActionTimerMixin):
 
     def list_users(self):
         aname = "keystone_v%s.list_users" % self.version
