@@ -707,28 +707,6 @@ class Swift(OSClient):
         return client
 
 
-@configure("monasca", default_version="2_0",
-           default_service_type="monitoring", supported_versions=["2_0"])
-class Monasca(OSClient):
-    """Wrapper for MonascaClient which returns an authenticated native client.
-
-    """
-
-    def create_client(self, version=None, service_type=None):
-        """Return monasca client."""
-        from monascaclient import client as monasca
-
-        # Change this to use session once it's supported by monascaclient
-        client = monasca.Client(
-            self.choose_version(version),
-            self._get_endpoint(service_type),
-            token=self.keystone.auth_ref.auth_token,
-            timeout=CONF.openstack_client_http_timeout,
-            insecure=self.credential.https_insecure,
-            **self._get_auth_info(project_name_key="tenant_name"))
-        return client
-
-
 @configure("magnum", default_version="1", supported_versions=["1"],
            default_service_type="container-infra",)
 class Magnum(OSClient):

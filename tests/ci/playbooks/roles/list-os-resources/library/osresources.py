@@ -381,14 +381,6 @@ class Trove(ResourceManager):
         return self.client.module.list(datastore="all")
 
 
-class Monasca(ResourceManager):
-
-    REQUIRED_SERVICE = consts.Service.MONASCA
-
-    def list_metrics(self):
-        return self.client.metrics.list()
-
-
 class Watcher(ResourceManager):
 
     REQUIRED_SERVICE = consts.Service.WATCHER

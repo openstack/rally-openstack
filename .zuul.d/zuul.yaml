@@ -50,8 +50,6 @@
         - rally-task-manila-ss:
             voting: false
         - rally-task-mistral
-        # it did not work for a long time. try to re-configure it
-        #- rally-task-monasca
         - rally-task-neutron-trunk:
             files:
               - .zuul.d/zuul.yaml

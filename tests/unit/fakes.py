@@ -1050,12 +1050,6 @@ class FakeGnocchiClient(object):
         self.metric = FakeMetricManager()
 
 
-class FakeMonascaClient(object):
-
-    def __init__(self):
-        self.metrics = FakeMetricsManager()
-
-
 class FakeNeutronClient(object):
 
     def __init__(self, **kwargs):
@@ -1475,7 +1469,6 @@ class FakeClients(object):
         self._trove = None
         self._mistral = None
         self._swift = None
-        self._monasca = None
         self._ec2 = None
         self._watcher = None
         self._barbican = None
@@ -1527,11 +1520,6 @@ class FakeClients(object):
         if not self._designate:
             self._designate = FakeDesignateClient()
         return self._designate
-
-    def monasca(self):
-        if not self._monasca:
-            self._monasca = FakeMonascaClient()
-        return self._monasca
 
     def zaqar(self):
         if not self._zaqar:

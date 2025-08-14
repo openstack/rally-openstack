@@ -34,8 +34,8 @@ class AuthenticateTestCase(test.ScenarioTestCase):
 
         # NOTE(stpierre): We can't use assert_has_calls() here because
         # that includes calls on the return values of the mock object
-        # as well. Glance (and Heat and Monasca, tested below) returns
-        # an iterator that the scenario wraps in list() in order to
+        # as well. Glance (and Heat, tested below) returns an iterator that
+        # the scenario wraps in list() in order to
         # force glanceclient to actually make the API call, and this
         # results in a bunch of call().__iter__() and call().__len__()
         # calls that aren't matched if we use assert_has_calls().
@@ -93,12 +93,3 @@ class AuthenticateTestCase(test.ScenarioTestCase):
             [mock.call(limit=0)] * 5)
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
                                        "authenticate.validate_heat")
-
-    def test_validate_monasca(self):
-        scenario_inst = authenticate.ValidateMonasca()
-        scenario_inst.run(5)
-        self.assertCountEqual(
-            self.clients("monasca").metrics.list.call_args_list,
-            [mock.call(limit=0)] * 5)
-        self._test_atomic_action_timer(scenario_inst.atomic_actions(),
-                                       "authenticate.validate_monasca")

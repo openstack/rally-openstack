@@ -710,33 +710,6 @@ class OSClientsTestCase(test.TestCase):
             mock_gnocchi.client.Client.assert_called_once_with(**kw)
             self.assertEqual(fake_gnocchi, self.clients.cache["gnocchi"])
 
-    def test_monasca(self):
-        fake_monasca = fakes.FakeMonascaClient()
-        mock_monasca = mock.MagicMock()
-        mock_monasca.client.Client.return_value = fake_monasca
-        self.assertNotIn("monasca", self.clients.cache)
-        with mock.patch.dict("sys.modules",
-                             {"monascaclient": mock_monasca}):
-            client = self.clients.monasca()
-            self.assertEqual(fake_monasca, client)
-            self.service_catalog.url_for.assert_called_once_with(
-                service_type="monitoring",
-                region_name=self.credential.region_name)
-            os_endpoint = self.service_catalog.url_for.return_value
-            kw = {"token": self.auth_ref.auth_token,
-                  "timeout": cfg.CONF.openstack_client_http_timeout,
-                  "insecure": False, "cacert": None,
-                  "username": self.credential.username,
-                  "password": self.credential.password,
-                  "tenant_name": self.credential.tenant_name,
-                  "auth_url": self.credential.auth_url
-                  }
-            mock_monasca.client.Client.assert_called_once_with("2_0",
-                                                               os_endpoint,
-                                                               **kw)
-            self.assertEqual(mock_monasca.client.Client.return_value,
-                             self.clients.cache["monasca"])
-
     @mock.patch("%s.Ironic._get_endpoint" % PATH)
     def test_ironic(self, mock_ironic__get_endpoint):
         fake_ironic = fakes.FakeIronicClient()

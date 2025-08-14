@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally_openstack.common import consts
-
 from rally.task import atomic
 from rally.task import validation
 
@@ -167,24 +165,3 @@ class ValidateHeat(scenario.OpenStackScenario):
         with atomic.ActionTimer(self, "authenticate.validate_heat"):
             for i in range(repetitions):
                 list(heat_client.stacks.list(limit=0))
-
-
-@validation.add("number", param_name="repetitions", minval=1)
-@validation.add("required_platform", platform="openstack", users=True)
-@validation.add("required_services",
-                services=[consts.Service.MONASCA])
-@scenario.configure(name="Authenticate.validate_monasca", platform="openstack")
-class ValidateMonasca(scenario.OpenStackScenario):
-
-    def run(self, repetitions):
-        """Check Monasca Client to ensure validation of token.
-
-        Creation of the client does not ensure validation of the token.
-        We have to do some minimal operation to make sure token gets validated.
-
-        :param repetitions: number of times to validate
-        """
-        monasca_client = self.clients("monasca")
-        with atomic.ActionTimer(self, "authenticate.validate_monasca"):
-            for i in range(repetitions):
-                list(monasca_client.metrics.list(limit=0))

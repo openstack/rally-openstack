@@ -31,6 +31,7 @@ Removed
 * Removed all support for the retired Murano project
 * Removed all support for the retired Sahara project
 * Removed all support for the retired Senlin project
+* Removed all support for the retired Monasca project
 
 Changed
 ~~~~~~~

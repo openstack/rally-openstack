@@ -1,5 +1,0 @@
-- job:
-    name: rally-task-monasca
-    parent: rally-task-at-devstack
-    vars:
-      rally_task: rally-jobs/monasca.yaml

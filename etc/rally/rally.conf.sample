@@ -483,10 +483,6 @@
 # mistral execution timeout (integer value)
 #mistral_execution_timeout = 200
 
-# Delay between creating Monasca metrics and polling for its elements.
-# (floating point value)
-#monasca_metric_create_prepoll_delay = 15.0
-
 # Time to sleep after start before polling for status (floating point
 # value)
 #nova_server_start_prepoll_delay = 0.0
