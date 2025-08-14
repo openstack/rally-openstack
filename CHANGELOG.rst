@@ -37,6 +37,7 @@ Changed
 
 * Implements pep-517 (pyproject.toml) and replaces pbr dependency
   with setuptools-scm
+* Zaqar scenarios now use messaging v2 API, instead of deprecated v1 API.
 
 Fixed
 ~~~~~
