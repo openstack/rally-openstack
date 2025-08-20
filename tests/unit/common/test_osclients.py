@@ -774,7 +774,7 @@ class OSClientsTestCase(test.TestCase):
                 region_name=self.credential.region_name)
             fake_zaqar_url = self.service_catalog.url_for.return_value
             mock_zaqar.client.Client.assert_called_once_with(
-                url=fake_zaqar_url, version=1.1,
+                url=fake_zaqar_url, version=2,
                 session=mock_keystoneauth1.session.Session())
             self.assertEqual(fake_zaqar, self.clients.cache["zaqar"],
                              mock_keystoneauth1.session.Session())

@@ -610,16 +610,16 @@ class Ironic(OSClient):
         return client
 
 
-@configure("zaqar", default_version="1.1", default_service_type="messaging",
-           supported_versions=["1", "1.1"])
+@configure("zaqar", default_version="2", default_service_type="messaging",
+           supported_versions=["2"])
 class Zaqar(OSClient):
     """Wrapper for ZaqarClient which returns an authenticated native client.
 
     """
 
     def choose_version(self, version=None):
-        # zaqarclient accepts only int or float obj as version
-        return float(super(Zaqar, self).choose_version(version))
+        # zaqarclient accepts only int as version
+        return int(super(Zaqar, self).choose_version(version))
 
     def create_client(self, version=None, service_type=None):
         """Return Zaqar client."""
