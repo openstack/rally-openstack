@@ -18,13 +18,12 @@ Synchronizes, formats and prepares requirements to release(obtains and adds
 maximum allowed version).
 """
 
-import collections
+import importlib.metadata
 import logging
 import re
 import sys
 import textwrap
 
-import pkg_resources
 import requests
 
 
@@ -69,12 +68,15 @@ _PYPI_CACHE = {}
 class PYPIPackage(object):
     # NOTE(andreykurilin): one license can have different labels. Let's use
     #   unified variant.
-    LICENSE_MAP = {"MIT license": "MIT",
-                   "MIT License": "MIT",
-                   "BSD License": "BSD",
-                   "Apache 2.0": "Apache License, Version 2.0"}
+    LICENSE_MAP = {
+        "MIT license": "MIT",
+        "MIT License": "MIT",
+        "BSD License": "BSD",
+        "Apache-2.0": "Apache License, Version 2.0",
+        "Apache 2.0": "Apache License, Version 2.0",
+    }
 
-    def __init__(self, package_name):
+    def __init__(self, package_name: str) -> None:
         self.package_name = package_name
         self._pypi_info = None
         self._pypi_license = None
@@ -106,8 +108,10 @@ class PYPIPackage(object):
     def pypi_license(self):
         if self._pypi_license is None:
             if self.pypi_info["info"]["license"]:
-                self._pypi_license = self.pypi_info["info"]["license"]
-            else:
+                if "\n" not in self.pypi_info["info"]["license"]:
+                    self._pypi_license = self.pypi_info["info"]["license"]
+
+            if not self._pypi_license:
                 # try to parse classifiers
                 prefix = "License :: OSI Approved :: "
                 classifiers = [c[len(prefix):]
@@ -116,8 +120,6 @@ class PYPIPackage(object):
                 self._pypi_license = "/".join(classifiers)
             self._license = self.LICENSE_MAP.get(self._pypi_license,
                                                  self._pypi_license)
-            if self._pypi_license == "UNKNOWN":
-                self._pypi_license = None
         return self._license
 
     def __eq__(self, other):
@@ -262,7 +264,11 @@ class UpperConstraint(PYPIPackage):
         return self.version
 
 
-def parse_data(raw_data, include_comments=True, dependency_cls=Requirement):
+def parse_data(
+    raw_data: str,
+    include_comments: bool = True,
+    dependency_cls: type[PYPIPackage] = Requirement
+):
     # first elem is None to simplify checks of last elem in requirements
     requirements = [None]
     for line in raw_data.split("\n"):
@@ -299,9 +305,11 @@ def parse_data(raw_data, include_comments=True, dependency_cls=Requirement):
                 requirements.pop(i)
         else:
             break
-    return collections.OrderedDict(
+    return dict(
         (v if isinstance(v, Comment) else v.package_name, v)
-        for v in requirements if v)
+        for v in requirements
+        if v
+    )
 
 
 def _fetch_from_gr(filename):
@@ -357,14 +365,17 @@ def update_upper_constraints():
     # NOTE(andreykurilin): global OpenStack upper-constraints file includes
     #   comments which can be unrelated to Rally project, so let's just ignore
     #   them.
-    global_uc = parse_data(raw_g_uc,
-                           include_comments=False,
-                           dependency_cls=UpperConstraint)
+    global_uc: dict[str, UpperConstraint] = parse_data(
+        raw_g_uc,
+        include_comments=False,
+        dependency_cls=UpperConstraint
+    )
 
-    our_uc = [UpperConstraint(package_name=p.project_name, version=p.version)
-              for p in pkg_resources.working_set
+    our_uc = [UpperConstraint(package_name=p.metadata["Name"],
+                              version=p.version)
+              for p in importlib.metadata.distributions()
               # do not include the current package at u-c
-              if p.project_name != "rally-openstack"]
+              if p.metadata["Name"] not in ("rally-openstack", "pip")]
 
     for package in our_uc:
         if package.package_name in global_uc:

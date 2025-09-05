@@ -20,7 +20,7 @@ This module should contain historical notes and checks to do not forget remove
 these workaround.
 """
 
-import pkg_resources
+import importlib.metadata
 
 from tests.unit import test
 
@@ -30,18 +30,22 @@ class WorkaroundTestCase(test.TestCase):
     WORKAROUNDS = []
 
     def get_min_required_version(self):
-        package = pkg_resources.get_distribution("rally-openstack")
-        requirement = [p for p in package.requires() if p.name == "rally"][0]
+        dist = importlib.metadata.distribution("rally-openstack")
 
-        for statement, version in requirement.specs:
-            version = [int(i) for i in version.split(".")]
-            if statement == ">=":
-                return version
-            elif statement == ">":
+        for p in dist.requires or []:
+            if not p.startswith("rally>"):
+                continue
+            version_str = p.split(">", 1)[1]
+            ge = version_str.startswith("=")
+            if ge:
+                version_str = version_str[1:]
+            version = [int(i) for i in version_str.split(".")]
+            if ge:
                 version[-1] += 1
-                return version
-        self.skipTest("Failed to get a minimum required version of Rally "
-                      "framework.")
+            return version
+
+        self.fail("Failed to get a minimum required version of Rally "
+                  "framework.")
 
     def test_rally_version(self):
         rally_version = self.get_min_required_version()

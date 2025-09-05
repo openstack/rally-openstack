@@ -27,7 +27,7 @@ Added
 Removed
 ~~~~~~~
 
-* Support for Python 3.8 is dropped
+* Support for Python 3.8 and Python 3.9 is dropped
 * Removed all support for the retired Murano project
 * Removed all support for the retired Sahara project
 * Removed all support for the retired Senlin project
@@ -39,6 +39,7 @@ Changed
 * Implements pep-517 (pyproject.toml) and replaces pbr dependency
   with setuptools-scm
 * Zaqar scenarios now use messaging v2 API, instead of deprecated v1 API.
+* Bump minimal required version to Rally 5.0.0. Switch docker image to use it.
 
 Fixed
 ~~~~~

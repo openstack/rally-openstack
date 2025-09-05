@@ -3,7 +3,7 @@
 # process, which may cause wedges in the gate later.
 
 hacking>=3.0                                           # Apache Software License
-fixtures                                               # Apache Software License/BSD License
+fixtures                                               # Apache-2.0 or BSD
 
 pytest                                                 # MIT
 # py.test plugin for measuring coverage.
@@ -11,11 +11,11 @@ pytest-cov                                             # MIT
 # py.test plugin for generating HTML reports
 pytest-html                                            # MIT
 # py.test xdist plugin for distributed testing and loop-on-failing modes
-pytest-xdist                                           # MIT
+pytest-xdist
 
-coverage!=4.4                                          # Apache-2.0
+coverage!=4.4                                          # Apache License, Version 2.0
 ddt                                                    # MIT
 
 # docs
-docutils                                               # BSD License/GNU General Public License (GPL)/Python Software Foundation License
+docutils                                               # BSD License/GNU General Public License (GPL)
 Pygments                                               # BSD-2-Clause

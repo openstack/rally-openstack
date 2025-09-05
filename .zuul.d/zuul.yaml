@@ -3,7 +3,6 @@
       jobs:
         - rally-tox-cover
         - rally-tox-pep8
-        - rally-tox-py39
         - rally-tox-py310
         - rally-tox-py311
         - rally-tox-py312
@@ -77,7 +76,6 @@
       jobs:
         - rally-tox-cover
         - rally-tox-pep8
-        - rally-tox-py39
         - rally-tox-py310
         - rally-tox-py311
         - rally-tox-py312

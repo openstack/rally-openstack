@@ -1,11 +1,11 @@
-requests!=2.20.0,!=2.24.0                              # Apache-2.0
+requests!=2.20.0,!=2.24.0                              # Apache License, Version 2.0
 
-rally>=4.1.0                                           # Apache License, Version 2.0
-setuptools_scm
+rally>=5.0.0                                           # Apache License, Version 2.0
+setuptools_scm                                         # MIT
 
 # OpenStack related
 gnocchiclient                                          # Apache Software License
-keystoneauth1                                          # Apache Software License
+keystoneauth1                                          # Apache License, Version 2.0
 kubernetes                                             # Apache License Version 2.0
 os-faults>=0.2.0                                       # Apache Software License
 osprofiler                                             # Apache Software License

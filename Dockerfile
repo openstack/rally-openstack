@@ -1,4 +1,4 @@
-FROM xrally/xrally:4.1.0
+FROM xrally/xrally:5.0.0
 
 # "rally" user (which is selected by-default) is owner of "/rally" directory,
 #   so there is no need to call chown or switch the user
