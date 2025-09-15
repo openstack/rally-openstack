@@ -1,11 +1,15 @@
 ---
-  KeystoneBasic.create_and_list_tenants:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create And List Tenants
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create and list tenants
+  scenario:
+    KeystoneBasic.create_and_list_tenants: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 1
+  sla:
+    failure_rate:
+      max: 0

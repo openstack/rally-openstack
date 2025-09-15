@@ -1,11 +1,15 @@
 ---
-  KeystoneBasic.create_delete_user:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Create and delete Keystone users
+description: Test creating and deleting users in Keystone identity service
+subtasks:
+- title: Create and delete user
+  scenario:
+    KeystoneBasic.create_delete_user: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

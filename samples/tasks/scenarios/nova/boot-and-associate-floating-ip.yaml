@@ -1,40 +1,45 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 ---
-  NovaServers.boot_and_associate_floating_ip:
-    -
-      args:
-        flavor:
-            name: "{{flavor_name}}"
-        image:
-            name: "^cirros.*-disk$"
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        network: {}
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        flavor:
-            name: "{{flavor_name}}"
-        image:
-            name: "^cirros.*-disk$"
-        floating_network: "ext_network_name"
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        network: {}
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Boot server and associate floating IP
+description: Test booting Nova servers and associating floating IP addresses
+subtasks:
+- title: Boot server and associate floating IP (default network)
+  scenario:
+    NovaServers.boot_and_associate_floating_ip:
+      flavor:
+        name: "{{flavor_name}}"
+      image:
+        name: "^cirros.*-disk$"
+  runner:
+    constant:
+      concurrency: 1
+      times: 1
+  contexts:
+    users:
+      users_per_tenant: 1
+      tenants: 1
+    network: {}
+  sla:
+    failure_rate:
+      max: 0
+- title: Boot server and associate floating IP (external network)
+  scenario:
+    NovaServers.boot_and_associate_floating_ip:
+      flavor:
+        name: "{{flavor_name}}"
+      image:
+        name: "^cirros.*-disk$"
+      floating_network: ext_network_name
+  runner:
+    constant:
+      concurrency: 1
+      times: 1
+  contexts:
+    users:
+      users_per_tenant: 1
+      tenants: 1
+    network: {}
+  sla:
+    failure_rate:
+      max: 0

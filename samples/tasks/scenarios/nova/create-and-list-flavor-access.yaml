@@ -1,14 +1,18 @@
 ---
-  NovaFlavors.create_and_list_flavor_access:
-    -
-      args:
-        ram: 500
-        vcpus: 1
-        disk: 1
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Create And List Flavor Access
+description: Test creating Nova resources
+subtasks:
+- title: Create and list flavor access
+  scenario:
+    NovaFlavors.create_and_list_flavor_access:
+      ram: 500
+      vcpus: 1
+      disk: 1
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  sla:
+    failure_rate:
+      max: 0

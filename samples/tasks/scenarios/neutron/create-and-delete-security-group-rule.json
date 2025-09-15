@@ -1,16 +1,23 @@
 {
-    "NeutronSecurityGroup.create_and_delete_security_group_rule": [
+    "version": 2,
+    "title": "Neutron Create And Delete Security Group Rule",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "security_group_args": {},
-                "security_group_rule_args":{}
+            "title": "Create and delete security group rule",
+            "scenario": {
+                "NeutronSecurityGroup.create_and_delete_security_group_rule": {
+                    "security_group_args": {},
+                    "security_group_rule_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 20,
-                "concurrency": 10
+                "constant": {
+                    "times": 20,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3
@@ -23,7 +30,7 @@
             },
             "sla": {
                 "failure_rate": {
-                "max": 0
+                    "max": 0
                 }
             }
         }

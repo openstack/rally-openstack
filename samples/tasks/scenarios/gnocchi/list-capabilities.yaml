@@ -1,14 +1,19 @@
 ---
-  Gnocchi.list_capabilities:
-    -
-      runner:
-        type: constant
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 3
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Gnocchi List Capabilities
+description: Test listing Gnocchi metric resources
+subtasks:
+- title: List capabilities
+  scenario:
+    Gnocchi.list_capabilities: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 3
+  sla:
+    failure_rate:
+      max: 0

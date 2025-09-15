@@ -1,15 +1,22 @@
 {
-    "NeutronLoadbalancerV1.create_and_delete_healthmonitors": [
+    "version": 2,
+    "title": "Neutron Create And Delete Healthmonitors",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "healthmonitor_create_args": {}
+            "title": "Create and delete healthmonitors",
+            "scenario": {
+                "NeutronLoadbalancerV1.create_and_delete_healthmonitors": {
+                    "healthmonitor_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 5,
                     "users_per_tenant": 2

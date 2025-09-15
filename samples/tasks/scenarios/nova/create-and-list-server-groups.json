@@ -1,18 +1,25 @@
 {
-    "NovaServerGroups.create_and_list_server_groups": [
+    "version": 2,
+    "title": "Nova Create And List Server Groups",
+    "description": "Test creating Nova resources",
+    "subtasks": [
         {
-            "args": {
-                "policies": [
-                    "affinity"
-                ],
-                "all_projects": false
+            "title": "Create and list server groups",
+            "scenario": {
+                "NovaServerGroups.create_and_list_server_groups": {
+                    "policies": [
+                        "affinity"
+                    ],
+                    "all_projects": false
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

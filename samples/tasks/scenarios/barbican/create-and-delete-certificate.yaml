@@ -1,15 +1,19 @@
 ---
-  BarbicanContainers.create_certificate_and_delete:
-    -
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-
+version: 2
+title: Barbican Create And Delete Certificate
+description: Test creating Barbican security resources
+subtasks:
+- title: Create and delete certificate
+  scenario:
+    BarbicanContainers.create_certificate_and_delete: {}
+  runner:
+    constant:
+      times: 2
+      concurrency: 1
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

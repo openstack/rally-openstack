@@ -1,19 +1,22 @@
 ---
-  NovaFlavors.create_flavor_and_add_tenant_access:
-    -
-      runner:
-        type: "constant"
-        concurrency: 2
-        times: 10
-      args:
-        ram: 500
-        vcpus : 1
-        disk: 1
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
+version: 2
+title: Nova Create Flavor And Add Tenant Access
+description: Test creating Nova resources
+subtasks:
+- title: Create flavor and add tenant access
+  scenario:
+    NovaFlavors.create_flavor_and_add_tenant_access:
+      ram: 500
+      vcpus: 1
+      disk: 1
+  runner:
+    constant:
+      concurrency: 2
+      times: 10
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

@@ -1,12 +1,16 @@
 ---
-  KeystoneBasic.create_tenant_with_users:
-    -
-      args:
-        users_per_tenant: 10
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create Tenant With Users
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create tenant with users
+  scenario:
+    KeystoneBasic.create_tenant_with_users:
+      users_per_tenant: 10
+  runner:
+    constant:
+      times: 10
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

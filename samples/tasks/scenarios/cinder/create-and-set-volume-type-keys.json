@@ -1,18 +1,25 @@
 {
-    "CinderVolumeTypes.create_and_set_volume_type_keys": [
+    "version": 2,
+    "title": "Cinder Volume Type Creation and Key Setting",
+    "description": "Test scenario for creating volume types and setting their extra keys in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "description": "rally tests creating types",
-                "volume_type_key": {
-                     "volume_backend_name": "LVM_iSCSI"
+            "title": "Create And Set Volume Type Keys",
+            "scenario": {
+                "CinderVolumeTypes.create_and_set_volume_type_keys": {
+                    "description": "rally tests creating types",
+                    "volume_type_key": {
+                        "volume_backend_name": "LVM_iSCSI"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

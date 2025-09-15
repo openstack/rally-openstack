@@ -14,14 +14,15 @@
 #    under the License.
 
 import inspect
-import itertools
 import os
 import traceback
+import typing as t
 from unittest import mock
 
 import yaml
 
 from rally import api
+from rally.common import logging
 from rally.task import context
 from rally.task import engine
 from rally.task import scenario
@@ -41,8 +42,8 @@ class TaskSampleTestCase(test.TestCase):
         super(TaskSampleTestCase, self).setUp()
         if os.environ.get("TOX_ENV_NAME") == "cover":
             self.skipTest("There is no need to check samples in coverage job.")
-        with mock.patch("rally.api.API.check_db_revision"):
-            self.rapi = api.API()
+
+        self.rapi = api.API(skip_db_check=True)
 
     def iterate_samples(self, merge_pairs=True):
         """Iterates all task samples
@@ -58,16 +59,77 @@ class TaskSampleTestCase(test.TestCase):
                         not merge_pairs and filename.endswith("yaml")):
                     yield os.path.join(dirname, filename)
 
+    def _load_task(
+        self,
+        source: str,
+        *,
+        template: str,
+        template_dir: str,
+        **args
+    ) -> t.Any:
+        try:
+            rendered_task = self.rapi.task.render_template(
+                task_template=template, template_dir=template_dir, **args
+            )
+        except Exception as e:
+            self.fail(f"Failed to render task from '{source}': {e}")
+
+        try:
+            return yaml.safe_load(rendered_task)
+        except Exception:
+            self.fail(f"Invalid JSON/YAML task file '{source}'.")
+
+    def _load_and_validate_task(
+        self,
+        source: str,
+        *,
+        template: str,
+        template_dir: str,
+        validate_syntax: bool = True,
+        **args
+    ) -> task_cfg.TaskConfig:
+
+        raw_config = self._load_task(
+            source=source, template=template, template_dir=template_dir, **args
+        )
+
+        try:
+            task_config_obj = task_cfg.TaskConfig(raw_config)
+        except Exception:
+            print(traceback.format_exc())
+            self.fail(f"Failed to load task file '{source}'.")
+
+        if validate_syntax:
+            eng = engine.TaskEngine(task_config_obj,
+                                    mock.MagicMock(), mock.Mock())
+            try:
+                eng.validate(only_syntax=True)
+            except Exception:
+                self.fail(f"Task file '{source}' failed syntax validation.")
+
+        return task_config_obj
+
     def test_check_missing_sla_section(self):
         failures = []
         for path in self.iterate_samples():
             if "tasks/scenarios" not in path:
                 continue
             with open(path) as task_file:
-                task_config = yaml.safe_load(
-                    self.rapi.task.render_template(
-                        task_template=task_file.read()))
-                for workload in itertools.chain(*task_config.values()):
+                task_template = task_file.read()
+
+            task_config_obj = self._load_and_validate_task(
+                path,
+                template=task_template,
+                template_dir=self.samples_path,
+                validate_syntax=False
+            )
+
+            # the separate test will fail if there is v1 sample
+            if task_config_obj.version != "2":
+                continue
+
+            for subtask in task_config_obj.subtasks:
+                for workload in subtask["workloads"]:
                     if not workload.get("sla", {}):
                         failures.append(path)
         if failures:
@@ -76,26 +138,22 @@ class TaskSampleTestCase(test.TestCase):
                       "\n  ".join(failures))
 
     def test_schema_is_valid(self):
+        orig = engine.LOG.logger.level
+        self.addCleanup(lambda: engine.LOG.setLevel(orig))
+        engine.LOG.setLevel(logging.WARNING)
+
         scenarios = set()
 
         for path in self.iterate_samples():
             with open(path) as task_file:
-                try:
-                    try:
-                        task_config = yaml.safe_load(
-                            self.rapi.task.render_template(
-                                task_template=task_file.read()))
-                    except Exception:
-                        print(traceback.format_exc())
-                        self.fail("Invalid JSON file: %s" % path)
-                    eng = engine.TaskEngine(task_cfg.TaskConfig(task_config),
-                                            mock.MagicMock(), mock.Mock())
-                    eng.validate(only_syntax=True)
-                except Exception:
-                    print(traceback.format_exc())
-                    self.fail("Invalid task file: %s" % path)
-                else:
-                    scenarios.update(task_config.keys())
+                task_template = task_file.read()
+
+            task_config_obj = self._load_and_validate_task(
+                path, template=task_template, template_dir=self.samples_path
+            )
+            for subtask in task_config_obj.subtasks:
+                for workload in subtask["workloads"]:
+                    scenarios.add(workload["name"])
 
         missing = set(s.get_name() for s in scenario.Scenario.get_all())
         missing -= scenarios
@@ -130,15 +188,20 @@ class TaskSampleTestCase(test.TestCase):
                 missed.append(json_path)
             else:
                 with open(json_path) as json_file:
-                    json_config = yaml.safe_load(
-                        self.rapi.task.render_template(
-                            task_template=json_file.read()))
+                    json_config = self._load_task(
+                        json_path,
+                        template=json_file.read(),
+                        template_dir=self.samples_path,
+                    )
                 with open(yaml_path) as yaml_file:
-                    yaml_config = yaml.safe_load(
-                        self.rapi.task.render_template(
-                            task_template=yaml_file.read()))
+                    yaml_config = self._load_task(
+                        json_path,
+                        template=yaml_file.read(),
+                        template_dir=self.samples_path,
+                    )
+
                 if json_config != yaml_config:
-                    not_equal.append("'%s' and '%s'" % (yaml_path, json_path))
+                    not_equal.append(f"'{yaml_path}' and '{json_path}'")
 
         error = ""
         if not_equal:
@@ -179,3 +242,37 @@ class TaskSampleTestCase(test.TestCase):
                 self.fail(("There is no json sample file of %s,"
                            "plugin location: %s" %
                            (p.get_name(), p.__module__)))
+
+    def test_certification_task(self):
+        cert_dir = os.path.join(RALLY_PATH, "tasks/openstack")
+
+        source = os.path.join(cert_dir, "task.yaml")
+        with open(source) as f:
+            template = f.read()
+
+        with self.subTest("no any args passed task_arguments.yaml"):
+            self._load_and_validate_task(
+                source, template=template, template_dir=cert_dir
+            )
+
+        args_file = "task_arguments.yaml"
+        with open(os.path.join(cert_dir, args_file)) as f:
+            args = yaml.safe_load(f)
+
+        with self.subTest(f"args from '{args_file}'"):
+            self._load_and_validate_task(
+                source, template=template, template_dir=cert_dir, **args
+            )
+
+        with self.subTest(f"toggled boolean args from '{args_file}'"):
+            args = dict(
+                (
+                    key,
+                    not value if isinstance(value, bool) else value
+                )
+                for key, value in args.items()
+            )
+
+            self._load_and_validate_task(
+                source, template=template, template_dir=cert_dir, **args
+            )

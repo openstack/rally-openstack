@@ -1,19 +1,26 @@
 {
-    "CinderVolumeTypes.create_volume_type_and_encryption_type": [
+    "version": 2,
+    "title": "Cinder Create Volume Type And Encryption Type",
+    "description": "Test scenario for create volume type and encryption type in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-              "description": "rally tests creating types",
-              "provider": "LuksEncryptor",
-              "cipher": "aes-xts-plain64",
-              "key_size": 512,
-              "control_location": "front-end"
+            "title": "Create Volume Type And Encryption Type",
+            "scenario": {
+                "CinderVolumeTypes.create_volume_type_and_encryption_type": {
+                    "description": "rally tests creating types",
+                    "provider": "LuksEncryptor",
+                    "cipher": "aes-xts-plain64",
+                    "key_size": 512,
+                    "control_location": "front-end"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

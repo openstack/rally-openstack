@@ -1,18 +1,25 @@
 {
-    "NeutronNetworks.create_and_show_subnets": [
+    "version": 2,
+    "title": "Neutron Create And Show Subnets",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {},
-                "subnet_create_args": {},
-                "subnet_cidr_start": "1.1.0.0/30",
-                "subnets_per_network": 2
+            "title": "Create and show subnets",
+            "scenario": {
+                "NeutronNetworks.create_and_show_subnets": {
+                    "network_create_args": {},
+                    "subnet_create_args": {},
+                    "subnet_cidr_start": "1.1.0.0/30",
+                    "subnets_per_network": 2
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "network": {},
                 "users": {
                     "tenants": 2,

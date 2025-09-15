@@ -1,15 +1,22 @@
 {
-    "Quotas.nova_update_and_delete": [
+    "version": 2,
+    "title": "Unknown Nova Update And Delete",
+    "description": "Test nova update and delete operations",
+    "subtasks": [
         {
-            "args": {
-                "max_quota": 1024
+            "title": "Unknown nova update and delete",
+            "scenario": {
+                "Quotas.nova_update_and_delete": {
+                    "max_quota": 1024
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

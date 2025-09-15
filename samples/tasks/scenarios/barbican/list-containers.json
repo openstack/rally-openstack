@@ -1,12 +1,20 @@
 {
-    "BarbicanContainers.list": [
+    "version": 2,
+    "title": "Barbican List Containers",
+    "description": "Test listing Barbican security resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 1
+            "title": "List containers",
+            "scenario": {
+                "BarbicanContainers.list": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 2,
+                    "concurrency": 1
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

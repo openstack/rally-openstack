@@ -1,15 +1,22 @@
 {
-    "NovaAggregates.create_and_update_aggregate": [
+    "version": 2,
+    "title": "Nova Create And Update Aggregate",
+    "description": "Test creating Nova resources",
+    "subtasks": [
         {
-            "args": {
-                "availability_zone": "nova"
+            "title": "Create and update aggregate",
+            "scenario": {
+                "NovaAggregates.create_and_update_aggregate": {
+                    "availability_zone": "nova"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

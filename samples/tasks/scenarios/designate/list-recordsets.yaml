@@ -1,16 +1,20 @@
 ---
-  DesignateBasic.list_recordsets:
-    -
-      args:
-        zone_id: <uuid>
-      runner:
-        type: "constant"
-        times: 3
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Designate List Recordsets
+description: Test listing Designate DNS resources
+subtasks:
+- title: List recordsets
+  scenario:
+    DesignateBasic.list_recordsets:
+      zone_id: <uuid>
+  runner:
+    constant:
+      times: 3
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

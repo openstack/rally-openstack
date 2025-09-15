@@ -1,18 +1,21 @@
 ---
-  MistralExecutions.create_execution_from_workbook:
-    -
-      args:
-        definition: rally-jobs/extra/mistral_wb.yaml
-        workflow_name: wf1
-      runner:
-        type: "constant"
-        times: 20
-        concurrency: 5
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
+version: 2
+title: Mistral Create Execution With Workflow Name
+description: Test creating Mistral workflow resources
+subtasks:
+- title: Create execution with workflow name
+  scenario:
+    MistralExecutions.create_execution_from_workbook:
+      definition: rally-jobs/extra/mistral_wb.yaml
+      workflow_name: wf1
+  runner:
+    constant:
+      times: 20
+      concurrency: 5
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

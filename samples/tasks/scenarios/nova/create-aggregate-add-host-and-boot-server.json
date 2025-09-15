@@ -1,25 +1,32 @@
 {
-    "NovaAggregates.create_aggregate_add_host_and_boot_server": [
+    "version": 2,
+    "title": "Nova Create Aggregate Add Host And Boot Server",
+    "description": "Test booting Nova servers",
+    "subtasks": [
         {
-            "args": {
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "metadata": {
-                    "test_metadata": "true"
-                },
-                "availability_zone": "nova",
-                "ram": 512,
-                "vcpus": 1,
-                "disk": 1,
-                "boot_server_kwargs": {}
+            "title": "Create aggregate add host and boot server",
+            "scenario": {
+                "NovaAggregates.create_aggregate_add_host_and_boot_server": {
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "metadata": {
+                        "test_metadata": "true"
+                    },
+                    "availability_zone": "nova",
+                    "ram": 512,
+                    "vcpus": 1,
+                    "disk": 1,
+                    "boot_server_kwargs": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

@@ -1,23 +1,30 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NeutronTrunks.boot_server_and_add_subports": [
+    "version": 2,
+    "title": "Neutron Boot Server And Add Subports",
+    "description": "Test boot server and add subports operations",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "network_create_args": {},
-                "subport_count": 10
+            "title": "Boot server and add subports",
+            "scenario": {
+                "NeutronTrunks.boot_server_and_add_subports": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "network_create_args": {},
+                    "subport_count": 10
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3

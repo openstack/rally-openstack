@@ -1,11 +1,19 @@
 {
-    "KeystoneBasic.create_delete_user": [
+    "version": 2,
+    "title": "SLA Configuration Example",
+    "description": "Comprehensive SLA configuration showing various performance criteria",
+    "subtasks": [
         {
-            "args": {},
+            "title": "User creation with multiple SLA criteria",
+            "description": "Test user creation/deletion with comprehensive SLA requirements",
+            "scenario": {
+                "KeystoneBasic.create_delete_user": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "max_seconds_per_iteration": 4.0,

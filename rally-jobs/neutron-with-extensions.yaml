@@ -1,131 +1,136 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
+
 ---
-  NeutronBGPVPN.create_and_list_bgpvpns:
-    -
-      runner:
-        type: "constant"
+version: 2
+title: Task for rally-task-neutron-with-extensions job
+subtasks:
+  - title: NeutronBGPVPN.create_and_list_bgpvpns tests
+    scenario:
+      NeutronBGPVPN.create_and_list_bgpvpns: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-
-  NeutronBGPVPN.create_and_update_bgpvpns:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronBGPVPN.create_and_update_bgpvpns tests
+    scenario:
+      NeutronBGPVPN.create_and_update_bgpvpns: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-
-  NeutronBGPVPN.create_and_delete_bgpvpns:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronBGPVPN.create_and_delete_bgpvpns tests
+    scenario:
+      NeutronBGPVPN.create_and_delete_bgpvpns: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-
-  NeutronBGPVPN.create_bgpvpn_assoc_disassoc_networks:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronBGPVPN.create_bgpvpn_assoc_disassoc_networks tests
+    scenario:
+      NeutronBGPVPN.create_bgpvpn_assoc_disassoc_networks: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network: {}
+      servers:
+        servers_per_tenant: 1
+        auto_assign_nic: true
+        flavor:
+          name: '{{flavor_name}}'
+        image:
+          name: ^cirros.*-disk$
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        network: {}
-        servers:
-          servers_per_tenant: 1
-          auto_assign_nic: True
-          flavor:
-            name: "{{flavor_name}}"
-          image:
-            name: "^cirros.*-disk$"
-      sla:
-        failure_rate:
-          max: 0
-
-  NeutronBGPVPN.create_bgpvpn_assoc_disassoc_routers:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronBGPVPN.create_bgpvpn_assoc_disassoc_routers tests
+    scenario:
+      NeutronBGPVPN.create_bgpvpn_assoc_disassoc_routers: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network: {}
+      servers:
+        servers_per_tenant: 1
+        auto_assign_nic: true
+        flavor:
+          name: '{{flavor_name}}'
+        image:
+          name: ^cirros.*-disk$
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        network: {}
-        servers:
-          servers_per_tenant: 1
-          auto_assign_nic: True
-          flavor:
-            name: "{{flavor_name}}"
-          image:
-            name: "^cirros.*-disk$"
-      sla:
-        failure_rate:
-          max: 0
-
-  NeutronBGPVPN.create_and_list_networks_associations:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronBGPVPN.create_and_list_networks_associations tests
+    scenario:
+      NeutronBGPVPN.create_and_list_networks_associations: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network: {}
+      servers:
+        servers_per_tenant: 1
+        auto_assign_nic: true
+        flavor:
+          name: '{{flavor_name}}'
+        image:
+          name: ^cirros.*-disk$
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        network: {}
-        servers:
-          servers_per_tenant: 1
-          auto_assign_nic: True
-          flavor:
-            name: "{{flavor_name}}"
-          image:
-            name: "^cirros.*-disk$"
-      sla:
-        failure_rate:
-          max: 0
-
-  NeutronBGPVPN.create_and_list_routers_associations:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronBGPVPN.create_and_list_routers_associations tests
+    scenario:
+      NeutronBGPVPN.create_and_list_routers_associations: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network: {}
+      servers:
+        servers_per_tenant: 1
+        auto_assign_nic: true
+        flavor:
+          name: '{{flavor_name}}'
+        image:
+          name: ^cirros.*-disk$
+    runner:
+      constant:
         times: 8
         concurrency: 4
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        network: {}
-        servers:
-          servers_per_tenant: 1
-          auto_assign_nic: True
-          flavor:
-            name: "{{flavor_name}}"
-          image:
-            name: "^cirros.*-disk$"
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

@@ -1,15 +1,19 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        volume_types:
-          - test
+version: 2
+title: Dummy Volume Types
+description: Test volume types operations
+subtasks:
+- title: Dummy volume types
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    volume_types:
+    - test

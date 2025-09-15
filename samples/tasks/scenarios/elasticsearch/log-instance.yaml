@@ -1,9 +1,13 @@
 {% set flavor_name = flavor_name or "esc_test.small" %}
 {% set image_name = image_name or "testVM" %}
 ---
-  ElasticsearchLogging.log_instance:
-    -
-      args:
+version: 2
+title: Elasticsearch logging from instance
+description: Test logging instance data to Elasticsearch service for search and indexing
+subtasks:
+  - title: Log instance data to Elasticsearch
+    scenario:
+      ElasticsearchLogging.log_instance:
         flavor:
           name: {{ flavor_name }}
         image:
@@ -24,26 +28,26 @@
                 gte: now-2m
                 lte: now
           minimum_should_match: 1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 10
         concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        flavors:
-          -
-            name: {{ flavor_name }}
-            ram: 512
-            disk: 1
-            vcpus: 1
-        images:
-          image_name: {{ image_name }}
-          image_url: http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
-          disk_format: qcow2
-          container_format: bare
-          visibility: public
-      sla:
-        failure_rate:
-          max: 0
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+      flavors:
+        -
+          name: {{ flavor_name }}
+          ram: 512
+          disk: 1
+          vcpus: 1
+      images:
+        image_name: {{ image_name }}
+        image_url: http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
+        disk_format: qcow2
+        container_format: bare
+        visibility: public
+    sla:
+      failure_rate:
+        max: 0

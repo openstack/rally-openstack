@@ -1,15 +1,22 @@
 {
-  "MagnumClusters.create_and_list_clusters": [
+  "version": 2,
+  "title": "Magnum cluster creation and listing",
+  "description": "Test creating and listing clusters in Magnum container orchestration service",
+  "subtasks": [
     {
+      "title": "Create and list Kubernetes clusters",
+      "scenario": {
+        "MagnumClusters.create_and_list_clusters": {
+          "node_count": 1
+        }
+      },
       "runner": {
-        "type": "constant",
-        "concurrency": 1,
-        "times": 1
+        "constant": {
+          "concurrency": 1,
+          "times": 1
+        }
       },
-      "args": {
-        "node_count": 1
-      },
-      "context": {
+      "contexts": {
         "cluster_templates": {
           "dns_nameserver": "8.8.8.8",
           "external_network_id": "public",
@@ -31,15 +38,19 @@
       }
     },
     {
+      "title": "Create and list Swarm clusters",
+      "scenario": {
+        "MagnumClusters.create_and_list_clusters": {
+          "node_count": 1
+        }
+      },
       "runner": {
-        "type": "constant",
-        "concurrency": 1,
-        "times": 1
+        "constant": {
+          "concurrency": 1,
+          "times": 1
+        }
       },
-      "args": {
-        "node_count": 1
-      },
-      "context": {
+      "contexts": {
         "cluster_templates": {
           "dns_nameserver": "8.8.8.8",
           "external_network_id": "public",
@@ -61,15 +72,19 @@
       }
     },
     {
+      "title": "Create and list Mesos clusters",
+      "scenario": {
+        "MagnumClusters.create_and_list_clusters": {
+          "node_count": 1
+        }
+      },
       "runner": {
-        "type": "constant",
-        "concurrency": 1,
-        "times": 1
+        "constant": {
+          "concurrency": 1,
+          "times": 1
+        }
       },
-      "args": {
-        "node_count": 1
-      },
-      "context": {
+      "contexts": {
         "cluster_templates": {
           "dns_nameserver": "8.8.8.8",
           "external_network_id": "public",

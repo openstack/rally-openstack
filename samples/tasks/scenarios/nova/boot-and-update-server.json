@@ -1,21 +1,28 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaServers.boot_and_update_server": [
+    "version": 2,
+    "title": "Nova Boot And Update Server",
+    "description": "Test booting Nova servers",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
+            "title": "Boot and update server",
+            "scenario": {
+                "NovaServers.boot_and_update_server": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

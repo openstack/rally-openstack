@@ -1,14 +1,21 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NeutronBGPVPN.create_and_list_networks_associations": [
+    "version": 2,
+    "title": "Neutron Create And List Networks Associations",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args":{},
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "Create and list networks associations",
+            "scenario": {
+                "NeutronBGPVPN.create_and_list_networks_associations": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1
@@ -17,7 +24,7 @@
                 "servers": {
                     "servers_per_tenant": 1,
                     "auto_assign_nic": true,
-                    "flavor" : {
+                    "flavor": {
                         "name": "{{flavor_name}}"
                     },
                     "image": {

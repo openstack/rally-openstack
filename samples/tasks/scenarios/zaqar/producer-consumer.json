@@ -1,14 +1,21 @@
 {
-    "ZaqarBasic.producer_consumer": [
+    "version": 2,
+    "title": "Zaqar Producer Consumer",
+    "description": "Test producer consumer operations",
+    "subtasks": [
         {
-            "args": {
-                "min_msg_count": 50,
-                "max_msg_count": 200
+            "title": "Producer consumer",
+            "scenario": {
+                "ZaqarBasic.producer_consumer": {
+                    "min_msg_count": 50,
+                    "max_msg_count": 200
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "failure_rate": {

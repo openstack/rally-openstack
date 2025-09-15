@@ -1,10 +1,18 @@
 {
-    "KeystoneBasic.get_entities": [
-    {
+    "version": 2,
+    "title": "Keystone Get Entities",
+    "description": "Test get entities operations",
+    "subtasks": [
+        {
+            "title": "Get entities",
+            "scenario": {
+                "KeystoneBasic.get_entities": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "failure_rate": {

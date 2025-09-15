@@ -1,11 +1,18 @@
 {
-    "KeystoneBasic.create_user": [
+    "version": 2,
+    "title": "Keystone Create User",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
         {
-            "args": {},
+            "title": "Create user",
+            "scenario": {
+                "KeystoneBasic.create_user": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "failure_rate": {

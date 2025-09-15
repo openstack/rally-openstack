@@ -1,12 +1,16 @@
 ---
-  Gnocchi.get_status:
-    -
-      args:
-        detailed: false
-      runner:
-        type: constant
-        times: 10
-        concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Gnocchi Get Status
+description: Test get status operations
+subtasks:
+- title: Get status
+  scenario:
+    Gnocchi.get_status:
+      detailed: false
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  sla:
+    failure_rate:
+      max: 0

@@ -1,16 +1,23 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Server Context Configuration",
+    "description": "Example of using servers context to pre-create instances for testing",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "OpenStack Test with Server Context",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 1,
-                "concurrency": 1
+                "constant": {
+                    "times": 1,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2

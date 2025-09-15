@@ -1,22 +1,29 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-   "NovaServers.boot_and_live_migrate_server": [
+    "version": 2,
+    "title": "Nova Boot And Live Migrate",
+    "description": "Test booting Nova servers",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "block_migration": false
+            "title": "Boot and live migrate",
+            "scenario": {
+                "NovaServers.boot_and_live_migrate_server": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "block_migration": false
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

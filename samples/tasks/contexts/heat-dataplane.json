@@ -1,15 +1,22 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Dummy Heat Dataplane",
+    "description": "Test heat dataplane operations",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Dummy heat dataplane",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2
@@ -19,7 +26,9 @@
                     "networks_per_tenant": 1,
                     "subnets_per_network": 1,
                     "network_create_args": {},
-                    "dns_nameservers": ["10.2.0.1"]
+                    "dns_nameservers": [
+                        "10.2.0.1"
+                    ]
                 },
                 "heat_dataplane": {
                     "stacks_per_tenant": 1,

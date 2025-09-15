@@ -1,15 +1,19 @@
 ---
-  HttpRequests.check_request:
-    -
-      args:
-        url: "http://www.example.com"
-        method: "GET"
-        status_code: 200
-        allow_redirects: False
-      runner:
-        type: "constant"
-        times: 20
-        concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Unknown Check Request
+description: Test check request operations
+subtasks:
+- title: Unknown check request
+  scenario:
+    HttpRequests.check_request:
+      url: http://www.example.com
+      method: GET
+      status_code: 200
+      allow_redirects: false
+  runner:
+    constant:
+      times: 20
+      concurrency: 5
+  sla:
+    failure_rate:
+      max: 0

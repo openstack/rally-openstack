@@ -1,10 +1,15 @@
 ---
-  Dummy.dummy:
-    -
-      args:
+version: 2
+title: "Constant Runner with Timeout"
+description: "Demonstrates using constant runner with timeout configuration"
+subtasks:
+  - title: "Constant runner with timeout"
+    description: "Run iterations with constant concurrency and timeout limit"
+    scenario:
+      Dummy.dummy:
         sleep: 10
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 20
         concurrency: 5
         timeout: 5

@@ -1,14 +1,19 @@
 ---
-  Quotas.cinder_get:
-    -
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Unknown Cinder Get
+description: Test cinder get operations
+subtasks:
+- title: Unknown cinder get
+  scenario:
+    Quotas.cinder_get: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

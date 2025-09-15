@@ -1,28 +1,30 @@
 ---
-VMTasks.check_designate_dns_resolving:
--
-  args:
-    flavor:
-      "name": "m1.tiny"
-    image:
-      "name": "^cirros.*-disk$"
-    username: "ubuntu"
-
-  context:
+version: 2
+title: Unknown Check Designate Dns Resolving
+description: Test check designate dns resolving operations
+subtasks:
+- title: Unknown check designate dns resolving
+  scenario:
+    VMTasks.check_designate_dns_resolving:
+      flavor:
+        name: m1.tiny
+      image:
+        name: ^cirros.*-disk$
+      username: ubuntu
+  runner:
+    constant:
+      concurrency: 3
+      times: 6
+  contexts:
     users:
       tenants: 2
       users_per_tenant: 3
     network:
       dns_nameservers:
-        - 8.8.8.8
-        - 192.168.1.12
-    zones: 
-      set_zone_in_network: True
-  runner:
-    concurrency:  3
-    times: 6
-    type: "constant"
-
+      - 8.8.8.8
+      - 192.168.1.12
+    zones:
+      set_zone_in_network: true
   sla:
-    failure_rate: 
+    failure_rate:
       max: 0

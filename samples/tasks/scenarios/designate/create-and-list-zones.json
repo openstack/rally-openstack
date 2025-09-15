@@ -1,12 +1,20 @@
 {
-    "DesignateBasic.create_and_list_zones": [
+    "version": 2,
+    "title": "Designate Create And List Zones",
+    "description": "Test creating Designate DNS resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 10
+            "title": "Create and list zones",
+            "scenario": {
+                "DesignateBasic.create_and_list_zones": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
+            },
+            "contexts": {
                 "quotas": {
                     "designate": {
                         "zones": 100,

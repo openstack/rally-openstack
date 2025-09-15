@@ -1,16 +1,23 @@
 {
-    "KeystoneBasic.create_and_list_roles": [
+    "version": 2,
+    "title": "Keystone Create And List Roles",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
         {
-            "args": {
-                "create_role_kwargs": {},
-                "list_role_kwargs": {}
+            "title": "Create and list roles",
+            "scenario": {
+                "KeystoneBasic.create_and_list_roles": {
+                    "create_role_kwargs": {},
+                    "list_role_kwargs": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

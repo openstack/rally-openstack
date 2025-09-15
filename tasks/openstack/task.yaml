@@ -1,3 +1,4 @@
+---
 {%- set glance_image_location = glance_image_location|default("https://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img") %}
 {%- set image_name = image_name|default("^(cirros.*-disk|TestVM)$") %}
 {%- set flavor_name = flavor_name|default("m1.tiny") %}
@@ -13,10 +14,15 @@
 {%- set tenants_amount = tenants_amount|default(1) %}
 {%- endif %}
 
-{%- from "macro/macro.yaml" import user_context, vm_params, unlimited_volumes, constant_runner, rps_runner, no_failures_sla -%}
-{%- from "macro/macro.yaml" import volumes, unlimited_nova, unlimited_neutron, glance_args -%}
+{%- from "macro/macro.yaml" import user_context, vm_params, unlimited_volumes, constant_runner, rps_runner, no_failures_sla %}
+{%- from "macro/macro.yaml" import volumes, unlimited_nova, unlimited_neutron, glance_args %}
 
----
+version: 2
+title: "OpenStack Certification Task"
+description: "Comprehensive OpenStack platform validation and certification testing"
+
+subtasks:
+
 {% if "authentication" in service_list %}
 {%- include "scenario/authentication.yaml"-%}
 {% endif %}

@@ -1,15 +1,19 @@
 ---
-  NeutronBGPVPN.create_and_delete_bgpvpns:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And Delete Bgpvpns
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and delete bgpvpns
+  scenario:
+    NeutronBGPVPN.create_and_delete_bgpvpns: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

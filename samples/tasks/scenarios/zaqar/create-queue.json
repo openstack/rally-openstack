@@ -1,11 +1,18 @@
 {
-    "ZaqarBasic.create_queue": [
+    "version": 2,
+    "title": "Zaqar Create Queue",
+    "description": "Test creating Zaqar messaging resources",
+    "subtasks": [
         {
-            "args": {},
+            "title": "Create queue",
+            "scenario": {
+                "ZaqarBasic.create_queue": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "failure_rate": {

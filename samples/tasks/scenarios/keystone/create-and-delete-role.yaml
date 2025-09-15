@@ -1,10 +1,15 @@
 ---
-  KeystoneBasic.create_and_delete_role:
-    -
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create And Delete Role
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create and delete role
+  scenario:
+    KeystoneBasic.create_and_delete_role: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

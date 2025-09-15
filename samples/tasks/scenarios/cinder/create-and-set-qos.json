@@ -1,20 +1,27 @@
 {
-    "CinderQos.create_and_set_qos": [
+    "version": 2,
+    "title": "Cinder QoS Creation and Configuration",
+    "description": "Test scenario for creating QoS specifications and configuring them in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "consumer": "back-end",
-                "write_iops_sec": "10",
-                "read_iops_sec": "1000",
-                "set_consumer": "both",
-                "set_write_iops_sec": "11",
-                "set_read_iops_sec": "1001"
+            "title": "Create And Set Qos",
+            "scenario": {
+                "CinderQos.create_and_set_qos": {
+                    "consumer": "back-end",
+                    "write_iops_sec": "10",
+                    "read_iops_sec": "1000",
+                    "set_consumer": "both",
+                    "set_write_iops_sec": "11",
+                    "set_read_iops_sec": "1001"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

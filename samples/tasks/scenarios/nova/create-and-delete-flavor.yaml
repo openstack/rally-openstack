@@ -1,18 +1,22 @@
 ---
-  NovaFlavors.create_and_delete_flavor:
-    -
-      runner:
-        type: "constant"
-        concurrency: 2
-        times: 10
-      args:
-        ram: 500
-        vcpus : 1
-        disk: 1
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Create and delete Nova flavors
+description: Test creating and deleting Nova flavors
+subtasks:
+- title: Create and delete flavor
+  scenario:
+    NovaFlavors.create_and_delete_flavor:
+      ram: 500
+      vcpus: 1
+      disk: 1
+  runner:
+    constant:
+      concurrency: 2
+      times: 10
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

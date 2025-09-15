@@ -1,12 +1,20 @@
 {
-    "NovaKeypair.create_and_list_keypairs": [
+    "version": 2,
+    "title": "Nova Create And List Keypairs",
+    "description": "Test creating Nova resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "Create and list keypairs",
+            "scenario": {
+                "NovaKeypair.create_and_list_keypairs": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

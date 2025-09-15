@@ -1,45 +1,64 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Task template with LBaaS context",
+    "description": "This sample demonstrates the usage of LBaaS context for setting up load balancer pools with different configurations.",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 2
-                },
-                "lbaas": {
-                    "pool": {}
-                }
-            }
-        },
-        {
-            "args": {
-                "sleep": 0.1
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 2
-                },
-                "lbaas": {
-                    "pool": {
-                        "lb_method": "ROUND_ROBIN",
-                        "protocol": "HTTP"
+            "title": "Test with basic LBaaS pool",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "times": 4,
+                            "concurrency": 2
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 2
+                        },
+                        "lbaas": {
+                            "pool": {}
+                        }
                     }
                 }
-            }
+            ]
+        },
+        {
+            "title": "Test with configured LBaaS pool",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "times": 4,
+                            "concurrency": 2
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 2
+                        },
+                        "lbaas": {
+                            "pool": {
+                                "lb_method": "ROUND_ROBIN",
+                                "protocol": "HTTP"
+                            }
+                        }
+                    }
+                }
+            ]
         }
     ]
 }

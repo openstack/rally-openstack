@@ -1,18 +1,25 @@
 {
-    "NeutronNetworks.set_and_clear_router_gateway": [
+    "version": 2,
+    "title": "Neutron Set And Clear Router Gateway",
+    "description": "Test set and clear router gateway operations",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {
-                    "router:external": true
-                },
-                "router_create_args": {}
+            "title": "Set and clear router gateway",
+            "scenario": {
+                "NeutronNetworks.set_and_clear_router_gateway": {
+                    "network_create_args": {
+                        "router:external": true
+                    },
+                    "router_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "network": {},
                 "users": {
                     "tenants": 2,
@@ -24,7 +31,9 @@
                         "router": -1
                     }
                 },
-                "roles": ["admin"]
+                "roles": [
+                    "admin"
+                ]
             },
             "sla": {
                 "failure_rate": {

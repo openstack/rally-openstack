@@ -1,12 +1,20 @@
 {
-    "SwiftObjects.list_objects_in_containers": [
+    "version": 2,
+    "title": "Swift List Objects In Containers",
+    "description": "Test listing Swift object storage resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 6,
-                "concurrency": 3
+            "title": "List objects in containers",
+            "scenario": {
+                "SwiftObjects.list_objects_in_containers": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 6,
+                    "concurrency": 3
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

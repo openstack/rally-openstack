@@ -1,19 +1,23 @@
----
-  CinderVolumes.create_and_update_volume:
-    -
-      args:
-        update_volume_kwargs:
-           description: "desc_updated"
-        create_volume_kwargs: {}
-        size: 1
-      runner:
-        type: "constant"
-        times: 3
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating volumes and updating them in Cinder block
+  storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  runner:
+    constant:
+      concurrency: 1
+      times: 3
+  scenario:
+    CinderVolumes.create_and_update_volume:
+      create_volume_kwargs: {}
+      size: 1
+      update_volume_kwargs:
+        description: desc_updated
+  sla:
+    failure_rate:
+      max: 0
+  title: Create And Update Volume
+title: Cinder Volume Creation and Update
+version: 2

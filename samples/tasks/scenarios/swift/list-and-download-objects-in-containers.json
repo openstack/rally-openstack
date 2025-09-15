@@ -1,12 +1,20 @@
 {
-    "SwiftObjects.list_and_download_objects_in_containers": [
+    "version": 2,
+    "title": "Swift List And Download Objects In Containers",
+    "description": "Test listing Swift object storage resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+            "title": "List and download objects in containers",
+            "scenario": {
+                "SwiftObjects.list_and_download_objects_in_containers": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

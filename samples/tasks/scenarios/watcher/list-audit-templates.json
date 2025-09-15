@@ -1,12 +1,20 @@
 {
-    "Watcher.list_audit_templates": [
+    "version": 2,
+    "title": "Watcher List Audit Templates",
+    "description": "Test listing Watcher optimization resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 1
+            "title": "List audit templates",
+            "scenario": {
+                "Watcher.list_audit_templates": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 1
+                }
+            },
+            "contexts": {
                 "audit_templates": {
                     "audit_templates_per_admin": 5,
                     "fill_strategy": "random",

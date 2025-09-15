@@ -1,15 +1,23 @@
 {
-    "Quotas.nova_get": [
+    "version": 2,
+    "title": "Unknown Nova Get",
+    "description": "Test nova get operations",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "Unknown nova get",
+            "scenario": {
+                "Quotas.nova_get": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
-                "tenants": 2,
-                "users_per_tenant": 2
+                    "tenants": 2,
+                    "users_per_tenant": 2
                 }
             },
             "sla": {
@@ -17,7 +25,6 @@
                     "max": 0
                 }
             }
-
         }
     ]
 }

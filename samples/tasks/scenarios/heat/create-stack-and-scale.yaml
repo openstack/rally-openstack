@@ -1,18 +1,22 @@
 ---
-  HeatStacks.create_stack_and_scale:
-    -
-      args:
-        template_path: "samples/tasks/scenarios/heat/templates/autoscaling-group.yaml.template"
-        output_key: "scaling_url"
-        delta: 1
-      runner:
-        type: "constant"
-        times: 3
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Heat Create Stack And Scale
+description: Test creating Heat orchestration resources
+subtasks:
+- title: Create stack and scale
+  scenario:
+    HeatStacks.create_stack_and_scale:
+      template_path: samples/tasks/scenarios/heat/templates/autoscaling-group.yaml.template
+      output_key: scaling_url
+      delta: 1
+  runner:
+    constant:
+      times: 3
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

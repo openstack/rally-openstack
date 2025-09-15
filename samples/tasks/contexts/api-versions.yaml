@@ -1,19 +1,23 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        api_versions:
-          nova:
-            version: 2.2
-          cinder:
-            version: 3.1
-            service_type: "volumev3"
+version: 2
+title: Dummy Api Versions
+description: Test api versions operations
+subtasks:
+- title: Dummy api versions
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    api_versions:
+      nova:
+        version: 2.2
+      cinder:
+        version: 3.1
+        service_type: volumev3

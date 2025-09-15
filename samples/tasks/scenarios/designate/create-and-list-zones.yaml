@@ -1,20 +1,25 @@
 ---
-  DesignateBasic.create_and_list_zones:
-    -
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      context:
-        quotas:
-          designate:
-            zones: 100
-            zone_recordsets: 500
-            zone_records: 2000
-            recordset_records: 2000
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Designate Create And List Zones
+description: Test creating Designate DNS resources
+subtasks:
+- title: Create and list zones
+  scenario:
+    DesignateBasic.create_and_list_zones: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 10
+  contexts:
+    quotas:
+      designate:
+        zones: 100
+        zone_recordsets: 500
+        zone_records: 2000
+        recordset_records: 2000
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

@@ -1,23 +1,30 @@
 {
-    "ManilaShares.create_share_and_access_from_vm": [
+    "version": 2,
+    "title": "Manila Create Share And Access From Vm",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "size": 1,
-                "share_type": "CephNFStype",
-                "flavor": {
-                    "name": "m1.tiny"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "username": "ubuntu"
+            "title": "Create share and access from vm",
+            "scenario": {
+                "ManilaShares.create_share_and_access_from_vm": {
+                    "size": 1,
+                    "share_type": "CephNFStype",
+                    "flavor": {
+                        "name": "m1.tiny"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "username": "ubuntu"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

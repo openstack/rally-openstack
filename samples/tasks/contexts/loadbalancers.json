@@ -1,39 +1,58 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Task template with loadbalancer contexts",
+    "description": "This sample demonstrates the usage of load balancer contexts for setting up LBaaS resources.",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 2
-                },
-                "lbaas": {
-                    "pool": {}
+            "title": "Test with LBaaS pool context",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "times": 4,
+                            "concurrency": 2
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 2
+                        },
+                        "lbaas": {
+                            "pool": {}
+                        }
+                    }
                 }
-            }
+            ]
         },
         {
-            "args": {
-                "sleep": 0.1
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 2
+            "title": "Test without LBaaS context",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "times": 4,
+                            "concurrency": 2
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 2
+                        }
+                    }
                 }
-            }
+            ]
         }
     ]
 }

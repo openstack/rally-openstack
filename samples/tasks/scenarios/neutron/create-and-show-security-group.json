@@ -1,15 +1,22 @@
 {
-    "NeutronSecurityGroup.create_and_show_security_group": [
+    "version": 2,
+    "title": "Neutron Create And Show Security Group",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "security_group_create_args": {}
+            "title": "Create and show security group",
+            "scenario": {
+                "NeutronSecurityGroup.create_and_show_security_group": {
+                    "security_group_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 20,
-                "concurrency": 10
+                "constant": {
+                    "times": 20,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3

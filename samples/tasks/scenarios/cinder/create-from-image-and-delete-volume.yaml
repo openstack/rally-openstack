@@ -1,18 +1,22 @@
----
-  CinderVolumes.create_and_delete_volume:
-    -
-      args:
-        size: 1
-        image:
-            name: "^cirros.*-disk$"
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating and deleting volumes in Cinder block storage
+  service.
+subtasks:
+- contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  runner:
+    constant:
+      concurrency: 2
+      times: 2
+  scenario:
+    CinderVolumes.create_and_delete_volume:
+      image:
+        name: ^cirros.*-disk$
+      size: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create And Delete Volume
+title: Cinder Volume Creation and Deletion
+version: 2

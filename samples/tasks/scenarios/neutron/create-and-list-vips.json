@@ -1,20 +1,27 @@
 {
-    "NeutronLoadbalancerV1.create_and_list_vips": [
+    "version": 2,
+    "title": "Neutron Create And List Vips",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "vip_create_args":{}
+            "title": "Create and list vips",
+            "scenario": {
+                "NeutronLoadbalancerV1.create_and_list_vips": {
+                    "vip_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 5,
                     "users_per_tenant": 2
                 },
-                "network":{},
+                "network": {},
                 "quotas": {
                     "neutron": {
                         "network": -1,

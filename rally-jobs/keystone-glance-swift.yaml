@@ -1,602 +1,592 @@
 {%- set cirros_image_url = "https://github.com/cirros-dev/cirros/releases/download/0.5.2/cirros-0.5.2-x86_64-disk.img" %}
+
 ---
-  KeystoneBasic.authenticate_user_and_validate_token:
-    -
-      args: {}
-      runner:
-        type: "constant"
+version: 2
+title: Task for rally-task-keystone-glance-swift job
+subtasks:
+  - title: KeystoneBasic.authenticate_user_and_validate_token tests
+    scenario:
+      KeystoneBasic.authenticate_user_and_validate_token: {}
+    runner:
+      constant:
         times: 20
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_user:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_user tests
+    scenario:
+      KeystoneBasic.create_user: {}
+    runner:
+      constant:
         times: 10
         concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_delete_user:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_delete_user tests
+    scenario:
+      KeystoneBasic.create_delete_user: {}
+    runner:
+      constant:
         times: 10
         concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_user_set_enabled_and_delete:
-    -
-      args:
-        enabled: true
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_user_set_enabled_and_delete tests
+    workloads:
+      - scenario:
+          KeystoneBasic.create_user_set_enabled_and_delete:
+            enabled: true
+        runner:
+          constant:
+            times: 10
+            concurrency: 10
+        sla:
+          failure_rate:
+            max: 0
+      - scenario:
+          KeystoneBasic.create_user_set_enabled_and_delete:
+            enabled: false
+        runner:
+          constant:
+            times: 10
+            concurrency: 10
+        sla:
+          failure_rate:
+            max: 0
+  - title: KeystoneBasic.create_and_list_tenants tests
+    scenario:
+      KeystoneBasic.create_and_list_tenants: {}
+    runner:
+      constant:
         times: 10
         concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        enabled: false
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_list_tenants:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.get_entities:
-    -
-      runner:
-        type: "constant"
-        times: 20
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        service_name: null
-      runner:
-        type: "constant"
-        times: 20
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        service_name: "nova"
-      runner:
-        type: "constant"
-        times: 20
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.add_and_remove_user_role:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.get_entities tests
+    workloads:
+      - scenario:
+          KeystoneBasic.get_entities: {}
+        runner:
+          constant:
+            times: 20
+            concurrency: 10
+        sla:
+          failure_rate:
+            max: 0
+      - scenario:
+          KeystoneBasic.get_entities:
+            service_name: null
+        runner:
+          constant:
+            times: 20
+            concurrency: 10
+        sla:
+          failure_rate:
+            max: 0
+      - scenario:
+          KeystoneBasic.get_entities:
+            service_name: nova
+        runner:
+          constant:
+            times: 20
+            concurrency: 10
+        sla:
+          failure_rate:
+            max: 0
+  - title: KeystoneBasic.add_and_remove_user_role tests
+    scenario:
+      KeystoneBasic.add_and_remove_user_role: {}
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_delete_role:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_delete_role tests
+    scenario:
+      KeystoneBasic.create_and_delete_role: {}
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_get_role:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_get_role tests
+    scenario:
+      KeystoneBasic.create_and_get_role: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 2
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_add_and_list_user_roles:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_add_and_list_user_roles tests
+    scenario:
+      KeystoneBasic.create_add_and_list_user_roles: {}
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_list_roles:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_list_roles tests
+    scenario:
+      KeystoneBasic.create_and_list_roles: {}
+    contexts:
+      users:
+        tenants: 3
+        users_per_tenant: 2
+    runner:
+      constant:
         times: 10
         concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_list_users:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_list_users tests
+    scenario:
+      KeystoneBasic.create_and_list_users: {}
+    runner:
+      constant:
         times: 10
         concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_tenant:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_tenant tests
+    scenario:
+      KeystoneBasic.create_tenant: {}
+    runner:
+      constant:
         times: 10
         concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_tenant_with_users:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_tenant_with_users tests
+    scenario:
+      KeystoneBasic.create_tenant_with_users:
         users_per_tenant: 10
-      runner:
-        type: "constant"
+    contexts:
+      users:
+        tenants: 3
+    runner:
+      constant:
         times: 10
         concurrency: 10
-      context:
-        users:
-          tenants: 3
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_user_update_password:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_user_update_password tests
+    scenario:
+      KeystoneBasic.create_user_update_password: {}
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_update_user:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_update_user tests
+    scenario:
+      KeystoneBasic.create_and_update_user:
         create_user_kwargs: {}
         update_user_kwargs:
-          enabled: False
-      runner:
-        type: "constant"
+          enabled: false
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 2
+    runner:
+      constant:
         times: 10
         concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_update_and_delete_tenant:
-    -
-      args: {}
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_update_and_delete_tenant tests
+    scenario:
+      KeystoneBasic.create_update_and_delete_tenant: {}
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_delete_service:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_delete_service tests
+    scenario:
+      KeystoneBasic.create_and_delete_service: {}
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_list_services:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_list_services tests
+    scenario:
+      KeystoneBasic.create_and_list_services: {}
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_list_ec2credentials:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_list_ec2credentials tests
+    scenario:
+      KeystoneBasic.create_and_list_ec2credentials: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 2
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  KeystoneBasic.create_and_delete_ec2credential:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: KeystoneBasic.create_and_delete_ec2credential tests
+    scenario:
+      KeystoneBasic.create_and_delete_ec2credential: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 2
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.01
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
+    sla:
+      failure_rate:
+        max: 0
+  - title: Dummy.openstack tests
+    workloads:
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.01
+        contexts:
           users:
             tenants: 8
             users_per_tenant: 4
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        sleep: 0.6
-      runner:
-        type: "constant"
-        concurrency: 2
-        times: 4
-        timeout: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        sleep: 0.6
-      runner:
-        type: "rps"
-        rps: 2
-        times: 5
-        timeout: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
-    -
-      description: "Check 'quotas' context."
-      args:
-        sleep: 0.01
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        quotas:
-          nova:
-            instances: 200
-            cores: 200
-            ram: -1
-            floating_ips: 200
-            fixed_ips: 200
-            metadata_items: -1
-            injected_files: -1
-            injected_file_content_bytes: -1
-            injected_file_path_bytes: -1
-            key_pairs: 500
-            security_groups: 400
-            security_group_rules: 600
-          cinder:
-            gigabytes: -1
-            snapshots: -1
-            volumes: -1
-      sla:
-        failure_rate:
-          max: 0
-
-  Authenticate.keystone:
-    -
-      runner:
-        type: "constant"
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        sla:
+          failure_rate:
+            max: 0
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.6
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+        runner:
+          constant:
+            concurrency: 2
+            times: 4
+            timeout: 1
+        sla:
+          failure_rate:
+            max: 0
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.6
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+        runner:
+          rps:
+            rps: 2
+            times: 5
+            timeout: 1
+        sla:
+          failure_rate:
+            max: 0
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.01
+        description: "Check 'quotas' context."
+        contexts:
+          quotas:
+            nova:
+              instances: 200
+              cores: 200
+              ram: -1
+              floating_ips: 200
+              fixed_ips: 200
+              metadata_items: -1
+              injected_files: -1
+              injected_file_content_bytes: -1
+              injected_file_path_bytes: -1
+              key_pairs: 500
+              security_groups: 400
+              security_group_rules: 600
+            cinder:
+              gigabytes: -1
+              snapshots: -1
+              volumes: -1
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        sla:
+          failure_rate:
+            max: 0
+  - title: Authenticate.keystone tests
+    scenario:
+      Authenticate.keystone: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 10
+    runner:
+      constant:
         times: 40
         concurrency: 20
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 10
-      sla:
-        failure_rate:
-          max: 0
-
-  Authenticate.validate_glance:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: Authenticate.validate_glance tests
+    scenario:
+      Authenticate.validate_glance:
         repetitions: 2
-      runner:
-        type: "constant"
+    contexts:
+      users:
+        tenants: 3
+        users_per_tenant: 5
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 5
-      sla:
-        failure_rate:
-          max: 0
-
-  HttpRequests.check_request:
-    -
-      args:
-        url: "http://www.example.com"
-        method: "GET"
+    sla:
+      failure_rate:
+        max: 0
+  - title: HttpRequests.check_request tests
+    scenario:
+      HttpRequests.check_request:
+        url: http://www.example.com
+        method: GET
         status_code: 200
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 2
         concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  HttpRequests.check_random_request:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: HttpRequests.check_random_request tests
+    scenario:
+      HttpRequests.check_random_request:
         requests:
-          -
-            url: "http://www.example.com"
-            method: "GET"
-          -
-            url: "http://localhost"
-            method: "GET"
+          - url: http://www.example.com
+            method: GET
+          - url: http://localhost
+            method: GET
         status_code: 200
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 2
         concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
-
-  GlanceImages.list_images:
-    -
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 5
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        images:
-          image_url: "{{ cirros_image_url }}"
-          disk_format: "qcow2"
-          container_format: "bare"
-          images_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 100
-
-    -
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 5
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        images:
-          image_url: "~/.rally/extra/dummy_image.qcow2"
-          disk_format: "qcow2"
-          container_format: "bare"
-          images_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 100
-
-  GlanceImages.create_and_list_image:
-    -
-      args:
-        image_location: "~/.rally/extra/dummy_image.qcow2"
-        container_format: "bare"
-        disk_format: "qcow2"
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        api_versions:
-          glance:
-            version: 2
-      sla:
-        failure_rate:
-          max: 100
-    -
-      args:
-        image_location: "~/.rally/extra/dummy_image.raw"
-        container_format: "bare"
-        disk_format: "raw"
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        api_versions:
-          glance:
-            version: 2
-      sla:
-        failure_rate:
-          max: 100
-
-  SwiftObjects.create_container_and_object_then_list_objects:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: GlanceImages.list_images tests
+    workloads:
+      - scenario:
+          GlanceImages.list_images: {}
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 2
+          images:
+            image_url: '{{ cirros_image_url }}'
+            disk_format: qcow2
+            container_format: bare
+            images_per_tenant: 1
+        runner:
+          constant:
+            times: 5
+            concurrency: 5
+        sla:
+          failure_rate:
+            max: 100
+      - scenario:
+          GlanceImages.list_images: {}
+        contexts:
+          users:
+            tenants: 2
+            users_per_tenant: 1
+          images:
+            image_url: ~/.rally/extra/dummy_image.qcow2
+            disk_format: qcow2
+            container_format: bare
+            images_per_tenant: 2
+        runner:
+          constant:
+            times: 5
+            concurrency: 5
+        sla:
+          failure_rate:
+            max: 100
+  - title: GlanceImages.create_and_list_image tests
+    workloads:
+      - description: Test qcow2 image
+        scenario:
+          GlanceImages.create_and_list_image:
+            image_location: ~/.rally/extra/dummy_image.qcow2
+            container_format: bare
+            disk_format: qcow2
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          api_versions:
+            glance:
+              version: 2
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        sla:
+          failure_rate:
+            max: 100
+      - description: Test raw image
+        scenario:
+          GlanceImages.create_and_list_image:
+            image_location: ~/.rally/extra/dummy_image.raw
+            container_format: bare
+            disk_format: raw
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          api_versions:
+            glance:
+              version: 2
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        sla:
+          failure_rate:
+            max: 100
+  - title: SwiftObjects.create_container_and_object_then_list_objects tests
+    scenario:
+      SwiftObjects.create_container_and_object_then_list_objects:
         objects_per_container: 2
         object_size: 5120
-      runner:
-        type: "constant"
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+      roles:
+        - admin
+    runner:
+      constant:
         times: 2
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-      sla:
-        failure_rate:
-          max: 0
-
-  SwiftObjects.create_container_and_object_then_delete_all:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: SwiftObjects.create_container_and_object_then_delete_all tests
+    scenario:
+      SwiftObjects.create_container_and_object_then_delete_all:
         objects_per_container: 5
         object_size: 102400
-      runner:
-        type: "constant"
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+      roles:
+        - admin
+    runner:
+      constant:
         times: 4
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-      sla:
-        failure_rate:
-          max: 0
-
-  SwiftObjects.create_container_and_object_then_download_object:
-    -
-      args:
+    sla:
+      failure_rate:
+        max: 0
+  - title: SwiftObjects.create_container_and_object_then_download_object tests
+    scenario:
+      SwiftObjects.create_container_and_object_then_download_object:
         objects_per_container: 5
         object_size: 1024
-      runner:
-        type: "constant"
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+      roles:
+        - admin
+    runner:
+      constant:
         times: 6
         concurrency: 3
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-      sla:
-        failure_rate:
-          max: 0
-
-  SwiftObjects.list_and_download_objects_in_containers:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: SwiftObjects.list_and_download_objects_in_containers tests
+    scenario:
+      SwiftObjects.list_and_download_objects_in_containers: {}
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+      roles:
+        - admin
+      swift_objects:
+        containers_per_tenant: 1
+        objects_per_container: 5
+        object_size: 10240
+    runner:
+      constant:
         times: 2
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-        swift_objects:
-          containers_per_tenant: 1
-          objects_per_container: 5
-          object_size: 10240
-      sla:
-        failure_rate:
-          max: 0
-
-  SwiftObjects.list_objects_in_containers:
-    -
-      runner:
-        type: "constant"
+    sla:
+      failure_rate:
+        max: 0
+  - title: SwiftObjects.list_objects_in_containers tests
+    scenario:
+      SwiftObjects.list_objects_in_containers: {}
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 1
+      roles:
+        - admin
+      swift_objects:
+        containers_per_tenant: 1
+        objects_per_container: 10
+        object_size: 1024
+    runner:
+      constant:
         times: 6
         concurrency: 3
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-        swift_objects:
-          containers_per_tenant: 1
-          objects_per_container: 10
-          object_size: 1024
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

@@ -1,14 +1,19 @@
 ---
-  NovaKeypair.create_and_list_keypairs:
-    -
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Create And List Keypairs
+description: Test creating Nova resources
+subtasks:
+- title: Create and list keypairs
+  scenario:
+    NovaKeypair.create_and_list_keypairs: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

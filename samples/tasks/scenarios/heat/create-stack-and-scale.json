@@ -1,27 +1,34 @@
 {
-  "HeatStacks.create_stack_and_scale": [
-    {
-      "args": {
-        "template_path": "samples/tasks/scenarios/heat/templates/autoscaling-group.yaml.template",
-        "output_key": "scaling_url",
-        "delta": 1
-      },
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 3
-      },
-      "context": {
-        "users": {
-          "users_per_tenant": 1,
-          "tenants": 2
+    "version": 2,
+    "title": "Heat Create Stack And Scale",
+    "description": "Test creating Heat orchestration resources",
+    "subtasks": [
+        {
+            "title": "Create stack and scale",
+            "scenario": {
+                "HeatStacks.create_stack_and_scale": {
+                    "template_path": "samples/tasks/scenarios/heat/templates/autoscaling-group.yaml.template",
+                    "output_key": "scaling_url",
+                    "delta": 1
+                }
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 3
+                }
+            },
+            "contexts": {
+                "users": {
+                    "users_per_tenant": 1,
+                    "tenants": 2
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         }
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
-        }
-      }
-    }
-  ]
+    ]
 }

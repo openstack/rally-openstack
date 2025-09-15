@@ -1,23 +1,27 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 ---
-  NovaKeypair.boot_and_delete_server_with_keypair:
-    -
-      args:
-        flavor:
-            name: "{{flavor_name}}"
-        image:
-            name: "^cirros.*-disk$"
-        boot_server_kwargs: {}
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 1
-        network:
-          start_cidr: "100.1.0.0/26"
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Boot And Delete Server With Keypairs
+description: Test booting Nova servers
+subtasks:
+- title: Boot and delete server with keypairs
+  scenario:
+    NovaKeypair.boot_and_delete_server_with_keypair:
+      flavor:
+        name: '{{flavor_name}}'
+      image:
+        name: ^cirros.*-disk$
+      boot_server_kwargs: {}
+  runner:
+    constant:
+      times: 5
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 1
+    network:
+      start_cidr: 100.1.0.0/26
+  sla:
+    failure_rate:
+      max: 0

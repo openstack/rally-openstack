@@ -1,12 +1,16 @@
 ---
-  ManilaShares.list_share_servers:
-    -
-      args:
-        search_opts: {}
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Manila List Share Servers
+description: Test listing Manila share resources
+subtasks:
+- title: List share servers
+  scenario:
+    ManilaShares.list_share_servers:
+      search_opts: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

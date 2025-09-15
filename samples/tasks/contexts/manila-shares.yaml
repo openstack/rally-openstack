@@ -1,27 +1,32 @@
-Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        quotas:
-          manila:
-            shares: -1
-            gigabytes: -1
-            share_networks: -1
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        manila_share_networks:
-          use_share_networks: True
-        manila_shares:
-          shares_per_tenant: 1
-          share_proto: "NFS"
-          size: 1
-          share_type: "dhss_true"
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: "Task template with Manila shares context"
+description: "This sample demonstrates the usage of Manila shares context for setting up shared filesystem resources."
+subtasks:
+  - title: "Test with Manila shares context"
+    workloads:
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.1
+        runner:
+          constant:
+            times: 4
+            concurrency: 2
+        contexts:
+          quotas:
+            manila:
+              shares: -1
+              gigabytes: -1
+              share_networks: -1
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          manila_share_networks:
+            use_share_networks: True
+          manila_shares:
+            shares_per_tenant: 1
+            share_proto: "NFS"
+            size: 1
+            share_type: "dhss_true"
+        sla:
+          failure_rate:
+            max: 0

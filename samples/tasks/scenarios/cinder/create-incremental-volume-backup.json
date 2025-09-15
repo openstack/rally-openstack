@@ -1,22 +1,31 @@
 {
-    "CinderVolumeBackups.create_incremental_volume_backup": [
+    "version": 2,
+    "title": "Cinder Incremental Volume Backup Creation",
+    "description": "Test scenario for creating incremental volume backups in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "size": 1,
-                "create_volume_kwargs": {},
-                "create_backup_kwargs": {}
+            "title": "Create Incremental Volume Backup",
+            "scenario": {
+                "CinderVolumeBackups.create_incremental_volume_backup": {
+                    "size": 1,
+                    "create_volume_kwargs": {},
+                    "create_backup_kwargs": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2
                 },
-                "roles": ["admin"]
+                "roles": [
+                    "admin"
+                ]
             },
             "sla": {
                 "failure_rate": {

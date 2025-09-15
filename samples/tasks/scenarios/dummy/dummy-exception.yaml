@@ -1,12 +1,16 @@
 ---
-  Dummy.dummy_exception:
-    -
-      args:
+version: 2
+title: "Dummy Exception Scenario Test"
+description: "Tests dummy exception handling with configurable message size - used for testing Rally's error handling capabilities"
+subtasks:
+  - title: "Exception handling test"
+    scenario:
+      Dummy.dummy_exception:
         size_of_message: 5
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 20
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

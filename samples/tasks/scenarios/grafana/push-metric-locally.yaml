@@ -1,25 +1,29 @@
 ---
-  GrafanaMetrics.push_metric_locally:
-    -
-      args:
-        monitor_vip: 10.0.0.5
-        pushgateway_port: 9091
-        grafana:
-          user: admin
-          password: password
-          port: 3000
-        datasource_id: 1
-        job_name: rally_test
-        sleep_time: 5
-        retries_total: 30
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Grafana metric push locally
+description: Test pushing metrics locally to Grafana monitoring dashboard service
+subtasks:
+- title: Push metrics locally to Grafana
+  scenario:
+    GrafanaMetrics.push_metric_locally:
+      monitor_vip: 10.0.0.5
+      pushgateway_port: 9091
+      grafana:
+        user: admin
+        password: password
+        port: 3000
+      datasource_id: 1
+      job_name: rally_test
+      sleep_time: 5
+      retries_total: 30
+  runner:
+    constant:
+      times: 10
+      concurrency: 1
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

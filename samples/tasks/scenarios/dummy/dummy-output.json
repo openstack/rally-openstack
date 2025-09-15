@@ -1,13 +1,20 @@
 {
-    "Dummy.dummy_output": [
+    "version": 2,
+    "title": "Dummy Output Generation Test",
+    "description": "Tests dummy scenario with random output generation - used for testing Rally's output handling and addOutput functionality",
+    "subtasks": [
         {
-            "args": {
-                "random_range": 25
+            "title": "Random output test",
+            "scenario": {
+                "Dummy.dummy_output": {
+                    "random_range": 25
+                }
             },
             "runner": {
-              "type": "constant",
-              "times": 50,
-              "concurrency": 5
+                "constant": {
+                    "times": 50,
+                    "concurrency": 5
+                }
             },
             "sla": {
                 "failure_rate": {

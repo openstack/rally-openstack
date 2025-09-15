@@ -1,19 +1,23 @@
 ---
-  ManilaShares.create_share_network_and_delete:
-    -
-      args:
-        name: "rally"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      context:
-        quotas:
-          manila:
-            share_networks: -1
-        users:
-          tenants: 2
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Manila Create Share Network And Delete
+description: Test creating Manila share resources
+subtasks:
+- title: Create share network and delete
+  scenario:
+    ManilaShares.create_share_network_and_delete:
+      name: rally
+  runner:
+    constant:
+      times: 10
+      concurrency: 10
+  contexts:
+    quotas:
+      manila:
+        share_networks: -1
+    users:
+      tenants: 2
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

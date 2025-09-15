@@ -1,17 +1,24 @@
 {
-    "GlanceImages.create_and_deactivate_image": [
+    "version": 2,
+    "title": "Glance Create And Deactivate Image",
+    "description": "Test creating Glance images",
+    "subtasks": [
         {
-            "args": {
-                "image_location": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img",
-                "container_format": "bare",
-                "disk_format": "qcow2"
+            "title": "Create and deactivate image",
+            "scenario": {
+                "GlanceImages.create_and_deactivate_image": {
+                    "image_location": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img",
+                    "container_format": "bare",
+                    "disk_format": "qcow2"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 1
+                "constant": {
+                    "times": 10,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

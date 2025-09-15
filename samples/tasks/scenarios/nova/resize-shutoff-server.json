@@ -1,26 +1,33 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaServers.resize_shutoff_server": [
+    "version": 2,
+    "title": "Nova Resize Shutoff Server",
+    "description": "Test server resize operations",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "to_flavor": {
-                    "name": "m1.small"
-                },
-                "confirm": true,
-                "force_delete": false
+            "title": "Resize shutoff server",
+            "scenario": {
+                "NovaServers.resize_shutoff_server": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "to_flavor": {
+                        "name": "m1.small"
+                    },
+                    "confirm": true,
+                    "force_delete": false
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2
@@ -34,4 +41,3 @@
         }
     ]
 }
-

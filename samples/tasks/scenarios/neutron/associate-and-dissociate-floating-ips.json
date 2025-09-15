@@ -1,15 +1,22 @@
 {
-    "NeutronNetworks.associate_and_dissociate_floating_ips": [
+    "version": 2,
+    "title": "Neutron Associate And Dissociate Floating Ips",
+    "description": "Test association operations",
+    "subtasks": [
         {
-            "args": {
-                "floating_network": "public"
+            "title": "Associate and dissociate floating ips",
+            "scenario": {
+                "NeutronNetworks.associate_and_dissociate_floating_ips": {
+                    "floating_network": "public"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

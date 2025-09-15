@@ -1,19 +1,24 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 6
-        concurrency: 3
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-        swift_objects:
-          containers_per_tenant: 1
-          objects_per_container: 10
-          object_size: 1024
+version: 2
+title: "Task template with Swift objects context"
+description: "This sample demonstrates the usage of Swift objects context for setting up object storage resources."
+subtasks:
+  - title: "Test with Swift objects context"
+    workloads:
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.1
+        runner:
+          constant:
+            times: 6
+            concurrency: 3
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          roles:
+            - "admin"
+          swift_objects:
+            containers_per_tenant: 1
+            objects_per_container: 10
+            object_size: 1024

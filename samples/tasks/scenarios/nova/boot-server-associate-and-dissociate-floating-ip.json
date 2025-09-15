@@ -1,60 +1,71 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-  "NovaServers.boot_server_associate_and_dissociate_floating_ip": [
-    {
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 5
-      },
-      "args": {
-        "flavor": {
-          "name": "{{flavor_name}}"
+    "version": 2,
+    "title": "Nova Boot Server Associate And Dissociate Floating Ip",
+    "description": "Test booting Nova servers",
+    "subtasks": [
+        {
+            "title": "Nova Boot Server Associate And Dissociate Floating Ip (variant 1)",
+            "scenario": {
+                "NovaServers.boot_server_associate_and_dissociate_floating_ip": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    }
+                }
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 5
+                }
+            },
+            "contexts": {
+                "users": {
+                    "users_per_tenant": 2,
+                    "tenants": 3
+                },
+                "network": {}
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         },
-        "image": {
-          "name": "^cirros.*-disk$"
+        {
+            "title": "Nova Boot Server Associate And Dissociate Floating Ip (variant 2)",
+            "scenario": {
+                "NovaServers.boot_server_associate_and_dissociate_floating_ip": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "floating_network": "ext_network_name"
+                }
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 5
+                }
+            },
+            "contexts": {
+                "users": {
+                    "users_per_tenant": 2,
+                    "tenants": 3
+                },
+                "network": {}
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         }
-      },
-      "context": {
-        "users": {
-          "users_per_tenant": 2,
-          "tenants": 3
-        },
-        "network": {}
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
-        }
-      }
-    },
-    {
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 5
-      },
-      "args": {
-        "flavor": {
-          "name": "{{flavor_name}}"
-        },
-        "image": {
-          "name": "^cirros.*-disk$"
-        },
-        "floating_network": "ext_network_name"
-      },
-      "context": {
-        "users": {
-          "users_per_tenant": 2,
-          "tenants": 3
-        },
-        "network": {}
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
-        }
-      }
-    }
-  ]
+    ]
 }

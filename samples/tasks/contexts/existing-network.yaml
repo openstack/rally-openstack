@@ -1,14 +1,18 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        existing_network: {}
+version: 2
+title: Dummy Existing Network
+description: Test existing network operations
+subtasks:
+- title: Dummy existing network
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    existing_network: {}

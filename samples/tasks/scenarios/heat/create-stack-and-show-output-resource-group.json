@@ -1,16 +1,23 @@
 {
-    "HeatStacks.create_stack_and_show_output": [
+    "version": 2,
+    "title": "Heat Create Stack And Show Output Resource Group",
+    "description": "Test creating Heat orchestration resources",
+    "subtasks": [
         {
-            "args": {
-               "template_path": "samples/tasks/scenarios/heat/templates/resource-group-with-outputs.yaml.template",
-               "output_key": "val1"
+            "title": "Heatstacks Create_Stack_And_Show_Output",
+            "scenario": {
+                "HeatStacks.create_stack_and_show_output": {
+                    "template_path": "samples/tasks/scenarios/heat/templates/resource-group-with-outputs.yaml.template",
+                    "output_key": "val1"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2
@@ -21,21 +28,22 @@
                     "max": 0
                 }
             }
-        }
-    ],
-
-    "HeatStacks.create_stack_and_show_output_via_API": [
+        },
         {
-            "args": {
-               "template_path": "samples/tasks/scenarios/heat/templates/resource-group-with-outputs.yaml.template",
-               "output_key": "val1"
+            "title": "Heatstacks Create_Stack_And_Show_Output_Via_Api",
+            "scenario": {
+                "HeatStacks.create_stack_and_show_output_via_API": {
+                    "template_path": "samples/tasks/scenarios/heat/templates/resource-group-with-outputs.yaml.template",
+                    "output_key": "val1"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 1
+                "constant": {
+                    "times": 5,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

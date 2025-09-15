@@ -1,11 +1,15 @@
 ---
-  ZaqarBasic.create_queue:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Zaqar Create Queue
+description: Test creating Zaqar messaging resources
+subtasks:
+- title: Create queue
+  scenario:
+    ZaqarBasic.create_queue: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

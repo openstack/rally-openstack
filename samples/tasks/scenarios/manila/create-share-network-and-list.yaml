@@ -1,22 +1,26 @@
 ---
-  ManilaShares.create_share_network_and_list:
-    -
-      args:
-        name: "rally"
-        detailed: True
-        search_opts:
-          name: "rally"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      context:
-        quotas:
-          manila:
-            share_networks: -1
-        users:
-          tenants: 2
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Manila Create Share Network And List
+description: Test creating Manila share resources
+subtasks:
+- title: Create share network and list
+  scenario:
+    ManilaShares.create_share_network_and_list:
+      name: rally
+      detailed: true
+      search_opts:
+        name: rally
+  runner:
+    constant:
+      times: 10
+      concurrency: 10
+  contexts:
+    quotas:
+      manila:
+        share_networks: -1
+    users:
+      tenants: 2
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

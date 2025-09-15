@@ -1,10 +1,15 @@
 ---
-  NovaServices.list_services:
-    -
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova List Services
+description: Test listing Nova resources
+subtasks:
+- title: List services
+  scenario:
+    NovaServices.list_services: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  sla:
+    failure_rate:
+      max: 0

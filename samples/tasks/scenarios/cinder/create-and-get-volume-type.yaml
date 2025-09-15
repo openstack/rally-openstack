@@ -1,16 +1,20 @@
----
-  CinderVolumeTypes.create_and_get_volume_type:
-    -
-      args:
-        description: "rally tests creating types"
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating volume types and retrieving them in Cinder
+  block storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  runner:
+    constant:
+      concurrency: 2
+      times: 5
+  scenario:
+    CinderVolumeTypes.create_and_get_volume_type:
+      description: rally tests creating types
+  sla:
+    failure_rate:
+      max: 0
+  title: Create And Get Volume Type
+title: Cinder Volume Type Creation and Retrieval
+version: 2

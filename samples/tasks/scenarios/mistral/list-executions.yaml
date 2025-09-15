@@ -1,14 +1,19 @@
 ---
-  MistralExecutions.list_executions:
-    -
-      runner:
-        type: "constant"
-        times: 50
-        concurrency: 10
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Mistral List Executions
+description: Test listing Mistral workflow resources
+subtasks:
+- title: List executions
+  scenario:
+    MistralExecutions.list_executions: {}
+  runner:
+    constant:
+      times: 50
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

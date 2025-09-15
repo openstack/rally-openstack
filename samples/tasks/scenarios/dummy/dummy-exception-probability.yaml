@@ -1,12 +1,16 @@
 ---
-  Dummy.dummy_exception_probability:
-    -
-      args:
+version: 2
+title: "Dummy Exception Probability Test"
+description: "Tests dummy scenario with probabilistic exception generation - used for testing Rally's statistical failure handling"
+subtasks:
+  - title: "Probabilistic exception test"
+    scenario:
+      Dummy.dummy_exception_probability:
         exception_probability: 0.5
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 1000
         concurrency: 1
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

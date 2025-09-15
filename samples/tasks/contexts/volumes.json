@@ -1,15 +1,23 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Volumes Context Configuration",
+    "description": "Sample configuration for Rally volumes context showing volume creation setup",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Basic volumes context",
+            "description": "Create volumes for use in testing scenarios",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2

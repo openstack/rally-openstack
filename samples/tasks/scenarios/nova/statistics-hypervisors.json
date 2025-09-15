@@ -1,23 +1,30 @@
 {
-  "NovaHypervisors.statistics_hypervisors": [
-    {
-      "args": {},
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 2
-      },
-      "context": {
-        "users": {
-          "tenants": 3,
-          "users_per_tenant": 2
+    "version": 2,
+    "title": "Nova Statistics Hypervisors",
+    "description": "Test hypervisor operations",
+    "subtasks": [
+        {
+            "title": "Statistics hypervisors",
+            "scenario": {
+                "NovaHypervisors.statistics_hypervisors": {}
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 2
+                }
+            },
+            "contexts": {
+                "users": {
+                    "tenants": 3,
+                    "users_per_tenant": 2
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         }
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
-        }
-      }
-    }
-  ]
+    ]
 }

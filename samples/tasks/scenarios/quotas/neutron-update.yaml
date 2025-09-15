@@ -1,16 +1,20 @@
 ---
-  Quotas.neutron_update:
-    -
-      args:
-        max_quota: 1024
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Unknown Neutron Update
+description: Test neutron update operations
+subtasks:
+- title: Unknown neutron update
+  scenario:
+    Quotas.neutron_update:
+      max_quota: 1024
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

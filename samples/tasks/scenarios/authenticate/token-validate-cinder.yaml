@@ -1,16 +1,20 @@
 ---
-  Authenticate.validate_cinder:
-    -
-      args:
+version: 2
+title: "Cinder Token Validation Test"
+description: "Test Cinder token validation performance"
+subtasks:
+  - title: "Cinder Token Validation"
+    scenario:
+      Authenticate.validate_cinder:
         repetitions: 2
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 10
         concurrency: 5
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 5
-      sla:
-        failure_rate:
-          max: 0
+    contexts:
+      users:
+        tenants: 3
+        users_per_tenant: 5
+    sla:
+      failure_rate:
+        max: 0

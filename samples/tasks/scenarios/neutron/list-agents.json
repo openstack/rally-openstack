@@ -1,15 +1,22 @@
 {
-    "NeutronNetworks.list_agents": [
+    "version": 2,
+    "title": "Neutron List Agents",
+    "description": "Test listing Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "agent_args": {}
+            "title": "List agents",
+            "scenario": {
+                "NeutronNetworks.list_agents": {
+                    "agent_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

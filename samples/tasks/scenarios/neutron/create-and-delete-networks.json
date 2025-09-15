@@ -1,15 +1,22 @@
 {
-    "NeutronNetworks.create_and_delete_networks": [
+    "version": 2,
+    "title": "Create and delete Neutron networks",
+    "description": "Test creating and deleting Neutron networks with quota management",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {}
+            "title": "Create and delete networks",
+            "scenario": {
+                "NeutronNetworks.create_and_delete_networks": {
+                    "network_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3

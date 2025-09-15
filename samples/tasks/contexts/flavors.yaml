@@ -1,17 +1,21 @@
 ---
-  Dummy.openstack:
-    -
-      args:
+version: 2
+title: "Flavors Context Configuration"
+description: "Sample configuration for Rally flavors context showing custom flavor creation"
+subtasks:
+  - title: "Custom flavor context"
+    description: "Create custom flavors for use in testing scenarios"
+    scenario:
+      Dummy.openstack:
         sleep: 0.1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 4
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        flavors:
-          -
-            name: "ram64"
-            ram: 64
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+      flavors:
+        - name: "ram64"
+          ram: 64

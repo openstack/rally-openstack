@@ -1,19 +1,26 @@
 {
-  "NovaHypervisors.list_hypervisors": [
-    {
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 10
-      },
-      "args": {
-        "detailed": true
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
-         }
-      }
-    }
-  ]
+    "version": 2,
+    "title": "Nova List Hypervisors",
+    "description": "Test listing Nova resources",
+    "subtasks": [
+        {
+            "title": "List hypervisors",
+            "scenario": {
+                "NovaHypervisors.list_hypervisors": {
+                    "detailed": true
+                }
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 10
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
+        }
+    ]
 }

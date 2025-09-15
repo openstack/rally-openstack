@@ -1,20 +1,24 @@
 ---
-  NeutronNetworks.create_and_update_networks:
-    -
-      args:
-        network_update_args:
-            admin_state_up: False
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 5
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            network: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And Update Networks
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and update networks
+  scenario:
+    NeutronNetworks.create_and_update_networks:
+      network_update_args:
+        admin_state_up: false
+  runner:
+    constant:
+      times: 10
+      concurrency: 5
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        network: -1
+  sla:
+    failure_rate:
+      max: 0

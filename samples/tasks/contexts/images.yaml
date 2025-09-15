@@ -1,18 +1,23 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        images:
-          image_url: "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img"
-          image_type: "qcow2"
-          image_container: "bare"
-          images_per_tenant: 4
+version: 2
+title: Images Context Configuration
+description: Sample configuration for Rally images context showing image creation setup
+subtasks:
+- title: Custom images context
+  description: Create custom images from remote URL for use in testing scenarios
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 2
+      concurrency: 1
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    images:
+      image_url: http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
+      image_type: qcow2
+      image_container: bare
+      images_per_tenant: 4

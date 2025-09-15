@@ -1,17 +1,24 @@
 {
-    "MistralExecutions.create_execution_from_workbook": [
+    "version": 2,
+    "title": "Mistral Create Delete Execution With Workflow Name",
+    "description": "Test creating Mistral workflow resources",
+    "subtasks": [
         {
-            "args": {
-                "definition": "rally-jobs/extra/mistral_wb.yaml",
-                "workflow_name": "wf1",
-                "do_delete": true
+            "title": "Create delete execution with workflow name",
+            "scenario": {
+                "MistralExecutions.create_execution_from_workbook": {
+                    "definition": "rally-jobs/extra/mistral_wb.yaml",
+                    "workflow_name": "wf1",
+                    "do_delete": true
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 20,
-                "concurrency": 5
+                "constant": {
+                    "times": 20,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

@@ -1,15 +1,22 @@
 {
-    "ManilaShares.list_shares": [
+    "version": 2,
+    "title": "Manila List Shares",
+    "description": "Test listing Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "detailed": true
+            "title": "List shares",
+            "scenario": {
+                "ManilaShares.list_shares": {
+                    "detailed": true
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 12,
-                "concurrency": 1
+                "constant": {
+                    "times": 12,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 4,

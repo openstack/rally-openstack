@@ -1,20 +1,25 @@
 ---
-  SwiftObjects.list_objects_in_containers:
-    -
-      runner:
-        type: "constant"
-        times: 6
-        concurrency: 3
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "admin"
-        swift_objects:
-          containers_per_tenant: 1
-          objects_per_container: 10
-          object_size: 1024
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Swift List Objects In Containers
+description: Test listing Swift object storage resources
+subtasks:
+- title: List objects in containers
+  scenario:
+    SwiftObjects.list_objects_in_containers: {}
+  runner:
+    constant:
+      times: 6
+      concurrency: 3
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+    roles:
+    - admin
+    swift_objects:
+      containers_per_tenant: 1
+      objects_per_container: 10
+      object_size: 1024
+  sla:
+    failure_rate:
+      max: 0

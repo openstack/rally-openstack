@@ -1,19 +1,26 @@
 {
-    "ManilaShares.create_share_network_and_list": [
+    "version": 2,
+    "title": "Manila Create Share Network And List",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "name": "rally",
-                "detailed": true,
-                "search_opts": {
-                    "name": "rally"
+            "title": "Create share network and list",
+            "scenario": {
+                "ManilaShares.create_share_network_and_list": {
+                    "name": "rally",
+                    "detailed": true,
+                    "search_opts": {
+                        "name": "rally"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 10
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "share_networks": -1

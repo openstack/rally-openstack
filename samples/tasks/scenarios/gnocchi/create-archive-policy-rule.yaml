@@ -1,13 +1,17 @@
 ---
-  GnocchiArchivePolicyRule.create_archive_policy_rule:
-    -
-      args:
-        metric_pattern: "cpu_*"
-        archive_policy_name: "low"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Gnocchi Create Archive Policy Rule
+description: Test creating Gnocchi metric resources
+subtasks:
+- title: Create archive policy rule
+  scenario:
+    GnocchiArchivePolicyRule.create_archive_policy_rule:
+      metric_pattern: cpu_*
+      archive_policy_name: low
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  sla:
+    failure_rate:
+      max: 0

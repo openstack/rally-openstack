@@ -1,18 +1,22 @@
 ---
-  KeystoneBasic.create_and_update_user:
-    -
-      args:
-        create_user_kwargs: {}
-        update_user_kwargs:
-          enabled: false
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create And Update User
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create and update user
+  scenario:
+    KeystoneBasic.create_and_update_user:
+      create_user_kwargs: {}
+      update_user_kwargs:
+        enabled: false
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

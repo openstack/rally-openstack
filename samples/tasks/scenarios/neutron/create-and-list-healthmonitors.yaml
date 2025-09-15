@@ -1,19 +1,23 @@
 ---
-  NeutronLoadbalancerV1.create_and_list_healthmonitors:
-    -
-      args:
-        healthmonitor_create_args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      context:
-        users:
-          tenants: 5
-          users_per_tenant: 2
-        quotas:
-          neutron:
-            health_monitor: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And List Healthmonitors
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and list healthmonitors
+  scenario:
+    NeutronLoadbalancerV1.create_and_list_healthmonitors:
+      healthmonitor_create_args: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 5
+      users_per_tenant: 2
+    quotas:
+      neutron:
+        health_monitor: -1
+  sla:
+    failure_rate:
+      max: 0

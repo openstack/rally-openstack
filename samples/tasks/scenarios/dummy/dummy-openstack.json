@@ -1,10 +1,18 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Dummy OpenStack Integration Test",
+    "description": "Tests dummy scenario with OpenStack integration - validates basic OpenStack client connectivity and credentials",
+    "subtasks": [
         {
+            "title": "OpenStack connectivity test",
+            "scenario": {
+                "Dummy.openstack": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 1,
-                "concurrency": 1
+                "constant": {
+                    "times": 1,
+                    "concurrency": 1
+                }
             },
             "sla": {
                 "failure_rate": {

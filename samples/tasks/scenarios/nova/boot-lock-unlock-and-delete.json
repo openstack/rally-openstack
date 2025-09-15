@@ -1,21 +1,28 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaServers.boot_lock_unlock_and_delete": [
+    "version": 2,
+    "title": "Nova Boot Lock Unlock And Delete",
+    "description": "Test booting Nova servers",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
+            "title": "Boot lock unlock and delete",
+            "scenario": {
+                "NovaServers.boot_lock_unlock_and_delete": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

@@ -1,26 +1,33 @@
 {
-    "NeutronLoadbalancerV2.create_and_list_loadbalancers": [
+    "version": 2,
+    "title": "Neutron Create And List Loadbalancers",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-             "args": {
-                 "lb_create_args": {}
-             },
-             "runner": {
-                 "type": "constant",
-                 "times": 5,
-                 "concurrency": 2
-             },
-             "context": {
-                 "users": {
-                     "tenants": 2,
-                     "users_per_tenant": 2
-                 },
-                 "network": {}
-             },
-             "sla": {
-                 "failure_rate": {
-                     "max": 0
-                 }
-             }
+            "title": "Create and list loadbalancers",
+            "scenario": {
+                "NeutronLoadbalancerV2.create_and_list_loadbalancers": {
+                    "lb_create_args": {}
+                }
+            },
+            "runner": {
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
+                "users": {
+                    "tenants": 2,
+                    "users_per_tenant": 2
+                },
+                "network": {}
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         }
     ]
 }

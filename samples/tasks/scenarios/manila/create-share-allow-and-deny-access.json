@@ -1,18 +1,25 @@
 {
-    "ManilaShares.create_share_then_allow_and_deny_access": [
+    "version": 2,
+    "title": "Manila Create Share Allow And Deny Access",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "share_proto": "nfs",
-                "size": 1,
-                "access": "127.0.0.1",
-                "access_type": "ip"
+            "title": "Create share allow and deny access",
+            "scenario": {
+                "ManilaShares.create_share_then_allow_and_deny_access": {
+                    "share_proto": "nfs",
+                    "size": 1,
+                    "access": "127.0.0.1",
+                    "access_type": "ip"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

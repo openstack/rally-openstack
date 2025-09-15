@@ -1,11 +1,16 @@
-  Dummy.dummy_random_fail_in_atomic:
-    -
-      args:
+---
+version: 2
+title: "Dummy Random Fail in Atomic Actions Test"
+description: "Tests dummy scenario with probabilistic failures within atomic actions - used for testing Rally's atomic action error handling"
+subtasks:
+  - title: "Random atomic action failures test"
+    scenario:
+      Dummy.dummy_random_fail_in_atomic:
         exception_probability: 0.5
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 100
         concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

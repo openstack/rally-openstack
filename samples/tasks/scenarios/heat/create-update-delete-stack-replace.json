@@ -1,16 +1,23 @@
 {
-    "HeatStacks.create_update_delete_stack": [
+    "version": 2,
+    "title": "Heat Create Update Delete Stack Replace",
+    "description": "Test creating Heat orchestration resources",
+    "subtasks": [
         {
-            "args": {
-               "template_path": "samples/tasks/scenarios/heat/templates/random-strings.yaml.template",
-               "updated_template_path": "samples/tasks/scenarios/heat/templates/updated-random-strings-replace.yaml.template"
+            "title": "Create update delete stack replace",
+            "scenario": {
+                "HeatStacks.create_update_delete_stack": {
+                    "template_path": "samples/tasks/scenarios/heat/templates/random-strings.yaml.template",
+                    "updated_template_path": "samples/tasks/scenarios/heat/templates/updated-random-strings-replace.yaml.template"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

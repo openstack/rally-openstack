@@ -1,11 +1,18 @@
 {
-    "KeystoneBasic.authenticate_user_and_validate_token": [
+    "version": 2,
+    "title": "Keystone Authenticate User And Validate Token",
+    "description": "Test authentication operations",
+    "subtasks": [
         {
-            "args": {},
+            "title": "Authenticate user and validate token",
+            "scenario": {
+                "KeystoneBasic.authenticate_user_and_validate_token": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 20,
-                "concurrency": 5
+                "constant": {
+                    "times": 20,
+                    "concurrency": 5
+                }
             },
             "sla": {
                 "failure_rate": {

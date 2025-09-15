@@ -1,19 +1,22 @@
-
 ---
-  NovaFlavors.create_and_get_flavor:
-    -
-      runner:
-        type: "constant"
-        concurrency: 2
-        times: 10
-      args:
-        ram: 500
-        vcpus : 1
-        disk: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Create And Get Flavor
+description: Test creating Nova resources
+subtasks:
+- title: Create and get flavor
+  scenario:
+    NovaFlavors.create_and_get_flavor:
+      ram: 500
+      vcpus: 1
+      disk: 1
+  runner:
+    constant:
+      concurrency: 2
+      times: 10
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

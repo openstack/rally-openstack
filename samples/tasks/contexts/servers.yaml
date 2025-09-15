@@ -1,20 +1,24 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 ---
-  Dummy.openstack:
-    -
-      args:
+version: 2
+title: "Server Context Configuration"
+description: "Example of using servers context to pre-create instances for testing"
+subtasks:
+  - title: "OpenStack Test with Server Context"
+    scenario:
+      Dummy.openstack:
         sleep: 0.1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 1
         concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        servers:
-          flavor:
-              name: "{{flavor_name}}"
-          image:
-              name: "^cirros.*-disk$"
-          servers_per_tenant: 2
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+      servers:
+        flavor:
+          name: "{{flavor_name}}"
+        image:
+          name: "^cirros.*-disk$"
+        servers_per_tenant: 2

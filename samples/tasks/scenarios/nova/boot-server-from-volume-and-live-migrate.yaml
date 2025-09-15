@@ -1,24 +1,29 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {% set volume_type = volume_type or "" %}
 ---
-  NovaServers.boot_server_from_volume_and_live_migrate:
-  - args:
+version: 2
+title: Nova Boot Server From Volume And Live Migrate
+description: Test booting Nova servers
+subtasks:
+- title: Boot server from volume and live migrate
+  scenario:
+    NovaServers.boot_server_from_volume_and_live_migrate:
       flavor:
-        name: "{{flavor_name}}"
+        name: '{{flavor_name}}'
       image:
-        name: "^cirros.*-disk$"
+        name: ^cirros.*-disk$
       block_migration: false
       volume_size: 10
-      volume_type: "{{volume_type}}"
+      volume_type: '{{volume_type}}'
       force_delete: false
-    runner:
-      type: "constant"
+  runner:
+    constant:
       times: 10
       concurrency: 2
-    context:
-      users:
-        tenants: 1
-        users_per_tenant: 1
-    sla:
-      failure_rate:
-        max: 0
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

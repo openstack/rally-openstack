@@ -1,13 +1,20 @@
 {
-    "NovaKeypair.create_and_get_keypair": [
+    "version": 2,
+    "title": "Nova Create And Get Keypair",
+    "description": "Test creating Nova resources",
+    "subtasks": [
         {
-            "args": {},
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "Create and get keypair",
+            "scenario": {
+                "NovaKeypair.create_and_get_keypair": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2
@@ -18,7 +25,6 @@
                     "max": 0
                 }
             }
-
         }
     ]
 }

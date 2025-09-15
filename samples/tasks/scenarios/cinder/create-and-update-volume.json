@@ -1,19 +1,26 @@
 {
-    "CinderVolumes.create_and_update_volume": [
+    "version": 2,
+    "title": "Cinder Volume Creation and Update",
+    "description": "Test scenario for creating volumes and updating them in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "create_volume_kwargs": {},
-                "update_volume_kwargs": {
-                    "description": "desc_updated"
-                 },
-                "size": 1
+            "title": "Create And Update Volume",
+            "scenario": {
+                "CinderVolumes.create_and_update_volume": {
+                    "create_volume_kwargs": {},
+                    "update_volume_kwargs": {
+                        "description": "desc_updated"
+                    },
+                    "size": 1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 3,
-                "concurrency": 1
+                "constant": {
+                    "times": 3,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

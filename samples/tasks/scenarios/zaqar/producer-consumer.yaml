@@ -1,13 +1,17 @@
 ---
-  ZaqarBasic.producer_consumer:
-    -
-      args:
-        min_msg_count: 50
-        max_msg_count: 200
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Zaqar Producer Consumer
+description: Test producer consumer operations
+subtasks:
+- title: Producer consumer
+  scenario:
+    ZaqarBasic.producer_consumer:
+      min_msg_count: 50
+      max_msg_count: 200
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

@@ -1,16 +1,20 @@
 ---
-  HeatStacks.create_suspend_resume_delete_stack:
-    -
-      args:
-        template_path: "samples/tasks/scenarios/heat/templates/random-strings.yaml.template"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Heat Create Suspend Resume Delete Stack
+description: Test creating Heat orchestration resources
+subtasks:
+- title: Create suspend resume delete stack
+  scenario:
+    HeatStacks.create_suspend_resume_delete_stack:
+      template_path: samples/tasks/scenarios/heat/templates/random-strings.yaml.template
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

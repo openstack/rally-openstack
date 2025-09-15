@@ -1,17 +1,22 @@
 ---
-  HeatStacks.list_stacks_and_resources:
-    -
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        stacks:
-          stacks_per_tenant: 2
-          resources_per_stack: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Heat List Stack And Resources
+description: Test listing Heat orchestration resources
+subtasks:
+- title: List stack and resources
+  scenario:
+    HeatStacks.list_stacks_and_resources: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 1
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+    stacks:
+      stacks_per_tenant: 2
+      resources_per_stack: 10
+  sla:
+    failure_rate:
+      max: 0

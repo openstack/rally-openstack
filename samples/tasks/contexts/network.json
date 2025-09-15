@@ -1,15 +1,23 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Network Context Configuration",
+    "description": "Sample configurations for Rally network context showing network setup options",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Default network context",
+            "description": "Basic network context with default settings",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2
@@ -18,15 +26,20 @@
             }
         },
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Custom network context",
+            "description": "Network context with custom CIDR, DNS, and router configuration",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2

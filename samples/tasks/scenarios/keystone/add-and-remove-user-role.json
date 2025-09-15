@@ -1,12 +1,20 @@
 {
-    "KeystoneBasic.add_and_remove_user_role": [
-    {
-            "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+    "version": 2,
+    "title": "Keystone Add And Remove User Role",
+    "description": "Test add and remove user role operations",
+    "subtasks": [
+        {
+            "title": "Add and remove user role",
+            "scenario": {
+                "KeystoneBasic.add_and_remove_user_role": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

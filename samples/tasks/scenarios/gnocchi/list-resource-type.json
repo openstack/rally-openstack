@@ -1,12 +1,20 @@
 {
-    "GnocchiResourceType.list_resource_type": [
+    "version": 2,
+    "title": "Gnocchi List Resource Type",
+    "description": "Test listing Gnocchi metric resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "List resource type",
+            "scenario": {
+                "GnocchiResourceType.list_resource_type": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

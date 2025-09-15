@@ -1,15 +1,22 @@
 {
-    "DesignateBasic.create_and_list_recordsets": [
+    "version": 2,
+    "title": "Designate Create And List Recordsets",
+    "description": "Test creating Designate DNS resources",
+    "subtasks": [
         {
-            "args": {
-                "recordsets_per_zone": 10
+            "title": "Create and list recordsets",
+            "scenario": {
+                "DesignateBasic.create_and_list_recordsets": {
+                    "recordsets_per_zone": 10
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 10
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "designate": {
                         "zones": 100,

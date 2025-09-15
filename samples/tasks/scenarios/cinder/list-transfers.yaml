@@ -1,16 +1,19 @@
----
-  CinderVolumes.list_transfers:
-    -
-      args:
-        detailed: true
-      runner:
-        type: "constant"
-        times: 3
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for listing volume transfers in Cinder block storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  runner:
+    constant:
+      concurrency: 2
+      times: 3
+  scenario:
+    CinderVolumes.list_transfers:
+      detailed: true
+  sla:
+    failure_rate:
+      max: 0
+  title: List Transfers
+title: Cinder Volume Transfer Listing
+version: 2

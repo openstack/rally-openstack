@@ -1,14 +1,18 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        networking_agents: {}
+version: 2
+title: Dummy Networking Agents
+description: Test networking agents operations
+subtasks:
+- title: Dummy networking agents
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    networking_agents: {}

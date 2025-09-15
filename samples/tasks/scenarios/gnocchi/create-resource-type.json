@@ -1,22 +1,29 @@
 {
-    "GnocchiResourceType.create_resource_type": [
+    "version": 2,
+    "title": "Gnocchi Create Resource Type",
+    "description": "Test creating Gnocchi metric resources",
+    "subtasks": [
         {
-            "args": {
-                "attributes": {
-                    "foo": {
-                        "required": false,
-                        "type": "string"
-                    },
-                    "bar": {
-                        "required": true,
-                        "type": "number"
+            "title": "Create resource type",
+            "scenario": {
+                "GnocchiResourceType.create_resource_type": {
+                    "attributes": {
+                        "foo": {
+                            "required": false,
+                            "type": "string"
+                        },
+                        "bar": {
+                            "required": true,
+                            "type": "number"
+                        }
                     }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
             "sla": {
                 "failure_rate": {

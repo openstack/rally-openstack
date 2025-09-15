@@ -1,15 +1,22 @@
 {
-    "NeutronNetworks.create_and_list_networks": [
+    "version": 2,
+    "title": "Neutron Create And List Networks",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {}
+            "title": "Neutron Create And List Networks (variant 1)",
+            "scenario": {
+                "NeutronNetworks.create_and_list_networks": {
+                    "network_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3
@@ -27,17 +34,21 @@
             }
         },
         {
-            "args": {
-                "network_create_args": {
-                    "provider:network_type": "vxlan"
+            "title": "Neutron Create And List Networks (variant 2)",
+            "scenario": {
+                "NeutronNetworks.create_and_list_networks": {
+                    "network_create_args": {
+                        "provider:network_type": "vxlan"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3
@@ -47,7 +58,9 @@
                         "network": -1
                     }
                 },
-                "roles": ["admin"]
+                "roles": [
+                    "admin"
+                ]
             },
             "sla": {
                 "failure_rate": {

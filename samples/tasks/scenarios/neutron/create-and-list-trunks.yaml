@@ -1,23 +1,26 @@
-
 ---
-  NeutronTrunks.create_and_list_trunks:
-    -
-      args:
-        network_create_args: {}
-        subport_count: 10
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            network: -1
-            port: -1
-            trunk: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And List Trunks
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and list trunks
+  scenario:
+    NeutronTrunks.create_and_list_trunks:
+      network_create_args: {}
+      subport_count: 10
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        network: -1
+        port: -1
+        trunk: -1
+  sla:
+    failure_rate:
+      max: 0

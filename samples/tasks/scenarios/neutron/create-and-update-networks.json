@@ -1,17 +1,24 @@
 {
-    "NeutronNetworks.create_and_update_networks": [
+    "version": 2,
+    "title": "Neutron Create And Update Networks",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "network_update_args": {
-                    "admin_state_up": false
-                 }
+            "title": "Create and update networks",
+            "scenario": {
+                "NeutronNetworks.create_and_update_networks": {
+                    "network_update_args": {
+                        "admin_state_up": false
+                    }
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

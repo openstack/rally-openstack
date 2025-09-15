@@ -1,15 +1,22 @@
 {
-    "Quotas.nova_update": [
+    "version": 2,
+    "title": "Unknown Nova Update",
+    "description": "Test nova update operations",
+    "subtasks": [
         {
-            "args": {
-                "max_quota": 1024
+            "title": "Unknown nova update",
+            "scenario": {
+                "Quotas.nova_update": {
+                    "max_quota": 1024
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

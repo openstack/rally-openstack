@@ -1,17 +1,21 @@
----
-  CinderVolumeTypes.create_and_update_volume_type:
-    -
-      args:
-        description: "test"
-        update_description: "test update"
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating volume types and updating them in Cinder block
+  storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  runner:
+    constant:
+      concurrency: 2
+      times: 5
+  scenario:
+    CinderVolumeTypes.create_and_update_volume_type:
+      description: test
+      update_description: test update
+  sla:
+    failure_rate:
+      max: 0
+  title: Create And Update Volume Type
+title: Cinder Volume Type Creation and Update
+version: 2

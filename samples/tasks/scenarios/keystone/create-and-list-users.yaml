@@ -1,11 +1,15 @@
 ---
-  KeystoneBasic.create_and_list_users:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create And List Users
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create and list users
+  scenario:
+    KeystoneBasic.create_and_list_users: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

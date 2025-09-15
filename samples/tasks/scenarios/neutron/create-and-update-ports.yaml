@@ -1,25 +1,29 @@
 ---
-  NeutronNetworks.create_and_update_ports:
-    -
-      args:
-        ports_per_network: 5
-        port_update_args:
-            admin_state_up: False
-            device_id: "dummy_id"
-            device_owner: "dummy_owner"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 5
-      context:
-        network: {}
-        users:
-          tenants: 2
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            network: -1
-            port: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And Update Ports
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and update ports
+  scenario:
+    NeutronNetworks.create_and_update_ports:
+      ports_per_network: 5
+      port_update_args:
+        admin_state_up: false
+        device_id: dummy_id
+        device_owner: dummy_owner
+  runner:
+    constant:
+      times: 10
+      concurrency: 5
+  contexts:
+    network: {}
+    users:
+      tenants: 2
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        network: -1
+        port: -1
+  sla:
+    failure_rate:
+      max: 0

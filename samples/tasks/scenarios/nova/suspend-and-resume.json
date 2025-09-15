@@ -1,22 +1,29 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaServers.suspend_and_resume_server": [
+    "version": 2,
+    "title": "Nova Suspend And Resume",
+    "description": "Test suspend and resume operations",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "force_delete": false
+            "title": "Suspend and resume",
+            "scenario": {
+                "NovaServers.suspend_and_resume_server": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "force_delete": false
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

@@ -1,11 +1,18 @@
 {
-    "KeystoneBasic.create_and_list_tenants": [
+    "version": 2,
+    "title": "Keystone Create And List Tenants",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
         {
-            "args": {},
+            "title": "Create and list tenants",
+            "scenario": {
+                "KeystoneBasic.create_and_list_tenants": {}
+            },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 1
+                "constant": {
+                    "times": 10,
+                    "concurrency": 1
+                }
             },
             "sla": {
                 "failure_rate": {

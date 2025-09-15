@@ -1,12 +1,20 @@
 {
-    "Quotas.cinder_get": [
+    "version": 2,
+    "title": "Unknown Cinder Get",
+    "description": "Test cinder get operations",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "Unknown cinder get",
+            "scenario": {
+                "Quotas.cinder_get": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2
@@ -17,7 +25,6 @@
                     "max": 0
                 }
             }
-
         }
     ]
 }

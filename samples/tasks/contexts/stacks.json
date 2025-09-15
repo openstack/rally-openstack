@@ -1,24 +1,35 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Task template with stacks context",
+    "description": "This sample demonstrates the usage of stacks context for setting up Heat stacks.",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 1
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 1
-                },
-                "stacks": {
-                    "stacks_per_tenant": 2,
-                    "resources_per_stack": 10
+            "title": "Test with Heat stacks context",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "times": 4,
+                            "concurrency": 1
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 1
+                        },
+                        "stacks": {
+                            "stacks_per_tenant": 2,
+                            "resources_per_stack": 10
+                        }
+                    }
                 }
-            }
+            ]
         }
     ]
 }

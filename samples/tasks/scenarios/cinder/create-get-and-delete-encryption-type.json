@@ -1,27 +1,34 @@
 {
-    "CinderVolumeTypes.create_get_and_delete_encryption_type": [
+    "version": 2,
+    "title": "Cinder Volume Type Encryption Creation, Retrieval and Deletion",
+    "description": "Test scenario for creating, retrieving, and deleting volume type encryption specifications in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-              "provider": "LuksEncryptor",
-              "cipher": "aes-xts-plain64",
-              "key_size": 512,
-              "control_location": "front-end"
+            "title": "Create Get And Delete Encryption Type",
+            "scenario": {
+                "CinderVolumeTypes.create_get_and_delete_encryption_type": {
+                    "provider": "LuksEncryptor",
+                    "cipher": "aes-xts-plain64",
+                    "key_size": 512,
+                    "control_location": "front-end"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 1
+                "constant": {
+                    "times": 4,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2
                 },
                 "volume_types": [
-                  "test_type1",
-                  "test_type2",
-                  "test_type3",
-                  "test_type4"
+                    "test_type1",
+                    "test_type2",
+                    "test_type3",
+                    "test_type4"
                 ]
             },
             "sla": {

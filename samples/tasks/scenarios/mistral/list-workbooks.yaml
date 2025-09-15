@@ -1,14 +1,19 @@
 ---
-  MistralWorkbooks.list_workbooks:
-    -
-      runner:
-        type: "constant"
-        times: 50
-        concurrency: 10
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Mistral List Workbooks
+description: Test listing Mistral workflow resources
+subtasks:
+- title: List workbooks
+  scenario:
+    MistralWorkbooks.list_workbooks: {}
+  runner:
+    constant:
+      times: 50
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

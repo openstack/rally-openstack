@@ -1,15 +1,22 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Dummy Manila Security Services",
+    "description": "Test manila security services operations",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Dummy manila security services",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

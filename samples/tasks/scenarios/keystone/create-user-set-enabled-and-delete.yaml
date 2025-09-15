@@ -1,22 +1,27 @@
 ---
-  KeystoneBasic.create_user_set_enabled_and_delete:
-    -
-      args:
-        enabled: true
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        enabled: false
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create User Set Enabled And Delete
+description: Test creating Keystone identity resources
+subtasks:
+- title: Keystone Create User Set Enabled And Delete (variant 1)
+  scenario:
+    KeystoneBasic.create_user_set_enabled_and_delete:
+      enabled: true
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0
+- title: Keystone Create User Set Enabled And Delete (variant 2)
+  scenario:
+    KeystoneBasic.create_user_set_enabled_and_delete:
+      enabled: false
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

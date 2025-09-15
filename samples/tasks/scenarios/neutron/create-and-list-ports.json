@@ -1,17 +1,24 @@
 {
-    "NeutronNetworks.create_and_list_ports": [
+    "version": 2,
+    "title": "Neutron Create And List Ports",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {},
-                "port_create_args": {},
-                "ports_per_network": 10
+            "title": "Create and list ports",
+            "scenario": {
+                "NeutronNetworks.create_and_list_ports": {
+                    "network_create_args": {},
+                    "port_create_args": {},
+                    "ports_per_network": 10
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "network": {},
                 "users": {
                     "tenants": 3,

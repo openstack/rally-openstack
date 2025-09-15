@@ -1,25 +1,29 @@
 ---
-  CinderQos.create_qos_associate_and_disassociate_type:
-    -
-      args:
+version: 2
+title: "Cinder QoS Associate and Disassociate Volume Types"
+description: "Test scenario for creating QoS specifications and associating/disassociating them with volume types in Cinder block storage service."
+subtasks:
+  - title: "Create QoS and associate with volume types"
+    scenario:
+      CinderQos.create_qos_associate_and_disassociate_type:
         consumer: "both"
         write_iops_sec: "10"
         read_iops_sec: "1000"
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 5
         concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-        volume_types: [
-          "test_type1",
-          "test_type2",
-          "test_type3",
-          "test_type4",
-          "test_type5",
-        ]
-      sla:
-        failure_rate:
-          max: 0
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 2
+      volume_types: [
+        "test_type1",
+        "test_type2",
+        "test_type3",
+        "test_type4",
+        "test_type5",
+      ]
+    sla:
+      failure_rate:
+        max: 0

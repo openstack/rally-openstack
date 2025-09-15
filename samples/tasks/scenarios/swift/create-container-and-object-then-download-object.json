@@ -1,16 +1,23 @@
 {
-    "SwiftObjects.create_container_and_object_then_download_object": [
+    "version": 2,
+    "title": "Swift Create Container And Object Then Download Object",
+    "description": "Test creating Swift object storage resources",
+    "subtasks": [
         {
-            "args": {
-                "objects_per_container": 5,
-                "object_size": 1024
+            "title": "Create container and object then download object",
+            "scenario": {
+                "SwiftObjects.create_container_and_object_then_download_object": {
+                    "objects_per_container": 5,
+                    "object_size": 1024
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 6,
-                "concurrency": 3
+                "constant": {
+                    "times": 6,
+                    "concurrency": 3
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

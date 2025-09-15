@@ -1,17 +1,24 @@
 {
-    "GlanceImages.create_and_delete_image": [
+    "version": 2,
+    "title": "Create and delete Glance images",
+    "description": "Test creating and deleting images in Glance with remote image sources",
+    "subtasks": [
         {
-            "args": {
-                "image_location": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img",
-                "container_format": "bare",
-                "disk_format": "qcow2"
+            "title": "Create and delete image",
+            "scenario": {
+                "GlanceImages.create_and_delete_image": {
+                    "image_location": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img",
+                    "container_format": "bare",
+                    "disk_format": "qcow2"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

@@ -1,13 +1,20 @@
 {
-    "Dummy.dummy": [
+    "version": 2,
+    "title": "Basic Dummy Scenario Test",
+    "description": "Simple dummy test that sleeps for a specified duration - used for basic Rally functionality testing",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 5
+            "title": "Basic sleep test",
+            "scenario": {
+                "Dummy.dummy": {
+                    "sleep": 5
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 20,
-                "concurrency": 5
+                "constant": {
+                    "times": 20,
+                    "concurrency": 5
+                }
             },
             "sla": {
                 "failure_rate": {

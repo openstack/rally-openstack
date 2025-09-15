@@ -1,12 +1,16 @@
 ---
-  NovaAvailabilityZones.list_availability_zones:
-    -
-      args:
-        detailed: true
-      runner:
-        type: "constant"
-        concurrency: 2
-        times: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova List Availability Zones
+description: Test listing Nova resources
+subtasks:
+- title: List availability zones
+  scenario:
+    NovaAvailabilityZones.list_availability_zones:
+      detailed: true
+  runner:
+    constant:
+      concurrency: 2
+      times: 10
+  sla:
+    failure_rate:
+      max: 0

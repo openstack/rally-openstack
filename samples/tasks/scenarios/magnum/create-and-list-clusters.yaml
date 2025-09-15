@@ -1,67 +1,74 @@
 ---
-  MagnumClusters.create_and_list_clusters:
-    -
-      args:
-        node_count: 1
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        cluster_templates:
-          image_id: "fedora-atomic-latest"
-          external_network_id: "public"
-          dns_nameserver: "8.8.8.8"
-          flavor_id: "m1.small"
-          docker_volume_size: 5
-          network_driver: "flannel"
-          coe: "kubernetes"
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        node_count: 1
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        cluster_templates:
-          image_id: "fedora-atomic-latest"
-          external_network_id: "public"
-          dns_nameserver: "8.8.8.8"
-          flavor_id: "m1.small"
-          docker_volume_size: 5
-          network_driver: "docker"
-          coe: "swarm"
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        node_count: 1
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        cluster_templates:
-          image_id: "ubuntu-mesos"
-          external_network_id: "public"
-          dns_nameserver: "8.8.8.8"
-          flavor_id: "m1.small"
-          network_driver: "docker"
-          coe: "mesos"
-      sla:
-        failure_rate:
-          max: 0
+description: Test creating and listing clusters in Magnum container orchestration
+  service
+subtasks:
+- contexts:
+    cluster_templates:
+      coe: kubernetes
+      dns_nameserver: 8.8.8.8
+      docker_volume_size: 5
+      external_network_id: public
+      flavor_id: m1.small
+      image_id: fedora-atomic-latest
+      network_driver: flannel
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  runner:
+    constant:
+      concurrency: 1
+      times: 1
+  scenario:
+    MagnumClusters.create_and_list_clusters:
+      node_count: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create and list Kubernetes clusters
+- contexts:
+    cluster_templates:
+      coe: swarm
+      dns_nameserver: 8.8.8.8
+      docker_volume_size: 5
+      external_network_id: public
+      flavor_id: m1.small
+      image_id: fedora-atomic-latest
+      network_driver: docker
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  runner:
+    constant:
+      concurrency: 1
+      times: 1
+  scenario:
+    MagnumClusters.create_and_list_clusters:
+      node_count: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create and list Swarm clusters
+- contexts:
+    cluster_templates:
+      coe: mesos
+      dns_nameserver: 8.8.8.8
+      external_network_id: public
+      flavor_id: m1.small
+      image_id: ubuntu-mesos
+      network_driver: docker
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  runner:
+    constant:
+      concurrency: 1
+      times: 1
+  scenario:
+    MagnumClusters.create_and_list_clusters:
+      node_count: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create and list Mesos clusters
+title: Magnum cluster creation and listing
+version: 2

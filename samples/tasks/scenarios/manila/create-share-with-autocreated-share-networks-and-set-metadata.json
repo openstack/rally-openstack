@@ -1,21 +1,28 @@
 {
-    "ManilaShares.set_and_delete_metadata": [
+    "version": 2,
+    "title": "Manila Create Share With Autocreated Share Networks And Set Metadata",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "sets": 1,
-                "set_size": 3,
-                "delete_size": 3,
-                "key_min_length": 1,
-                "key_max_length": 256,
-                "value_min_length": 1,
-                "value_max_length": 1024
+            "title": "Create share with autocreated share networks and set metadata",
+            "scenario": {
+                "ManilaShares.set_and_delete_metadata": {
+                    "sets": 1,
+                    "set_size": 3,
+                    "delete_size": 3,
+                    "key_min_length": 1,
+                    "key_max_length": 256,
+                    "value_min_length": 1,
+                    "value_max_length": 1024
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 1,
-                "concurrency": 1
+                "constant": {
+                    "times": 1,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

@@ -1,22 +1,29 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaServers.boot_and_delete_server": [
+    "version": 2,
+    "title": "Boot and delete Nova servers",
+    "description": "Test booting and deleting Nova servers with different network configurations",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "force_delete": false
+            "title": "Boot and delete server without networking",
+            "scenario": {
+                "NovaServers.boot_and_delete_server": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "force_delete": false
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2
@@ -29,21 +36,25 @@
             }
         },
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "auto_assign_nic": true
+            "title": "Boot and delete server with auto-assigned NIC",
+            "scenario": {
+                "NovaServers.boot_and_delete_server": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "auto_assign_nic": true
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

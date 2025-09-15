@@ -1,17 +1,24 @@
 {
-    "ManilaShares.create_and_shrink_share": [
+    "version": 2,
+    "title": "Manila Create Share And Shrink",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "share_proto": "nfs",
-                "size": 1,
-                "new_size": 2
+            "title": "Create share and shrink",
+            "scenario": {
+                "ManilaShares.create_and_shrink_share": {
+                    "share_proto": "nfs",
+                    "size": 1,
+                    "new_size": 2
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

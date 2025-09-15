@@ -1,20 +1,24 @@
 ---
-  NovaFlavors.create_flavor_and_set_keys:
-    -
-      runner:
-        type: "constant"
-        concurrency: 2
-        times: 10
-      args:
-        ram: 500
-        vcpus : 1
-        disk: 1
-        extra_specs:
-          quota:disk_read_bytes_sec: 10240
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Create Flavor And Set Keys
+description: Test creating Nova resources
+subtasks:
+- title: Create flavor and set keys
+  scenario:
+    NovaFlavors.create_flavor_and_set_keys:
+      ram: 500
+      vcpus: 1
+      disk: 1
+      extra_specs:
+        quota:disk_read_bytes_sec: 10240
+  runner:
+    constant:
+      concurrency: 2
+      times: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

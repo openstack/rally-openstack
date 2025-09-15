@@ -1,58 +1,67 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        cluster_templates:
-          image_id: "fedora-atomic-latest"
-          external_network_id: "public"
-          dns_nameserver: "8.8.8.8"
-          flavor_id: "m1.small"
-          docker_volume_size: 5
-          network_driver: "flannel"
-          coe: "kubernetes"
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        cluster_templates:
-          image_id: "fedora-atomic-latest"
-          external_network_id: "public"
-          dns_nameserver: "8.8.8.8"
-          flavor_id: "m1.small"
-          docker_volume_size: 5
-          network_driver: "docker"
-          coe: "swarm"
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        cluster_templates:
-          image_id: "ubuntu-mesos"
-          external_network_id: "public"
-          dns_nameserver: "8.8.8.8"
-          flavor_id: "m1.small"
-          network_driver: "docker"
-          coe: "mesos"
+version: 2
+title: "Task template with cluster templates context"
+description: "This sample demonstrates the usage of cluster templates context for setting up Magnum cluster templates with different COE types."
+subtasks:
+  - title: "Test with Kubernetes cluster template"
+    workloads:
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.1
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          cluster_templates:
+            image_id: "fedora-atomic-latest"
+            external_network_id: "public"
+            dns_nameserver: "8.8.8.8"
+            flavor_id: "m1.small"
+            docker_volume_size: 5
+            network_driver: "flannel"
+            coe: "kubernetes"
+  - title: "Test with Swarm cluster template"
+    workloads:
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.1
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          cluster_templates:
+            image_id: "fedora-atomic-latest"
+            external_network_id: "public"
+            dns_nameserver: "8.8.8.8"
+            flavor_id: "m1.small"
+            docker_volume_size: 5
+            network_driver: "docker"
+            coe: "swarm"
+  - title: "Test with Mesos cluster template"
+    workloads:
+      - scenario:
+          Dummy.openstack:
+            sleep: 0.1
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          cluster_templates:
+            image_id: "ubuntu-mesos"
+            external_network_id: "public"
+            dns_nameserver: "8.8.8.8"
+            flavor_id: "m1.small"
+            network_driver: "docker"
+            coe: "mesos"

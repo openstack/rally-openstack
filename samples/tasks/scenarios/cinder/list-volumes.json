@@ -1,15 +1,22 @@
 {
-    "CinderVolumes.list_volumes": [
+    "version": 2,
+    "title": "Cinder Volume Listing",
+    "description": "Test scenario for listing volumes in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "detailed": true
+            "title": "List Volumes",
+            "scenario": {
+                "CinderVolumes.list_volumes": {
+                    "detailed": true
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 1
+                "constant": {
+                    "times": 100,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

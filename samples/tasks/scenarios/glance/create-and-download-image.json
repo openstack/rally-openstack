@@ -1,17 +1,24 @@
 {
-    "GlanceImages.create_and_download_image": [
+    "version": 2,
+    "title": "Glance Create And Download Image",
+    "description": "Test creating Glance images",
+    "subtasks": [
         {
-            "args": {
-                "image_location": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img",
-                "container_format": "bare",
-                "disk_format": "qcow2"
+            "title": "Create and download image",
+            "scenario": {
+                "GlanceImages.create_and_download_image": {
+                    "image_location": "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img",
+                    "container_format": "bare",
+                    "disk_format": "qcow2"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3
@@ -22,7 +29,6 @@
                     "max": 0
                 }
             }
-
         }
     ]
 }

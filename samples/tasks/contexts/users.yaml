@@ -1,28 +1,35 @@
 ---
-  Dummy.openstack:
-    -
-      args:
+version: 2
+title: "Users Context Configuration"
+description: "Sample configurations for Rally users context showing tenant and user creation options"
+subtasks:
+  - title: "Basic users context"
+    description: "Simple users context with basic tenant and user configuration"
+    scenario:
+      Dummy.openstack:
         sleep: 0.1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 4
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-    -
-      args:
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+  - title: "Advanced users context"
+    description: "Users context with advanced options including domain configuration and user selection"
+    scenario:
+      Dummy.openstack:
         sleep: 0.1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 4
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-          resource_management_workers: 1
-          project_domain: "project"
-          user_domain: "demo"
-          user_choice_method: "random"
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+        resource_management_workers: 1
+        project_domain: "project"
+        user_domain: "demo"
+        user_choice_method: "random"

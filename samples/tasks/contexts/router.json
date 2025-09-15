@@ -1,15 +1,22 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Dummy Router",
+    "description": "Test router operations",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Dummy Router (variant 1)",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2
@@ -18,15 +25,19 @@
             }
         },
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Dummy Router (variant 2)",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2

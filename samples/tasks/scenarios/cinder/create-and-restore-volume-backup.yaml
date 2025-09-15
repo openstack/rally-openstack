@@ -1,21 +1,25 @@
----
-  CinderVolumes.create_and_restore_volume_backup:
-    -
-      args:
-        size: 1
-        do_delete: True
-        create_volume_kwargs: {}
-        create_backup_kwargs: {}
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 1
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        roles:
-          - "member"
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating volume backups and restoring them in Cinder
+  block storage service.
+subtasks:
+- contexts:
+    roles:
+    - member
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  runner:
+    constant:
+      concurrency: 1
+      times: 2
+  scenario:
+    CinderVolumes.create_and_restore_volume_backup:
+      create_backup_kwargs: {}
+      create_volume_kwargs: {}
+      do_delete: true
+      size: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create And Restore Volume Backup
+title: Cinder Volume Backup Creation and Restoration
+version: 2

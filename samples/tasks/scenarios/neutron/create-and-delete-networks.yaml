@@ -1,19 +1,23 @@
 ---
-  NeutronNetworks.create_and_delete_networks:
-    -
-      args:
+version: 2
+title: "Create and delete Neutron networks"
+description: "Test creating and deleting Neutron networks with quota management"
+subtasks:
+  - title: "Create and delete networks"
+    scenario:
+      NeutronNetworks.create_and_delete_networks:
         network_create_args: {}
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 100
         concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            network: -1
-      sla:
-        failure_rate:
-          max: 0
+    contexts:
+      users:
+        tenants: 3
+        users_per_tenant: 3
+      quotas:
+        neutron:
+          network: -1
+    sla:
+      failure_rate:
+        max: 0

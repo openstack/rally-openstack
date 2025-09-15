@@ -1,15 +1,22 @@
 {
-    "Quotas.neutron_update": [
+    "version": 2,
+    "title": "Unknown Neutron Update",
+    "description": "Test neutron update operations",
+    "subtasks": [
         {
-            "args": {
-                "max_quota": 1024
+            "title": "Unknown neutron update",
+            "scenario": {
+                "Quotas.neutron_update": {
+                    "max_quota": 1024
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

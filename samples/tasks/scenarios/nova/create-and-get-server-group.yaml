@@ -1,15 +1,21 @@
-  NovaServerGroups.create_and_get_server_group:
-    -
-      args:
-        policies: ["affinity"]
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+---
+version: 2
+title: Nova Create And Get Server Group
+description: Test creating Nova resources
+subtasks:
+- title: Create and get server group
+  scenario:
+    NovaServerGroups.create_and_get_server_group:
+      policies:
+      - affinity
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

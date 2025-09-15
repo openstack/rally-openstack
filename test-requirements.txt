@@ -10,6 +10,8 @@ pytest                                                 # MIT
 pytest-cov                                             # MIT
 # py.test plugin for generating HTML reports
 pytest-html                                            # MIT
+# py.test plugin that enables unittest builtin subTest feature
+pytest-subtests
 # py.test xdist plugin for distributed testing and loop-on-failing modes
 pytest-xdist
 

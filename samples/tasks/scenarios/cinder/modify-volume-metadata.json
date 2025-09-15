@@ -1,13 +1,20 @@
 {
-    "CinderVolumes.modify_volume_metadata": [
+    "version": 2,
+    "title": "Cinder Volume Metadata Modification",
+    "description": "Test scenario for modifying volume metadata in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {},
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+            "title": "Modify Volume Metadata",
+            "scenario": {
+                "CinderVolumes.modify_volume_metadata": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
                 "volumes": {
                     "size": 1
                 },

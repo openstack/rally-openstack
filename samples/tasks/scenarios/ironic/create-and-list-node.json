@@ -1,15 +1,22 @@
 {
-    "IronicNodes.create_and_list_node": [
+    "version": 2,
+    "title": "Ironic Create And List Node",
+    "description": "Test creating Ironic bare metal resources",
+    "subtasks": [
         {
-            "args": {
-                "driver": "pxe_ssh"
+            "title": "Create and list node",
+            "scenario": {
+                "IronicNodes.create_and_list_node": {
+                    "driver": "pxe_ssh"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 5,
                     "users_per_tenant": 1

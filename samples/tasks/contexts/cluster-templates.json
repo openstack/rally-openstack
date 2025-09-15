@@ -1,78 +1,105 @@
 {
-  "Dummy.openstack": [
-     {
-        "args": {
-          "sleep": 0.1
+    "version": 2,
+    "title": "Task template with cluster templates context",
+    "description": "This sample demonstrates the usage of cluster templates context for setting up Magnum cluster templates with different COE types.",
+    "subtasks": [
+        {
+            "title": "Test with Kubernetes cluster template",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "concurrency": 1,
+                            "times": 1
+                        }
+                    },
+                    "contexts": {
+                        "cluster_templates": {
+                            "dns_nameserver": "8.8.8.8",
+                            "external_network_id": "public",
+                            "flavor_id": "m1.small",
+                            "docker_volume_size": 5,
+                            "coe": "kubernetes",
+                            "image_id": "fedora-atomic-latest",
+                            "network_driver": "flannel"
+                        },
+                        "users": {
+                            "users_per_tenant": 1,
+                            "tenants": 1
+                        }
+                    }
+                }
+            ]
         },
-        "runner": {
-           "type": "constant",
-           "concurrency": 1,
-           "times": 1
+        {
+            "title": "Test with Swarm cluster template",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "concurrency": 1,
+                            "times": 1
+                        }
+                    },
+                    "contexts": {
+                        "cluster_templates": {
+                            "dns_nameserver": "8.8.8.8",
+                            "external_network_id": "public",
+                            "flavor_id": "m1.small",
+                            "docker_volume_size": 5,
+                            "coe": "swarm",
+                            "image_id": "fedora-atomic-latest",
+                            "network_driver": "docker"
+                        },
+                        "users": {
+                            "users_per_tenant": 1,
+                            "tenants": 1
+                        }
+                    }
+                }
+            ]
         },
-        "context": {
-           "cluster_templates": {
-              "dns_nameserver": "8.8.8.8",
-              "external_network_id": "public",
-              "flavor_id": "m1.small",
-              "docker_volume_size": 5,
-              "coe": "kubernetes",
-              "image_id": "fedora-atomic-latest",
-              "network_driver": "flannel"
-           },
-           "users": {
-              "users_per_tenant": 1,
-              "tenants": 1
-           }
+        {
+            "title": "Test with Mesos cluster template",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "concurrency": 1,
+                            "times": 1
+                        }
+                    },
+                    "contexts": {
+                        "cluster_templates": {
+                            "dns_nameserver": "8.8.8.8",
+                            "external_network_id": "public",
+                            "flavor_id": "m1.small",
+                            "coe": "mesos",
+                            "image_id": "ubuntu-mesos",
+                            "network_driver": "docker"
+                        },
+                        "users": {
+                            "users_per_tenant": 1,
+                            "tenants": 1
+                        }
+                    }
+                }
+            ]
         }
-     },
-     {
-        "args": {
-          "sleep": 0.1
-        },
-        "runner": {
-           "type": "constant",
-           "concurrency": 1,
-           "times": 1
-        },
-        "context": {
-           "cluster_templates": {
-              "dns_nameserver": "8.8.8.8",
-              "external_network_id": "public",
-              "flavor_id": "m1.small",
-              "docker_volume_size": 5,
-              "coe": "swarm",
-              "image_id": "fedora-atomic-latest",
-              "network_driver": "docker"
-           },
-           "users": {
-              "users_per_tenant": 1,
-              "tenants": 1
-           }
-        }
-     },
-     {
-        "args": {
-          "sleep": 0.1
-        },
-        "runner": {
-           "type": "constant",
-           "concurrency": 1,
-           "times": 1
-        },
-        "context": {
-           "cluster_templates": {
-              "dns_nameserver": "8.8.8.8",
-              "external_network_id": "public",
-              "flavor_id": "m1.small",
-              "coe": "mesos",
-              "image_id": "ubuntu-mesos",
-              "network_driver": "docker"
-           },
-           "users": {
-              "users_per_tenant": 1,
-              "tenants": 1
-           }
-        }
-     }
-  ]
+    ]
 }

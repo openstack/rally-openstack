@@ -1,19 +1,27 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Keypair Context Configuration",
+    "description": "Sample configuration for Rally keypair context showing SSH key pair setup",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Basic keypair context",
+            "description": "Create SSH key pairs for use in testing scenarios",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2
-                 },
+                },
                 "keypair": {}
             }
         }

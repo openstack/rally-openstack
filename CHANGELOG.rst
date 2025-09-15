@@ -40,6 +40,7 @@ Changed
   with setuptools-scm
 * Zaqar scenarios now use messaging v2 API, instead of deprecated v1 API.
 * Bump minimal required version to Rally 5.0.0. Switch docker image to use it.
+* All task samples are ported to Task format V2
 
 Fixed
 ~~~~~

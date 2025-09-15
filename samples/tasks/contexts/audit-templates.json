@@ -1,15 +1,22 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Dummy Audit Templates",
+    "description": "Test audit templates operations",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Dummy audit templates",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "audit_templates": {
                     "audit_templates_per_admin": 5,
                     "fill_strategy": "random",

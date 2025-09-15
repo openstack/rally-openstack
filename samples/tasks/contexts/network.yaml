@@ -1,34 +1,41 @@
 ---
-  Dummy.openstack:
-    -
-      args:
+version: 2
+title: "Network Context Configuration"
+description: "Sample configurations for Rally network context showing network setup options"
+subtasks:
+  - title: "Default network context"
+    description: "Basic network context with default settings"
+    scenario:
+      Dummy.openstack:
         sleep: 0.1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 4
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        network: {}
-    -
-      args:
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+      network: {}
+  - title: "Custom network context"
+    description: "Network context with custom CIDR, DNS, and router configuration"
+    scenario:
+      Dummy.openstack:
         sleep: 0.1
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 4
         concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        network:
-          start_cidr: "10.2.0.0/24"
-          networks_per_tenant: 1
-          subnets_per_network: 1
-          network_create_args: {}
-          dns_nameservers:
-            - "10.2.0.1"
-          router:
-            external: false
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+      network:
+        start_cidr: "10.2.0.0/24"
+        networks_per_tenant: 1
+        subnets_per_network: 1
+        network_create_args: {}
+        dns_nameservers:
+          - "10.2.0.1"
+        router:
+          external: false

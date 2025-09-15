@@ -1,17 +1,24 @@
 {
-    "NeutronSecurityGroup.create_and_list_security_group_rules": [
+    "version": 2,
+    "title": "Neutron Create And List Security Group Rules",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "security_group_args": {},
-                "security_group_rule_args": {},
-                "security_group_rules_count": 5
+            "title": "Create and list security group rules",
+            "scenario": {
+                "NeutronSecurityGroup.create_and_list_security_group_rules": {
+                    "security_group_args": {},
+                    "security_group_rule_args": {},
+                    "security_group_rules_count": 5
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 20,
-                "concurrency": 10
+                "constant": {
+                    "times": 20,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3
@@ -25,7 +32,7 @@
             },
             "sla": {
                 "failure_rate": {
-                "max": 0
+                    "max": 0
                 }
             }
         }

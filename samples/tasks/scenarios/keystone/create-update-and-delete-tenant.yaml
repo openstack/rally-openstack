@@ -1,11 +1,15 @@
 ---
-  KeystoneBasic.create_update_and_delete_tenant:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create Update And Delete Tenant
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create update and delete tenant
+  scenario:
+    KeystoneBasic.create_update_and_delete_tenant: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  sla:
+    failure_rate:
+      max: 0

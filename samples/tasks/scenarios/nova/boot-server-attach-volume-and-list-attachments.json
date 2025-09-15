@@ -1,26 +1,33 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {% set image_name = "^(cirros.*-disk|TestVM)$" %}
 {
-    "NovaServers.boot_server_attach_volume_and_list_attachments": [
+    "version": 2,
+    "title": "Nova Boot Server Attach Volume And List Attachments",
+    "description": "Test booting Nova servers",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "{{image_name}}"
-                },
-                "volume_size": 1,
-                "volume_num": 2,
-                "boot_server_kwargs": {},
-                "create_volume_kwargs": {}
+            "title": "Boot server attach volume and list attachments",
+            "scenario": {
+                "NovaServers.boot_server_attach_volume_and_list_attachments": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "{{image_name}}"
+                    },
+                    "volume_size": 1,
+                    "volume_num": 2,
+                    "boot_server_kwargs": {},
+                    "create_volume_kwargs": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

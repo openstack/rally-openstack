@@ -1,26 +1,33 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {% set availability_zone = availability_zone or "nova" %}
 {
-    "CinderVolumes.create_and_attach_volume": [
+    "version": 2,
+    "title": "Cinder Volume Creation and Attachment to Nova Instance",
+    "description": "Test scenario for creating volumes and attaching them to Nova instances in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "size": 10,
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "create_volume_params": {
-                    "availability_zone": "{{availability_zone}}"
+            "title": "Create and attach volume (fixed size)",
+            "scenario": {
+                "CinderVolumes.create_and_attach_volume": {
+                    "size": 10,
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "create_volume_params": {
+                        "availability_zone": "{{availability_zone}}"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 1
+                "constant": {
+                    "times": 5,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2
@@ -33,27 +40,31 @@
             }
         },
         {
-            "args": {
-                "size": {
-                    "min": 1,
-                    "max": 5
-                },
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "create_volume_params": {
-                    "availability_zone": "{{availability_zone}}"
+            "title": "Create and attach volume (variable size)",
+            "scenario": {
+                "CinderVolumes.create_and_attach_volume": {
+                    "size": {
+                        "min": 1,
+                        "max": 5
+                    },
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "create_volume_params": {
+                        "availability_zone": "{{availability_zone}}"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 1
+                "constant": {
+                    "times": 5,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

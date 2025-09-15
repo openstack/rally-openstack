@@ -1,16 +1,20 @@
 ---
-  GnocchiMetric.create_metric:
-    -
-      args:
-        archive_policy_name: "low"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 3
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Gnocchi Create Metric
+description: Test creating Gnocchi metric resources
+subtasks:
+- title: Create metric
+  scenario:
+    GnocchiMetric.create_metric:
+      archive_policy_name: low
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 3
+  sla:
+    failure_rate:
+      max: 0

@@ -1,20 +1,29 @@
 {
-    "NeutronNetworks.create_and_bind_ports": [
+    "version": 2,
+    "title": "Neutron Create And Bind Ports",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "ports_per_network": 2
+            "title": "Create and bind ports",
+            "scenario": {
+                "NeutronNetworks.create_and_bind_ports": {
+                    "ports_per_network": 2
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3
                 },
-                "roles": ["admin"],
+                "roles": [
+                    "admin"
+                ],
                 "quotas": {
                     "neutron": {
                         "network": -1,

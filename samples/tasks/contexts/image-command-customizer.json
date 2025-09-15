@@ -1,32 +1,43 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Task template with image command customizer context",
+    "description": "This sample demonstrates the usage of image command customizer context for creating customized images with pre-installed commands.",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
-           },
-            "runner": {
-                "type": "constant",
-                "times": 1,
-                "concurrency": 1,
-                "timeout": 3000
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 1
-                },
-                "image_command_customizer": {
-                    "image": {"name": "Fedora-x86_64-20-20140618-sda"},
-                    "flavor": {"name": "m1.small"},
-                    "command": {
-                        "local_path": "rally-jobs/extra/install_benchmark.sh",
-                        "remote_path": "./install_benchmark.sh"
+            "title": "Test with image command customizer",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
                     },
-                    "username": "root",
-                    "userdata": "#cloud-config\ndisable_root: 0\nssh_pwauth: 1"
-                },
-                "network": {}
-            }
+                    "runner": {
+                        "constant": {
+                            "times": 1,
+                            "concurrency": 1,
+                            "timeout": 3000
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 1
+                        },
+                        "image_command_customizer": {
+                            "image": {"name": "Fedora-x86_64-20-20140618-sda"},
+                            "flavor": {"name": "m1.small"},
+                            "command": {
+                                "local_path": "rally-jobs/extra/install_benchmark.sh",
+                                "remote_path": "./install_benchmark.sh"
+                            },
+                            "username": "root",
+                            "userdata": "#cloud-config\ndisable_root: 0\nssh_pwauth: 1"
+                        },
+                        "network": {}
+                    }
+                }
+            ]
         }
     ]
 }

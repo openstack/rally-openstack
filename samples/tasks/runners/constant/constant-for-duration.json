@@ -1,13 +1,21 @@
 {
-    "Dummy.dummy": [
+    "version": 2,
+    "title": "Constant For Duration Runner",
+    "description": "Demonstrates using constant runner with duration-based execution",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 5
+            "title": "Constant concurrency for duration",
+            "description": "Run with constant concurrency level for a specified duration",
+            "scenario": {
+                "Dummy.dummy": {
+                    "sleep": 5
+                }
             },
             "runner": {
-                "type": "constant_for_duration",
-                "concurrency": 5,
-                "duration": 30
+                "constant_for_duration": {
+                    "concurrency": 5,
+                    "duration": 30
+                }
             }
         }
     ]

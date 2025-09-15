@@ -1,15 +1,22 @@
 {
-    "ManilaShares.create_share_network_and_delete": [
+    "version": 2,
+    "title": "Manila Create Share Network And Delete",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "name": "rally"
+            "title": "Create share network and delete",
+            "scenario": {
+                "ManilaShares.create_share_network_and_delete": {
+                    "name": "rally"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 10
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "share_networks": -1

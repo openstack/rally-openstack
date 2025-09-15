@@ -1,16 +1,23 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaServers.list_servers": [
+    "version": 2,
+    "title": "Nova List Servers",
+    "description": "Test listing Nova resources",
+    "subtasks": [
         {
-            "args": {
-                "detailed": true
+            "title": "List servers",
+            "scenario": {
+                "NovaServers.list_servers": {
+                    "detailed": true
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 1,
-                "concurrency": 1
+                "constant": {
+                    "times": 1,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

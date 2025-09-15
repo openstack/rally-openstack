@@ -1,15 +1,22 @@
 {
-    "HeatStacks.create_and_list_stack": [
+    "version": 2,
+    "title": "Heat Create And List Stack",
+    "description": "Test creating Heat orchestration resources",
+    "subtasks": [
         {
-            "args": {
-               "template_path": "samples/tasks/scenarios/heat/templates/default.yaml.template"
+            "title": "Create and list stack",
+            "scenario": {
+                "HeatStacks.create_and_list_stack": {
+                    "template_path": "samples/tasks/scenarios/heat/templates/default.yaml.template"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 1
+                "constant": {
+                    "times": 10,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

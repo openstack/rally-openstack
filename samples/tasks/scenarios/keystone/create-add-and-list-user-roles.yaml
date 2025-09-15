@@ -1,14 +1,19 @@
 ---
-  KeystoneBasic.create_add_and_list_user_roles:
-    -
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Keystone Create Add And List User Roles
+description: Test creating Keystone identity resources
+subtasks:
+- title: Create add and list user roles
+  scenario:
+    KeystoneBasic.create_add_and_list_user_roles: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

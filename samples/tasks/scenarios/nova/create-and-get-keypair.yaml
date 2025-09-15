@@ -1,15 +1,19 @@
 ---
-  NovaKeypair.create_and_get_keypair:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Create And Get Keypair
+description: Test creating Nova resources
+subtasks:
+- title: Create and get keypair
+  scenario:
+    NovaKeypair.create_and_get_keypair: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

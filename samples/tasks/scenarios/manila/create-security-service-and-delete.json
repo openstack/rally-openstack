@@ -1,22 +1,29 @@
 {
-    "ManilaShares.create_security_service_and_delete": [
+    "version": 2,
+    "title": "Manila Create Security Service And Delete",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "security_service_type": "active_directory",
-                "dns_ip": "fake_dns_ip",
-                "server": "fake-server",
-                "domain": "fake_domain",
-                "user": "fake_user",
-                "password": "fake_password",
-                "name": "fake_name",
-                "description": "fake_description"
+            "title": "Create security service and delete",
+            "scenario": {
+                "ManilaShares.create_security_service_and_delete": {
+                    "security_service_type": "active_directory",
+                    "dns_ip": "fake_dns_ip",
+                    "server": "fake-server",
+                    "domain": "fake_domain",
+                    "user": "fake_user",
+                    "password": "fake_password",
+                    "name": "fake_name",
+                    "description": "fake_description"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 10
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

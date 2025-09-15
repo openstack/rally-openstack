@@ -1,18 +1,25 @@
 {
-    "KeystoneBasic.create_and_update_user": [
+    "version": 2,
+    "title": "Keystone Create And Update User",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
         {
-            "args": {
-                "create_user_kwargs": {},
-                "update_user_kwargs": {
-                    "enabled": false
+            "title": "Create and update user",
+            "scenario": {
+                "KeystoneBasic.create_and_update_user": {
+                    "create_user_kwargs": {},
+                    "update_user_kwargs": {
+                        "enabled": false
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

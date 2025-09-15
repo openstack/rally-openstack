@@ -1,14 +1,21 @@
 {
-    "KeystoneBasic.create_and_list_services": [
-    {
-            "args": {
-                "service_type": "Rally_test_type",
-                "description": "test_description"
+    "version": 2,
+    "title": "Keystone Create And List Services",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
+        {
+            "title": "Create and list services",
+            "scenario": {
+                "KeystoneBasic.create_and_list_services": {
+                    "service_type": "Rally_test_type",
+                    "description": "test_description"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "failure_rate": {

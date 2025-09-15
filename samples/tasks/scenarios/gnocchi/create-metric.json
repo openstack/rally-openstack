@@ -1,15 +1,22 @@
 {
-    "GnocchiMetric.create_metric": [
+    "version": 2,
+    "title": "Gnocchi Create Metric",
+    "description": "Test creating Gnocchi metric resources",
+    "subtasks": [
         {
-            "args": {
-                "archive_policy_name": "low"
+            "title": "Create metric",
+            "scenario": {
+                "GnocchiMetric.create_metric": {
+                    "archive_policy_name": "low"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

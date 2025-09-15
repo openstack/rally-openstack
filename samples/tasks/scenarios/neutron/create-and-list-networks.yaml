@@ -1,39 +1,44 @@
 ---
-  NeutronNetworks.create_and_list_networks:
-    -
-      args:
-        network_create_args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            network: -1
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        network_create_args:
-          provider:network_type: "vxlan"
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            network: -1
-        roles:
-          - "admin"
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And List Networks
+description: Test creating Neutron networking resources
+subtasks:
+- title: Neutron Create And List Networks (variant 1)
+  scenario:
+    NeutronNetworks.create_and_list_networks:
+      network_create_args: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        network: -1
+  sla:
+    failure_rate:
+      max: 0
+- title: Neutron Create And List Networks (variant 2)
+  scenario:
+    NeutronNetworks.create_and_list_networks:
+      network_create_args:
+        provider:network_type: vxlan
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        network: -1
+    roles:
+    - admin
+  sla:
+    failure_rate:
+      max: 0

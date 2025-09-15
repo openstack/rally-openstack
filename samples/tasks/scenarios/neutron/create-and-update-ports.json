@@ -1,20 +1,27 @@
 {
-    "NeutronNetworks.create_and_update_ports": [
+    "version": 2,
+    "title": "Neutron Create And Update Ports",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "port_update_args": {
-                    "admin_state_up": false,
-                    "device_id": "dummy_id",
-                    "device_owner": "dummy_owner"
-                },
-                "ports_per_network": 5
+            "title": "Create and update ports",
+            "scenario": {
+                "NeutronNetworks.create_and_update_ports": {
+                    "port_update_args": {
+                        "admin_state_up": false,
+                        "device_id": "dummy_id",
+                        "device_owner": "dummy_owner"
+                    },
+                    "ports_per_network": 5
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "network": {},
                 "users": {
                     "tenants": 2,

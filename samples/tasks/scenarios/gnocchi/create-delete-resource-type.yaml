@@ -1,18 +1,22 @@
 ---
-  GnocchiResourceType.create_delete_resource_type:
-    -
-      args:
-        attributes:
-          foo:
-            required: false
-            type: "string"
-          bar:
-            required: true
-            type: "number"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Gnocchi Create Delete Resource Type
+description: Test creating Gnocchi metric resources
+subtasks:
+- title: Create delete resource type
+  scenario:
+    GnocchiResourceType.create_delete_resource_type:
+      attributes:
+        foo:
+          required: false
+          type: string
+        bar:
+          required: true
+          type: number
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  sla:
+    failure_rate:
+      max: 0

@@ -1,18 +1,25 @@
 {
-    "ManilaShares.create_and_delete_share": [
+    "version": 2,
+    "title": "Manila Create Share Without Share Networks And Delete",
+    "description": "Test creating Manila share resources",
+    "subtasks": [
         {
-            "args": {
-                "share_proto": "nfs",
-                "size": 1,
-                "min_sleep": 1,
-                "max_sleep": 2
+            "title": "Create share without share networks and delete",
+            "scenario": {
+                "ManilaShares.create_and_delete_share": {
+                    "share_proto": "nfs",
+                    "size": 1,
+                    "min_sleep": 1,
+                    "max_sleep": 2
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

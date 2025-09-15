@@ -24,7 +24,9 @@ import unittest
 from rally import api
 from rally.cli import yamlutils as yaml
 from rally.common import broker
+from rally.common import logging
 from rally import plugins
+from rally.task import engine
 
 import rally_openstack as rally_openstack_module
 from rally_openstack.common import consts
@@ -56,6 +58,11 @@ class TestTaskSamples(unittest.TestCase):
     @plugins.ensure_plugins_are_loaded
     def test_task_samples_are_valid(self):
         from rally_openstack.task.contexts.keystone import users
+
+        orig = engine.LOG.logger.level
+        self.addCleanup(lambda: engine.LOG.setLevel(orig))
+        engine.LOG.setLevel(logging.WARNING)
+
         rally = utils.Rally(force_new_db=True)
         # let's use pre-created users to make TestTaskSamples quicker
         rapi = api.API(config_file=rally.config_filename)

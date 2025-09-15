@@ -1,29 +1,36 @@
 {
-    "SwiftObjects.create_container_and_object_then_delete_all": [
-        {
-            "args": {
-                "objects_per_container": 5,
-                "object_size": 102400
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 1
-                },
-                "roles": [
-                    "admin"
-                ]
-            },
-            "sla": {
-                "failure_rate": {
-                    "max": 0
-                }
-            }
+  "version": 2,
+  "title": "Swift container and object creation and deletion",
+  "description": "Test creating containers and objects then deleting all in Swift object storage service",
+  "subtasks": [
+    {
+      "title": "Create container and objects then delete all",
+      "scenario": {
+        "SwiftObjects.create_container_and_object_then_delete_all": {
+          "objects_per_container": 5,
+          "object_size": 102400
         }
-    ]
+      },
+      "runner": {
+        "constant": {
+          "times": 4,
+          "concurrency": 2
+        }
+      },
+      "contexts": {
+        "users": {
+          "tenants": 1,
+          "users_per_tenant": 1
+        },
+        "roles": [
+          "admin"
+        ]
+      },
+      "sla": {
+        "failure_rate": {
+          "max": 0
+        }
+      }
+    }
+  ]
 }

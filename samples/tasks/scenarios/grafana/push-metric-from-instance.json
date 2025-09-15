@@ -1,33 +1,40 @@
 {% set flavor_name = flavor_name or "grafana_test.small" %}
 {% set image_name = image_name or "testVM" %}
 {
-    "GrafanaMetrics.push_metric_from_instance": [
+    "version": 2,
+    "title": "Grafana Push Metric From Instance",
+    "description": "Test pushing data to Grafana",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{ flavor_name }}"
-                },
-                "image": {
-                    "name": "{{ image_name }}"
-                },
-                "monitor_vip": "10.0.0.5",
-                "pushgateway_port": 9091,
-                "grafana": {
-                    "user": "admin",
-                    "password": "password",
-                    "port": 3000
-                },
-                "datasource_id": 1,
-                "job_name": "rally_test",
-                "sleep_time": 5,
-                "retries_total": 30
+            "title": "Push metric from instance",
+            "scenario": {
+                "GrafanaMetrics.push_metric_from_instance": {
+                    "flavor": {
+                        "name": "{{ flavor_name }}"
+                    },
+                    "image": {
+                        "name": "{{ image_name }}"
+                    },
+                    "monitor_vip": "10.0.0.5",
+                    "pushgateway_port": 9091,
+                    "grafana": {
+                        "user": "admin",
+                        "password": "password",
+                        "port": 3000
+                    },
+                    "datasource_id": 1,
+                    "job_name": "rally_test",
+                    "sleep_time": 5,
+                    "retries_total": 30
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 1
+                "constant": {
+                    "times": 10,
+                    "concurrency": 1
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

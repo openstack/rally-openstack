@@ -1,18 +1,25 @@
 {
-    "Watcher.create_audit_template_and_delete": [
+    "version": 2,
+    "title": "Watcher Create Audit Template And Delete",
+    "description": "Test creating Watcher optimization resources",
+    "subtasks": [
         {
-            "args": {
-                "goal": {
-                    "name": "dummy"
-                },
-                "strategy": {
-                    "name": "dummy"
+            "title": "Create audit template and delete",
+            "scenario": {
+                "Watcher.create_audit_template_and_delete": {
+                    "goal": {
+                        "name": "dummy"
+                    },
+                    "strategy": {
+                        "name": "dummy"
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
             "sla": {
                 "failure_rate": {

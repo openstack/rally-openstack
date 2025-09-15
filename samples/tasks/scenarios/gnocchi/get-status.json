@@ -1,13 +1,20 @@
 {
-    "Gnocchi.get_status": [
+    "version": 2,
+    "title": "Gnocchi Get Status",
+    "description": "Test get status operations",
+    "subtasks": [
         {
-            "args": {
-                "detailed": false
+            "title": "Get status",
+            "scenario": {
+                "Gnocchi.get_status": {
+                    "detailed": false
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
             "sla": {
                 "failure_rate": {

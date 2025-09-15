@@ -1,37 +1,41 @@
 ---
-  ManilaShares.set_and_delete_metadata:
-    -
-      args:
-        sets: 1
-        set_size: 3
-        delete_size: 3
-        key_min_length: 1
-        key_max_length: 256
-        value_min_length: 1
-        value_max_length: 1024
-      runner:
-        type: "constant"
-        times: 1
-        concurrency: 1
-      context:
-        quotas:
-          manila:
-            shares: -1
-            gigabytes: -1
-            share_networks: -1
-        users:
-          tenants: 1
-          users_per_tenant: 1
-          user_choice_method: "round_robin"
-        network:
-          networks_per_tenant: 1
-          start_cidr: "99.0.0.0/24"
-        manila_share_networks:
-          use_share_networks: True
-        manila_shares:
-          shares_per_tenant: 1
-          share_proto: "NFS"
-          size: 1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Manila Create Share With Autocreated Share Networks And Set Metadata
+description: Test creating Manila share resources
+subtasks:
+- title: Create share with autocreated share networks and set metadata
+  scenario:
+    ManilaShares.set_and_delete_metadata:
+      sets: 1
+      set_size: 3
+      delete_size: 3
+      key_min_length: 1
+      key_max_length: 256
+      value_min_length: 1
+      value_max_length: 1024
+  runner:
+    constant:
+      times: 1
+      concurrency: 1
+  contexts:
+    quotas:
+      manila:
+        shares: -1
+        gigabytes: -1
+        share_networks: -1
+    users:
+      tenants: 1
+      users_per_tenant: 1
+      user_choice_method: round_robin
+    network:
+      networks_per_tenant: 1
+      start_cidr: 99.0.0.0/24
+    manila_share_networks:
+      use_share_networks: true
+    manila_shares:
+      shares_per_tenant: 1
+      share_proto: NFS
+      size: 1
+  sla:
+    failure_rate:
+      max: 0

@@ -1,16 +1,23 @@
 {
-    "NeutronTrunks.create_and_list_trunks": [
+    "version": 2,
+    "title": "Neutron Create And List Trunks",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {},
-                "subport_count": 10
+            "title": "Create and list trunks",
+            "scenario": {
+                "NeutronTrunks.create_and_list_trunks": {
+                    "network_create_args": {},
+                    "subport_count": 10
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3

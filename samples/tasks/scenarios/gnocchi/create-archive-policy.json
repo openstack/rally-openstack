@@ -1,18 +1,25 @@
 {
-    "GnocchiArchivePolicy.create_archive_policy": [
+    "version": 2,
+    "title": "Gnocchi Create Archive Policy",
+    "description": "Test creating Gnocchi metric resources",
+    "subtasks": [
         {
-            "args": {
-                "definition": [
-                    {
-                        "granularity": "0:00:01",
-                        "timespan": "1:00:00"
-                    }
-                ]
+            "title": "Create archive policy",
+            "scenario": {
+                "GnocchiArchivePolicy.create_archive_policy": {
+                    "definition": [
+                        {
+                            "granularity": "0:00:01",
+                            "timespan": "1:00:00"
+                        }
+                    ]
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
             "sla": {
                 "failure_rate": {

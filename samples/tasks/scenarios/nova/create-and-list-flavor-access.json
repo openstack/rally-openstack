@@ -1,21 +1,28 @@
 {
-  "NovaFlavors.create_and_list_flavor_access": [
-    {
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 10
-      },
-      "args": {
-        "ram": 500,
-        "vcpus" : 1,
-        "disk": 1
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
+    "version": 2,
+    "title": "Nova Create And List Flavor Access",
+    "description": "Test creating Nova resources",
+    "subtasks": [
+        {
+            "title": "Create and list flavor access",
+            "scenario": {
+                "NovaFlavors.create_and_list_flavor_access": {
+                    "ram": 500,
+                    "vcpus": 1,
+                    "disk": 1
+                }
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 10
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         }
-      }
-    }
-  ]
+    ]
 }

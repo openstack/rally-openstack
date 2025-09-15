@@ -1,15 +1,23 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Users Context Configuration",
+    "description": "Sample configurations for Rally users context showing tenant and user creation options",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Basic users context",
+            "description": "Simple users context with basic tenant and user configuration",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2
@@ -17,15 +25,20 @@
             }
         },
         {
-            "args": {
-                "sleep": 0.1
+            "title": "Advanced users context",
+            "description": "Users context with advanced options including domain configuration and user selection",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 2,

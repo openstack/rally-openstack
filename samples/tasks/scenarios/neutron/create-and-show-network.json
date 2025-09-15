@@ -1,15 +1,22 @@
 {
-    "NeutronNetworks.create_and_show_network": [
+    "version": 2,
+    "title": "Neutron Create And Show Network",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "network_create_args": {}
+            "title": "Create and show network",
+            "scenario": {
+                "NeutronNetworks.create_and_show_network": {
+                    "network_create_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3

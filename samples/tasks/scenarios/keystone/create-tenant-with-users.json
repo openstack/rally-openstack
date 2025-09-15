@@ -1,13 +1,20 @@
 {
-    "KeystoneBasic.create_tenant_with_users": [
+    "version": 2,
+    "title": "Keystone Create Tenant With Users",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
         {
-            "args": {
-                "users_per_tenant": 10
+            "title": "Create tenant with users",
+            "scenario": {
+                "KeystoneBasic.create_tenant_with_users": {
+                    "users_per_tenant": 10
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 10
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
             },
             "sla": {
                 "failure_rate": {

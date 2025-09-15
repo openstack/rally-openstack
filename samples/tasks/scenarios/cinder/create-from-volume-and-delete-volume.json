@@ -1,15 +1,22 @@
 {
-    "CinderVolumes.create_from_volume_and_delete_volume": [
+    "version": 2,
+    "title": "Cinder Volume Creation from Volume and Deletion",
+    "description": "Test scenario for creating volumes from existing volumes and deleting them in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "size": 1
+            "title": "Create From Volume And Delete Volume (variant 1)",
+            "scenario": {
+                "CinderVolumes.create_from_volume_and_delete_volume": {
+                    "size": 1
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1
@@ -25,18 +32,22 @@
             }
         },
         {
-            "args": {
-                "size": {
-                    "min": 1,
-                    "max": 5
+            "title": "Create From Volume And Delete Volume (variant 2)",
+            "scenario": {
+                "CinderVolumes.create_from_volume_and_delete_volume": {
+                    "size": {
+                        "min": 1,
+                        "max": 5
+                    }
                 }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

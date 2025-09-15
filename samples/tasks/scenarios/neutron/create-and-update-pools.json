@@ -1,21 +1,28 @@
 {
-    "NeutronLoadbalancerV1.create_and_update_pools": [
+    "version": 2,
+    "title": "Neutron Create And Update Pools",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "pool_create_args":{},
-                "pool_update_args":{}
+            "title": "Create and update pools",
+            "scenario": {
+                "NeutronLoadbalancerV1.create_and_update_pools": {
+                    "pool_create_args": {},
+                    "pool_update_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 100,
-                "concurrency": 10
+                "constant": {
+                    "times": 100,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 3
                 },
-                "network":{},
+                "network": {},
                 "quotas": {
                     "neutron": {
                         "network": -1,

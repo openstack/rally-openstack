@@ -1,36 +1,41 @@
----
-  CinderVolumes.create_from_volume_and_delete_volume:
-    -
-      args:
-        size: 1
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        volumes:
-          size: 1
-      sla:
-        failure_rate:
-          max: 0
-    -
-      args:
-        size:
-          min: 1
-          max: 5
-      runner:
-        type: "constant"
-        times: 2
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        volumes:
-          size: 1
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating volumes from existing volumes and deleting
+  them in Cinder block storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+    volumes:
+      size: 1
+  runner:
+    constant:
+      concurrency: 2
+      times: 2
+  scenario:
+    CinderVolumes.create_from_volume_and_delete_volume:
+      size: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create From Volume And Delete Volume (variant 1)
+- contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+    volumes:
+      size: 1
+  runner:
+    constant:
+      concurrency: 2
+      times: 2
+  scenario:
+    CinderVolumes.create_from_volume_and_delete_volume:
+      size:
+        max: 5
+        min: 1
+  sla:
+    failure_rate:
+      max: 0
+  title: Create From Volume And Delete Volume (variant 2)
+title: Cinder Volume Creation from Volume and Deletion
+version: 2

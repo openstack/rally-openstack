@@ -1,21 +1,32 @@
 {
-    "Dummy.openstack": [
+    "version": 2,
+    "title": "Task template with roles context",
+    "description": "This sample demonstrates the usage of roles context for setting up Keystone roles.",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 0.1
-            },
-            "runner": {
-                "type": "constant",
-                "times": 4,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 1,
-                    "users_per_tenant": 2
-                },
-                "roles": ["role"]
-            }
+            "title": "Test with roles context",
+            "workloads": [
+                {
+                    "scenario": {
+                        "Dummy.openstack": {
+                            "sleep": 0.1
+                        }
+                    },
+                    "runner": {
+                        "constant": {
+                            "times": 4,
+                            "concurrency": 2
+                        }
+                    },
+                    "contexts": {
+                        "users": {
+                            "tenants": 1,
+                            "users_per_tenant": 2
+                        },
+                        "roles": ["role"]
+                    }
+                }
+            ]
         }
     ]
 }

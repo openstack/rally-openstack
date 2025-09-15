@@ -1,16 +1,23 @@
 {
-    "NeutronNetworks.create_and_delete_floating_ips": [
+    "version": 2,
+    "title": "Neutron Create And Delete Floating Ips",
+    "description": "Test creating Neutron networking resources",
+    "subtasks": [
         {
-            "args": {
-                "floating_network": "public",
-                "floating_ip_args": {}
+            "title": "Create and delete floating ips",
+            "scenario": {
+                "NeutronNetworks.create_and_delete_floating_ips": {
+                    "floating_network": "public",
+                    "floating_ip_args": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

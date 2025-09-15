@@ -1,16 +1,23 @@
 {
-    "MistralWorkbooks.create_workbook": [
+    "version": 2,
+    "title": "Mistral Create Delete Workbook",
+    "description": "Test creating Mistral workflow resources",
+    "subtasks": [
         {
-            "args": {
-                "definition": "rally-jobs/extra/mistral_wb.yaml",
-                "do_delete": true
+            "title": "Create delete workbook",
+            "scenario": {
+                "MistralWorkbooks.create_workbook": {
+                    "definition": "rally-jobs/extra/mistral_wb.yaml",
+                    "do_delete": true
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 50,
-                "concurrency": 10
+                "constant": {
+                    "times": 50,
+                    "concurrency": 10
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

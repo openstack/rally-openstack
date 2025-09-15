@@ -1,12 +1,20 @@
 {
-    "NeutronSubnets.delete_subnets": [
+    "version": 2,
+    "title": "Neutron Delete Subnets",
+    "description": "Test deleting Neutron networking resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 15,
-                "concurrency": 15
+            "title": "Delete subnets",
+            "scenario": {
+                "NeutronSubnets.delete_subnets": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 15,
+                    "concurrency": 15
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 15,

@@ -1,19 +1,26 @@
 {% set use_security_services = use_security_services or False %}
 {
-    "ManilaShares.create_and_list_share": [
+    "version": 2,
+    "title": "Manila Create Share With Autocreated Share Networks And List",
+    "description": "Test creating Manila share resources with autocreated share networks",
+    "subtasks": [
         {
-            "args": {
-                "share_proto": "nfs",
-                "size": 1,
-                "min_sleep": 1,
-                "max_sleep": 2
+            "title": "Create and list share with autocreated share networks",
+            "scenario": {
+                "ManilaShares.create_and_list_share": {
+                    "share_proto": "nfs",
+                    "size": 1,
+                    "min_sleep": 1,
+                    "max_sleep": 2
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "quotas": {
                     "manila": {
                         "shares": -1,

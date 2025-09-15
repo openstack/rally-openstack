@@ -1,19 +1,23 @@
 ---
-  NeutronSecurityGroup.create_and_delete_security_groups:
-    -
-      args:
-        security_group_create_args: {}
-      runner:
-        type: "constant"
-        times: 100
-        concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            security_group: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And Delete Security Groups
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and delete security groups
+  scenario:
+    NeutronSecurityGroup.create_and_delete_security_groups:
+      security_group_create_args: {}
+  runner:
+    constant:
+      times: 100
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        security_group: -1
+  sla:
+    failure_rate:
+      max: 0

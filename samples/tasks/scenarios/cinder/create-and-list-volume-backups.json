@@ -1,24 +1,33 @@
 {
-    "CinderVolumes.create_and_list_volume_backups": [
+    "version": 2,
+    "title": "Cinder Volume Backup Creation and Listing",
+    "description": "Test scenario for creating volume backups and listing them in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "size": 1,
-                "detailed": true,
-                "do_delete": true,
-                "create_volume_kwargs": {},
-                "create_backup_kwargs": {}
+            "title": "Create And List Volume Backups",
+            "scenario": {
+                "CinderVolumes.create_and_list_volume_backups": {
+                    "size": 1,
+                    "detailed": true,
+                    "do_delete": true,
+                    "create_volume_kwargs": {},
+                    "create_backup_kwargs": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 2
+                "constant": {
+                    "times": 2,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1
                 },
-                "roles": ["member"]
+                "roles": [
+                    "member"
+                ]
             },
             "sla": {
                 "failure_rate": {

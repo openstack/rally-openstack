@@ -1,15 +1,22 @@
 {
-    "GnocchiMetric.list_metric": [
+    "version": 2,
+    "title": "Gnocchi List Metric",
+    "description": "Test listing Gnocchi metric resources",
+    "subtasks": [
         {
-            "args": {
-                "limit": 10000
+            "title": "List metric",
+            "scenario": {
+                "GnocchiMetric.list_metric": {
+                    "limit": 10000
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 3

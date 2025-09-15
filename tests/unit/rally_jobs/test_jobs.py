@@ -49,6 +49,38 @@ class RallyJobsTestCase(test.TestCase):
 
         self.addCleanup(return_home)
 
+        self.task_api = api._Task(api.API(skip_db_check=True))
+
+    def _test_schema(self, filename: str, full_path: str) -> None:
+        args_file = os.path.join(
+            self.rally_jobs_path,
+            filename.rsplit(".", 1)[0] + "_args.yaml")
+
+        args = {}
+        if os.path.exists(args_file):
+            with open(args_file, "r") as f:
+                args = yaml.safe_load(f)
+            if not isinstance(args, dict):
+                raise TypeError(
+                    f"args file {args_file} must be dict in yaml or json "
+                    "presentation"
+                )
+
+        with open(full_path) as f:
+            task_raw_cfg = self.task_api.render_template(
+                task_template=f.read(), **args
+            )
+        task = task_cfg.TaskConfig(yaml.safe_load(task_raw_cfg))
+        task_obj = fakes.FakeTask({"uuid": full_path})
+
+        eng = engine.TaskEngine(task, task_obj, mock.Mock())
+        eng.validate(only_syntax=True)
+
+        if task.version == "1":
+            raise ValueError(
+                "Task config still uses format v1. It is deprecated."
+            )
+
     def test_schema_is_valid(self):
         discover.load_plugins(os.path.join(self.rally_jobs_path, "plugins"))
 
@@ -59,29 +91,8 @@ class RallyJobsTestCase(test.TestCase):
 
         for filename in files:
             full_path = os.path.join(self.rally_jobs_path, filename)
-
-            with open(full_path) as task_file:
-                try:
-                    args_file = os.path.join(
-                        self.rally_jobs_path,
-                        filename.rsplit(".", 1)[0] + "_args.yaml")
-
-                    args = {}
-                    if os.path.exists(args_file):
-                        args = yaml.safe_load(open(args_file).read())
-                        if not isinstance(args, dict):
-                            raise TypeError(
-                                "args file %s must be dict in yaml or json "
-                                "presentation" % args_file)
-
-                    task_inst = api._Task(api.API(skip_db_check=True))
-                    task = task_inst.render_template(
-                        task_template=task_file.read(), **args)
-                    task = task_cfg.TaskConfig(yaml.safe_load(task))
-                    task_obj = fakes.FakeTask({"uuid": full_path})
-
-                    eng = engine.TaskEngine(task, task_obj, mock.Mock())
-                    eng.validate(only_syntax=True)
-                except Exception:
-                    print(traceback.format_exc())
-                    self.fail("Wrong task input file: %s" % full_path)
+            try:
+                self._test_schema(filename, full_path)
+            except Exception:
+                print(traceback.format_exc())
+                self.fail(f"Wrong task input file: {full_path}")

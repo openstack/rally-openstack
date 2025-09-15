@@ -1,16 +1,20 @@
 ---
-  Quotas.nova_update_and_delete:
-    -
-      args:
-        max_quota: 1024
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Unknown Nova Update And Delete
+description: Test nova update and delete operations
+subtasks:
+- title: Unknown nova update and delete
+  scenario:
+    Quotas.nova_update_and_delete:
+      max_quota: 1024
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

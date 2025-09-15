@@ -1,25 +1,32 @@
 {
-  "NovaHypervisors.list_and_search_hypervisors": [
-    {
-      "args": {
-        "detailed": true
-      },
-      "runner": {
-        "type": "constant",
-        "concurrency": 2,
-        "times": 2
-      },
-      "context": {
-        "users": {
-          "tenants": 3,
-          "users_per_tenant": 2
+    "version": 2,
+    "title": "Nova List And Search Hypervisor",
+    "description": "Test listing Nova resources",
+    "subtasks": [
+        {
+            "title": "List and search hypervisor",
+            "scenario": {
+                "NovaHypervisors.list_and_search_hypervisors": {
+                    "detailed": true
+                }
+            },
+            "runner": {
+                "constant": {
+                    "concurrency": 2,
+                    "times": 2
+                }
+            },
+            "contexts": {
+                "users": {
+                    "tenants": 3,
+                    "users_per_tenant": 2
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
         }
-      },
-      "sla": {
-        "failure_rate": {
-          "max": 0
-        }
-      }
-    }
-  ]
+    ]
 }

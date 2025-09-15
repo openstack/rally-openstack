@@ -1,21 +1,25 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 ---
-  NovaServers.snapshot_server:
-    -
-      args:
-        flavor:
-            name: "{{flavor_name}}"
-        image:
-            name: "^cirros.*-disk$"
-        force_delete: false
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Nova Boot Snapshot Boot Delete
+description: Test booting Nova servers
+subtasks:
+- title: Boot snapshot boot delete
+  scenario:
+    NovaServers.snapshot_server:
+      flavor:
+        name: '{{flavor_name}}'
+      image:
+        name: ^cirros.*-disk$
+      force_delete: false
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 2
+  sla:
+    failure_rate:
+      max: 0

@@ -1,21 +1,25 @@
----
-  CinderQos.create_and_set_qos:
-    -
-      args:
-        consumer: "back-end"
-        write_iops_sec: "10"
-        read_iops_sec: "1000"
-        set_consumer: "both"
-        set_write_iops_sec: "11"
-        set_read_iops_sec: "1001"
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating QoS specifications and configuring them in
+  Cinder block storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  runner:
+    constant:
+      concurrency: 2
+      times: 5
+  scenario:
+    CinderQos.create_and_set_qos:
+      consumer: back-end
+      read_iops_sec: '1000'
+      set_consumer: both
+      set_read_iops_sec: '1001'
+      set_write_iops_sec: '11'
+      write_iops_sec: '10'
+  sla:
+    failure_rate:
+      max: 0
+  title: Create And Set Qos
+title: Cinder QoS Creation and Configuration
+version: 2

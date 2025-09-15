@@ -1,22 +1,29 @@
 {% set flavor_name = flavor_name or "m1.tiny" %}
 {
-    "NovaKeypair.boot_and_delete_server_with_keypair": [
+    "version": 2,
+    "title": "Nova Boot And Delete Server With Keypairs",
+    "description": "Test booting Nova servers",
+    "subtasks": [
         {
-            "args": {
-                "flavor": {
-                    "name": "{{flavor_name}}"
-                },
-                "image": {
-                    "name": "^cirros.*-disk$"
-                },
-                "boot_server_kwargs": {}
+            "title": "Boot and delete server with keypairs",
+            "scenario": {
+                "NovaKeypair.boot_and_delete_server_with_keypair": {
+                    "flavor": {
+                        "name": "{{flavor_name}}"
+                    },
+                    "image": {
+                        "name": "^cirros.*-disk$"
+                    },
+                    "boot_server_kwargs": {}
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 1

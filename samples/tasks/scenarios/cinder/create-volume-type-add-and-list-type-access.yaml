@@ -1,16 +1,20 @@
----
-  CinderVolumeTypes.create_volume_type_add_and_list_type_access:
-    -
-      args:
-        description: "rally tests creating types"
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-      sla:
-        failure_rate:
-          max: 0
+description: Test scenario for creating volume types and managing their access permissions
+  in Cinder block storage service.
+subtasks:
+- contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+  runner:
+    constant:
+      concurrency: 2
+      times: 4
+  scenario:
+    CinderVolumeTypes.create_volume_type_add_and_list_type_access:
+      description: rally tests creating types
+  sla:
+    failure_rate:
+      max: 0
+  title: Create Volume Type Add And List Type Access
+title: Cinder Volume Type Creation and Access Management
+version: 2

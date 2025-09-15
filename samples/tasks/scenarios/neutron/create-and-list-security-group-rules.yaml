@@ -1,22 +1,26 @@
 ---
-  NeutronSecurityGroup.create_and_list_security_group_rules:
-    -
-      args:
-        security_group_args: {}
-        security_group_rule_args: {}
-        security_group_rules_count: 5
-      runner:
-        type: "constant"
-        times: 20
-        concurrency: 10
-      context:
-        users:
-          tenants: 3
-          users_per_tenant: 3
-        quotas:
-          neutron:
-            security_group: -1
-            security_group_rule: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Neutron Create And List Security Group Rules
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and list security group rules
+  scenario:
+    NeutronSecurityGroup.create_and_list_security_group_rules:
+      security_group_args: {}
+      security_group_rule_args: {}
+      security_group_rules_count: 5
+  runner:
+    constant:
+      times: 20
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 3
+      users_per_tenant: 3
+    quotas:
+      neutron:
+        security_group: -1
+        security_group_rule: -1
+  sla:
+    failure_rate:
+      max: 0

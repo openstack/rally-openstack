@@ -1,16 +1,20 @@
 ---
-  GnocchiMetric.create_delete_metric:
-    -
-      args:
-        archive_policy_name: "low"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 3
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Gnocchi metric creation and deletion
+description: Test creating and deleting metrics in Gnocchi metrics service
+subtasks:
+- title: Create and delete metrics
+  scenario:
+    GnocchiMetric.create_delete_metric:
+      archive_policy_name: low
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 3
+  sla:
+    failure_rate:
+      max: 0

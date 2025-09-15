@@ -1,15 +1,22 @@
 {
-    "Authenticate.validate_ceilometer": [
+    "version": 2,
+    "title": "Ceilometer Token Validation Test",
+    "description": "Test Ceilometer token validation performance",
+    "subtasks": [
         {
-            "args": {
-                "repetitions": 2
+            "title": "Ceilometer Token Validation",
+            "scenario": {
+                "Authenticate.validate_ceilometer": {
+                    "repetitions": 2
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 5
+                "constant": {
+                    "times": 10,
+                    "concurrency": 5
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 5

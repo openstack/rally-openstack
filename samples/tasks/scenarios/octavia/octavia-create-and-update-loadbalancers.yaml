@@ -1,18 +1,22 @@
 ---
-  Octavia.create_and_update_loadbalancers:
-    -
-      args: {}
-      runner:
-        type: "constant"
-        times: 5
-        concurrency: 2
-      context:
-        users:
-          tenants: 2
-          users_per_tenant: 2
-        roles:
-        - load-balancer_member
-        network: {}
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Octavia Octavia Create And Update Loadbalancers
+description: Test creating Octavia load balancer resources
+subtasks:
+- title: Create and update loadbalancers
+  scenario:
+    Octavia.create_and_update_loadbalancers: {}
+  runner:
+    constant:
+      times: 5
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 2
+      users_per_tenant: 2
+    roles:
+    - load-balancer_member
+    network: {}
+  sla:
+    failure_rate:
+      max: 0

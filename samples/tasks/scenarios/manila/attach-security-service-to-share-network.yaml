@@ -1,19 +1,23 @@
 ---
-  ManilaShares.attach_security_service_to_share_network:
-    -
-      args:
-        security_service_type: "active_directory"
-      runner:
-        type: "constant"
-        times: 10
-        concurrency: 10
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 1
-        quotas:
-          manila:
-            share_networks: -1
-      sla:
-        failure_rate:
-          max: 0
+version: 2
+title: Manila Attach Security Service To Share Network
+description: Test attach security service to share network operations
+subtasks:
+- title: Attach security service to share network
+  scenario:
+    ManilaShares.attach_security_service_to_share_network:
+      security_service_type: active_directory
+  runner:
+    constant:
+      times: 10
+      concurrency: 10
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+    quotas:
+      manila:
+        share_networks: -1
+  sla:
+    failure_rate:
+      max: 0

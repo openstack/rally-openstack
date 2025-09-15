@@ -1,12 +1,20 @@
 {
-    "Dummy.dummy": [
+    "version": 2,
+    "title": "Serial Runner",
+    "description": "Demonstrates using serial runner for sequential execution",
+    "subtasks": [
         {
-            "args": {
-                "sleep": 5
+            "title": "Sequential execution",
+            "description": "Execute iterations one after another in sequence",
+            "scenario": {
+                "Dummy.dummy": {
+                    "sleep": 5
+                }
             },
             "runner": {
-                "type": "serial",
-                "times": 20
+                "serial": {
+                    "times": 20
+                }
             }
         }
     ]

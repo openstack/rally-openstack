@@ -1,15 +1,22 @@
 {
-    "Quotas.cinder_update": [
+    "version": 2,
+    "title": "Unknown Cinder Update",
+    "description": "Test cinder update operations",
+    "subtasks": [
         {
-            "args": {
-                "max_quota": 1024
+            "title": "Unknown cinder update",
+            "scenario": {
+                "Quotas.cinder_update": {
+                    "max_quota": 1024
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 3,
                     "users_per_tenant": 2

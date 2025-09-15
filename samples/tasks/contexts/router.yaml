@@ -1,27 +1,32 @@
 ---
-  Dummy.openstack:
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        router: {}
-    -
-      args:
-        sleep: 0.1
-      runner:
-        type: "constant"
-        times: 4
-        concurrency: 2
-      context:
-        users:
-          tenants: 1
-          users_per_tenant: 2
-        router:
-          routers_per_tenant: 1
+version: 2
+title: Dummy Router
+description: Test router operations
+subtasks:
+- title: Dummy Router (variant 1)
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    router: {}
+- title: Dummy Router (variant 2)
+  scenario:
+    Dummy.openstack:
+      sleep: 0.1
+  runner:
+    constant:
+      times: 4
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 2
+    router:
+      routers_per_tenant: 1

@@ -1,17 +1,24 @@
 {
-    "CinderQos.create_and_list_qos": [
+    "version": 2,
+    "title": "Cinder QoS Creation and Listing",
+    "description": "Test scenario for creating QoS specifications and listing them in Cinder block storage service.",
+    "subtasks": [
         {
-            "args": {
-                "consumer": "both",
-                "write_iops_sec": "10",
-                "read_iops_sec": "1000"
+            "title": "Create And List Qos",
+            "scenario": {
+                "CinderQos.create_and_list_qos": {
+                    "consumer": "both",
+                    "write_iops_sec": "10",
+                    "read_iops_sec": "1000"
+                }
             },
             "runner": {
-                "type": "constant",
-                "times": 5,
-                "concurrency": 2
+                "constant": {
+                    "times": 5,
+                    "concurrency": 2
+                }
             },
-            "context": {
+            "contexts": {
                 "users": {
                     "tenants": 2,
                     "users_per_tenant": 2

@@ -1,12 +1,20 @@
 {
-    "BarbicanOrders.create_certificate_and_delete": [
+    "version": 2,
+    "title": "Barbican Create And Delete Order Certificate",
+    "description": "Test creating Barbican security resources",
+    "subtasks": [
         {
-            "runner": {
-                "type": "constant",
-                "times": 2,
-                "concurrency": 1
+            "title": "Create and delete order certificate",
+            "scenario": {
+                "BarbicanOrders.create_certificate_and_delete": {}
             },
-            "context": {
+            "runner": {
+                "constant": {
+                    "times": 2,
+                    "concurrency": 1
+                }
+            },
+            "contexts": {
                 "users": {
                     "tenants": 1,
                     "users_per_tenant": 1

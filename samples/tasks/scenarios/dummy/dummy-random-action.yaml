@@ -1,14 +1,18 @@
 ---
-  Dummy.dummy_random_action:
-    -
-      args:
+version: 2
+title: "Dummy Random Action Test"
+description: "Tests dummy scenario with random atomic actions and sleep intervals - used for testing Rally's atomic action tracking"
+subtasks:
+  - title: "Random atomic actions test"
+    scenario:
+      Dummy.dummy_random_action:
         actions_num: 5
         sleep_min: 0
         sleep_max: 2
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 5
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

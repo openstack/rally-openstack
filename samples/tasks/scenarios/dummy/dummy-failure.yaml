@@ -1,15 +1,19 @@
 ---
-  Dummy.failure:
-    -
-      args:
+version: 2
+title: "Dummy Failure Scenario Test"
+description: "Tests dummy scenario with controlled failures at specific iterations - used for testing Rally's failure handling and reporting"
+subtasks:
+  - title: "Controlled failure test"
+    scenario:
+      Dummy.failure:
         sleep: 0.2
         from_iteration: 5
         to_iteration: 10
         each: 2
-      runner:
-        type: "constant"
+    runner:
+      constant:
         times: 20
         concurrency: 5
-      sla:
-        failure_rate:
-          max: 0
+    sla:
+      failure_rate:
+        max: 0

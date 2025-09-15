@@ -1,28 +1,35 @@
 {
-    "IronicNodes.create_and_delete_node": [
-        {
-            "args": {
-                "driver": "pxe_ssh",
-                "properties": {
-                    "capabilities": "boot_option:local"
-                }
-            },
-            "runner": {
-                "type": "constant",
-                "times": 10,
-                "concurrency": 2
-            },
-            "context": {
-                "users": {
-                    "tenants": 5,
-                    "users_per_tenant": 1
-                }
-            },
-            "sla": {
-                "failure_rate": {
-                    "max": 0
-                }
-            }
+  "version": 2,
+  "title": "Ironic node creation and deletion",
+  "description": "Test creating and deleting bare metal nodes in Ironic service",
+  "subtasks": [
+    {
+      "title": "Create and delete bare metal nodes",
+      "scenario": {
+        "IronicNodes.create_and_delete_node": {
+          "driver": "pxe_ssh",
+          "properties": {
+            "capabilities": "boot_option:local"
+          }
         }
-    ]
+      },
+      "runner": {
+        "constant": {
+          "times": 10,
+          "concurrency": 2
+        }
+      },
+      "contexts": {
+        "users": {
+          "tenants": 5,
+          "users_per_tenant": 1
+        }
+      },
+      "sla": {
+        "failure_rate": {
+          "max": 0
+        }
+      }
+    }
+  ]
 }
