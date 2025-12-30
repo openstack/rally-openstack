@@ -269,7 +269,7 @@ class VMTasksTestCase(test.ScenarioTestCase):
         fake_stack = mock.Mock()
         fake_stack.stack.outputs = [{"output_key": "gate_node",
                                      "output_value": "ok"}]
-        mock_heat.main.Stack.return_value = fake_stack
+        mock_heat.Stack.return_value = fake_stack
         context = {
             "user": {"keypair": {"name": "name", "private": "pk"},
                      "credential": mock.MagicMock()},

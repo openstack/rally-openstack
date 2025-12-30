@@ -28,7 +28,7 @@ from rally.task import utils as rally_utils
 from rally.utils import sshutils
 
 from rally_openstack.common import consts
-from rally_openstack.common.services import heat
+from rally_openstack.common.services.heat import main as heat
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 from rally_openstack.task.scenarios.vm import utils as vm_utils
@@ -322,9 +322,9 @@ class RuncommandHeat(vm_utils.VMScenario):
         parameters["key_name"] = keypair["name"]
         network = self.context["tenant"]["networks"][0]
         parameters["router_id"] = network["router_id"]
-        self.stack = heat.main.Stack(self, self.task,
-                                     template, files=files,
-                                     parameters=parameters)
+        self.stack = heat.Stack(
+            self, self.task, template, files=files, parameters=parameters
+        )
         self.stack.create()
         for output in self.stack.stack.outputs:
             if output["output_key"] == "gate_node":
