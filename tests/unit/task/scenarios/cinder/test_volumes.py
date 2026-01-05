@@ -221,9 +221,10 @@ class CinderServersTestCase(test.ScenarioTestCase):
 
         volume_args = {"some_key": "some_val"}
         vm_args = {"some_key": "some_val"}
-
+        force_delete = True
         scenario.run(10, "img", "0",
                      create_volume_params=volume_args,
+                     force_delete=force_delete,
                      create_vm_params=vm_args)
 
         mock_service.create_volume.assert_called_once_with(
@@ -235,7 +236,8 @@ class CinderServersTestCase(test.ScenarioTestCase):
 
         mock_service.delete_volume.assert_called_once_with(
             mock_service.create_volume.return_value)
-        scenario._delete_server.assert_called_once_with(fake_server)
+        scenario._delete_server.assert_called_once_with(
+            fake_server, force=force_delete)
 
     @mock.patch("rally_openstack.common.services.image.image.Image")
     def test_create_and_upload_volume_to_image(self, mock_image):

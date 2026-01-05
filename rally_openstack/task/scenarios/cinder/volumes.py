@@ -423,7 +423,7 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
         "Use 'create_vm_params' for additional instance parameters.",
         "0.2.0", ["kwargs"], once=True)
     def run(self, size, image, flavor, create_volume_params=None,
-            create_vm_params=None, **kwargs):
+            force_delete=False, create_vm_params=None, **kwargs):
         """Create a VM and attach a volume to it.
 
         Simple test to create a VM and attach a volume, then
@@ -437,6 +437,7 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
         :param flavor: VM flavor name
         :param create_volume_params: optional arguments for volume creation
         :param create_vm_params: optional arguments for VM creation
+        :param force_delete: True if force_delete should be used
         :param kwargs: (deprecated) optional arguments for VM creation
         """
 
@@ -456,7 +457,7 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
         self._detach_volume(server, volume)
 
         self.cinder.delete_volume(volume)
-        self._delete_server(server)
+        self._delete_server(server, force=force_delete)
 
 
 @types.convert(image={"type": "glance_image"},
