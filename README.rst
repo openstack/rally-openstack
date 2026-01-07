@@ -2,8 +2,11 @@
 rally-openstack
 ===============
 
-Rally plugins for `OpenStack platform <https://openstack.org>`_
+.. image:: https://governance.openstack.org/tc/badges/rally-openstack.svg
 
+.. Change things from this point on
+
+Rally plugins for `OpenStack platform <https://openstack.org>`_
 
 Usage
 -----
@@ -11,7 +14,7 @@ Usage
 .. code-block:: bash
 
     # Install this package (will install rally if not installed)
-    pip install rally-openstack
+    python3 -m pip install rally-openstack
 
     # List all installed plugins
     rally plugin list --platform openstack
@@ -35,15 +38,14 @@ Usage
     # Check that you provide correct credentials
     rally env check
 
-    # Collect key Open Stack metrics
+    # Collect key OpenStack metrics
     rally task start ./tasks/openstack_metrics/task.yaml --task-args {"image_name": "image_to_use", "flavor_name": "flavor_to_use"}
 
     # Generate Report
     rally task report --out report.html
 
-
 Links
-----------------------
+-----
 
 * Free software: Apache license
 * Documentation: https://rally.readthedocs.org/en/latest/
