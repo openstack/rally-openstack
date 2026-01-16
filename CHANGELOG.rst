@@ -22,7 +22,7 @@ Changelog
 Added
 ~~~~~
 
-* CI jobs for checking compatibility with python 3.12
+* CI jobs for checking compatibility with python 3.12 and 3.13
 
 Removed
 ~~~~~~~

@@ -7,6 +7,7 @@
         - rally-tox-py310
         - rally-tox-py311
         - rally-tox-py312
+        - rally-tox-py313
         - rally-dsvm-tox-functional
         - rally-openstack-docker-build
         #- rally-task-basic-with-existing-users
@@ -81,6 +82,7 @@
         - rally-tox-py310
         - rally-tox-py311
         - rally-tox-py312
+        - rally-tox-py313
         - rally-dsvm-tox-functional
         - rally-openstack-docker-build
         #- rally-task-basic-with-existing-users

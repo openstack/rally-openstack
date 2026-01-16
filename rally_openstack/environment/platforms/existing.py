@@ -395,7 +395,7 @@ class OpenStack(platform.Platform):
         env_vars_description = "\n".join(
             line for line in env_vars_docs.split("\n")[1:]
         )
-        doc += (f"\n **The following environment variables are expected for "
+        doc += (f"\n\n**The following environment variables are expected for "
                 f"creation a Rally environment using sustem environment "
                 f"variables**\n{env_vars_description}")
         return doc
