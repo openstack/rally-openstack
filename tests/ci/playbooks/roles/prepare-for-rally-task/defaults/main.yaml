@@ -1,3 +1,4 @@
+rally_source_dir: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}'
 rally_dummy_qcow2_image: ""
 rally_dummy_raw_image: ""
 rally_use_existing_users: false

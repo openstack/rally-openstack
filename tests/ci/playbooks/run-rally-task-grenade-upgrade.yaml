@@ -1,0 +1,29 @@
+- hosts: all
+  roles:
+    - role: orchestrate-devstack
+      devstack_base_dir: "{{ devstack_bases.old }}"
+      devstack_data_base_dir: "{{ devstack_bases.shared }}"
+
+- hosts: controller
+  vars:
+    rally_home_dir: '/opt/stack/.rally'
+    rally_dummy_qcow2_image: "{{ rally_home_dir }}/extra/dummy_image.qcow2"
+    rally_dummy_raw_image: "{{ rally_home_dir }}/extra/dummy_image.raw"
+    rally_results_dir: '{{ rally_home_dir }}/results'
+    rally_task_args_file: "100-percent-not-exist-file"
+    rally_source_dir: '/opt/stack/old/rally-openstack'
+  pre_tasks:
+    - name: Copy rally-jobs for stack user access
+      become: true
+      shell:
+        cmd: |
+          mkdir -p {{ rally_source_dir }}
+          cp -r {{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs {{ rally_source_dir }}/
+          chown -R stack:stack {{ rally_source_dir }}
+        executable: /bin/bash
+  roles:
+    - prepare-for-rally-task
+    - run-rally-task-multiple-branches
+    - process-task-results-multiple-runs
+    - import-task-results
+    - check-task-sla

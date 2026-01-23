@@ -1,0 +1,22 @@
+- name: Run Rally task on stable branch (pre-upgrade)
+  include_tasks: start-and-check-task-result.yaml
+
+- name: Configure grenade branches
+  include_role:
+    name: configure-grenade-branches
+
+- name: Write grenade configuration
+  include_role:
+    name: write-grenade-conf
+  vars:
+    base_dir: "{{ devstack_bases.shared }}"
+    grenade_base_dir: "{{ devstack_bases.new }}"
+
+- name: Run grenade upgrade (stable to master)
+  include_role:
+    name: run-grenade
+  vars:
+    grenade_base_dir: "{{ devstack_bases.new }}"
+
+- name: Run Rally task on master branch (post-upgrade)
+  include_tasks: start-and-check-task-result.yaml
