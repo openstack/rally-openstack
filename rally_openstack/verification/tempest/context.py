@@ -89,20 +89,24 @@ class TempestContext(context.VerifierContext):
                                os.path.join(self.data_dir, "tempest.log"))
         self._configure_option("oslo_concurrency", "lock_path",
                                os.path.join(self.data_dir, "lock_files"))
-        self._configure_img_options()
-        self._configure_option("compute", "image_ref",
-                               helper_method=self._discover_or_create_image)
-        self._configure_option("compute", "image_ref_alt",
-                               helper_method=self._discover_or_create_image)
-        self._configure_option("compute", "flavor_ref",
-                               helper_method=self._discover_or_create_flavor,
-                               flv_ram=conf.CONF.openstack.flavor_ref_ram,
-                               flv_disk=conf.CONF.openstack.flavor_ref_disk)
-        self._configure_option("compute", "flavor_ref_alt",
-                               helper_method=self._discover_or_create_flavor,
-                               flv_ram=conf.CONF.openstack.flavor_ref_alt_ram,
-                               flv_disk=conf.CONF.openstack.flavor_ref_alt_disk
-                               )
+        if "nova" in self.available_services:
+            self._configure_img_options()
+            self._configure_option(
+                "compute", "image_ref",
+                helper_method=self._discover_or_create_image)
+            self._configure_option(
+                "compute", "image_ref_alt",
+                helper_method=self._discover_or_create_image)
+            self._configure_option(
+                "compute", "flavor_ref",
+                helper_method=self._discover_or_create_flavor,
+                flv_ram=conf.CONF.openstack.flavor_ref_ram,
+                flv_disk=conf.CONF.openstack.flavor_ref_disk)
+            self._configure_option(
+                "compute", "flavor_ref_alt",
+                helper_method=self._discover_or_create_flavor,
+                flv_ram=conf.CONF.openstack.flavor_ref_alt_ram,
+                flv_disk=conf.CONF.openstack.flavor_ref_alt_disk)
         if "neutron" in self.available_services:
             neutronclient = self.clients.neutron()
             if neutronclient.list_networks(shared=True)["networks"]:
@@ -135,8 +139,9 @@ class TempestContext(context.VerifierContext):
         self.clients.clear()
 
         self._cleanup_tempest_roles()
-        self._cleanup_images()
-        self._cleanup_flavors()
+        if "nova" in self.available_services:
+            self._cleanup_images()
+            self._cleanup_flavors()
         if "neutron" in self.available_services:
             self._cleanup_network_resources()
 
