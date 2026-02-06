@@ -372,7 +372,7 @@ class TempestContextTestCase(test.TestCase):
         verifier = mock.Mock(env=self.env, version="27.1.0")
         verifier.manager.home_dir = "/p/a/t/h"
 
-        # case #1: no neutron and heat
+        # case #1: no services (only keystone)
         self.cred.clients.return_value.services.return_value = {}
 
         ctx = context.TempestContext({"verifier": verifier})
@@ -386,7 +386,27 @@ class TempestContextTestCase(test.TestCase):
         ctx.conf.write(mock_open.side_effect())
         self.assertEqual(
             [mock.call("DEFAULT", "log_file", "/p/a/t/h/tempest.log"),
-             mock.call("oslo_concurrency", "lock_path", "/p/a/t/h/lock_files"),
+             mock.call("oslo_concurrency", "lock_path",
+                       "/p/a/t/h/lock_files")],
+            mock__configure_option.call_args_list)
+
+        mock_create_dir.reset_mock()
+        mock__create_tempest_roles.reset_mock()
+        mock_open.reset_mock()
+        mock__configure_option.reset_mock()
+
+        # case #2: only nova (no neutron, no heat)
+        self.cred.clients.return_value.services.return_value = {
+            "compute": "nova"}
+
+        ctx = context.TempestContext({"verifier": verifier})
+        ctx.conf = mock.Mock()
+        ctx.setup()
+
+        self.assertEqual(
+            [mock.call("DEFAULT", "log_file", "/p/a/t/h/tempest.log"),
+             mock.call("oslo_concurrency", "lock_path",
+                       "/p/a/t/h/lock_files"),
              mock.call("scenario", "img_file", "/p/a/t/h/" + ctx.image_name,
                        helper_method=ctx._download_image),
              mock.call("compute", "image_ref",
@@ -408,8 +428,9 @@ class TempestContextTestCase(test.TestCase):
         mock_open.reset_mock()
         mock__configure_option.reset_mock()
 
-        # case #2: neutron and heat are presented
+        # case #3: nova, neutron, and heat are presented
         self.cred.clients.return_value.services.return_value = {
+            "compute": "nova",
             "network": "neutron", "orchestration": "heat"}
 
         ctx = context.TempestContext({"verifier": verifier})
@@ -448,7 +469,7 @@ class TempestContextTestCase(test.TestCase):
                       flv_disk=config.CONF.openstack.heat_instance_type_disk)
         ], mock__configure_option.call_args_list)
 
-        # case 3: tempest is old.
+        # case #4: tempest is old.
         verifier.version = "17.0.0"
         ctx = context.TempestContext({"verifier": verifier})
         ctx.conf = mock.Mock()
@@ -460,3 +481,45 @@ class TempestContextTestCase(test.TestCase):
                           helper_method=ctx._download_image)
             ]
         )
+
+    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
+    @mock.patch("%s.TempestContext._cleanup_network_resources" % PATH)
+    @mock.patch("%s.TempestContext._cleanup_flavors" % PATH)
+    @mock.patch("%s.TempestContext._cleanup_images" % PATH)
+    @mock.patch("%s.TempestContext._cleanup_tempest_roles" % PATH)
+    def test_cleanup(self, mock__cleanup_tempest_roles,
+                     mock__cleanup_images, mock__cleanup_flavors,
+                     mock__cleanup_network_resources, mock_open):
+        verifier = mock.Mock(env=self.env)
+        verifier.manager.home_dir = "/p/a/t/h"
+
+        # case #1: no services (only keystone)
+        self.cred.clients.return_value.services.return_value = {}
+
+        ctx = context.TempestContext({"verifier": verifier})
+        ctx.conf = mock.Mock()
+        ctx.cleanup()
+
+        ctx.clients.clear.assert_called_once()
+        mock__cleanup_tempest_roles.assert_called_once()
+        mock__cleanup_images.assert_not_called()
+        mock__cleanup_flavors.assert_not_called()
+        mock__cleanup_network_resources.assert_not_called()
+        mock_open.assert_called_once_with(verifier.manager.configfile, "w")
+
+        mock__cleanup_tempest_roles.reset_mock()
+        mock_open.reset_mock()
+
+        # case #2: nova and neutron are presented
+        self.cred.clients.return_value.services.return_value = {
+            "compute": "nova", "network": "neutron"}
+
+        ctx = context.TempestContext({"verifier": verifier})
+        ctx.conf = mock.Mock()
+        ctx.cleanup()
+
+        mock__cleanup_tempest_roles.assert_called_once()
+        mock__cleanup_images.assert_called_once()
+        mock__cleanup_flavors.assert_called_once()
+        mock__cleanup_network_resources.assert_called_once()
+        mock_open.assert_called_once_with(verifier.manager.configfile, "w")
