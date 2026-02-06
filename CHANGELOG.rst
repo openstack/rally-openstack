@@ -48,6 +48,7 @@ Fixed
 * Fix restoring quotas bug while rally cleanup
 * Don't load compute resources in tempest verifier if nova is not enabled
 * Fix cleanup when neutron is not available
+* Fix tempest config failure when nova is not available
 
 [3.0.0] - 2024-05-23
 --------------------
