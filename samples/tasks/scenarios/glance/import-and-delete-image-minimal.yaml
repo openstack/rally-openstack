@@ -1,0 +1,16 @@
+---
+version: 2
+title: Import and delete image - minimal example
+description: Minimal task file to quickly test glance-direct image import
+
+subtasks:
+  - title: Import and delete image test
+    scenario:
+      GlanceImages.import_and_delete_image:
+        image_location: http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
+        container_format: bare
+        disk_format: qcow2
+    runner:
+      constant:
+        times: 1
+        concurrency: 1

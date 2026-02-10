@@ -1,0 +1,17 @@
+---
+version: 2
+title: Import and delete image using web-download method
+description: Minimal task file to test Glance web-download import method.
+
+subtasks:
+  - title: Import and delete image via web-download
+    scenario:
+      GlanceImages.import_and_delete_image:
+        image_location: http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
+        container_format: bare
+        disk_format: qcow2
+        import_method: web-download
+    runner:
+      constant:
+        times: 1
+        concurrency: 1

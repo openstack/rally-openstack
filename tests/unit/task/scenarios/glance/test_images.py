@@ -240,3 +240,72 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
             "cf", "url", "df", "vs", 0, 0)
         mock_create_image.assert_called_once_with(**call_args)
         mock_deactivate_image.assert_called_once_with(fake_image.id)
+
+    def test_import_and_delete_image(self):
+        """Test import and delete using glance-direct method (default)."""
+        image_service = self.mock_image.return_value
+
+        fake_queued_image = fakes.FakeImage(id=1, name="img1",
+                                            status="queued")
+        fake_active_image = fakes.FakeImage(id=1, name="img1",
+                                            status="active")
+        image_service.create_image_for_import.return_value = fake_queued_image
+        image_service.import_image.return_value = fake_active_image
+        properties = {"fakeprop": "fake"}
+        create_args = {"container_format": "cf",
+                       "disk_format": "df",
+                       "visibility": "vs",
+                       "min_disk": 0,
+                       "min_ram": 0,
+                       "properties": properties}
+
+        images.ImportAndDeleteImage(self.context).run(
+            "cf", "url", "df", "vs", 0, 0, properties, None, True)
+
+        image_service.create_image_for_import.assert_called_once_with(
+            **create_args)
+        image_service.stage_image_data.assert_called_once_with(
+            image_id=fake_queued_image.id, image_location="url")
+        image_service.import_image.assert_called_once_with(
+            image_id=fake_queued_image.id,
+            import_method="glance-direct",
+            import_uri=None,
+            stores=None,
+            all_stores=True)
+        image_service.delete_image.assert_called_once_with(
+            fake_active_image.id)
+
+    def test_import_and_delete_image_web_download(self):
+        """Test import and delete using web-download method."""
+        image_service = self.mock_image.return_value
+
+        fake_queued_image = fakes.FakeImage(id=1, name="img1",
+                                            status="queued")
+        fake_active_image = fakes.FakeImage(id=1, name="img1",
+                                            status="active")
+        image_service.create_image_for_import.return_value = fake_queued_image
+        image_service.import_image.return_value = fake_active_image
+        properties = {"fakeprop": "fake"}
+        create_args = {"container_format": "cf",
+                       "disk_format": "df",
+                       "visibility": "vs",
+                       "min_disk": 0,
+                       "min_ram": 0,
+                       "properties": properties}
+
+        # Test web-download method
+        images.ImportAndDeleteImage(self.context).run(
+            "cf", "http://example.com/image.img", "df", "vs", 0, 0,
+            properties, None, True, "web-download")
+
+        image_service.create_image_for_import.assert_called_once_with(
+            **create_args)
+        image_service.stage_image_data.assert_not_called()
+        image_service.import_image.assert_called_once_with(
+            image_id=fake_queued_image.id,
+            import_method="web-download",
+            import_uri="http://example.com/image.img",
+            stores=None,
+            all_stores=True)
+        image_service.delete_image.assert_called_once_with(
+            fake_active_image.id)

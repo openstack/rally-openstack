@@ -198,3 +198,39 @@ class UnifiedGlanceV1ServiceTestCase(test.TestCase):
                           self.service.set_visibility,
                           image_id=image_id,
                           visibility=visibility)
+
+    def test_create_image_for_import_not_supported(self):
+        # Verify NotImplementedError is raised for V1 API
+        exc = self.assertRaises(NotImplementedError,
+                                self.service.create_image_for_import,
+                                image_name="test",
+                                container_format="bare",
+                                disk_format="qcow2")
+        self.assertIn("Glance V1", str(exc))
+        self.assertIn("import", str(exc).lower())
+
+    def test_stage_image_data_not_supported(self):
+        # Verify NotImplementedError is raised for V1 API
+        exc = self.assertRaises(NotImplementedError,
+                                self.service.stage_image_data,
+                                image_id="image_id",
+                                image_location="/path/to/image")
+        self.assertIn("staging", str(exc).lower())
+        self.assertIn("Glance V1", str(exc))
+
+    def test_import_image_not_supported(self):
+        # Verify NotImplementedError is raised for V1 API
+        exc = self.assertRaises(NotImplementedError,
+                                self.service.import_image,
+                                image_id="image_id")
+        self.assertIn("import", str(exc).lower())
+        self.assertIn("Glance V1", str(exc))
+
+    def test_stage_and_import_image_not_supported(self):
+        # Verify NotImplementedError is raised for V1 API
+        exc = self.assertRaises(NotImplementedError,
+                                self.service.stage_and_import_image,
+                                image_id="image_id",
+                                image_location="/path/to/image")
+        self.assertIn("import", str(exc).lower())
+        self.assertIn("Glance V1", str(exc))

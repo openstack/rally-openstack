@@ -131,3 +131,75 @@ class Image(service.UnifiedService):
         :rtype: iterable containing image data or None
         """
         return self._impl.download_image(image, do_checksum=do_checksum)
+
+    @service.should_be_overridden
+    def create_image_for_import(self, image_name=None, container_format=None,
+                                disk_format=None, visibility="private",
+                                min_disk=0, min_ram=0, properties=None):
+        """Create image in queued state for import.
+
+        :param image_name: Image name
+        :param container_format: Container format
+        :param disk_format: Disk format
+        :param visibility: Image visibility
+        :param min_disk: Minimum disk size
+        :param min_ram: Minimum RAM
+        :param properties: Dict of image properties
+        """
+        return self._impl.create_image_for_import(
+            image_name=image_name,
+            container_format=container_format,
+            disk_format=disk_format,
+            visibility=visibility,
+            min_disk=min_disk,
+            min_ram=min_ram,
+            properties=properties)
+
+    @service.should_be_overridden
+    def stage_image_data(self, image_id, image_location):
+        """Stage image data to Glance staging area.
+
+        :param image_id: ID of image to stage data for
+        :param image_location: Location of the data (path or URL)
+        """
+        return self._impl.stage_image_data(
+            image_id=image_id,
+            image_location=image_location)
+
+    @service.should_be_overridden
+    def import_image(self, image_id, import_method="glance-direct",
+                     import_uri=None, stores=None, all_stores=True):
+        """Import image data.
+
+        :param image_id: ID of image to import into
+        :param import_method: Possible methods ('glance-direct',
+                                                'web-download')
+        :param import_uri: import URI for supported methods
+        :param stores: List of stores for multistore
+        :param all_stores: Import to all stores
+        """
+        return self._impl.import_image(
+            image_id=image_id,
+            import_method=import_method,
+            import_uri=import_uri,
+            stores=stores,
+            all_stores=all_stores)
+
+    @service.should_be_overridden
+    def stage_and_import_image(self, image_id, image_location,
+                               import_method="glance-direct",
+                               stores=None, all_stores=True):
+        """Stage and import image data.
+
+        :param image_id: ID of image to import
+        :param image_location: Location of the data (path or URL)
+        :param import_method:  Must be 'glance-direct'
+        :param stores: List of stores for multistore
+        :param all_stores: Import to all stores
+        """
+        return self._impl.stage_and_import_image(
+            image_id=image_id,
+            image_location=image_location,
+            import_method=import_method,
+            stores=stores,
+            all_stores=all_stores)
