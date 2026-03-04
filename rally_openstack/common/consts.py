@@ -75,6 +75,7 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
     VOLUMEV2 = "volumev2"
     VOLUMEV3 = "volumev3"
     SHARE = "share"
+    SHARED_FILE_SYSTEM = "shared-file-system"
     EC2 = "ec2"
     IMAGE = "image"
     CLOUD = "cloudformation"
@@ -105,6 +106,7 @@ class _ServiceType(utils.ImmutableMixin, utils.EnumMixin):
             self.VOLUMEV2: _Service.CINDER,
             self.VOLUMEV3: _Service.CINDER,
             self.SHARE: _Service.MANILA,
+            self.SHARED_FILE_SYSTEM: _Service.MANILA,
             self.EC2: _Service.EC2,
             self.IMAGE: _Service.GLANCE,
             self.CLOUD: _Service.CLOUD,

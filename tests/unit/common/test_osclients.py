@@ -675,7 +675,7 @@ class OSClientsTestCase(test.TestCase):
                 "session": mock_keystoneauth1.session.Session(),
                 "service_catalog_url": mock_manila__get_endpoint.return_value
             }
-            mock_manila.client.Client.assert_called_once_with("1", **kw)
+            mock_manila.client.Client.assert_called_once_with("2", **kw)
             self.assertEqual(
                 mock_manila.client.Client.return_value,
                 self.clients.cache["manila"])

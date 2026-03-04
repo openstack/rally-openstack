@@ -549,7 +549,8 @@ class Cinder(OSClient):
         return client
 
 
-@configure("manila", default_version="1", default_service_type="share")
+@configure("manila", default_version="2",
+           default_service_type="shared-file-system")
 class Manila(OSClient):
     """Wrapper for ManilaClient which returns an authenticated native client.
 
