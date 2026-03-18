@@ -437,6 +437,12 @@ class NeutronPort(NeutronMixin):
                       f"because port can be already auto-deleted.")
 
 
+@base.resource("neutron", "router", order=next(_neutron_order),
+               tenant_resource=True)
+class NeutronRouter(NeutronMixin):
+    pass
+
+
 @base.resource("neutron", "subnet", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronSubnet(NeutronMixin):
@@ -446,12 +452,6 @@ class NeutronSubnet(NeutronMixin):
 @base.resource("neutron", "network", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronNetwork(NeutronMixin):
-    pass
-
-
-@base.resource("neutron", "router", order=next(_neutron_order),
-               tenant_resource=True)
-class NeutronRouter(NeutronMixin):
     pass
 
 
