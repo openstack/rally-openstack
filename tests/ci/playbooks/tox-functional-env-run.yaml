@@ -3,6 +3,15 @@
     - run-devstack
 
 - hosts: controller
+  become: true
+  tasks:
+    - name: "Ensure tox is installed"
+      include_role:
+        name: ensure-tox
+  vars:
+    ensure_global_symlinks: true
+
+- hosts: controller
   vars:
     rally_task_args_file: "100-percent-not-exist-file"
     # this task will not be launched, but we need to specify something real to
