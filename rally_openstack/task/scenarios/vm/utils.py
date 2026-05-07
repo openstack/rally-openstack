@@ -103,7 +103,8 @@ class VMScenario(nova_utils.NovaScenario):
 
         :returns: tuple (exit_status, stdout, stderr)
         """
-        cmd, stdin = [], None
+        cmd: list[str] = []
+        stdin = None
 
         interpreter = command.get("interpreter") or []
         if interpreter:

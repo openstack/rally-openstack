@@ -96,7 +96,9 @@ class HeatDataplane(context.OpenStackContext):
     }
 
     def _get_context_parameter(self, user, tenant_id, path):
-        value = {"user": user, "tenant": self.context["tenants"][tenant_id]}
+        value: list | dict = {
+            "user": user, "tenant": self.context["tenants"][tenant_id]
+        }
         for key in path.split("."):
             try:
                 # try to cast string to int in order to support integer keys
@@ -108,7 +110,7 @@ class HeatDataplane(context.OpenStackContext):
                 value = value[key]
             except KeyError:
                 raise exceptions.RallyException(
-                    "There is no key %s in context" % path)
+                    f"There is no key {path} in context")
         return value
 
     def _get_public_network_id(self):
