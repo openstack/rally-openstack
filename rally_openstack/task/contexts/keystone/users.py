@@ -285,8 +285,14 @@ class UserGenerator(context.OpenStackContext):
     def _remove_default_security_group(self):
         """Delete default security group for tenants."""
 
+        clients = osclients.Clients(self.credential)
+        if "neutron" not in clients.services().values():
+            LOG.debug("Security group cleanup is disabled: "
+                      "neutron is not available.")
+            return
+
         admin_client = neutron.NeutronService(
-            clients=osclients.Clients(self.credential),
+            clients=clients,
             atomic_inst=self.atomic_actions()
         )
 

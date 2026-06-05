@@ -273,6 +273,8 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         )
 
         self.osclients.Clients.return_value = mock.Mock()
+        self.osclients.Clients.return_value.services.return_value = {
+            "network": "neutron"}
         neutron = self.osclients.Clients.return_value.neutron.return_value
         neutron.list_extensions.return_value = {
             "extensions": [{"alias": "security-group"}]}
@@ -302,6 +304,8 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         )
 
         self.osclients.Clients.return_value = mock.Mock()
+        self.osclients.Clients.return_value.services.return_value = {
+            "network": "neutron"}
         neutron = self.osclients.Clients.return_value.neutron.return_value
         neutron.list_extensions.return_value = {"extensions": []}
 
@@ -317,6 +321,22 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
 
         self.assertFalse(neutron.list_security_groups.called)
         self.assertFalse(neutron.delete_security_group.called)
+
+    def test__remove_default_security_group_no_neutron(self):
+        self.context.update(
+            tenants={
+                "tenant-1": {},
+                "tenant-2": {}
+            }
+        )
+
+        self.osclients.Clients.return_value = mock.Mock()
+        self.osclients.Clients.return_value.services.return_value = {}
+
+        users.UserGenerator(self.context)._remove_default_security_group()
+
+        self.assertFalse(
+            self.osclients.Clients.return_value.neutron.called)
 
     @mock.patch("%s.identity" % CTX)
     def test__create_tenants(self, mock_identity):
