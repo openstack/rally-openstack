@@ -167,7 +167,7 @@ class TempestConfigfileManager(object):
                         break
                 self.conf.set(section_name, "public_network_id", net_id)
                 self.conf.set(section_name, "floating_network_name", net_name)
-        else:
+        elif "nova" in self.available_services:
             novaclient = self.clients.nova()
             net_name = next(net.human_id for net in novaclient.networks.list()
                             if net.human_id is not None)

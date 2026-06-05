@@ -204,6 +204,14 @@ class TempestConfigfileManagerTestCase(test.TestCase):
             result = self.tempest.conf.items(section)
             self.assertIn(option, result)
 
+    def test__configure_network_no_neutron_or_nova(self):
+        self.tempest.available_services = []
+
+        self.tempest._configure_network()
+
+        self.assertFalse(self.tempest.clients.neutron.called)
+        self.assertFalse(self.tempest.clients.nova.called)
+
     def test__configure_network_feature_enabled(self):
         self.tempest.available_services = ["neutron"]
         client = self.tempest.clients.neutron()
