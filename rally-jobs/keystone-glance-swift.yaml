@@ -496,6 +496,50 @@ subtasks:
         sla:
           failure_rate:
             max: 100
+  - title: GlanceImages.import_and_delete_image tests
+    workloads:
+      - description: glance-direct import of a qcow2 image
+        scenario:
+          GlanceImages.import_and_delete_image:
+            image_location: ~/.rally/extra/dummy_image.qcow2
+            container_format: bare
+            disk_format: qcow2
+            import_method: glance-direct
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          api_versions:
+            glance:
+              version: 2
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        sla:
+          failure_rate:
+            max: 100
+      - description: web-download import from a remote URL
+        scenario:
+          GlanceImages.import_and_delete_image:
+            image_location: '{{ cirros_image_url }}'
+            container_format: bare
+            disk_format: qcow2
+            import_method: web-download
+        contexts:
+          users:
+            tenants: 1
+            users_per_tenant: 1
+          api_versions:
+            glance:
+              version: 2
+        runner:
+          constant:
+            times: 1
+            concurrency: 1
+        sla:
+          failure_rate:
+            max: 100
   - title: SwiftObjects.create_container_and_object_then_list_objects tests
     scenario:
       SwiftObjects.create_container_and_object_then_list_objects:

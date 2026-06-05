@@ -109,6 +109,90 @@ class ImageTestCase(test.TestCase):
         service._impl.download_image.assert_called_once_with(image_id,
                                                              do_checksum=True)
 
+    @ddt.data(("image_name", "container_format", "disk_format",
+               "visibility", "min_disk", "min_ram"))
+    def test_create_image_for_import(self, params):
+        (image_name, container_format, disk_format, visibility,
+         min_disk, min_ram) = params
+        service = self.get_service_with_fake_impl()
+        properties = {"fakeprop": "fake"}
+
+        service.create_image_for_import(
+            image_name=image_name,
+            container_format=container_format,
+            disk_format=disk_format,
+            visibility=visibility,
+            min_disk=min_disk,
+            min_ram=min_ram,
+            properties=properties)
+
+        service._impl.create_image_for_import.assert_called_once_with(
+            image_name=image_name,
+            container_format=container_format,
+            disk_format=disk_format,
+            visibility=visibility,
+            min_disk=min_disk,
+            min_ram=min_ram,
+            properties=properties)
+
+    @ddt.data(("image_id", "image_location"))
+    def test_stage_image_data(self, params):
+        image_id, image_location = params
+        service = self.get_service_with_fake_impl()
+
+        service.stage_image_data(image_id=image_id,
+                                 image_location=image_location)
+
+        service._impl.stage_image_data.assert_called_once_with(
+            image_id=image_id,
+            image_location=image_location)
+
+    @ddt.data(
+        {"import_method": "glance-direct"},
+        {"import_method": "web-download"},
+        {"import_method": "glance-download"},
+        {"import_method": "copy-image"},
+    )
+    @ddt.unpack
+    def test_import_image(self, import_method):
+        image_id = "image_id"
+        import_uri = "http://example.com/image.qcow2"
+        stores = ["store1"]
+        service = self.get_service_with_fake_impl()
+
+        service.import_image(image_id=image_id,
+                             import_method=import_method,
+                             import_uri=import_uri,
+                             stores=stores,
+                             all_stores=False)
+
+        service._impl.import_image.assert_called_once_with(
+            image_id=image_id,
+            import_method=import_method,
+            import_uri=import_uri,
+            stores=stores,
+            all_stores=False)
+
+    @ddt.data(("image_id", "image_location"))
+    def test_stage_and_import_image(self, params):
+        image_id, image_location = params
+        service = self.get_service_with_fake_impl()
+        stores = ["store1", "store2"]
+
+        service.stage_and_import_image(
+            image_id=image_id,
+            image_location=image_location,
+            import_method="glance-direct",
+            stores=stores,
+            all_stores=False)
+
+        service._impl.stage_and_import_image.assert_called_once_with(
+            image_id=image_id,
+            image_location=image_location,
+            import_method="glance-direct",
+            stores=stores,
+            all_stores=False)
+
     def test_is_applicable(self):
         clients = mock.Mock()
 

@@ -369,3 +369,80 @@ class CreateAndDownloadImage(GlanceBasic):
             properties=properties)
 
         self.glance.download_image(image.id)
+
+
+@validation.add("enum", param_name="import_method",
+                values=["glance-direct", "web-download"],
+                missed=True)
+@validation.add("enum", param_name="container_format",
+                values=["ami", "ari", "aki", "bare", "ovf"])
+@validation.add("enum", param_name="disk_format",
+                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
+                        "qcow2", "vdi", "iso"])
+@types.convert(image_location={"type": "path_or_url"},
+               kwargs={"type": "glance_image_args"})
+@validation.add("required_services", services=[consts.Service.GLANCE])
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_api_versions", component="glance", versions=["2"])
+@scenario.configure(context={"cleanup@openstack": ["glance"]},
+                    name="GlanceImages.import_and_delete_image",
+                    platform="openstack")
+class ImportAndDeleteImage(GlanceBasic):
+
+    def run(self, container_format, image_location, disk_format,
+            visibility="private", min_disk=0, min_ram=0, properties=None,
+            stores=None, all_stores=True, import_method="glance-direct"):
+        """Import image using specific method, then delete it.
+
+        This scenario tests the Glance v2 interoperable image import
+        workflow.
+
+        Each phase is measured separately with timers:
+        - glance_v2.create_image_for_import: Create image in queued state
+        - glance_v2.stage_image_data: Upload to staging area
+        - glance_v2.import_image: Import from staging/URL + wait for active
+        - glance_v2.delete_image: Delete the image
+
+        :param container_format: Acceptable formats: ami, ari, aki, bare,
+                                 and ovf
+        :param image_location: image file location (path or URL)
+        :param disk_format: disk format of image. Acceptable formats:
+                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param visibility: The access permission for the created image
+        :param min_disk: The min disk of created images
+        :param min_ram: The min ram of created images
+        :param properties: Image metadata properties to set
+                           on the image
+        :param stores: List of specific stores for multistore deployments
+        :param all_stores: Import to all available stores
+        :param import_method: Import method to use (default: 'glance-direct')
+                             Options: glance-direct, web-download,
+        """
+        # Create image in queued state
+        image = self.glance.create_image_for_import(
+            container_format=container_format,
+            disk_format=disk_format,
+            visibility=visibility,
+            min_disk=min_disk,
+            min_ram=min_ram,
+            properties=properties)
+
+        # Stage image data to Glance staging area
+        if import_method == "glance-direct":
+            self.glance.stage_image_data(
+                image_id=image.id,
+                image_location=image_location)
+            import_uri = None
+        else:
+            import_uri = image_location
+
+        # Import from staging area or external source
+        image = self.glance.import_image(
+            image_id=image.id,
+            import_method=import_method,
+            import_uri=import_uri,
+            stores=stores,
+            all_stores=all_stores)
+
+        # Delete the imported image
+        self.glance.delete_image(image.id)

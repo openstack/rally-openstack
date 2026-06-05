@@ -23,6 +23,10 @@ Added
 ~~~~~
 
 * CI jobs for checking compatibility with python 3.12 and 3.13
+* New ``GlanceImages.import_and_delete_image`` scenario that exercises the
+  Glance v2 interoperable image import workflow (``glance-direct`` and
+  ``web-download``), including multistore deployments via the ``stores`` and
+  ``all_stores`` parameters.
 
 Removed
 ~~~~~~~

@@ -209,3 +209,56 @@ class UnifiedGlanceV1Service(glance_common.UnifiedGlanceMixin, image.Image):
 
         is_public = visibility != "private"
         self._impl.set_visibility(image_id=image_id, is_public=is_public)
+
+    def create_image_for_import(self, image_name=None, container_format=None,
+                                disk_format=None, visibility="private",
+                                min_disk=0, min_ram=0, properties=None):
+        """Create image for import - not supported in Glance V1.
+
+        The image import workflow (stage + import) is only available
+        in Glance V2 API. Use create_image() instead for V1.
+
+        :raises: NotImplementedError
+        """
+        raise NotImplementedError(
+            "Image import workflow is not supported in Glance V1 API. "
+            "Please use Glance V2 or use create_image() method instead.")
+
+    def stage_image_data(self, image_id, image_location):
+        """Stage image data - not supported in Glance V1.
+
+        The image import workflow (stage + import) is only available
+        in Glance V2 API.
+
+        :raises: NotImplementedError
+        """
+        raise NotImplementedError(
+            "Image staging is not supported in Glance V1 API. "
+            "Please use Glance V2.")
+
+    def import_image(self, image_id, import_method="glance-direct",
+                     import_uri=None, stores=None, all_stores=True):
+        """Import image data - not supported in Glance V1.
+
+        The image import workflow (stage + import) is only available
+        in Glance V2 API.
+
+        :raises: NotImplementedError
+        """
+        raise NotImplementedError(
+            "Image import is not supported in Glance V1 API. "
+            "Please use Glance V2.")
+
+    def stage_and_import_image(self, image_id, image_location,
+                               import_method="glance-direct",
+                               stores=None, all_stores=True):
+        """Stage and import image - not supported in Glance V1.
+
+        The image import workflow (stage + import) is only available
+        in Glance V2 API. Use create_image() instead for V1.
+
+        :raises: NotImplementedError
+        """
+        raise NotImplementedError(
+            "Image import workflow is not supported in Glance V1 API. "
+            "Please use Glance V2 or use create_image() method instead.")

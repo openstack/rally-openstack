@@ -48,5 +48,12 @@ OPTS = {"openstack": [
                  default=1.0,
                  deprecated_group="benchmark",
                  help="Interval between checks when waiting for image "
-                      "creation.")
+                      "creation."),
+    cfg.FloatOpt("glance_image_import_timeout",
+                 default=120.0,
+                 help="Time to wait for glance image import to complete."),
+    cfg.FloatOpt("glance_image_import_poll_interval",
+                 default=2.0,
+                 help="Interval between checks when waiting for image "
+                      "import.")
 ]}
