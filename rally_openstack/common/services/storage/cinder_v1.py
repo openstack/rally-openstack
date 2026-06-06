@@ -152,7 +152,6 @@ class CinderV1Service(service.Service, cinder_common.CinderMixin):
     def create_volume_type(self, name=None):
         """create volume type.
 
-        :param kwargs: Optional additional arguments for volume type creation
         :param name: Descriptive name of the volume type
         """
         kwargs = {"name": name or self.generate_random_name()}

@@ -39,7 +39,7 @@ class Octavia(service.Service):
     def load_balancer_show(self, lb_id):
         """Show a load balancer
 
-        :param string lb:
+        :param string lb_id:
             dict of the load balancer to show
         :return:
             A dict of the specified load balancer's settings
@@ -80,8 +80,10 @@ class Octavia(service.Service):
     def load_balancer_delete(self, lb_id, cascade=False):
         """Delete a load balancer
 
-        :param string lb:
+        :param string lb_id:
             The dict of the load balancer to delete
+        :param cascade:
+            If True will delete all child objects of the load balancer
         :return:
             Response Code from the API
         """
@@ -106,7 +108,7 @@ class Octavia(service.Service):
     def load_balancer_stats_show(self, lb_id, **kwargs):
         """Shows the current statistics for a load balancer.
 
-        :param string lb:
+        :param string lb_id:
             dict of the load balancer
         :return:
             A dict of the specified load balancer's statistics
@@ -118,7 +120,7 @@ class Octavia(service.Service):
     def load_balancer_failover(self, lb_id):
         """Trigger load balancer failover
 
-        :param string lb:
+        :param string lb_id:
             dict of the load balancer to failover
         :return:
             Response Code from the API
@@ -315,8 +317,6 @@ class Octavia(service.Service):
             ID of pool the member is added
         :param member_id:
             ID of the member
-        :param kwargs:
-            A dict of arguments
         :return:
             Response of member
         """
@@ -424,6 +424,8 @@ class Octavia(service.Service):
     def l7rule_list(self, l7policy_id, **kwargs):
         """List all l7rules for a l7policy
 
+        :param l7policy_id:
+            ID of the l7policy to get list
         :param kwargs:
             Parameters to filter on
         :return:

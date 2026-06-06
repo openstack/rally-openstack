@@ -134,6 +134,6 @@ class MistralScenario(scenario.OpenStackScenario):
     def _delete_execution(self, execution):
         """Delete the given execution.
 
-        :param ex: the execution that would be deleted.
+        :param execution: the execution that would be deleted.
         """
         self.clients("mistral").executions.delete(execution.id)

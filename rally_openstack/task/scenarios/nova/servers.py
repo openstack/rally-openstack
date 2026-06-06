@@ -1255,7 +1255,7 @@ class BootServerAndListInterfaces(utils.NovaScenario):
 
         :param image: ID of the image to be used for server creation
         :param flavor: ID of the flavor to be used for server creation
-        :param **kwargs: Optional arguments for booting the instance
+        :param kwargs: Optional arguments for booting the instance
         """
         server = self._boot_server(image, flavor, **kwargs)
         self._list_interfaces(server)
