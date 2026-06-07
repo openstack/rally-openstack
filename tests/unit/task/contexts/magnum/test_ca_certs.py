@@ -169,14 +169,13 @@ class CaCertsGeneratorTestCase(test.ScenarioTestCase):
         mock_magnum_scenario__get_ca_certificate.assert_not_called()
         mock_magnum_scenario__create_ca_certificate.assert_not_called()
 
-    @mock.patch("os.remove", return_value=mock.Mock())
-    @mock.patch("os.path.join", return_value=mock.Mock())
+    @mock.patch("os.remove")
     @mock.patch("%s.magnum.utils.MagnumScenario._get_cluster_template" % SCN)
     @mock.patch("%s.magnum.utils.MagnumScenario._get_cluster" % SCN,
                 return_value=mock.Mock())
     def test_cleanup(self, mock_magnum_scenario__get_cluster,
                      mock_magnum_scenario__get_cluster_template,
-                     mock_os_path_join, mock_os_remove):
+                     mock_os_remove):
 
         tenants_count = 2
         users_per_tenant = 5
@@ -204,20 +203,20 @@ class CaCertsGeneratorTestCase(test.ScenarioTestCase):
         ca_cert_ctx.cleanup()
 
         cluster_uuid = "rally_cluster_uuid"
-        dir = self.context["ca_certs_directory"]
-        mock_os_path_join.assert_has_calls(dir, cluster_uuid.__add__(".key"))
-        mock_os_path_join.assert_has_calls(
-            dir, cluster_uuid.__add__("_ca.crt"))
-        mock_os_path_join.assert_has_calls(dir, cluster_uuid.__add__(".crt"))
+        expected_calls = []
+        for _ in range(tenants_count):
+            expected_calls.append(mock.call(cluster_uuid + ".key"))
+            expected_calls.append(mock.call(cluster_uuid + "_ca.crt"))
+            expected_calls.append(mock.call(cluster_uuid + ".crt"))
+        mock_os_remove.assert_has_calls(expected_calls)
 
-    @mock.patch("os.remove", return_value=mock.Mock())
-    @mock.patch("os.path.join", return_value=mock.Mock())
+    @mock.patch("os.remove")
     @mock.patch("%s.magnum.utils.MagnumScenario._get_cluster_template" % SCN)
     @mock.patch("%s.magnum.utils.MagnumScenario._get_cluster" % SCN,
                 return_value=mock.Mock())
     def test_tls_disabled_cleanup(self, mock_magnum_scenario__get_cluster,
                                   mock_magnum_scenario__get_cluster_template,
-                                  mock_os_path_join, mock_os_remove):
+                                  mock_os_remove):
 
         tenants_count = 2
         users_per_tenant = 5
@@ -244,5 +243,4 @@ class CaCertsGeneratorTestCase(test.ScenarioTestCase):
         ca_cert_ctx = ca_certs.CaCertGenerator(self.context)
         ca_cert_ctx.cleanup()
 
-        mock_os_path_join.assert_not_called()
-        mock_os_remove.assert_not_called()
+        self.assertFalse(mock_os_remove.called)
