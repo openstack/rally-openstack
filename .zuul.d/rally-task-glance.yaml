@@ -3,3 +3,44 @@
     parent: rally-task-at-devstack
     vars:
       rally_task: rally-jobs/glance.yaml
+
+- job:
+    name: rally-task-glance-upgrade
+    parent: rally-task-at-grenade
+    required-projects:
+      - openstack/glance
+      - openstack/glance_store
+      - openstack/python-glanceclient
+    vars:
+      rally_task: rally-jobs/glance.yaml
+      grenade_plugins:
+        glance: https://opendev.org/openstack/glance
+      devstack_localrc:
+        GLANCE_USE_IMPORT_WORKFLOW: true
+        GLANCE_ENABLE_MULTIPLE_STORES: True
+      devstack_local_conf:
+        post-config:
+          $GLANCE_API_CONF:
+            DEFAULT:
+              enabled_import_methods: "[\"glance-direct\"]"
+              enabled_backends: "robust:rbd"
+              use_keystone_limits: False
+              user_storage_quota: 0
+            glance_store:
+              default_backend: robust
+              stores: rbd
+              default_store: rbd
+              rbd_thin_provisioning: true
+            robust:
+              rbd_store_pool: images
+              rbd_store_user: glance
+              rbd_store_ceph_conf: /etc/ceph/ceph.conf
+            os_glance_staging_store:
+              filesystem_store_datadir: /opt/stack/data/glance/os_glance_staging_store/
+            os_glance_tasks_store:
+              filesystem_store_datadir: /opt/stack/data/glance/os_glance_tasks_store/
+          $GLANCE_IMAGE_IMPORT_CONF:
+            image_import_opts:
+              image_import_plugins: "['image_conversion']"
+            image_conversion:
+              output_format: raw

@@ -24,3 +24,54 @@
       rally_results_dir: '/opt/stack/.rally/results'
     run: tests/ci/playbooks/run-rally-task.yaml
     post-run: tests/ci/playbooks/post-rally-task.yaml
+
+- job:
+    name: rally-task-at-grenade
+    parent: grenade
+    description: Base job Rally task with Grenade upgrade
+    required-projects:
+      - name: openstack/rally
+      - name: openstack/rally-openstack
+      - name: openstack/devstack-plugin-ceph
+    timeout: 10800
+    roles:
+      - zuul: openstack/devstack
+      - zuul: openstack/grenade
+    vars:
+      devstack_services:
+        c-bak: false
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        base: false
+        key: true
+        mysql: true
+        tempest: false
+        rabbit: true
+        g-api: true
+        etcd3: true
+        dstat: true
+        ceph-mon: true
+        ceph-osd: true
+        horizon: false
+      grenade_from_branch: stable/2026.1
+      rally_home_dir: '/opt/stack/.rally'
+      rally_results_dir: '/opt/stack/.rally/results'
+      grenade_localrc:
+        BASE_RUN_SMOKE: false
+        TARGET_RUN_SMOKE: false
+        ENABLE_TEMPEST: false
+        VERIFY_RESOURCES: false
+        SERVICE_TIMEOUT: 120
+      grenade_devstack_localrc:
+        shared:
+          KEYSTONE_ADMIN_ENDPOINT: true
+      devstack_plugins:
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        devstack-plugin-ceph: https://opendev.org/openstack/devstack-plugin-ceph
+      grenade_plugins:
+        devstack-plugin-ceph: https://opendev.org/openstack/devstack-plugin-ceph
+    ansible-split-streams: true
+    run: tests/ci/playbooks/run-rally-task-grenade-upgrade.yaml
+    post-run: tests/ci/playbooks/post-rally-task.yaml

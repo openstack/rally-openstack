@@ -66,6 +66,9 @@
               - rally_openstack/task/scenarios/glance
               - rally_openstack/task/contexts/glance
               - tests/ci/playbooks
+        - rally-task-glance-upgrade:
+            irrelevant-files: *trivial-files
+            voting: true
         - rally-task-keystone-swift:
             irrelevant-files: *trivial-files
         #- rally-task-magnum:

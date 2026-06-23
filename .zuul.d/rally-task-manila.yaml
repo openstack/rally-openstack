@@ -103,41 +103,20 @@
 
 - job:
     name: rally-task-manila-ss-compare-branches
-    parent: grenade
+    parent: rally-task-at-grenade
     nodeset: openstack-single-node-jammy
-    timeout: 10800
     required-projects:
-      - openstack/rally
-      - openstack/rally-openstack
       - openstack/manila
       - openstack/python-manilaclient
-    roles:
-      - zuul: openstack/devstack
-      - zuul: openstack/grenade
-    ansible-split-streams: true
     vars:
       grenade_from_branch: stable/2025.2
       rally_task: rally-jobs/manila.yaml
-      rally_home_dir: '/opt/stack/.rally'
-      rally_results_dir: '/opt/stack/.rally/results'
       grenade_plugins:
         manila: https://opendev.org/openstack/manila
       devstack_plugins:
         manila: https://opendev.org/openstack/manila
-        rally-openstack: https://opendev.org/openstack/rally-openstack
-      devstack_services:
-        tempest: false
-        horizon: false
       grenade_localrc:
-        BASE_RUN_SMOKE: False
-        TARGET_RUN_SMOKE: False
-        ENABLE_TEMPEST: False
-        VERIFY_RESOURCES: False
-        SERVICE_TIMEOUT: 120
         NOVA_ENABLE_UPGRADE_WORKAROUND: True
       grenade_devstack_localrc:
         shared:
-          KEYSTONE_ADMIN_ENDPOINT: true
           <<: *manila_ss_localrc
-    run: tests/ci/playbooks/run-rally-task-grenade-upgrade.yaml
-    post-run: tests/ci/playbooks/post-rally-task.yaml
