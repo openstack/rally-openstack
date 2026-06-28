@@ -159,6 +159,8 @@ class ScenarioTestCase(TestCase):
                 self.task_utils + ".get_from_manager")
             self.mock_wait_for = fixtures.MockPatch(
                 self.task_utils + ".wait_for")
+            self.mock_wait_is_ready = fixtures.MockPatch(
+                self.task_utils + ".wait_is_ready")
             self.mock_wait_for_delete = fixtures.MockPatch(
                 self.task_utils + ".wait_for_delete")
             self.mock_wait_for_status = fixtures.MockPatch(
@@ -166,6 +168,7 @@ class ScenarioTestCase(TestCase):
             self.useFixture(self.mock_resource_is)
             self.useFixture(self.mock_get_from_manager)
             self.useFixture(self.mock_wait_for)
+            self.useFixture(self.mock_wait_is_ready)
             self.useFixture(self.mock_wait_for_delete)
             self.useFixture(self.mock_wait_for_status)
 
