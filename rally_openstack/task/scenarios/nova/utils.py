@@ -88,6 +88,34 @@ def list_servers(client, detailed=True):
     return all_servers
 
 
+class _LiveMigrateReady:
+    def __init__(self, admin_clients, server_id, host_pre_migrate,
+                 skip_host_check):
+        self._admin_clients = admin_clients
+        self._server_id = server_id
+        self._host_pre_migrate = host_pre_migrate
+        self._skip_host_check = skip_host_check
+
+    def __call__(self, resource) -> bool:
+        server_admin = self._admin_clients("nova").servers.get(self._server_id)
+        status = server_admin.status
+        if status == "ERROR":
+            raise exceptions.GetResourceErrorStatus(
+                resource=server_admin,
+                status=status,
+                fault=getattr(server_admin, "fault", "n/a"))
+        if self._skip_host_check:
+            return status == "ACTIVE"
+        host = getattr(server_admin, "OS-EXT-SRV-ATTR:host")
+        return status == "ACTIVE" and host != self._host_pre_migrate
+
+    def __str__(self):
+        if self._skip_host_check:
+            return "server to become ACTIVE"
+        return (f"server to become ACTIVE on a host other than "
+                f"{self._host_pre_migrate}")
+
+
 class NovaScenario(neutron_utils.NeutronBaseScenario,
                    scenario.OpenStackScenario):
     """Base class for Nova scenarios with basic atomic actions."""
@@ -863,26 +891,20 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
             if compute_nodes < 2:
                 raise exceptions.RallyException("Less than 2 compute nodes,"
                                                 " skipping Live Migration")
-
         server_admin = self.admin_clients("nova").servers.get(server.id)
         host_pre_migrate = getattr(server_admin, "OS-EXT-SRV-ATTR:host")
         server_admin.live_migrate(block_migration=block_migration,
                                   disk_over_commit=disk_over_commit)
-        utils.wait_for_status(
+
+        utils.wait_is_ready(
             server,
-            ready_statuses=["ACTIVE"],
-            update_resource=utils.get_from_manager(),
+            is_ready=_LiveMigrateReady(
+                self.admin_clients, server.id, host_pre_migrate,
+                skip_host_check),
             timeout=CONF.openstack.nova_server_live_migrate_timeout,
             check_interval=(
-                CONF.openstack.nova_server_live_migrate_poll_interval)
+                CONF.openstack.nova_server_live_migrate_poll_interval),
         )
-        if not skip_host_check:
-            server_admin = self.admin_clients("nova").servers.get(server.id)
-            host_after_migrate = getattr(server_admin, "OS-EXT-SRV-ATTR:host")
-            if host_pre_migrate == host_after_migrate:
-                raise exceptions.RallyException(
-                    "Live Migration failed: Migration complete "
-                    "but instance did not change host: %s" % host_pre_migrate)
 
     @atomic.action_timer("nova.migrate")
     def _migrate(self, server, skip_compute_nodes_check=False,

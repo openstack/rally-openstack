@@ -794,16 +794,87 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
                                     skip_compute_nodes_check=True,
                                     skip_host_check=True)
 
-        self.mock_wait_for_status.mock.assert_called_once_with(
+        self.mock_wait_is_ready.mock.assert_called_once_with(
             self.server,
-            ready_statuses=["ACTIVE"],
-            update_resource=self.mock_get_from_manager.mock.return_value,
+            is_ready=mock.ANY,
             check_interval=CONF.openstack.
             nova_server_live_migrate_poll_interval,
             timeout=CONF.openstack.nova_server_live_migrate_timeout)
-        self.mock_get_from_manager.mock.assert_called_once_with()
+        is_ready = self.mock_wait_is_ready.mock.call_args[1]["is_ready"]
+        self.assertIsInstance(is_ready, utils._LiveMigrateReady)
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.live_migrate")
+
+    def test__live_migrate_server_is_ready_callback(self):
+        host_pre_migrate = "compute-a"
+        host_post_migrate = "compute-b"
+        server_admin = mock.Mock()
+        server_admin.live_migrate = mock.Mock()
+        setattr(server_admin, "OS-EXT-SRV-ATTR:host", host_pre_migrate)
+        admin_get = self.admin_clients("nova").servers.get
+        admin_get.return_value = server_admin
+
+        nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario._live_migrate(
+            self.server,
+            block_migration=False,
+            disk_over_commit=False,
+            skip_compute_nodes_check=True,
+            skip_host_check=False)
+
+        is_ready = self.mock_wait_is_ready.mock.call_args[1]["is_ready"]
+
+        error_server = mock.Mock(status="ERROR", fault="failed")
+        admin_get.return_value = error_server
+        self.assertRaises(
+            rally_exceptions.GetResourceErrorStatus,
+            is_ready, self.server)
+
+        same_host_server = mock.Mock(status="ACTIVE")
+        setattr(same_host_server, "OS-EXT-SRV-ATTR:host", host_pre_migrate)
+        admin_get.return_value = same_host_server
+        self.assertFalse(is_ready(self.server))
+
+        new_host_server = mock.Mock(status="ACTIVE")
+        setattr(new_host_server, "OS-EXT-SRV-ATTR:host", host_post_migrate)
+        admin_get.return_value = new_host_server
+        self.assertTrue(is_ready(self.server))
+
+        self.mock_wait_is_ready.mock.reset_mock()
+        admin_get.return_value = server_admin
+        nova_scenario._live_migrate(
+            self.server,
+            block_migration=False,
+            disk_over_commit=False,
+            skip_compute_nodes_check=True,
+            skip_host_check=True)
+        is_ready_skip_host = (
+            self.mock_wait_is_ready.mock.call_args[1]["is_ready"])
+
+        admin_get.return_value = same_host_server
+        self.assertTrue(is_ready_skip_host(self.server))
+
+    def test__live_migrate_ready_str(self):
+        admin_clients = mock.Mock()
+        servers_get = admin_clients.return_value.servers.get
+
+        is_ready = utils._LiveMigrateReady(
+            admin_clients, "server-id", "compute-a", skip_host_check=False)
+        self.assertEqual(
+            "server to become ACTIVE on a host other than compute-a",
+            str(is_ready))
+
+        is_ready_skip_host = utils._LiveMigrateReady(
+            admin_clients, "server-id", "compute-a", skip_host_check=True)
+        self.assertEqual("server to become ACTIVE", str(is_ready_skip_host))
+
+        error_server = mock.Mock(status="ERROR", fault="failed")
+        servers_get.return_value = error_server
+        self.assertRaises(
+            rally_exceptions.GetResourceErrorStatus,
+            is_ready, mock.Mock())
+        admin_clients.assert_called_with("nova")
+        servers_get.assert_called_with("server-id")
 
     def test__migrate_server(self):
         fake_server = self.server
