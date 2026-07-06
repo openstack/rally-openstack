@@ -109,7 +109,7 @@ testscenarios===0.5.0
 testtools===2.7.2
 typing_extensions===4.14.1
 tzdata===2025.2
-ujson===5.11.0
+ujson===5.13.0
 urllib3===1.26.20
 virtualenv===20.32.0
 warlock===2.1.0
