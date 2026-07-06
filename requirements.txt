@@ -1,23 +1,23 @@
 requests!=2.20.0,!=2.24.0                              # Apache License, Version 2.0
 
 rally>=5.0.0                                           # Apache License, Version 2.0
-pbr>=6.1.1                                             # Apache Software License
+pbr!=2.1.0                                             # Apache License, Version 2.0
 
 # OpenStack related
 gnocchiclient                                          # Apache Software License
-keystoneauth1                                          # Apache License, Version 2.0
+keystoneauth1
 kubernetes                                             # Apache License Version 2.0
 os-faults>=0.2.0                                       # Apache Software License
-osprofiler                                             # Apache Software License
+osprofiler                                             # Apache License, Version 2.0
 python-barbicanclient                                  # Apache Software License
-python-cinderclient!=4.0.0                             # Apache Software License
-python-designateclient                                 # Apache License, Version 2.0
+python-cinderclient!=4.0.0                             # Apache License, Version 2.0
+python-designateclient
 python-heatclient                                      # Apache Software License
 python-glanceclient                                    # Apache License, Version 2.0
-python-ironicclient!=2.5.2,!=2.7.1,!=3.0.0             # Apache Software License
+python-ironicclient!=2.5.2,!=2.7.1,!=3.0.0
 python-keystoneclient!=2.1.0                           # Apache Software License
 python-magnumclient                                    # Apache Software License
-python-manilaclient                                    # Apache Software License
+python-manilaclient                                    # Apache License, Version 2.0
 python-mistralclient!=3.2.0                            # Apache Software License
 python-neutronclient                                   # Apache Software License
 python-novaclient                                      # Apache License, Version 2.0

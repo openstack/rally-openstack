@@ -105,10 +105,8 @@ class OpenStackScenarioTestCase(test.TestCase):
                 ("user", CREDENTIAL_WITHOUT_HMAC)], 0))
     @ddt.unpack
     @mock.patch("rally_openstack.task.scenario.profiler.init")
-    @mock.patch("rally_openstack.task.scenario.profiler.get")
     def test_profiler_init(self, users_credentials,
                            expected_call_count,
-                           mock_profiler_get,
                            mock_profiler_init):
         for user, credential in users_credentials:
             self.context.update({user: {"credential": credential},
@@ -118,10 +116,8 @@ class OpenStackScenarioTestCase(test.TestCase):
         if expected_call_count:
             mock_profiler_init.assert_called_once_with(
                 CREDENTIAL_WITH_HMAC["profiler_hmac_key"])
-            mock_profiler_get.assert_called_once_with()
         else:
             self.assertFalse(mock_profiler_init.called)
-            self.assertFalse(mock_profiler_get.called)
 
     def test__choose_user_random(self):
         users = [{"credential": mock.Mock(), "tenant_id": "foo"}

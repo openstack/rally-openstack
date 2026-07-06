@@ -130,8 +130,7 @@ class OpenStackScenario(scenario.Scenario):
                     profiler_conn_str = cred.profiler_conn_str
             if profiler_hmac_key is None:
                 return
-            profiler.init(profiler_hmac_key)
-            trace_id = profiler.get().get_base_id()
+            trace_id = profiler.init(profiler_hmac_key).get_base_id()
             complete_data = {"title": "OSProfiler Trace-ID",
                              "chart_plugin": "OSProfiler",
                              "data": {"trace_id": trace_id,
