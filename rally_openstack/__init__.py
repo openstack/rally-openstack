@@ -30,11 +30,12 @@ try:
     # Try to get version from installed package metadata
     __version__ = _version("rally-openstack")
 except Exception:
-    # Fallback to setuptools_scm for development installs
+    # Fallback to pbr for development installs
     try:
-        from setuptools_scm import get_version  # type: ignore[import-untyped]
+        import pbr.version  # type: ignore[import-untyped]
 
-        __version__ = get_version()
+        __version__ = pbr.version.VersionInfo(
+            "rally-openstack").version_string()
     except Exception:
         # Final fallback - this should rarely happen
         __version__ = "0.0.0"

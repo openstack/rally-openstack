@@ -1,11 +1,17 @@
+[build-system]
+requires = [
+    "pbr>=6.1.1"
+]
+build-backend = "pbr.build"
+
 [project]
 name = "rally-openstack"
 description = "Rally plugins for OpenStack platform"
 authors = [
     {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
 ]
-readme = "README.rst"
-license = { text = "Apache License, Version 2.0"}
+readme = { file = "README.rst", content-type = "text/x-rst" }
+license = { text = "Apache License, Version 2.0" }
 classifiers = [
     "Environment :: OpenStack",
     "Intended Audience :: Developers",
@@ -27,21 +33,11 @@ requires-python = ">=3.10"
 [project.urls]
 Homepage = "https://docs.openstack.org/rally/latest/"
 
-[build-system]
-requires = [
-    "setuptools>=64",
-    "setuptools_scm>=8"
-]
-build-backend = "setuptools.build_meta"
-
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
-
-[tool.setuptools_scm]
-local_scheme = "no-local-version"
 
 [tool.setuptools.packages.find]
 where = ["."]

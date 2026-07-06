@@ -40,8 +40,8 @@ Removed
 Changed
 ~~~~~~~
 
-* Implements pep-517 (pyproject.toml) and replaces pbr dependency
-  with setuptools-scm
+* Packaging metadata is moved to ``pyproject.toml`` (PEP 621), while pbr
+  is kept as the build backend
 * Zaqar scenarios now use messaging v2 API, instead of deprecated v1 API.
 * Bump minimal required version to Rally 5.0.0. Switch docker image to use it.
 * All task samples are ported to Task format V2
