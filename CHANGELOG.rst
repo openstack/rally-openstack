@@ -16,17 +16,22 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-[unreleased]
-------------
+[3.1.0] - 2026-07-07
+--------------------
 
 Added
 ~~~~~
 
-* CI jobs for checking compatibility with python 3.12 and 3.13
+* CI jobs for checking compatibility with python 3.12, 3.13 and 3.14
 * New ``GlanceImages.import_and_delete_image`` scenario that exercises the
   Glance v2 interoperable image import workflow (``glance-direct`` and
   ``web-download``), including multistore deployments via the ``stores`` and
   ``all_stores`` parameters.
+* Support for ``create_volume_kwargs`` and ``boot_server_kwargs`` in more
+  scenarios that boot a server from a volume.
+* ``force_delete`` argument for the ``CinderVolumes.create_and_attach_volume``
+  scenario.
+* Base support for mypy static type checking.
 
 Removed
 ~~~~~~~
@@ -45,6 +50,9 @@ Changed
 * Zaqar scenarios now use messaging v2 API, instead of deprecated v1 API.
 * Bump minimal required version to Rally 5.0.0. Switch docker image to use it.
 * All task samples are ported to Task format V2
+* Tempest verifier configures the OVN agent instead of the removed OVN
+  Metadata agent.
+* Manila now defaults to the ``shared-file-system`` service type (v2 API).
 
 Fixed
 ~~~~~
@@ -53,6 +61,9 @@ Fixed
 * Don't load compute resources in tempest verifier if nova is not enabled
 * Fix cleanup when neutron is not available
 * Fix tempest config failure when nova is not available
+* Fix neutron cleanup order to delete routers before networks
+* Fix live migration host check race under concurrent load
+* Select a public network accessible by all tenants when RBAC is enabled
 
 [3.0.0] - 2024-05-23
 --------------------
