@@ -141,10 +141,10 @@ class RallyJobsTestCase(test.TestCase):
 
         for dir_name, _, files in os.walk(self.root_dir):
             dir_name = os.path.relpath(dir_name, self.root_dir)
-            if dir_name in (".tox", ".git"):
+            if dir_name.split("/", 1)[0] in (".tox", ".git"):
                 continue
             for f in files:
-                full_path = os.path.join(dir_name, f)
+                full_path = os.path.join(dir_name, f) if dir_name != "." else f
                 for key in list(not_matched):
                     if file_matchers[key]["matcher"].match(full_path):
                         not_matched.remove(key)

@@ -8,11 +8,18 @@
         - rally-tox-py311
         - rally-tox-py312
         - rally-tox-py313
-        - rally-dsvm-tox-functional
+        - rally-dsvm-tox-functional:
+            irrelevant-files: &trivial-files
+              - CHANGELOG.rst
+              - CONTRIBUTING.rst
+              - DOCKER_README.md
+              - README.rst
+              - tests/unit/.*
         - rally-openstack-docker-build
         #- rally-task-basic-with-existing-users
         - rally-task-simple-job
         - rally-task-barbican:
+            irrelevant-files: *trivial-files
             files:
               - .zuul.d/zuul.yaml
               - rally-jobs/barbican.yaml
@@ -22,8 +29,10 @@
               - rally_openstack/task/scenarios/barbican
               - tests/ci/playbooks
             voting: false
-        - rally-task-cinder
+        - rally-task-cinder:
+            irrelevant-files: *trivial-files
         - rally-task-designate:
+            irrelevant-files: *trivial-files
             files:
               - .zuul.d/zuul.yaml
               - rally-jobs/designate.yaml
@@ -35,7 +44,8 @@
         #- rally-task-heat:
         #    voting: false
         #- rally-task-ironic
-        - rally-task-keystone-glance-swift
+        - rally-task-keystone-glance-swift:
+            irrelevant-files: *trivial-files
         #- rally-task-magnum:
         #    voting: false
         #    files:
@@ -47,11 +57,15 @@
         #      - rally_openstack/task/scenarios/magnum
         #      - tests/ci/playbooks
         - rally-task-manila-no-ss:
+            irrelevant-files: *trivial-files
             voting: false
         - rally-task-manila-ss:
+            irrelevant-files: *trivial-files
             voting: false
-        - rally-task-mistral
+        - rally-task-mistral:
+            irrelevant-files: *trivial-files
         - rally-task-neutron-trunk:
+            irrelevant-files: *trivial-files
             files:
               - .zuul.d/zuul.yaml
               - rally-jobs/neutron-trunk.yaml
@@ -63,15 +77,20 @@
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
         - rally-task-neutron-with-extensions:
+            irrelevant-files: *trivial-files
             voting: false
-        - rally-task-nova
+        - rally-task-nova:
+            irrelevant-files: *trivial-files
         #- rally-task-octavia:
         #    voting: false
         - rally-task-telemetry:
+            irrelevant-files: *trivial-files
             voting: false
         - rally-task-watcher:
+            irrelevant-files: *trivial-files
             voting: false
         - rally-task-zaqar:
+            irrelevant-files: *trivial-files
             voting: false
         - rally-verify-tempest
     gate:
@@ -96,13 +115,18 @@
         #      - rally_openstack/task/cleanup/resources.py
         #      - rally_openstack/task/scenarios/barbican
         #      - tests/ci/playbooks
-        - rally-task-cinder
+        - rally-task-cinder:
+            irrelevant-files: *trivial-files
         #- rally-task-heat
         #- rally-task-ironic
-        - rally-task-keystone-glance-swift
-        - rally-task-mistral
-        - rally-task-neutron
+        - rally-task-keystone-glance-swift:
+            irrelevant-files: *trivial-files
+        - rally-task-mistral:
+            irrelevant-files: *trivial-files
+        - rally-task-neutron:
+            irrelevant-files: *trivial-files
         - rally-task-neutron-trunk:
+            irrelevant-files: *trivial-files
             files:
               - rally-jobs/neutron-trunk.yaml
               - rally_openstack/common/osclients.py
@@ -112,7 +136,8 @@
               - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
               - tests/ci/playbooks
-        - rally-task-nova
+        - rally-task-nova:
+            irrelevant-files: *trivial-files
         - rally-verify-tempest
     post:
       jobs:
