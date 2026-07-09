@@ -18,4 +18,4 @@
         . /opt/stack/data/venv/bin/activate
         python3 tests/ci/rally_verify.py
       args:
-        chdir: "{{ zuul.project.src_dir }}"
+        chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
