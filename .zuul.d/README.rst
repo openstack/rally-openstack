@@ -31,3 +31,9 @@ project configuration and job definitions.
 
 Ansible roles, tasks cannot be here, so we placed them at *tests/ci/playbooks*
 directory.
+
+.. warning:: A task job resolves ``rally_task`` against the checkout of the
+    project that triggers it. Passing an absolute path makes it possible to
+    reuse a task file shipped in this repo from another project (e.g. rally).
+    This is technically supported but not recommended in general, as it couples
+    that project to rally-openstack's on-disk layout.

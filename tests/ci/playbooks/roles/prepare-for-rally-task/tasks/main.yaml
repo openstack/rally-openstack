@@ -142,14 +142,25 @@
           openstack flavor create --id 42 --ram 64 --disk 0 --vcpus 1 m1.nano
       fi
 
+- name: Resolve the rally_task path
+  set_fact:
+    # A relative rally_task is resolved against the checkout of the project
+    # that runs the job.
+    # An absolute path is used as-is, so another project (e.g. rally) can point
+    # the job at a task file living in the rally-openstack checkout.
+    rally_task_path: >-
+      {{ rally_task
+         if rally_task is match('^[/~]')
+         else ansible_user_dir ~ '/' ~ zuul.project.src_dir ~ '/' ~ rally_task }}
+
 - name: Check the existence of rally_task
   stat:
-    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/{{ rally_task }}'
+    path: '{{ rally_task_path }}'
   register: rally_task_file_stat
 
 - name: Fail if Rally task file is missed.
   fail:
-    msg: "'{{ rally_task }}' Rally task file is missed."
+    msg: "'{{ rally_task_path }}' Rally task file is missed."
   when: not rally_task_file_stat.stat.exists
 
 - name: Copy task file
