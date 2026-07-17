@@ -2,28 +2,27 @@
     name: rally-openstack-dockerhub-credentials
     data:
       username: !encrypted/pkcs1-oaep
-        - Lpn4COtSgWZJO5Y6AA/ANJYJEF0PM3I94kBSYouHrzHGY+hriHcjBWZPPMxKvhEjhf14w
-          iV/2nomBxZv40CC09znrSHr9KT2gjxZ1rUIfTDnn6USOXsGWWLUN2pKE4GC6Z4SG5kdmo
-          Yxd+NwE5xygERFIRUkT052ZYe/1ZFfBunC7iofHLVgCKmQ2/Pg4Q/7EDwPABiHNyUlgL1
-          CCXhiK0L75R17klqMDcug4z5/7p0zK9VHp5NvY5y/rPyNWWjatgKMSIBxja7QW4UEeRXi
-          8obAzKuYXjoiRAE++pGELTU1aXR3oq6U04Xgl1mwm6Xb5VyYik+OFPq7F8rjwhqd161mN
-          LL8ZGXVF6m742LVDLJWDRrKQbC84NdOs7Bx17DZ8Jqbqli3DCagS3kAcsyn8rPByU3BMZ
-          NvbyEeZpnte4nuxWZl2eURuktYM88+7PTqinPgxodFCwrY1L3Si7D/bRe3IA1XKKMO5gI
-          BsmYpDLX2uz/mdOyxEC/4162rRaYXBVeZrMZTd/a1+z5HGRryxPZ7MMh5kTCzZHseSB7h
-          qPOYsdU2zAceijI1+VNg3J6ZzwC/N7uLn6OweyHSca7si3hYXbZpfzDDzo6Z1iJdbLkcR
-          fga6LCxc8P8LrosrWqTm/9T4n3d7Jll06qg2jVFV1UO7ItmcmQ2A+V8v4ufPRU=
+        - M5vK0FBsjlMR3I32JyJ67hrbNnoFij4ncYffCiRxWyabu+N7PG9tNFyhFukTv7U9Dtauw
+          QlKAmuh7caWRZslo7+SwMFV9wv/Wg6w/Ur1DMWFIOea59MdqGj2JM87tMSE1EcaKd5DzM
+          b0hyYGNvpl/hQt531khg9MaDXgBpol+LmP/uIb5ihNJNobxYcDQ39RjudwObqmHWhPCkH
+          TjjdLt54JDyZnak69yfmK3QrRedmNmu8eLyAZCOI6m7vjQK7GigUoBFqBstbZXg0wERPH
+          j8mwbGNQs3pm/xKRqSrCl+/yTTq0cx7PGr6oQMK9UqbqDsZ4J6/CZ9YQT5bkRaV8JaU8N
+          bF8Se5Oz9beyykc6Ku51f9Dl3wa0GeY1wmRglrna30BFapNeMd1O7ANxP+kQ3osYf4frK
+          a0lhkjYZ5Zmn/SY+P2aqF37AXSvMHflWNV3NnJy/EZ4+lvzzv/pLqiDXRDtCTbvLsNWWj
+          8rHdDuT2HVxxl8aMLVUM98ooPIoGndWbjyfNjhs53XLHCe9fZdjy8PHMPTDBnrdBXZwYH
+          nI6BYCXzbr3plQe5o2uBEaIMNbNT3Ramv5b9Z7AW2I+fRCQqnrfWj5cIZApJ6gcwjvd4T
+          WUaHd/NkFZ1NDXTrq0eHT3RWPh3wFzOYGCxDSz1aSCznJXIzoMXhBe8ksyfBgo=
       password: !encrypted/pkcs1-oaep
-        - o20FjF9msjlmzUEY8IUNm8z4QrN4ZEIUtIj38R+ZdtDFKfpaXY4bR3aCEoEXbzXcv91FD
-          Zgi6yeNX7gh62dfTzbkijo72s8xfRUeps9FqIS/wnFHhWc64aR8NOaUCdw8W+Up+zeKyM
-          GSY7Po3WbitKKxqekTzHOmCpFZcvmvxsvkkDoG249kic9yRFOxn2C8pYYXkUdcoAe+twV
-          YBBzk7+IAJKexCH1FdvOr3EfPhNPBlRyYAu6ae8zxxHYSvyw2gGsQ5EPvmkoImqnig2Eh
-          EqEgdgSXspsUSt1hLDZwGjKXSQOiXuJSqOs1RHWvqRqBSoSgFUXVtWNBDFLEEZQB6+Hle
-          9Qe53NiHssAsr0DVLK81Jai8onWPibhpK9N44DO1x2fnOf6zppHpKhLDXGYRBnOMIquPa
-          A50og83WtLOcKAk5mZpLA2vNc+t9Qa0wzIpyvuTeVJrqY7wmNQ1IcaztoSl897JakaE+z
-          ITMdA5fProexj1C+zBG8FlcN507rzZoEfUNkc3398uKURE8/BlGYbVP9ut2Zb35JNMQNp
-          G8+cu8nOeBxEcq1IP7RlifAFnyPXgRwpsorU/XeeKz4NYEsVXjiX0E6rXlhVsiC2/T3P4
-          jEQJAcLa8Puj1tmS+ux+J99yq2W6dYmeFx2v063DHqrC8Cs7+2VIgxRQBGCi9A=
-
+        - RTFkzByYKk5jmkyj4UpKGAFkb1bVzZ0j5RHk1fgWADYOg7Zp/OxZz1EQFiLPnFOWDh/Ks
+          wp3bjd2TFGiNEYrY2Mg2Q3nJ1kq92T/fC7K3tzvNVfDDmEv9ZF+IL5L6934M3Jt2y01d6
+          oZgUzeKjrxaRi0YZLVX08zeCz5pARR77zYngNTbMC84WRy7zzV4cOuw/lnp/5eBiizkpZ
+          IcL2HK/0oGHCYPKYJ5IOEwKjGNAeweSd3CSN7RAqgTf2mNGkZkqW9BH70kNppTUf8/m0H
+          Kh8jjDvByq5trPFzhMK7w9zFXYwPdfeBne3iMWQ7p/NxGT/MXTnzi/gcHa+mlPCMtrYzc
+          d4XHjQ9/k3zu20fxKVabeAnQe5ikxlOTtnPDCHU42JC3DgIZPv46K9aqZE1MdV2q1JJiv
+          Qmk0bGSc5Y4nG2d+or3EA+C5mR4ElI4uv9LbchAVtcCg6QrBkvpOglZqFIEf8VZ0z+zO7
+          SA9itZbJIEO+grdi+N8v4F4p2xTQGM3uusGczwJLVio2KjZqek3sbH2jVobwBdWpObc71
+          isAFYHS/eIKMvEHyOxNZOmbVpdP/8M/GOS21vMBL7+RrrrGl2zQK879j2gI9tcio+GmLJ
+          9abVpu2dB5pXpHEWxddsdJtxsNVYvsAa8KcCZlC5ZwHVHg9COoMwHITrz81ndM=
 
 - job:
     name: rally-openstack-docker-build
