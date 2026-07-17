@@ -11,6 +11,9 @@
     timeout: 7200
     roles:
       - zuul: openstack/devstack
+    # Zuul merges stdout/stderr streams into stdout by default
+    #   https://zuul-ci.org/docs/zuul/latest/config/job.html#attr-job.ansible-split-streams
+    ansible-split-streams: true
     vars:
       devstack_localrc:
         # TODO(frickler): drop this once python-keystoneclient no longer needs it
