@@ -15,6 +15,8 @@
 from unittest import mock
 
 from rally_openstack.common.services.storage import block
+from rally_openstack.common.services.storage import cinder_v2
+from rally_openstack.common.services.storage import cinder_v3
 from tests.unit import test
 
 
@@ -31,6 +33,26 @@ class BlockTestCase(test.TestCase):
             mock_discover.return_value = mock.MagicMock(), None
             service = block.BlockStorage(self.clients)
         return service
+
+    def _is_applicable(self, impl_cls, requested_version):
+        clients = mock.MagicMock()
+        client_name = impl_cls._meta_get("impl")._meta_get("client_name")
+        client = getattr(clients, client_name)
+        client.choose_version.return_value = requested_version
+        return impl_cls.is_applicable(clients)
+
+    def test_is_applicable(self):
+        # an exact major version and any of its microversions should match
+        self.assertTrue(
+            self._is_applicable(cinder_v3.UnifiedCinderV3Service, "3"))
+        self.assertTrue(
+            self._is_applicable(cinder_v3.UnifiedCinderV3Service, "3.42"))
+        # a different major version should not match
+        self.assertFalse(
+            self._is_applicable(cinder_v2.UnifiedCinderV2Service, "3.42"))
+        # a missing version should not match
+        self.assertFalse(
+            self._is_applicable(cinder_v3.UnifiedCinderV3Service, None))
 
     def test_create_volume(self):
         self.assertEqual(self.service._impl.create_volume.return_value,

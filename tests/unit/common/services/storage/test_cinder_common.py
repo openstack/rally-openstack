@@ -51,8 +51,18 @@ class CinderMixinTestCase(test.ScenarioTestCase):
         return self.service._atomic_actions
 
     def test__get_client(self):
+        # the microversion configured via the context is used
+        self.clients.cinder.choose_version.return_value = "3.42"
         self.assertEqual(self.cinder,
                          self.service._get_client())
+        self.clients.cinder.assert_called_once_with("3.42")
+
+        # without a configured version it falls back to the service version
+        self.clients.cinder.reset_mock()
+        self.clients.cinder.choose_version.return_value = None
+        self.assertEqual(self.cinder,
+                         self.service._get_client())
+        self.clients.cinder.assert_called_once_with(self.version)
 
     def test__update_resource_with_manage(self):
         resource = mock.MagicMock(id=1, manager=mock.MagicMock())
@@ -142,7 +152,8 @@ class CinderMixinTestCase(test.ScenarioTestCase):
                          self.service.extend_volume(volume, 1))
 
         self.cinder.volumes.extend.assert_called_once_with(volume, 1)
-        self.service._wait_available_volume.assert_called_once_with(volume)
+        self.service._wait_available_volume.assert_called_once_with(
+            volume, ready_statuses=["available", "in-use"])
 
     def test_list_snapshots(self):
         self.assertEqual(self.cinder.volume_snapshots.list.return_value,

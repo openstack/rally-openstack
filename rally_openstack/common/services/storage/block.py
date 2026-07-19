@@ -37,6 +37,29 @@ QoSSpecs = service.make_resource_cls(
 
 class BlockStorage(service.UnifiedService):
 
+    @classmethod
+    def is_applicable(cls, clients):
+        """Check that the implementation can be used in the cloud.
+
+        The base implementation matches the requested version against the
+        version of the implementation using strict string equality. That
+        breaks whenever a Block Storage API microversion is requested (e.g.
+        "3.42"), because the versioned implementation is registered with the
+        major version only (e.g. "3"). Here we compare just the major part of
+        the version, so any "3.x" microversion is served by the v3
+        implementation.
+        """
+        if not cls._meta_is_inited(raise_exc=False):
+            return False
+        impl = cls._meta_get("impl", cls)
+        client = getattr(clients, impl._meta_get("client_name"))
+        requested_version = client.choose_version()
+        if requested_version is None:
+            return False
+        impl_version = impl._meta_get("version")
+        return (str(requested_version).split(".")[0]
+                == str(impl_version).split(".")[0])
+
     @service.should_be_overridden
     def create_volume(self, size, consistencygroup_id=None,
                       group_id=None, snapshot_id=None, source_volid=None,

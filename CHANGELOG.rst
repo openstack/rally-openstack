@@ -26,6 +26,30 @@ Changed
   <https://zuul-ci.org/docs/zuul/latest/config/job.html#attr-job.ansible-split-streams>`_
   for ``rally-task-at-devstack`` Zuul job.
 
+Fixed
+~~~~~
+
+* Support for specifying Cinder API microversions, added in Rally OpenStack
+  3.0.0, never actually worked. The failure slipped through because CI
+  silently ignored it (a Rally framework bug, fixed in the first Rally
+  release after 5.0.1). The unified BlockStorage service layer had two
+  problems:
+
+  - it selected the implementation without accounting for the requested
+    microversion;
+  - it created the cinderclient without passing the requested microversion.
+
+  Both are now fixed, so scenarios that request a Cinder microversion work
+  as expected.
+
+* ``CinderMixin.extend_volume`` now treats the ``in-use`` state, along with
+  ``available``, as a successful result. ``in-use`` is valid when the volume
+  is attached to a server while being extended (an online extend, supported
+  since Cinder microversion 3.42). This fixes the logic of the
+  ``NovaServers.boot_server_attach_created_volume_and_extend`` scenario, which
+  previously timed out waiting for the attached volume to become
+  ``available``.
+
 [4.0.0] - 2026-07-09
 --------------------
 

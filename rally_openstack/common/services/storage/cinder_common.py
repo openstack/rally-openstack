@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import random
+import typing as t
 
 from rally import exceptions
 from rally.task import atomic
@@ -28,7 +31,10 @@ CONF = block.CONF
 class CinderMixin(atomic.ActionTimerMixin):
 
     def _get_client(self):
-        return self._clients.cinder(self.version)
+        # use the microversion configured via the api_versions context
+        # (e.g. "3.42"), falling back to this implementation's version
+        version = self._clients.cinder.choose_version() or self.version
+        return self._clients.cinder(version)
 
     def _update_resource(self, resource):
         try:
@@ -49,10 +55,12 @@ class CinderMixin(atomic.ActionTimerMixin):
             raise exceptions.GetResourceFailure(resource=resource, err=e)
         return res
 
-    def _wait_available_volume(self, volume):
+    def _wait_available_volume(
+        self, volume: t.Any, ready_statuses: list[str] | None = None
+    ) -> t.Any:
         return bench_utils.wait_for_status(
             volume,
-            ready_statuses=["available"],
+            ready_statuses=ready_statuses or ["available"],
             update_resource=self._update_resource,
             timeout=CONF.openstack.cinder_volume_create_timeout,
             check_interval=CONF.openstack.cinder_volume_create_poll_interval
@@ -79,7 +87,9 @@ class CinderMixin(atomic.ActionTimerMixin):
                                 .cinder_volume_delete_poll_interval)
             )
 
-    def extend_volume(self, volume, new_size):
+    def extend_volume(
+        self, volume: t.Any, new_size: int | dict[str, int]
+    ) -> t.Any:
         """Extend the size of the specified volume."""
         if isinstance(new_size, dict):
             new_size = random.randint(new_size["min"], new_size["max"])
@@ -87,7 +97,10 @@ class CinderMixin(atomic.ActionTimerMixin):
         aname = "cinder_v%s.extend_volume" % self.version
         with atomic.ActionTimer(self, aname):
             self._get_client().volumes.extend(volume, new_size)
-            return self._wait_available_volume(volume)
+            # an attached volume stays in-use after an online extend,
+            # while a detached one returns to available
+            return self._wait_available_volume(
+                volume, ready_statuses=["available", "in-use"])
 
     def list_snapshots(self, detailed=True):
         """Get a list of all snapshots."""
