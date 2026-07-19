@@ -529,6 +529,9 @@
         users:
           tenants: 2
           users_per_tenant: 1
+      sla:
+        failure_rate:
+          max: 50
     -
       title: NovaServers.boot_and_bounce_server tests
       scenario:

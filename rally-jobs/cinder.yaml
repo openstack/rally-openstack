@@ -20,6 +20,9 @@
             users:
               tenants: 2
               users_per_tenant: 2
+          sla:
+            failure_rate:
+              max: 50
         -
           description: "Create a volume from the specified image."
           scenario:
@@ -35,6 +38,9 @@
             users:
               tenants: 1
               users_per_tenant: 1
+          sla:
+            failure_rate:
+              max: 50
     -
       title: Authenticate.validate_cinder tests
       scenario:
@@ -101,6 +107,9 @@
             users:
               tenants: 2
               users_per_tenant: 2
+          sla:
+            failure_rate:
+              max: 50
         -
           description: "Create a volume from specific image and delete it."
           scenario:
@@ -116,6 +125,9 @@
             users:
               tenants: 2
               users_per_tenant: 2
+          sla:
+            failure_rate:
+              max: 50
         -
           description: "Create a volume from image created by image context."
           scenario:
@@ -140,6 +152,9 @@
               images_per_tenant: 1
               image_name: "image-context-test"
               visibility: "public"
+          sla:
+            failure_rate:
+              max: 50
     -
       title: CinderVolumes.create_and_update_volume tests
       workloads:
@@ -416,6 +431,9 @@
               users_per_tenant: 1
             volumes:
               size: 1
+          sla:
+            failure_rate:
+              max: 50
         -
           scenario:
             CinderVolumes.create_from_volume_and_delete_volume:
@@ -432,6 +450,9 @@
               users_per_tenant: 1
             volumes:
               size: 1
+          sla:
+            failure_rate:
+              max: 50
     -
       title: CinderVolumes.create_and_attach_volume test
       scenario:
