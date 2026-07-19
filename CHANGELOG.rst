@@ -16,6 +16,16 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[unreleased]
+------------
+
+Changed
+~~~~~~~
+
+* Enable `ansible-split-streams
+  <https://zuul-ci.org/docs/zuul/latest/config/job.html#attr-job.ansible-split-streams>`_
+  for ``rally-task-at-devstack`` Zuul job.
+
 [4.0.0] - 2026-07-09
 --------------------
 
