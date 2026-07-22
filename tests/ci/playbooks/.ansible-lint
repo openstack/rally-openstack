@@ -19,9 +19,12 @@ mock_roles:
   - fetch-tox-output
   - run-devstack
 
-mock_modules:
-  - synchronize
-  - zuul_return
+# NOTE(andreykurilin): the 'synchronize' and 'zuul_return' modules are injected
+#   by Zuul as custom action plugins at run time. ansible-lint's 'mock_modules'
+#   are not exported to the child 'ansible-playbook --syntax-check' process, so
+#   we ship real lint-only stubs and point ANSIBLE_LIBRARY at them from the
+#   zuul-ansible-lint tox environment instead. See
+#   tests/ci/ansible-lint-stubs/README.rst for details.
 
 skip_list:
   - no-changed-when  # Commands should not change things if nothing needs doing
@@ -30,6 +33,7 @@ skip_list:
   - name[template]  # Jinja templates should only be at the end of 'name'
   - command-instead-of-shell  # Use shell only when shell functionality is required.
   - no-jinja-when  # No Jinja2 in when.
+  - role-name  # FIXME(andreykurilin): rename in-house role names to use underscore
   # FIXME(andreykurilin): all the rules from the list bellow should be fixed
   - key-order[play]
   - name[play]
