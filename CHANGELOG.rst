@@ -50,6 +50,8 @@ Fixed
   previously timed out waiting for the attached volume to become
   ``available``.
 
+  `Launchpad-bug #2084795 <https://launchpad.net/bugs/2084795>`_
+
 [4.0.0] - 2026-07-09
 --------------------
 
