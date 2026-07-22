@@ -16,8 +16,8 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
-[unreleased]
-------------
+[4.1.0] - 2026-07-22
+--------------------
 
 Changed
 ~~~~~~~
@@ -51,6 +51,8 @@ Fixed
   ``available``.
 
   `Launchpad-bug #2084795 <https://launchpad.net/bugs/2084795>`_
+
+* Automatic update of Docker Hub description for Rally-OpenStack images
 
 [4.0.0] - 2026-07-09
 --------------------
