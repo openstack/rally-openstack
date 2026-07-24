@@ -159,6 +159,9 @@ class CreateAndUpdateLoadBalancers(octavia_utils.OctaviaBase):
             self.octavia.load_balancer_set(
                 lb_id=loadbalancer["id"],
                 lb_update_args=update_loadbalancer)
+        # Wait for all load balancers to finish updating
+        for loadbalancer in loadbalancers:
+            self.octavia.wait_for_loadbalancer_prov_status(loadbalancer)
 
 
 @validation.add("required_services", services=[consts.Service.OCTAVIA])
