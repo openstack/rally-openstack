@@ -71,17 +71,23 @@ class OpenStackAPIVersions(context.OpenStackContext):
         # In this example we will launch NovaKeypair.create_and_list_keypairs
         # scenario on 2.2 api version.
         {
-            "NovaKeypair.create_and_list_keypairs": [
+            "version": 2,
+            "title": "Launch NovaKeypair.create_and_list_keypairs on 2.2",
+            "subtasks": [
                 {
-                    "args": {
-                        "key_type": "x509"
+                    "title": "Create and list keypairs",
+                    "scenario": {
+                        "NovaKeypair.create_and_list_keypairs": {
+                            "key_type": "x509"
+                        }
                     },
                     "runner": {
-                        "type": "constant",
-                        "times": 10,
-                        "concurrency": 2
+                        "constant": {
+                            "times": 10,
+                            "concurrency": 2
+                        }
                     },
-                    "context": {
+                    "contexts": {
                         "users": {
                             "tenants": 3,
                             "users_per_tenant": 2
@@ -103,26 +109,32 @@ class OpenStackAPIVersions(context.OpenStackContext):
         # In this example we will launch CinderVolumes.create_and_attach_volume
         # scenario on Cinder V2
         {
-            "CinderVolumes.create_and_attach_volume": [
+            "version": 2,
+            "title": "Launch CinderVolumes.create_and_attach_volume on V2",
+            "subtasks": [
                 {
-                    "args": {
-                        "size": 10,
-                        "image": {
-                            "name": "^cirros.*-disk$"
-                        },
-                        "flavor": {
-                            "name": "m1.tiny"
-                        },
-                        "create_volume_params": {
-                            "availability_zone": "nova"
+                    "title": "Create and attach volume",
+                    "scenario": {
+                        "CinderVolumes.create_and_attach_volume": {
+                            "size": 10,
+                            "image": {
+                                "name": "^cirros.*-disk$"
+                            },
+                            "flavor": {
+                                "name": "m1.tiny"
+                            },
+                            "create_volume_params": {
+                                "availability_zone": "nova"
+                            }
                         }
                     },
                     "runner": {
-                        "type": "constant",
-                        "times": 5,
-                        "concurrency": 1
+                        "constant": {
+                            "times": 5,
+                            "concurrency": 1
+                        }
                     },
-                    "context": {
+                    "contexts": {
                         "users": {
                             "tenants": 2,
                             "users_per_tenant": 2
@@ -147,26 +159,32 @@ class OpenStackAPIVersions(context.OpenStackContext):
         # Similar to the previous example, but `service_name` argument is used
         # instead of `service_type`
         {
-            "CinderVolumes.create_and_attach_volume": [
+            "version": 2,
+            "title": "Launch CinderVolumes.create_and_attach_volume on V2",
+            "subtasks": [
                 {
-                    "args": {
-                        "size": 10,
-                        "image": {
-                            "name": "^cirros.*-disk$"
-                        },
-                        "flavor": {
-                            "name": "m1.tiny"
-                        },
-                        "create_volume_params": {
-                            "availability_zone": "nova"
+                    "title": "Create and attach volume",
+                    "scenario": {
+                        "CinderVolumes.create_and_attach_volume": {
+                            "size": 10,
+                            "image": {
+                                "name": "^cirros.*-disk$"
+                            },
+                            "flavor": {
+                                "name": "m1.tiny"
+                            },
+                            "create_volume_params": {
+                                "availability_zone": "nova"
+                            }
                         }
                     },
                     "runner": {
-                        "type": "constant",
-                        "times": 5,
-                        "concurrency": 1
+                        "constant": {
+                            "times": 5,
+                            "concurrency": 1
+                        }
                     },
-                    "context": {
+                    "contexts": {
                         "users": {
                             "tenants": 2,
                             "users_per_tenant": 2

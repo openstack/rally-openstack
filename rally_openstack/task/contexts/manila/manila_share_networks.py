@@ -44,7 +44,7 @@ share_network Names or IDs is value. Example:
 
    .. code-block:: json
 
-     "context": {
+     "contexts": {
          "manila_share_networks": {
          "use_share_networks": true,
          "share_networks": {
