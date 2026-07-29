@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("neutron_create_loadbalancer_timeout",
                  default=float(500),

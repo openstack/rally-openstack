@@ -13,7 +13,7 @@
 #    under the License.
 
 
-class DesignateQuotas(object):
+class DesignateQuotas:
     """Management of Designate quotas."""
 
     QUOTAS_SCHEMA = {
@@ -56,5 +56,5 @@ class DesignateQuotas(object):
         # NOTE(andreykurilin): we have broken designate jobs, so I can't check
         #   that this method is right :(
         response = self.clients.designate().quotas.get(tenant_id)
-        return dict([(k, response.get(k))
-                     for k in self.QUOTAS_SCHEMA["properties"]])
+        return dict((k, response.get(k))
+                    for k in self.QUOTAS_SCHEMA["properties"])

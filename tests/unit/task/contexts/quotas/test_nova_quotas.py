@@ -21,7 +21,7 @@ from tests.unit import test
 class NovaQuotasTestCase(test.TestCase):
 
     def setUp(self):
-        super(NovaQuotasTestCase, self).setUp()
+        super().setUp()
         self.quotas = {
             "instances": 10,
             "cores": 100,

@@ -21,6 +21,7 @@ from rally_openstack.task.scenarios.nova import utils as nova_utils
 from tests.unit import fakes
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.nova"
 SCN = "rally_openstack.task.scenarios"
 TYP = "rally_openstack.task.types"

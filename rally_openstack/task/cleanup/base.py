@@ -15,10 +15,11 @@
 
 from __future__ import annotations
 
+import typing as t
+
 from rally.common import cfg
 from rally.task import utils
 
-import typing as t
 
 if t.TYPE_CHECKING:  # pragma: no cover
     R = t.TypeVar("R", bound="ResourceManager")
@@ -36,7 +37,7 @@ cleanup_group = cfg.OptGroup(name="cleanup", title="Cleanup Options")
 #   a name property, but it is missed.
 #   Let's use instances of specific class to return as a name of resources
 #   which do not have names at all.
-class NoName(object):
+class NoName:
     def __init__(self, resource_type):
         self.resource_type = resource_type
 
@@ -96,7 +97,7 @@ def resource(
 
 
 @resource(service="", resource="")
-class ResourceManager(object):
+class ResourceManager:
     """Base class for cleanup plugins for specific resources.
 
     You should use @resource decorator to specify major configuration of

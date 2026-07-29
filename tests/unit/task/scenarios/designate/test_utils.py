@@ -21,6 +21,7 @@ import ddt
 from rally_openstack.task.scenarios.designate import utils
 from tests.unit import test
 
+
 DESIGNATE_UTILS = "rally_openstack.task.scenarios.designate.utils."
 
 
@@ -28,7 +29,7 @@ DESIGNATE_UTILS = "rally_openstack.task.scenarios.designate.utils."
 class DesignateScenarioTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(DesignateScenarioTestCase, self).setUp()
+        super().setUp()
         self.domain = mock.Mock()
         self.zone = mock.Mock()
         self.server = mock.Mock()

@@ -18,9 +18,9 @@ import os
 import pkgutil
 import re
 
+from rally import exceptions
 from rally.common import logging
 from rally.common import validation
-from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import atomic
 from rally.task import types
@@ -55,7 +55,7 @@ class ValidCommandValidator(validators.FileExistsValidator):
         :param required: Boolean indicating that the command dictionary is
             required
         """
-        super(ValidCommandValidator, self).__init__(param_name=param_name)
+        super().__init__(param_name=param_name)
 
         self.required = required
 
@@ -528,7 +528,7 @@ class DDLoadTest(BootRuncommandDelete):
                "script_inline": BASH_DD_LOAD_TEST}
         if command and "interpreter" in command:
             cmd["interpreter"] = command["interpreter"]
-        return super(DDLoadTest, self).run(
+        return super().run(
             flavor=flavor, username=username, password=password,
             image=image, command=cmd,
             volume_args=volume_args, floating_network=floating_network,

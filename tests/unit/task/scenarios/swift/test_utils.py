@@ -20,6 +20,7 @@ import ddt
 from rally_openstack.task.scenarios.swift import utils
 from tests.unit import test
 
+
 SWIFT_UTILS = "rally_openstack.task.scenarios.swift.utils"
 
 

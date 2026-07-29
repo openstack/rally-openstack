@@ -37,7 +37,7 @@ CREDENTIAL_WITH_HMAC = OpenStackCredential(
 @ddt.ddt
 class OpenStackScenarioTestCase(test.TestCase):
     def setUp(self):
-        super(OpenStackScenarioTestCase, self).setUp()
+        super().setUp()
         self.osclients = fixtures.MockPatch(
             "rally_openstack.common.osclients.Clients")
         self.useFixture(self.osclients)

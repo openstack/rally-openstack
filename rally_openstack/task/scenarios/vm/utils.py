@@ -28,13 +28,14 @@ from rally.utils import sshutils
 
 from rally_openstack.task.scenarios.nova import utils as nova_utils
 
+
 LOG = logging.getLogger(__name__)
 
 
 CONF = cfg.CONF
 
 
-class Host(object):
+class Host:
 
     ICMP_UP_STATUS = "ICMP UP"
     ICMP_DOWN_STATUS = "ICMP DOWN"

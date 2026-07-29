@@ -23,6 +23,7 @@ from rally_openstack.common.services.image import image
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.nova import utils as nova_utils
 
+
 LOG = logging.getLogger(__name__)
 
 """Scenarios for Glance images."""
@@ -30,7 +31,7 @@ LOG = logging.getLogger(__name__)
 
 class GlanceBasic(scenario.OpenStackScenario):
     def __init__(self, context=None, admin_clients=None, clients=None):
-        super(GlanceBasic, self).__init__(context, admin_clients, clients)
+        super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_glance = image.Image(
                 self._admin_clients, name_generator=self.generate_random_name,

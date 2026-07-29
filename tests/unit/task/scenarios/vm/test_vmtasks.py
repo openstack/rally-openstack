@@ -18,8 +18,8 @@ from unittest import mock
 
 import ddt
 
-from rally.common import validation
 from rally import exceptions
+from rally.common import validation
 
 from rally_openstack.task.scenarios.vm import vmtasks
 from tests.unit import test
@@ -32,7 +32,7 @@ BASE = "rally_openstack.task.scenarios.vm.vmtasks"
 class VMTasksTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(VMTasksTestCase, self).setUp()
+        super().setUp()
         self.context.update({"user": {"keypair": {"name": "keypair_name"},
                                       "credential": mock.MagicMock()}})
 
@@ -49,14 +49,14 @@ class VMTasksTestCase(test.ScenarioTestCase):
         scenario._wait_for_ping = mock.Mock()
         scenario._delete_server_with_fip = mock.Mock()
         scenario._run_command = mock.MagicMock(
-            return_value=(0, "{\"foo\": 42}", "foo_err"))
+            return_value=(0, '{"foo": 42}', "foo_err"))
         scenario.add_output = mock.Mock()
         return scenario
 
     def test_boot_runcommand_delete(self):
         scenario = self.create_env(vmtasks.BootRuncommandDelete(self.context))
         scenario._run_command = mock.MagicMock(
-            return_value=(0, "{\"foo\": 42}", "foo_err"))
+            return_value=(0, '{"foo": 42}', "foo_err"))
         scenario.run("foo_flavor", image="foo_image",
                      command={"script_file": "foo_script",
                               "interpreter": "foo_interpreter"},
@@ -87,7 +87,7 @@ class VMTasksTestCase(test.ScenarioTestCase):
                       "data": [
                           "StdErr: foo_err",
                           "StdOut:",
-                          "{\"foo\": 42}"],
+                          '{"foo": 42}'],
                       "title": "Script Output"})
 
     @ddt.data(
@@ -98,29 +98,29 @@ class VMTasksTestCase(test.ScenarioTestCase):
                                         "StdOut:",
                                         ""],
                                     "title": "Script Output"}}]},
-        {"output": (1, "{\"foo\": 42}", ""), "raises": exceptions.ScriptError},
+        {"output": (1, '{"foo": 42}', ""), "raises": exceptions.ScriptError},
         {"output": ("", 1, ""), "raises": TypeError},
-        {"output": (0, "{\"foo\": 42}", ""),
+        {"output": (0, '{"foo": 42}', ""),
          "expected": [{"complete": {"chart_plugin": "TextArea",
                                     "data": [
                                         "StdErr: (none)",
                                         "StdOut:",
-                                        "{\"foo\": 42}"],
+                                        '{"foo": 42}'],
                                     "title": "Script Output"}}]},
-        {"output": (0, "{\"additive\": [1, 2]}", ""),
+        {"output": (0, '{"additive": [1, 2]}', ""),
          "expected": [{"complete": {"chart_plugin": "TextArea",
                                     "data": [
                                         "StdErr: (none)",
-                                        "StdOut:", "{\"additive\": [1, 2]}"],
+                                        "StdOut:", '{"additive": [1, 2]}'],
                                     "title": "Script Output"}}]},
-        {"output": (0, "{\"complete\": [3, 4]}", ""),
+        {"output": (0, '{"complete": [3, 4]}', ""),
          "expected": [{"complete": {"chart_plugin": "TextArea",
                                     "data": [
                                         "StdErr: (none)",
                                         "StdOut:",
-                                        "{\"complete\": [3, 4]}"],
+                                        '{"complete": [3, 4]}'],
                                     "title": "Script Output"}}]},
-        {"output": (0, "{\"additive\": [1, 2], \"complete\": [3, 4]}", ""),
+        {"output": (0, '{"additive": [1, 2], "complete": [3, 4]}', ""),
          "expected": [{"additive": 1}, {"additive": 2},
                       {"complete": 3}, {"complete": 4}]}
     )
@@ -208,7 +208,7 @@ class VMTasksTestCase(test.ScenarioTestCase):
                      "foo_script", "foo_username")
         scenario.add_output.assert_called_once_with(complete={
             "chart_plugin": "TextArea", "data": ["StdErr: foo_err",
-                                                 "StdOut:", "{\"foo\": 42}"],
+                                                 "StdOut:", '{"foo": 42}'],
             "title": "Script Output"})
         scenario._delete_server_with_fip.assert_called_once_with(
             "foo_server", self.ip, force_delete=False)
@@ -227,7 +227,7 @@ class VMTasksTestCase(test.ScenarioTestCase):
 
         scenario = self.create_env(vmtasks.BootRuncommandDelete(context))
         scenario._run_command = mock.MagicMock(
-            return_value=(0, "{\"foo\": 42}", "foo_err"))
+            return_value=(0, '{"foo": 42}', "foo_err"))
         scenario.run("foo_flavor",
                      command={"script_file": "foo_script",
                               "interpreter": "foo_interpreter"},
@@ -257,7 +257,7 @@ class VMTasksTestCase(test.ScenarioTestCase):
             complete={"chart_plugin": "TextArea",
                       "data": [
                           "StdErr: foo_err",
-                          "StdOut:", "{\"foo\": 42}"],
+                          "StdOut:", '{"foo": 42}'],
                       "title": "Script Output"})
 
     @mock.patch("%s.heat" % BASE)
@@ -432,7 +432,7 @@ class VMTasksTestCase(test.ScenarioTestCase):
 class ValidCommandValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(ValidCommandValidatorTestCase, self).setUp()
+        super().setUp()
         self.context = {"admin": {"credential": mock.MagicMock()},
                         "users": [{"credential": mock.MagicMock()}]}
 

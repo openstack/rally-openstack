@@ -13,16 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import fixtures
 import os
 import unittest
-from unittest import mock
 import uuid
+from unittest import mock
 
-from oslo_config import fixture as cfg_fixture  # noqa N311
+import fixtures
+from oslo_config import fixture as cfg_fixture  # noqa: TID251
 
-from rally.common import db
 from rally import plugins
+from rally.common import db
 
 from tests.unit import fakes
 
@@ -33,7 +33,7 @@ plugins.load()
 class DatabaseFixture(cfg_fixture.Config):
     """Create clean DB before starting test."""
     def setUp(self):
-        super(DatabaseFixture, self).setUp()
+        super().setUp()
         db_url = os.environ.get("RALLY_UNITTEST_DB_URL", "sqlite://")
         db.engine_reset()
         self.conf.set_default("connection", db_url, group="database")
@@ -45,14 +45,14 @@ class TestCase(fixtures.TestWithFixtures, unittest.TestCase):
     """Test case base class for all unit tests."""
 
     def setUp(self):
-        super(TestCase, self).setUp()
+        super().setUp()
         self.addCleanup(mock.patch.stopall)
 
     # TODO(andreykurilin): port existing code to use 'standard' flow
-    def assertRaises(
+    def assertRaises(  # noqa: N802
         self,
         expected_exception,
-        callable,
+        callable,  # noqa: A002
         *args,
         **kwargs,
     ):
@@ -94,7 +94,7 @@ class DBTestCase(TestCase):
     """Base class for tests which use DB."""
 
     def setUp(self):
-        super(DBTestCase, self).setUp()
+        super().setUp()
         self.useFixture(DatabaseFixture())
 
 
@@ -151,7 +151,7 @@ class ScenarioTestCase(TestCase):
         return get_test_context()
 
     def setUp(self):
-        super(ScenarioTestCase, self).setUp()
+        super().setUp()
         if self.patch_task_utils:
             self.mock_resource_is = fixtures.MockPatch(
                 self.task_utils + ".resource_is")
@@ -186,10 +186,10 @@ class ScenarioTestCase(TestCase):
     def tearDown(self):
         for patcher in self._client_mocks:
             patcher.stop()
-        super(ScenarioTestCase, self).tearDown()
+        super().tearDown()
 
 
-class ContextClientAdapter(object):
+class ContextClientAdapter:
     def __init__(self, endpoint, test_case):
         self.endpoint = endpoint
         self.test_case = test_case
@@ -214,7 +214,7 @@ class ContextClientAdapter(object):
 
 class ContextTestCase(ScenarioTestCase):
     def setUp(self):
-        super(ContextTestCase, self).setUp()
+        super().setUp()
 
         self._adapters = {}
 
@@ -238,7 +238,7 @@ class FakeClientsScenarioTestCase(ScenarioTestCase):
         return getattr(self._fake_clients, client_type)()
 
     def setUp(self):
-        super(FakeClientsScenarioTestCase, self).setUp()
+        super().setUp()
         self._fake_clients = fakes.FakeClients()
 
 

@@ -26,7 +26,7 @@ from tests.unit import test
 class ImageTestCase(test.TestCase):
 
     def setUp(self):
-        super(ImageTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
 
     def get_service_with_fake_impl(self):

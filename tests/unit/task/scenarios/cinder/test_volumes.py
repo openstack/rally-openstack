@@ -20,6 +20,7 @@ import ddt
 from rally_openstack.task.scenarios.cinder import volumes
 from tests.unit import test
 
+
 CINDER_VOLUMES = ("rally_openstack.task.scenarios.cinder.volumes")
 
 
@@ -41,7 +42,7 @@ class CinderServersTestCase(test.ScenarioTestCase):
         return context
 
     def setUp(self):
-        super(CinderServersTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.storage.block.BlockStorage")
         self.addCleanup(patch.stop)

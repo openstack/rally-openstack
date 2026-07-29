@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("glance_image_delete_timeout",
                  default=120.0,

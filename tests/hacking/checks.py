@@ -22,6 +22,11 @@ Guidelines for writing new hacking checks
  - List the new rule in the top level HACKING.rst file
  - Add test cases for each new rule to tests/unit/test_hacking.py
 
+ Only Rally-specific checks that have no equivalent in ``hacking`` or
+ ``ruff`` live here. Style, import ordering, quotes, builtins, naming and
+ the generic ``assert*`` rewrites are handled by ruff (see pyproject.toml)
+ or by hacking's own H-checks.
+
 """
 
 import re
@@ -29,35 +34,7 @@ import tokenize
 
 from hacking import core
 
-re_assert_equal_end_with_true_or_false = re.compile(
-    r"assertEqual\(.*?, \s+(True|False)\)$")
-re_assert_equal_start_with_true_or_false = re.compile(
-    r"assertEqual\((True|False),")
-re_assert_true_instance = re.compile(
-    r"(.)*assertTrue\(isinstance\((\w|\.|\'|\"|\[|\])+, "
-    r"(\w|\.|\'|\"|\[|\])+\)\)")
-re_assert_equal_type = re.compile(
-    r"(.)*assertEqual\(type\((\w|\.|\'|\"|\[|\])+\), "
-    r"(\w|\.|\'|\"|\[|\])+\)")
-re_assert_equal_end_with_none = re.compile(r"assertEqual\(.*?,\s+None\)$")
-re_assert_equal_start_with_none = re.compile(r"assertEqual\(None,")
-re_assert_not_equal_end_with_none = re.compile(
-    r"assertNotEqual\(.*?,\s+None\)$")
-re_assert_not_equal_start_with_none = re.compile(r"assertNotEqual\(None,")
-re_assert_true_false_with_in_or_not_in = re.compile(
-    r"assert(True|False)\("
-    r"(\w|[][.'\"])+( not)? in (\w|[][.'\",])+(, .*)?\)")
-re_assert_true_false_with_in_or_not_in_spaces = re.compile(
-    r"assert(True|False)\((\w|[][.'\"])+( not)? in [\[|'|\"](\w|[][.'\", ])+"
-    r"[\[|'|\"](, .*)?\)")
-re_assert_equal_in_end_with_true_or_false = re.compile(
-    r"assertEqual\((\w|[][.'\"])+( not)? in (\w|[][.'\", ])+, (True|False)\)")
-re_assert_equal_in_start_with_true_or_false = re.compile(
-    r"assertEqual\((True|False), (\w|[][.'\"])+( not)? in (\w|[][.'\", ])+\)")
-re_no_construct_dict = re.compile(
-    r"\sdict\(\)")
-re_no_construct_list = re.compile(
-    r"\slist\(\)")
+
 re_str_format = re.compile(r"""
 %            # start of specifier
 \(([^)]+)\)  # mapping key, in group 1
@@ -69,10 +46,6 @@ re_str_format = re.compile(r"""
 """, re.X)
 re_raises = re.compile(
     r"\s:raise[^s] *.*$|\s:raises *:.*$|\s:raises *[^:]+$")
-re_db_import = re.compile(r"^from rally.common import db")
-re_objects_import = re.compile(r"^from rally.common import objects")
-re_old_type_class = re.compile(r"^\s*class \w+(\(\))?:")
-re_datetime_alias = re.compile(r"^(from|import) datetime(?!\s+as\s+dt$)")
 re_log_warn = re.compile(r"(.)*LOG\.(warn)\(\s*('|\"|_)")
 
 
@@ -93,17 +66,19 @@ def _parse_assert_mock_str(line):
 def check_assert_methods_from_mock(logical_line, filename, noqa=False):
     """Ensure that ``assert_*`` methods from ``mock`` library is used correctly
 
-    N301 - base error number
-    N302 - related to nonexistent "assert_called"
-    N303 - related to nonexistent "assert_called_once"
+    ``mock`` silently accepts any ``assert_*`` attribute access as a no-op,
+    so a typo (or a method that does not exist) turns an assertion into a
+    check that always passes.
+
+    N301 - unknown ``assert_*`` method
     N304 - related to nonexistent "called_once_with"
     """
     if noqa:
         return
 
-    correct_names = ["assert_any_call", "assert_called_once_with",
-                     "assert_called_with", "assert_has_calls",
-                     "assert_not_called"]
+    correct_names = ["assert_any_call", "assert_called", "assert_called_once",
+                     "assert_called_once_with", "assert_called_with",
+                     "assert_has_calls", "assert_not_called"]
     ignored_files = ["./tests/unit/test_hacking.py"]
 
     if filename.startswith("./tests") and filename not in ignored_files:
@@ -116,20 +91,7 @@ def check_assert_methods_from_mock(logical_line, filename, noqa=False):
                        " library. %(custom_msg)s For more details, visit "
                        "http://www.voidspace.org.uk/python/mock/ .")
 
-                if method_name == "assert_called":
-                    error_number = "N302"
-                    custom_msg = ("Maybe, you should try to use "
-                                  "'assertTrue(%s.called)' instead." %
-                                  obj_name)
-                elif method_name == "assert_called_once":
-                    # For more details, see a bug in Rally:
-                    #    https://bugs.launchpad.net/rally/+bug/1305991
-                    error_number = "N303"
-                    custom_msg = ("Maybe, you should try to use "
-                                  "'assertEqual(1, %s.call_count)' "
-                                  "or '%s.assert_called_once_with()'"
-                                  " instead." % (obj_name, obj_name))
-                elif method_name == "called_once_with":
+                if method_name == "called_once_with":
                     error_number = "N304"
                     custom_msg = ("Maybe, you should try to use "
                                   "'%s.assert_called_once_with()'"
@@ -145,53 +107,7 @@ def check_assert_methods_from_mock(logical_line, filename, noqa=False):
 
 
 @core.flake8ext
-def check_import_of_logging(logical_line, filename, noqa=False):
-    """Check correctness import of logging module
-
-    N310
-    """
-    if noqa:
-        return
-
-    excluded_files = ["./rally/common/logging.py",
-                      "./tests/unit/common/test_logging.py",
-                      "./tests/ci/rally_verify.py",
-                      "./tests/ci/sync_requirements.py"]
-
-    forbidden_imports = ["from oslo_log",
-                         "import oslo_log",
-                         "import logging"]
-
-    if filename not in excluded_files:
-        for forbidden_import in forbidden_imports:
-            if logical_line.startswith(forbidden_import):
-                yield (0, "N310 Wrong module for logging is imported. Please "
-                          "use `rally.common.logging` instead.")
-
-
-@core.flake8ext
-def check_import_of_config(logical_line, filename, noqa=False):
-    """Check correctness import of config module
-
-    N311
-    """
-    if noqa:
-        return
-
-    excluded_files = ["./rally/common/cfg.py"]
-
-    forbidden_imports = ["from oslo_config",
-                         "import oslo_config"]
-
-    if filename not in excluded_files:
-        for forbidden_import in forbidden_imports:
-            if logical_line.startswith(forbidden_import):
-                yield (0, "N311 Wrong module for config is imported. Please "
-                          "use `rally.common.cfg` instead.")
-
-
-@core.flake8ext
-def no_use_conf_debug_check(logical_line, filename, noqa=False):
+def no_use_conf_debug_check(logical_line, noqa=False):
     """Check for "cfg.CONF.debug"
 
     Rally has two DEBUG level:
@@ -203,242 +119,38 @@ def no_use_conf_debug_check(logical_line, filename, noqa=False):
     """
     if noqa:
         return
-    excluded_files = ["./rally/common/logging.py"]
 
     point = logical_line.find("CONF.debug")
-    if point != -1 and filename not in excluded_files:
+    if point != -1:
         yield (point, "N312 Don't use `CONF.debug`. "
                       "Function `rally.common.logging.is_debug` "
                       "should be used instead.")
 
 
 @core.flake8ext
-def assert_true_instance(logical_line, noqa=False):
-    """Check for assertTrue(isinstance(a, b)) sentences
+def check_log_warn(logical_line):
+    """Check for LOG.warn, which is deprecated
 
-    N320
+    N313
     """
-    if noqa:
-        return
-    if re_assert_true_instance.match(logical_line):
-        yield (0, "N320 assertTrue(isinstance(a, b)) sentences not allowed, "
-                  "you should use assertIsInstance(a, b) instead.")
+    if re_log_warn.search(logical_line):
+        yield 0, "N313 LOG.warn is deprecated, please use LOG.warning"
 
 
 @core.flake8ext
-def assert_equal_type(logical_line, noqa=False):
-    """Check for assertEqual(type(A), B) sentences
+def check_opts_import_path(logical_line, noqa=False):
+    """Ensure that we load opts from correct paths only
 
-    N321
+    N342
     """
     if noqa:
         return
-    if re_assert_equal_type.match(logical_line):
-        yield (0, "N321 assertEqual(type(A), B) sentences not allowed, "
-                  "you should use assertIsInstance(a, b) instead.")
+    forbidden_methods = [".register_opts("]
 
-
-@core.flake8ext
-def assert_equal_none(logical_line, noqa=False):
-    """Check for assertEqual(A, None) or assertEqual(None, A) sentences
-
-    N322
-    """
-    if noqa:
-        return
-    res = (re_assert_equal_start_with_none.search(logical_line)
-           or re_assert_equal_end_with_none.search(logical_line))
-    if res:
-        yield (0, "N322 assertEqual(A, None) or assertEqual(None, A) "
-                  "sentences not allowed, you should use assertIsNone(A) "
-                  "instead.")
-
-
-@core.flake8ext
-def assert_true_or_false_with_in(logical_line, noqa=False):
-    """Check assertTrue/False(A in/not in B) with collection contents
-
-    Check for assertTrue/False(A in B), assertTrue/False(A not in B),
-    assertTrue/False(A in B, message) or assertTrue/False(A not in B, message)
-    sentences.
-
-    N323
-    """
-    if noqa:
-        return
-    res = (re_assert_true_false_with_in_or_not_in.search(logical_line)
-           or re_assert_true_false_with_in_or_not_in_spaces.search(
-               logical_line))
-    if res:
-        yield (0, "N323 assertTrue/assertFalse(A in/not in B)sentences not "
-                  "allowed, you should use assertIn(A, B) or assertNotIn(A, B)"
-                  " instead.")
-
-
-@core.flake8ext
-def assert_equal_in(logical_line, noqa=False):
-    """Check assertEqual(A in/not in B, True/False) with collection contents
-
-    Check for assertEqual(A in B, True/False), assertEqual(True/False, A in B),
-    assertEqual(A not in B, True/False) or assertEqual(True/False, A not in B)
-    sentences.
-
-    N324
-    """
-    if noqa:
-        return
-    res = (re_assert_equal_in_end_with_true_or_false.search(logical_line)
-           or re_assert_equal_in_start_with_true_or_false.search(logical_line))
-    if res:
-        yield (0, "N324: Use assertIn/NotIn(A, B) rather than "
-                  "assertEqual(A in/not in B, True/False) when checking "
-                  "collection contents.")
-
-
-@core.flake8ext
-def assert_not_equal_none(logical_line, noqa=False):
-    """Check for assertNotEqual(A, None) or assertEqual(None, A) sentences
-
-    N325
-    """
-    if noqa:
-        return
-    res = (re_assert_not_equal_start_with_none.search(logical_line)
-           or re_assert_not_equal_end_with_none.search(logical_line))
-    if res:
-        yield (0, "N325 assertNotEqual(A, None) or assertNotEqual(None, A) "
-                  "sentences not allowed, you should use assertIsNotNone(A) "
-                  "instead.")
-
-
-@core.flake8ext
-def assert_equal_true_or_false(logical_line, noqa=False):
-    """Check for assertEqual(A, True/False) sentences
-
-    Check for assertEqual(A, True/False) sentences or
-    assertEqual(True/False, A)
-
-    N326
-    """
-    if noqa:
-        return
-    res = (re_assert_equal_end_with_true_or_false.search(logical_line)
-           or re_assert_equal_start_with_true_or_false.search(logical_line))
-    if res:
-        yield (0, "N326 assertEqual(A, True/False) or "
-                  "assertEqual(True/False, A) sentences not allowed,"
-                  "you should use assertTrue(A) or assertFalse(A) instead.")
-
-
-@core.flake8ext
-def check_no_direct_rally_objects_import(logical_line, filename, noqa=False):
-    """Check if rally.common.objects are properly imported.
-
-    If you import "from rally.common import objects" you are able to use
-    objects directly like objects.Task.
-
-    N340
-    """
-    if noqa:
-        return
-    if filename == "./rally/common/objects/__init__.py":
-        return
-
-    if (logical_line.startswith("from rally.common.objects")
-       or logical_line.startswith("import rally.common.objects.")):
-        yield (0, "N340: Import objects module:"
-                  "`from rally.common import objects`. "
-                  "After that you can use directly objects e.g. objects.Task")
-
-
-@core.flake8ext
-def check_no_oslo_deprecated_import(logical_line, noqa=False):
-    """Check if oslo.foo packages are not imported instead of oslo_foo ones.
-
-    Libraries from oslo.foo namespace are deprecated because of namespace
-    problems.
-
-    N341
-    """
-    if noqa:
-        return
-    if (logical_line.startswith("from oslo.")
-       or logical_line.startswith("import oslo.")):
-        yield (0, "N341: Import oslo module: `from oslo_xyz import ...`. "
-                  "The oslo.xyz namespace was deprecated, use oslo_xyz "
-                  "instead")
-
-
-@core.flake8ext
-def check_quotes(logical_line, noqa=False):
-    """Check that single quotation marks are not used
-
-    N350
-    """
-    if noqa:
-        return
-
-    in_string = False
-    in_multiline_string = False
-    single_quotas_are_used = False
-
-    check_tripple = (
-        lambda line, i, char: (
-            i + 2 < len(line)
-            and (char == line[i] == line[i + 1] == line[i + 2])
-        )
-    )
-
-    i = 0
-    while i < len(logical_line):
-        char = logical_line[i]
-
-        if in_string:
-            if char == "\"":
-                in_string = False
-            if char == "\\":
-                i += 1  # ignore next char
-
-        elif in_multiline_string:
-            if check_tripple(logical_line, i, "\""):
-                i += 2  # skip next 2 chars
-                in_multiline_string = False
-
-        elif char == "#":
-            break
-
-        elif char == "'":
-            single_quotas_are_used = True
-            break
-
-        elif char == "\"":
-            if check_tripple(logical_line, i, "\""):
-                in_multiline_string = True
-                i += 3
-                continue
-            in_string = True
-
-        i += 1
-
-    if single_quotas_are_used:
-        yield i, "N350 Remove Single quotes"
-
-
-@core.flake8ext
-def check_no_constructor_data_struct(logical_line, noqa=False):
-    """Check that data structs (lists, dicts) are declared using literals
-
-    N351
-    """
-    if noqa:
-        return
-
-    match = re_no_construct_dict.search(logical_line)
-    if match:
-        yield 0, "N351 Remove dict() construct and use literal {}"
-    match = re_no_construct_list.search(logical_line)
-    if match:
-        yield 0, "N351 Remove list() construct and use literal []"
+    for forbidden_method in forbidden_methods:
+        if logical_line.find(forbidden_method) != -1:
+            yield (0, "N342 All options should be loaded from correct "
+                      "paths only: rally_openstack/common/cfg")
 
 
 @core.flake8ext
@@ -457,7 +169,7 @@ def check_dict_formatting_in_string(logical_line, tokens, noqa=False):
             if not in_string:
                 current_string = ""
                 in_string = True
-            current_string += text.strip("\"")
+            current_string += text.strip('"')
         elif token_type == tokenize.OP:
             if not current_string:
                 continue
@@ -519,66 +231,3 @@ def check_raises(logical_line, filename, noqa=False):
         if re_raises.search(logical_line):
             yield (0, "N354 ':Please use ':raises Exception: conditions' "
                       "in docstrings.")
-
-
-@core.flake8ext
-def check_datetime_alias(logical_line, noqa=False):
-    """Ensure using ``dt`` as alias for ``datetime``
-
-    N356
-    """
-    if noqa:
-        return
-    if re_datetime_alias.search(logical_line):
-        yield 0, "N356 Please use ``dt`` as alias for ``datetime``."
-
-
-@core.flake8ext
-def check_db_imports_in_cli(logical_line, filename, noqa=False):
-    """Ensure that CLI modules do not use ``rally.common.db``
-
-    N360
-    """
-    if noqa:
-        return
-    if (not filename.startswith("./rally/cli")
-            or filename == "./rally/cli/commands/db.py"):
-        return
-    if re_db_import.search(logical_line):
-        yield (0, "N360 CLI modules do not allow to work with "
-                  "`rally.common.db``.")
-
-
-@core.flake8ext
-def check_objects_imports_in_cli(logical_line, filename):
-    """Ensure that CLI modules do not use ``rally.common.objects``
-
-    N361
-    """
-    if not filename.startswith("./rally/cli"):
-        return
-    if re_objects_import.search(logical_line):
-        yield (0, "N361 CLI modules do not allow to work with "
-                  "`rally.common.objects``.")
-
-
-@core.flake8ext
-def check_log_warn(logical_line):
-    if re_log_warn.search(logical_line):
-        yield 0, "N313 LOG.warn is deprecated, please use LOG.warning"
-
-
-@core.flake8ext
-def check_opts_import_path(logical_line, noqa=False):
-    """Ensure that we load opts from correct paths only
-
-    N342
-    """
-    if noqa:
-        return
-    forbidden_methods = [".register_opts("]
-
-    for forbidden_method in forbidden_methods:
-        if logical_line.find(forbidden_method) != -1:
-            yield (0, "N342 All options should be loaded from correct "
-                      "paths only: rally_openstack/common/cfg")

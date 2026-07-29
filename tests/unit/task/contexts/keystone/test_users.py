@@ -17,18 +17,18 @@ from unittest import mock
 
 from rally import exceptions
 
+from rally_openstack.common import consts
 from rally_openstack.common import credential as oscredential
 from rally_openstack.task.contexts.keystone import users
 from tests.unit import test
 
-from rally_openstack.common import consts
 
 CTX = "rally_openstack.task.contexts.keystone.users"
 
 
 class UserGeneratorBaseTestCase(test.ScenarioTestCase):
     def setUp(self):
-        super(UserGeneratorBaseTestCase, self).setUp()
+        super().setUp()
         self.osclients_patcher = mock.patch("%s.osclients" % CTX)
         self.osclients = self.osclients_patcher.start()
         self.addCleanup(self.osclients_patcher.stop)
@@ -151,7 +151,7 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
 class UserGeneratorForExistingUsersTestCase(test.ScenarioTestCase):
     def setUp(self):
-        super(UserGeneratorForExistingUsersTestCase, self).setUp()
+        super().setUp()
         self.osclients_patcher = mock.patch("%s.osclients" % CTX)
         self.osclients = self.osclients_patcher.start()
         self.addCleanup(self.osclients_patcher.stop)
@@ -187,7 +187,7 @@ class UserGeneratorForExistingUsersTestCase(test.ScenarioTestCase):
 
         user_list = [user1, user2, user3]
 
-        class AuthRef(object):
+        class AuthRef:
             USER_ID_COUNT = 0
             PROJECT_ID_COUNT = 0
 
@@ -235,7 +235,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
     threads = 10
 
     def setUp(self):
-        super(UserGeneratorForNewUsersTestCase, self).setUp()
+        super().setUp()
         self.osclients_patcher = mock.patch("%s.osclients" % CTX)
         self.osclients = self.osclients_patcher.start()
         self.addCleanup(self.osclients_patcher.stop)
@@ -344,7 +344,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator = users.UserGenerator(self.context)
         tenants = user_generator._create_tenants(1)
         self.assertEqual(1, len(tenants))
-        id, tenant = tenants.popitem()
+        _id, tenant = tenants.popitem()
         self.assertIn("name", tenant)
 
     @mock.patch("%s.identity" % CTX)
@@ -472,7 +472,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
                               ctx.config["project_domain"]))
 
             for user in ctx.context["users"]:
-                self.assertEqual(set(["id", "credential", "tenant_id"]),
+                self.assertEqual({"id", "credential", "tenant_id"},
                                  set(user.keys()))
 
                 user_credential_dict = user["credential"].to_dict()

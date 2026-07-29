@@ -47,7 +47,7 @@ class CreatePods(utils.MagnumScenario):
         :param manifests: manifest files used to create the pods
         """
         for manifest in manifests:
-            with open(manifest, "r") as f:
+            with open(manifest) as f:
                 manifest_str = f.read()
             manifest = yaml.safe_load(manifest_str)
             pod = self._create_v1pod(manifest)
@@ -66,7 +66,7 @@ class CreateRcs(utils.MagnumScenario):
         :param manifests: manifest files use to create the rcs
         """
         for manifest in manifests:
-            with open(manifest, "r") as f:
+            with open(manifest) as f:
                 manifest_str = f.read()
             manifest = yaml.safe_load(manifest_str)
             rc = self._create_v1rc(manifest)

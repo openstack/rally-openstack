@@ -14,8 +14,9 @@
 #    under the License.
 
 import jsonschema
-from rally.common import logging
+
 from rally import exceptions as rally_exceptions
+from rally.common import logging
 from rally.task import types
 from rally.task import validation
 
@@ -66,8 +67,8 @@ class BootAndListServer(utils.NovaScenario):
 
         pool_list = self._list_servers(detailed)
         msg = ("Server not included into list of available servers\n"
-               "Booted server: {}\n"
-               "Pool of servers: {}").format(server, pool_list)
+               f"Booted server: {server}\n"
+               f"Pool of servers: {pool_list}")
         self.assertIn(server, pool_list, err_msg=msg)
 
 
@@ -236,7 +237,7 @@ class BootAndBounceServer(utils.NovaScenario):
             action_builder.validate(actions)
         except jsonschema.exceptions.ValidationError as error:
             raise rally_exceptions.InvalidConfigException(
-                "Invalid server actions configuration \'%(actions)s\' due to: "
+                "Invalid server actions configuration '%(actions)s' due to: "
                 "%(error)s" % {"actions": str(actions), "error": str(error)})
         server = self._boot_server(image, flavor, **kwargs)
         for action in action_builder.build_actions(actions, server):
@@ -610,8 +611,8 @@ class BootServerAttachVolumeAndListAttachments(utils.NovaScenario,
 
         for attachment in attachments:
             msg = ("attachment not included into list of available "
-                   "attachments\n attachment: {}\n"
-                   "list attachments: {}").format(attachment, list_attachments)
+                   f"attachments\n attachment: {attachment}\n"
+                   f"list attachments: {list_attachments}")
             self.assertIn(attachment, list_attachments, err_msg=msg)
 
 

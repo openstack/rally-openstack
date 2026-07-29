@@ -15,6 +15,7 @@ from unittest import mock
 from rally_openstack.task.contexts.neutron import lbaas as lbaas_context
 from tests.unit import test
 
+
 NET = "rally_openstack.common.wrappers.network."
 
 

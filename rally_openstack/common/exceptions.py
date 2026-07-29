@@ -14,6 +14,7 @@
 
 from rally import exceptions as rally_exceptions
 
+
 RallyException = rally_exceptions.RallyException
 
 

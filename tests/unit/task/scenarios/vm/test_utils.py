@@ -19,8 +19,10 @@ from unittest import mock
 import netaddr
 
 from rally.common import cfg
+
 from rally_openstack.task.scenarios.vm import utils
 from tests.unit import test
+
 
 VMTASKS_UTILS = "rally_openstack.task.scenarios.vm.utils"
 CONF = cfg.CONF

@@ -18,16 +18,17 @@ import typing as t
 
 from rally.common import broker
 from rally.common import logging
+from rally.common import utils as rutils
 from rally.common.plugin import discover
 from rally.common.plugin import plugin
-from rally.common import utils as rutils
+
 from rally_openstack.task.cleanup import base
 
 
 LOG = logging.getLogger(__name__)
 
 
-class SeekAndDestroy(object):
+class SeekAndDestroy:
 
     def __init__(self, manager_cls, admin, users,
                  resource_classes=None, task_id=None):

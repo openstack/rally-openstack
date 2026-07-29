@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+
 import requests
 
 from rally.common import cfg
@@ -25,6 +26,7 @@ from rally.task import validation
 from rally_openstack.common import consts
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.nova import utils as nova_utils
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

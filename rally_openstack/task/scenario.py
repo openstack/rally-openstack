@@ -17,6 +17,7 @@ import functools
 import random
 
 from osprofiler import profiler
+
 from rally.common import cfg
 from rally.common.plugin import plugin
 from rally.task import context
@@ -36,7 +37,7 @@ class OpenStackScenario(scenario.Scenario):
     """Base class for all OpenStack scenarios."""
 
     def __init__(self, context=None, admin_clients=None, clients=None):
-        super(OpenStackScenario, self).__init__(context)
+        super().__init__(context)
         if context:
             if admin_clients is None and "admin" in context:
                 self._admin_clients = osclients.Clients(

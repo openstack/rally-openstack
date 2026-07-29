@@ -20,6 +20,7 @@ from rally_openstack.task.contexts.designate import zones
 from rally_openstack.task.scenarios.designate import utils
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts"
 SCN = "rally_openstack.task.scenarios"
 

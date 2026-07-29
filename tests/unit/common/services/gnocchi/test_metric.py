@@ -20,7 +20,7 @@ from tests.unit import test
 
 class GnocchiServiceTestCase(test.TestCase):
     def setUp(self):
-        super(GnocchiServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.name_generator = mock.MagicMock()
         self.service = metric.GnocchiService(

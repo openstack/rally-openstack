@@ -20,13 +20,14 @@ from rally import exceptions
 from rally_openstack.task.scenarios.heat import stacks
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.scenarios.heat.stacks"
 
 
 class HeatStacksTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(HeatStacksTestCase, self).setUp()
+        super().setUp()
         self.default_template = "heat_template_version: 2013-05-23"
         self.default_parameters = {"dummy_param": "dummy_key"}
         self.default_files = ["dummy_file.yaml"]
@@ -258,7 +259,7 @@ class HeatStacksTestCase(test.ScenarioTestCase):
     @mock.patch("%s.CreateStackAndShowOutputViaAPI"
                 "._stack_show_output_via_API" % BASE)
     @mock.patch("%s.CreateStackAndShowOutputViaAPI._create_stack" % BASE)
-    def test_create_and_show_output_via_API(self,
+    def test_create_and_show_output_via_API(self,  # noqa: N802
                                             mock__create_stack,
                                             mock__stack_show_output_api):
         stacks.CreateStackAndShowOutputViaAPI(self.context).run(
@@ -295,7 +296,7 @@ class HeatStacksTestCase(test.ScenarioTestCase):
     @mock.patch("%s.CreateStackAndListOutputViaAPI"
                 "._stack_list_output_via_API" % BASE)
     @mock.patch("%s.CreateStackAndListOutputViaAPI._create_stack" % BASE)
-    def test_create_and_list_output_via_API(self,
+    def test_create_and_list_output_via_API(self,  # noqa: N802
                                             mock__create_stack,
                                             mock__stack_list_output_api):
         stacks.CreateStackAndListOutputViaAPI(self.context).run(

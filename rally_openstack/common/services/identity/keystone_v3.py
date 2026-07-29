@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import logging
 from rally import exceptions
+from rally.common import logging
 from rally.task import atomic
 
 from rally_openstack.common import service

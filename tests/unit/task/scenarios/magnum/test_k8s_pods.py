@@ -17,6 +17,7 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.magnum import k8s_pods
 from tests.unit import test
 
@@ -38,7 +39,7 @@ class K8sPodsTestCase(test.ScenarioTestCase):
         scenario = k8s_pods.CreatePods()
         file_content = "data: fake_content"
         if manifest == "manifest.json":
-            file_content = "{\"data\": \"fake_content\"}"
+            file_content = '{"data": "fake_content"}'
         file_mock = mock.mock_open(read_data=file_content)
         fake_pod = mock.Mock()
         scenario._create_v1pod = mock.MagicMock(return_value=fake_pod)
@@ -48,7 +49,7 @@ class K8sPodsTestCase(test.ScenarioTestCase):
                 file_mock, create=True) as m:
             scenario.run(manifests)
 
-        m.assert_called_once_with(manifest, "r")
+        m.assert_called_once_with(manifest)
         m.return_value.read.assert_called_once_with()
         scenario._create_v1pod.assert_called_once_with(
             {"data": "fake_content"})
@@ -64,7 +65,7 @@ class K8sPodsTestCase(test.ScenarioTestCase):
                 exceptions.RallyAssertionError,
                 scenario.run, manifests)
 
-        m.assert_called_with(manifest, "r")
+        m.assert_called_with(manifest)
         m.return_value.read.assert_called_with()
         scenario._create_v1pod.assert_called_with(
             {"data": "fake_content"})
@@ -75,7 +76,7 @@ class K8sPodsTestCase(test.ScenarioTestCase):
         scenario = k8s_pods.CreateRcs()
         file_content = "data: fake_content"
         if manifest == "manifest.json":
-            file_content = "{\"data\": \"fake_content\"}"
+            file_content = '{"data": "fake_content"}'
         file_mock = mock.mock_open(read_data=file_content)
         fake_rc = mock.Mock()
         scenario._create_v1rc = mock.MagicMock(return_value=fake_rc)
@@ -85,7 +86,7 @@ class K8sPodsTestCase(test.ScenarioTestCase):
                 file_mock, create=True) as m:
             scenario.run(manifests)
 
-        m.assert_called_once_with(manifest, "r")
+        m.assert_called_once_with(manifest)
         m.return_value.read.assert_called_once_with()
         scenario._create_v1rc.assert_called_once_with({"data": "fake_content"})
 
@@ -100,6 +101,6 @@ class K8sPodsTestCase(test.ScenarioTestCase):
                 exceptions.RallyAssertionError,
                 scenario.run, manifests)
 
-        m.assert_called_with(manifest, "r")
+        m.assert_called_with(manifest)
         m.return_value.read.assert_called_with()
         scenario._create_v1rc.assert_called_with({"data": "fake_content"})

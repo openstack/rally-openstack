@@ -18,10 +18,10 @@ import os
 from urllib.parse import urlparse
 from urllib.parse import urlunparse
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
 from rally.common.plugin import plugin
-from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential as oscred
@@ -70,7 +70,7 @@ class AuthenticationFailed(exceptions.AuthenticationFailed):
             # something unexpected. include exception class as well.
             self._helpful_trace = True
             message = "[%s] %s" % (error.__class__.__name__, str(error))
-        super(AuthenticationFailed, self).__init__(message=message, **kwargs)
+        super().__init__(message=message, **kwargs)
 
     def is_trace_helpful(self):
         return self._helpful_trace
@@ -233,9 +233,9 @@ class OSClient(plugin.Plugin):
 
     def __call__(self, *args, **kwargs):
         """Return initialized client instance."""
-        key = "{0}{1}{2}".format(self.get_name(),
-                                 str(args) if args else "",
-                                 str(kwargs) if kwargs else "")
+        key = "{}{}{}".format(self.get_name(),
+                              str(args) if args else "",
+                              str(kwargs) if kwargs else "")
         if key not in self.cache:
             self.cache[key] = self.create_client(*args, **kwargs)
         return self.cache[key]
@@ -247,7 +247,7 @@ class OSClient(plugin.Plugin):
         platform: str = "openstack",  # type: ignore[override]
         allow_hidden: bool = False
     ) -> type["OSClient"]:
-        return super(OSClient, cls).get(
+        return super().get(
             name,
             platform=platform,
             allow_hidden=allow_hidden
@@ -393,7 +393,7 @@ class Keystone(OSClient):
         # and won't check the authentication access until it is actually being
         # called. To catch the authentication failure in auth_ref(), we will
         # have to call self.auth_ref.auth_token here to actually use auth_ref.
-        self.auth_ref   # noqa
+        self.auth_ref
 
         return client.Client(**kw)
 
@@ -626,7 +626,7 @@ class Zaqar(OSClient):
 
     def choose_version(self, version=None):
         # zaqarclient accepts only int as version
-        return int(super(Zaqar, self).choose_version(version))
+        return int(super().choose_version(version))
 
     def create_client(self, version=None, service_type=None):
         """Return Zaqar client."""
@@ -772,7 +772,7 @@ class Barbican(OSClient):
         return client
 
 
-class Clients(object):
+class Clients:
     """This class simplify and unify work with OpenStack python clients."""
 
     def __init__(self, credential, cache=None):

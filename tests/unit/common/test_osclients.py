@@ -17,14 +17,15 @@ from unittest import mock
 
 import ddt
 
-from rally.common import cfg
 from rally import exceptions
+from rally.common import cfg
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential as oscredential
 from rally_openstack.common import osclients
 from tests.unit import fakes
 from tests.unit import test
+
 
 PATH = "rally_openstack.common.osclients"
 
@@ -36,7 +37,7 @@ class DummyClient(osclients.OSClient):
         pass
 
 
-class OSClientTestCaseUtils(object):
+class OSClientTestCaseUtils:
 
     def set_up_keystone_mocks(self):
         self.ksc_module = mock.MagicMock(__version__="2.0.0")
@@ -159,7 +160,7 @@ class CachedTestCase(test.TestCase):
 class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
 
     def setUp(self):
-        super(TestCreateKeystoneClient, self).setUp()
+        super().setUp()
         self.credential = oscredential.OpenStackCredential(
             "http://auth_url/v2.0", "user", "pass", "tenant")
 
@@ -402,7 +403,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
 class OSClientsTestCase(test.TestCase):
 
     def setUp(self):
-        super(OSClientsTestCase, self).setUp()
+        super().setUp()
         self.credential = oscredential.OpenStackCredential(
             "http://auth_url/v2.0", "user", "pass", "tenant")
         self.clients = osclients.Clients(self.credential, {})

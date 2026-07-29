@@ -20,7 +20,7 @@ from rally.common import broker
 from rally_openstack.task.scenarios.swift import utils as swift_utils
 
 
-class SwiftObjectMixin(object):
+class SwiftObjectMixin:
     """Mix-in method for Swift Object Context."""
 
     def _create_containers(self, containers_per_tenant, threads):

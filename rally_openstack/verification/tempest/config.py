@@ -18,9 +18,9 @@ import inspect
 import io
 import os
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 from rally.verification import utils
 
 from rally_openstack.common import consts
@@ -31,7 +31,7 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-class TempestConfigfileManager(object):
+class TempestConfigfileManager:
     """Class to create a Tempest config file."""
 
     def __init__(self, env):
@@ -81,7 +81,7 @@ class TempestConfigfileManager(object):
                         or not self.credential.https_insecure),
                 timeout=CONF.openstack_client_http_timeout)
             data = discover.Discover(temp_session, auth_url).version_data()
-            return dict([(v["version"][0], v["url"]) for v in data])
+            return dict((v["version"][0], v["url"]) for v in data)
 
         # check the original auth_url without cropping versioning to identify
         # the default version

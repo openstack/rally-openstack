@@ -19,6 +19,7 @@ from rally.task import hook
 
 from rally_openstack.common import consts
 
+
 LOG = logging.getLogger(__name__)
 
 

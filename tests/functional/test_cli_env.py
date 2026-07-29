@@ -54,7 +54,7 @@ class EnvTestCase(unittest.TestCase):
             if (line_template % err1 not in output
                     and line_template % err2 not in output):
                 self.fail("The output of `env check` doesn't contain expected"
-                          " error. Output:\n" % e.output)
+                          " error. Output:\n%s" % e.output)
         else:
             self.fail("Check env command should fail!")
 

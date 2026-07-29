@@ -18,13 +18,14 @@ from unittest import mock
 from rally_openstack.task.contexts.nova import keypairs
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.nova"
 
 
 class KeyPairContextTestCase(test.TestCase):
 
     def setUp(self):
-        super(KeyPairContextTestCase, self).setUp()
+        super().setUp()
         self.users = 2
 
         task = {"uuid": "foo_task_id"}

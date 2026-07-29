@@ -19,8 +19,8 @@ from rally.common import validation
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
+from rally_openstack.task.cleanup import manager as resource_manager
 
 
 LOG = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ class FlavorConfig(dict):
         :param ephemeral: ephemeral disk amount for the flavor (GBs)
         :param extra_specs: is ignored
         """
-        super(FlavorConfig, self).__init__(
+        super().__init__(
             name=name, ram=ram, vcpus=vcpus, disk=disk,
             swap=swap, ephemeral=ephemeral)
         self.__dict__.update(self)

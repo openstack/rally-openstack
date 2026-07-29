@@ -11,7 +11,6 @@
 #    under the License.
 
 import ast
-import sys
 from unittest import mock
 
 from tests.unit import test
@@ -21,7 +20,7 @@ from tests.unit import test_mock
 class VariantsTestCase(test.TestCase):
     def setUp(self):
         self.variants = test_mock.Variants(["test", "foo", "bar"])
-        super(VariantsTestCase, self).setUp()
+        super().setUp()
 
     def test_print(self):
         self.assertEqual(
@@ -83,7 +82,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
     code_mock_args = ["args", "args2", "some_longer_args"]
 
     def setUp(self):
-        super(FuncMockArgsDecoratorsCheckerTestCase, self).setUp()
+        super().setUp()
         self.visitor = test_mock.FuncMockArgsDecoratorsChecker()
         self.visitor.classname_python = ""
         self.visitor.globals_["EXPR"] = "expression"
@@ -247,7 +246,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.visitor._get_mock_args(self.tree)
         )
 
-    def test_visit_Assign(self):
+    def test_visit_Assign(self):  # noqa: N802
         self.visitor.globals_ = {}
 
         self.visitor.visit_Assign(
@@ -266,7 +265,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.visitor.globals_
         )
 
-    def test_visit_ClassDef(self):
+    def test_visit_ClassDef(self):  # noqa: N802
         self.visitor.visit_ClassDef(
             self._parse_expr("class MyObject(object): pass")
         )
@@ -283,7 +282,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.visitor.classname_python
         )
 
-    def test_visit_FunctionDef_empty_decs(self):
+    def test_visit_FunctionDef_empty_decs(self):  # noqa: N802
         self.visitor._get_mock_decorators_variants = mock.Mock(
             return_value=[]
         )
@@ -295,7 +294,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.tree
         )
 
-    def test_visit_FunctionDef_good(self):
+    def test_visit_FunctionDef_good(self):  # noqa: N802
         self.visitor._get_mock_decorators_variants = mock.Mock(
             return_value=[
                 ["foo", "foo_bar", "pkg_foo_bar"]
@@ -315,7 +314,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.tree
         )
 
-    def test_visit_FunctionDef_misnamed(self):
+    def test_visit_FunctionDef_misnamed(self):  # noqa: N802
         variants = test_mock.Variants(
             ["foo", "foo_bar", "pkg_foo_bar", "a"]
         )
@@ -327,11 +326,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
         )
 
         self.assertIsNone(self.visitor.visit_FunctionDef(self.tree))
-        if sys.version_info < (3, 8):
-            # https://github.com/python/cpython/pull/9731
-            lineno = 2
-        else:
-            lineno = 7
+        lineno = 7
         self.assertEqual(
             [
                 {
@@ -355,7 +350,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.tree
         )
 
-    def test_visit_FunctionDef_mismatch_args(self):
+    def test_visit_FunctionDef_mismatch_args(self):  # noqa: N802
         variants = test_mock.Variants(
             ["foo", "foo_bar", "pkg_foo_bar", "a"]
         )
@@ -367,11 +362,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
         )
 
         self.assertIsNone(self.visitor.visit_FunctionDef(self.tree))
-        if sys.version_info < (3, 8):
-            # https://github.com/python/cpython/pull/9731
-            lineno = 2
-        else:
-            lineno = 7
+        lineno = 7
         self.assertEqual(
             [
                 {
@@ -396,7 +387,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.tree
         )
 
-    def test_visit_FunctionDef_mismatch_decs(self):
+    def test_visit_FunctionDef_mismatch_decs(self):  # noqa: N802
         variants = test_mock.Variants(
             ["foo", "foo_bar", "pkg_foo_bar", "a"]
         )
@@ -408,11 +399,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
         )
 
         self.assertIsNone(self.visitor.visit_FunctionDef(self.tree))
-        if sys.version_info < (3, 8):
-            # https://github.com/python/cpython/pull/9731
-            lineno = 2
-        else:
-            lineno = 7
+        lineno = 7
         self.assertEqual(
             [
                 {
@@ -448,11 +435,7 @@ def test_func(self, mock_args, mock_args2, mock_some_longer_args):
             self.visitor.errors[0]["decs"]
         )
 
-        if sys.version_info < (3, 8):
-            # https://github.com/python/cpython/pull/9731
-            lineno = 2
-        else:
-            lineno = 7
+        lineno = 7
         self.assertEqual(lineno, self.visitor.errors[0]["lineno"])
 
     def test_visit_ok(self):

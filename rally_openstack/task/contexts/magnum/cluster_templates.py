@@ -15,8 +15,8 @@
 from rally.common import validation
 
 from rally_openstack.common import consts
-from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
+from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task.scenarios.magnum import utils as magnum_utils
 
 

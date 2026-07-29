@@ -22,10 +22,10 @@ import traceback
 import unittest
 
 from rally import api
+from rally import plugins
 from rally.cli import yamlutils as yaml
 from rally.common import broker
 from rally.common import logging
-from rally import plugins
 from rally.task import engine
 
 import rally_openstack as rally_openstack_module

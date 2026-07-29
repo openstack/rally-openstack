@@ -32,7 +32,8 @@ class CinderV2Service(service.Service, cinder_common.CinderMixin):
     def create_volume(self, size, consistencygroup_id=None,
                       snapshot_id=None, source_volid=None, name=None,
                       description=None, volume_type=None,
-                      availability_zone=None, metadata=None, imageRef=None,
+                      availability_zone=None, metadata=None,
+                      imageRef=None,  # noqa: N803
                       scheduler_hints=None):
         """Creates a volume.
 
@@ -236,7 +237,9 @@ class UnifiedCinderV2Service(cinder_common.UnifiedCinderMixin,
                       name=None, description=None,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
-                      metadata=None, imageRef=None, scheduler_hints=None,
+                      metadata=None,
+                      imageRef=None,  # noqa: N803
+                      scheduler_hints=None,
                       backup_id=None):
         """Creates a volume.
 

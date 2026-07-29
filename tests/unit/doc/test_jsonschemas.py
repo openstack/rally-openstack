@@ -15,8 +15,8 @@
 import copy
 import json
 
-from rally.common.plugin import plugin
 from rally import plugins
+from rally.common.plugin import plugin
 
 from tests.unit import test
 
@@ -35,14 +35,14 @@ class ConfigSchemasTestCase(test.TestCase):
     STRING_TYPE_KEYS = {"$schema", "type", "description", "pattern"}
 
     def fail(self, p, schema, msg):
-        super(ConfigSchemasTestCase, self).fail(
+        super().fail(
             "Config schema of plugin '%s' (%s) is invalid. %s "
             "Schema: \n%s" % (p.get_name(),
                               "%s.%s" % (p.__module__, p.__name__),
                               msg,
                               json.dumps(schema, indent=3)))
 
-    def _check_anyOf_or_oneOf(self, p, schema, definitions):
+    def _check_anyOf_or_oneOf(self, p, schema, definitions):  # noqa: N802
         if "anyOf" in schema or "oneOf" in schema:
             key = "anyOf" if "anyOf" in schema else "oneOf"
             for case in schema[key]:

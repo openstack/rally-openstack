@@ -17,8 +17,8 @@ from rally.common import cfg
 from rally.common import validation
 
 from rally_openstack.common import consts as rally_consts
-from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
+from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task.contexts.manila import consts
 from rally_openstack.task.scenarios.manila import utils as manila_utils
 

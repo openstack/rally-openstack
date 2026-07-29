@@ -22,13 +22,14 @@ from rally import exceptions
 from rally_openstack.task.contexts.vm import image_command_customizer
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.contexts.vm.image_command_customizer"
 
 
 class ImageCommandCustomizerContextVMTestCase(test.TestCase):
 
     def setUp(self):
-        super(ImageCommandCustomizerContextVMTestCase, self).setUp()
+        super().setUp()
 
         self.context = {
             "task": mock.MagicMock(),

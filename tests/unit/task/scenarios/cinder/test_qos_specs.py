@@ -15,6 +15,7 @@
 from unittest import mock
 
 from rally import exceptions as rally_exceptions
+
 from rally_openstack.task.scenarios.cinder import qos_specs
 from tests.unit import test
 
@@ -22,7 +23,7 @@ from tests.unit import test
 class CinderQosTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(CinderQosTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.storage.block.BlockStorage")
         self.addCleanup(patch.stop)

@@ -14,7 +14,7 @@
 #    under the License.
 
 
-class ManilaQuotas(object):
+class ManilaQuotas:
     """Management of Manila quotas."""
 
     QUOTAS_SCHEMA = {
@@ -55,5 +55,5 @@ class ManilaQuotas(object):
 
     def get(self, tenant_id):
         response = self.clients.manila().quotas.get(tenant_id)
-        return dict([(k, getattr(response, k))
-                     for k in self.QUOTAS_SCHEMA["properties"]])
+        return dict((k, getattr(response, k))
+                    for k in self.QUOTAS_SCHEMA["properties"])

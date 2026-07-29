@@ -18,13 +18,13 @@ import string
 import time
 
 from kubernetes import client as k8s_config
-from kubernetes.client.api import core_v1_api
 from kubernetes.client import api_client
+from kubernetes.client.api import core_v1_api
 from kubernetes.client.rest import ApiException
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import utils as common_utils
-from rally import exceptions
 from rally.task import atomic
 from rally.task import utils
 
@@ -157,13 +157,13 @@ class MagnumScenario(scenario.OpenStackScenario):
         cert_file = None
         ca_certs = None
         if not cluster_template.tls_disabled:
-            dir = self.context["ca_certs_directory"]
+            directory = self.context["ca_certs_directory"]
             key_file = cluster_uuid + ".key"
-            key_file = os.path.join(dir, key_file)
+            key_file = os.path.join(directory, key_file)
             cert_file = cluster_uuid + ".crt"
-            cert_file = os.path.join(dir, cert_file)
+            cert_file = os.path.join(directory, cert_file)
             ca_certs = cluster_uuid + "_ca.crt"
-            ca_certs = os.path.join(dir, ca_certs)
+            ca_certs = os.path.join(directory, ca_certs)
         if hasattr(k8s_config, "ConfigurationObject"):
             # k8sclient < 4.0.0
             config = k8s_config.ConfigurationObject()

@@ -13,12 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import requests
+
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 from rally.task import atomic
 from rally.task import utils
-import requests
 
 from rally_openstack.task import scenario
 
@@ -226,7 +227,7 @@ class HeatScenario(scenario.OpenStackScenario):
         return output
 
     @atomic.action_timer("heat.show_output_via_API")
-    def _stack_show_output_via_API(self, stack, output_key):
+    def _stack_show_output_via_API(self, stack, output_key):  # noqa: N802
         """Execute output_show for specified "output_key".
 
         This method uses old way for getting output value.
@@ -253,7 +254,7 @@ class HeatScenario(scenario.OpenStackScenario):
         return output_list
 
     @atomic.action_timer("heat.list_output_via_API")
-    def _stack_list_output_via_API(self, stack):
+    def _stack_list_output_via_API(self, stack):  # noqa: N802
         """Execute output_list for specified "stack".
 
         This method uses old way for getting output value.

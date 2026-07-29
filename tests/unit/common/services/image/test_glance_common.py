@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
 import uuid
+from unittest import mock
 
 from glanceclient import exc as glance_exc
 
@@ -32,7 +32,7 @@ class FullGlance(service.Service, glance_common.GlanceMixin):
 
 class GlanceMixinTestCase(test.TestCase):
     def setUp(self):
-        super(GlanceMixinTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.glance = self.clients.glance.return_value
         self.name_generator = mock.MagicMock()
@@ -78,7 +78,7 @@ class FullUnifiedGlance(glance_common.UnifiedGlanceMixin,
 
 class UnifiedGlanceMixinTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedGlanceMixinTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.name_generator = mock.MagicMock()
         self.impl = mock.MagicMock()
@@ -89,7 +89,7 @@ class UnifiedGlanceMixinTestCase(test.TestCase):
         self.service.version = self.version
 
     def test__unify_image(self):
-        class Image(object):
+        class Image:
             def __init__(self, visibility=None, is_public=None, status=None):
                 self.id = uuid.uuid4()
                 self.name = str(uuid.uuid4())

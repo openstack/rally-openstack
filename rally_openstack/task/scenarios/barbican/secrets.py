@@ -23,6 +23,7 @@ from rally_openstack.common import consts
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.barbican import utils
 
+
 """Scenarios for Barbican secrets."""
 
 

@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("cinder_volume_create_prepoll_delay",
                  default=2.0,

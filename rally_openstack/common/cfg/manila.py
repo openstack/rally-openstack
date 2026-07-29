@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt(
         "manila_share_create_prepoll_delay",

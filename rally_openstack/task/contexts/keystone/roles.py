@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally import exceptions
 from rally.common import broker
 from rally.common import cfg
 from rally.common import logging
 from rally.common import validation
-from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
@@ -45,7 +45,7 @@ class RoleGenerator(context.OpenStackContext):
     }
 
     def __init__(self, ctx):
-        super(RoleGenerator, self).__init__(ctx)
+        super().__init__(ctx)
         self.credential = self.context["admin"]["credential"]
         self.workers = (
             cfg.CONF.openstack.roles_context_resource_management_workers)

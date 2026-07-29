@@ -14,11 +14,12 @@
 #    under the License.
 
 import copy
-import ddt
 from unittest import mock
 
+import ddt
 from glanceclient import exc as glance_exc
 from novaclient import exceptions as nova_exc
+
 from rally import exceptions
 
 from rally_openstack.common import consts
@@ -114,7 +115,7 @@ class RequiredOpenStackValidatorTestCase(test.TestCase):
 class ImageExistsValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(ImageExistsValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.ImageExistsValidator("image", True)
         self.config = copy.deepcopy(config)
         self.context = copy.deepcopy(context)
@@ -191,7 +192,7 @@ class ImageExistsValidatorTestCase(test.TestCase):
 class ExternalNetworkExistsValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(ExternalNetworkExistsValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.ExternalNetworkExistsValidator("net")
         self.config = copy.deepcopy(config)
         self.context = copy.deepcopy(context)
@@ -239,7 +240,7 @@ class ExternalNetworkExistsValidatorTestCase(test.TestCase):
 class RequiredNeutronExtensionsValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(RequiredNeutronExtensionsValidatorTestCase, self).setUp()
+        super().setUp()
         self.config = copy.deepcopy(config)
         self.context = copy.deepcopy(context)
 
@@ -271,7 +272,7 @@ class RequiredNeutronExtensionsValidatorTestCase(test.TestCase):
 class FlavorExistsValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(FlavorExistsValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.FlavorExistsValidator(
             param_name="foo_flavor")
         self.config = copy.deepcopy(config)
@@ -371,7 +372,7 @@ class FlavorExistsValidatorTestCase(test.TestCase):
 class ImageValidOnFlavorValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(ImageValidOnFlavorValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.ImageValidOnFlavorValidator("foo_flavor",
                                                                 "image")
         self.config = copy.deepcopy(config)
@@ -615,7 +616,7 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
 class RequiredServicesValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(RequiredServicesValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.RequiredServicesValidator([
             consts.Service.KEYSTONE,
             consts.Service.NOVA])
@@ -678,7 +679,7 @@ class RequiredServicesValidatorTestCase(test.TestCase):
 class ValidateHeatTemplateValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(ValidateHeatTemplateValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.ValidateHeatTemplateValidator(
             "template_path1", "template_path2")
         self.config = copy.deepcopy(config)
@@ -712,8 +713,8 @@ class ValidateHeatTemplateValidatorTestCase(test.TestCase):
                 mock.call(template="fake_template2")
             ])
             mock_open.assert_has_calls([
-                mock.call("fake_path1", "r"),
-                mock.call("fake_path2", "r")
+                mock.call("fake_path1"),
+                mock.call("fake_path2")
             ], any_order=True)
             self.assertIsNone(result)
         else:
@@ -754,7 +755,7 @@ class ValidateHeatTemplateValidatorTestCase(test.TestCase):
 class RequiredCinderServicesValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(RequiredCinderServicesValidatorTestCase, self).setUp()
+        super().setUp()
         self.context = copy.deepcopy(context)
         self.config = copy.deepcopy(config)
 
@@ -780,7 +781,7 @@ class RequiredCinderServicesValidatorTestCase(test.TestCase):
 class RequiredAPIVersionsValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(RequiredAPIVersionsValidatorTestCase, self).setUp()
+        super().setUp()
         self.config = copy.deepcopy(config)
         self.context = copy.deepcopy(context)
 
@@ -893,7 +894,7 @@ class RequiredAPIVersionsValidatorTestCase(test.TestCase):
 class VolumeTypeExistsValidatorTestCase(test.TestCase):
 
     def setUp(self):
-        super(VolumeTypeExistsValidatorTestCase, self).setUp()
+        super().setUp()
         self.validator = validators.VolumeTypeExistsValidator("volume_type",
                                                               True)
         self.config = copy.deepcopy(config)

@@ -55,12 +55,12 @@ class OSProfilerChart(charts.OutputEmbeddedChart,
 
     @classmethod
     def _fetch_osprofiler_data(cls, connection_str, trace_id):
-        from osprofiler.drivers import base
         from osprofiler import opts as osprofiler_opts
+        from osprofiler.drivers import base
 
-        opts.register_opts(osprofiler_opts.list_opts())  # noqa
+        opts.register_opts(osprofiler_opts.list_opts())  # noqa: N342
 
-        try:  # noqa
+        try:
             engine = base.get_driver(connection_str)
         except Exception:
             msg = "Error while fetching OSProfiler results."
@@ -114,8 +114,7 @@ class OSProfilerChart(charts.OutputEmbeddedChart,
                 return cls._return_raw_response_for_complete_data(data)
 
             osp_report = cls._generate_osprofiler_report(osp_data)
-            title = "{0} : {1}".format(data["title"],
-                                       data["data"]["trace_id"])
+            title = f"{data['title']} : {data['data']['trace_id']}"
 
             if (mode and mode != "raw") and "workload_uuid" in data["data"]:
                 # NOTE(andreykurilin): we need to rework our charts plugin

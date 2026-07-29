@@ -19,8 +19,8 @@ from unittest import mock
 import ddt
 import requests
 
-from rally.common import cfg
 from rally import exceptions
+from rally.common import cfg
 
 from rally_openstack.verification.tempest import config
 from rally_openstack.verification.tempest import context
@@ -52,7 +52,7 @@ PATH = "rally_openstack.verification.tempest.context"
 class TempestContextTestCase(test.TestCase):
 
     def setUp(self):
-        super(TempestContextTestCase, self).setUp()
+        super().setUp()
 
         self.mock_isfile = mock.patch("os.path.isfile",
                                       return_value=True).start()

@@ -40,11 +40,11 @@ class CaCertGenerator(context.OpenStackContext):
 
     def _generate_csr_and_key(self):
         """Return a dict with a new csr and key."""
+        from cryptography import x509
         from cryptography.hazmat import backends
-        from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives import serialization
-        from cryptography import x509
+        from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.x509.oid import NameOID
 
         key = rsa.generate_private_key(
@@ -54,9 +54,9 @@ class CaCertGenerator(context.OpenStackContext):
 
         csr = x509.CertificateSigningRequestBuilder().subject_name(
             x509.Name([
-                x509.NameAttribute(NameOID.COMMON_NAME, u"admin"),
+                x509.NameAttribute(NameOID.COMMON_NAME, "admin"),
                 x509.NameAttribute(NameOID.ORGANIZATION_NAME,
-                                   u"system:masters")
+                                   "system:masters")
             ])).sign(key, hashes.SHA256(), backends.default_backend())
 
         result = {
@@ -87,23 +87,23 @@ class CaCertGenerator(context.OpenStackContext):
 
             if not cluster_template.tls_disabled:
                 tls = self._generate_csr_and_key()
-                dir = ""
+                directory = ""
                 if self.config.get("directory") is not None:
-                    dir = self.config.get("directory")
-                self.context["ca_certs_directory"] = dir
-                fname = os.path.join(dir, cluster_uuid + ".key")
+                    directory = self.config.get("directory")
+                self.context["ca_certs_directory"] = directory
+                fname = os.path.join(directory, cluster_uuid + ".key")
                 with open(fname, "w") as key_file:
                     key_file.write(tls["key"])
                 # get CA certificate for this cluster
                 ca_cert = magnum_scenario._get_ca_certificate(cluster_uuid)
-                fname = os.path.join(dir, cluster_uuid + "_ca.crt")
+                fname = os.path.join(directory, cluster_uuid + "_ca.crt")
                 with open(fname, "w") as ca_cert_file:
                     ca_cert_file.write(ca_cert.pem)
                 # send csr to Magnum to have it signed
                 csr_req = {"cluster_uuid": cluster_uuid,
                            "csr": tls["csr"]}
                 cert = magnum_scenario._create_ca_certificate(csr_req)
-                fname = os.path.join(dir, cluster_uuid + ".crt")
+                fname = os.path.join(directory, cluster_uuid + ".crt")
                 with open(fname, "w") as cert_file:
                     cert_file.write(cert.pem)
 
@@ -125,10 +125,10 @@ class CaCertGenerator(context.OpenStackContext):
                 cluster.cluster_template_id)
 
             if not cluster_template.tls_disabled:
-                dir = self.context["ca_certs_directory"]
-                fname = os.path.join(dir, cluster_uuid + ".key")
+                directory = self.context["ca_certs_directory"]
+                fname = os.path.join(directory, cluster_uuid + ".key")
                 os.remove(fname)
-                fname = os.path.join(dir, cluster_uuid + "_ca.crt")
+                fname = os.path.join(directory, cluster_uuid + "_ca.crt")
                 os.remove(fname)
-                fname = os.path.join(dir, cluster_uuid + ".crt")
+                fname = os.path.join(directory, cluster_uuid + ".crt")
                 os.remove(fname)

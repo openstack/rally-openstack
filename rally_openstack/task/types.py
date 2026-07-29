@@ -16,9 +16,9 @@ import copy
 import operator
 import re
 
+from rally import exceptions
 from rally.common import logging
 from rally.common.plugin import plugin
-from rally import exceptions
 from rally.task import types
 
 from rally_openstack.common import osclients
@@ -36,7 +36,7 @@ class OpenStackResourceType(types.ResourceType):
     """A base class for OpenStack ResourceTypes plugins with help-methods"""
 
     def __init__(self, context=None, cache=None):
-        super(OpenStackResourceType, self).__init__(context, cache)
+        super().__init__(context, cache)
 
         self._clients = None
         if self._context.get("admin"):

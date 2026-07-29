@@ -31,7 +31,7 @@ from tests.unit import test
 class FaultInjectionHookTestCase(test.TestCase):
 
     def setUp(self):
-        super(FaultInjectionHookTestCase, self).setUp()
+        super().setUp()
         self.task = {"deployment_uuid": "foo_uuid"}
 
     @ddt.data((dict(action="foo"), True),

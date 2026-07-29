@@ -66,7 +66,9 @@ class BlockStorage(service.UnifiedService):
                       name=None, description=None,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
-                      metadata=None, imageRef=None, scheduler_hints=None,
+                      metadata=None,
+                      imageRef=None,  # noqa: N803
+                      scheduler_hints=None,
                       source_replica=None, backup_id=None):
         """Creates a volume.
 

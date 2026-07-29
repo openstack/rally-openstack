@@ -26,7 +26,7 @@ CTX = "rally_openstack.task.contexts.network.allow_ssh"
 class AllowSSHContextTestCase(test.TestCase):
 
     def setUp(self):
-        super(AllowSSHContextTestCase, self).setUp()
+        super().setUp()
         self.users_count = 3
 
         self.ctx = test.get_test_context()

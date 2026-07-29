@@ -18,6 +18,7 @@ from rally_openstack.task.scenarios.mistral import utils
 from tests.unit import fakes
 from tests.unit import test
 
+
 MISTRAL_UTILS = "rally_openstack.task.scenarios.mistral.utils"
 PARAMS_EXAMPLE = {"env": {"env_param": "param_value"}}
 INPUT_EXAMPLE = """{"input1": "value1", "some_json_input": {"a": "b"}}"""
@@ -37,7 +38,7 @@ class MistralScenarioTestCase(test.ScenarioTestCase):
         )
 
     def test_create_workbook(self):
-        definition = "version: \"2.0\"\nname: wb"
+        definition = 'version: "2.0"\nname: wb'
         scenario = utils.MistralScenario(context=self.context)
         self.assertEqual(
             self.clients("mistral").workbooks.create.return_value,

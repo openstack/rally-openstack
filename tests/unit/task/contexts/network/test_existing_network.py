@@ -17,13 +17,14 @@ from unittest import mock
 from rally_openstack.task.contexts.network import existing_network
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.network"
 
 
 class ExistingNetworkTestCase(test.TestCase):
 
     def setUp(self):
-        super(ExistingNetworkTestCase, self).setUp()
+        super().setUp()
 
         self.config = {"foo": "bar"}
         self.context = test.get_test_context()

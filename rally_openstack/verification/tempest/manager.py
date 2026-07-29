@@ -19,8 +19,8 @@ import subprocess
 
 import yaml
 
-from rally.common.io import subunit_v2
 from rally import exceptions
+from rally.common.io import subunit_v2
 from rally.plugins.verification import testr
 from rally.verification import manager
 from rally.verification import utils
@@ -72,7 +72,7 @@ class TempestManager(testr.TestrLauncher):
 
     @property
     def run_environ(self):
-        env = super(TempestManager, self).run_environ
+        env = super().run_environ
         env["TEMPEST_CONFIG_DIR"] = os.path.dirname(self.configfile)
         env["TEMPEST_CONFIG"] = os.path.basename(self.configfile)
         # TODO(andreykurilin): move it to Testr base class
@@ -86,7 +86,7 @@ class TempestManager(testr.TestrLauncher):
 
     def validate_args(self, args):
         """Validate given arguments."""
-        super(TempestManager, self).validate_args(args)
+        super().validate_args(args)
 
         if args.get("pattern"):
             pattern = args["pattern"].split("=", 1)
@@ -135,7 +135,7 @@ class TempestManager(testr.TestrLauncher):
                 "for extensions." % self.get_name())
         version = version or "master"
         egg = re.sub(r"\.git$", "", os.path.basename(source.strip("/")))
-        full_source = "git+{0}@{1}#egg={2}".format(source, version, egg)
+        full_source = f"git+{source}@{version}#egg={egg}"
         # NOTE(ylobankov): Use 'develop mode' installation to provide an
         #                  ability to advanced users to change tests or
         #                  develop new ones in verifier repo on the fly.
@@ -195,7 +195,7 @@ class TempestManager(testr.TestrLauncher):
         """List all Tempest tests."""
         if pattern:
             pattern = self._transform_pattern(pattern)
-        return super(TempestManager, self).list_tests(pattern)
+        return super().list_tests(pattern)
 
     def prepare_run_args(self, run_args):
         """Prepare 'run_args' for testr context."""

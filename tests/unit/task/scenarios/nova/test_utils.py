@@ -18,11 +18,13 @@ from unittest import mock
 import ddt
 from novaclient import exceptions as nova_exc
 
-from rally.common import cfg
 from rally import exceptions as rally_exceptions
+from rally.common import cfg
+
 from rally_openstack.task.scenarios.nova import utils
 from tests.unit import fakes
 from tests.unit import test
+
 
 BM_UTILS = "rally.task.utils"
 NOVA_UTILS = "rally_openstack.task.scenarios.nova.utils"
@@ -33,7 +35,7 @@ CONF = cfg.CONF
 class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(NovaScenarioTestCase, self).setUp()
+        super().setUp()
         self.server = mock.Mock()
         self.server1 = mock.Mock()
         self.volume = mock.Mock()
@@ -1361,11 +1363,11 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test_list_servers(self):
 
-        class ServersManager(object):
+        class ServersManager:
             def __init__(self):
                 self._list = mock.Mock()
 
-        class NovaClient(object):
+        class NovaClient:
             def __init__(self):
                 self.servers = ServersManager()
 

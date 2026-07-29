@@ -12,14 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from docutils import frontend
-from docutils import nodes
-from docutils.parsers import rst
-from docutils import utils
 import os
 import re
 import sys
 from unittest import mock
+
+from docutils import frontend
+from docutils import nodes
+from docutils import utils
+from docutils.parsers import rst
 
 import rally_openstack
 from tests.unit import test

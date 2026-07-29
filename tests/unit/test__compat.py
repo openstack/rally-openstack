@@ -36,8 +36,8 @@ class CompatibilityTestCase(test.TestCase):
 
         from rally_openstack.common import osclients as right_osclients
 
-        expected = set(o for o in dir(right_osclients)
-                       if not o.startswith("_"))
-        actual = set(o for o in dir(osclients) if not o.startswith("_"))
+        expected = {o for o in dir(right_osclients)
+                    if not o.startswith("_")}
+        actual = {o for o in dir(osclients) if not o.startswith("_")}
         self.assertEqual(expected, actual)
         self.assertEqual(right_osclients.Clients, osclients.Clients)

@@ -15,8 +15,8 @@
 
 import random
 
-from rally.common import logging
 from rally import exceptions
+from rally.common import logging
 from rally.task import atomic
 from rally.task import types
 from rally.task import validation

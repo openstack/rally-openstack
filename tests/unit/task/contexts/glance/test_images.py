@@ -21,6 +21,7 @@ import ddt
 from rally_openstack.task.contexts.glance import images
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.glance.images"
 SCN = "rally_openstack.task.scenarios.glance"
 
@@ -34,7 +35,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
     threads = 10
 
     def setUp(self):
-        super(ImageGeneratorTestCase, self).setUp()
+        super().setUp()
         self.context.update({
             "config": {
                 "users": {

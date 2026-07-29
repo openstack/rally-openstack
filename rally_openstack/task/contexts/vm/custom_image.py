@@ -23,8 +23,8 @@ from rally_openstack.common import consts
 from rally_openstack.common import osclients
 from rally_openstack.common.services.image import image
 from rally_openstack.task import context
-from rally_openstack.task.scenarios.vm import vmtasks
 from rally_openstack.task import types
+from rally_openstack.task.scenarios.vm import vmtasks
 
 
 LOG = logging.getLogger(__name__)

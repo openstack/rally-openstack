@@ -21,6 +21,7 @@ import netaddr
 from rally_openstack.task.contexts.network import networks as network_context
 from tests.unit import test
 
+
 PATH = "rally_openstack.task.contexts.network.networks"
 
 

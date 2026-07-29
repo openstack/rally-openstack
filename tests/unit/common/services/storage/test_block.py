@@ -22,7 +22,7 @@ from tests.unit import test
 
 class BlockTestCase(test.TestCase):
     def setUp(self):
-        super(BlockTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.service = self._get_service_with_fake_impl()
 

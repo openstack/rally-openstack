@@ -17,7 +17,6 @@
 import sys
 from unittest import mock
 
-
 from rally_openstack.task.scenarios.vm.workloads import siege
 from tests.unit import test
 

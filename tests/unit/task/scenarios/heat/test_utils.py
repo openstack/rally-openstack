@@ -20,6 +20,7 @@ from rally import exceptions
 from rally_openstack.task.scenarios.heat import utils
 from tests.unit import test
 
+
 HEAT_UTILS = "rally_openstack.task.scenarios.heat.utils"
 
 CONF = utils.CONF
@@ -27,7 +28,7 @@ CONF = utils.CONF
 
 class HeatScenarioTestCase(test.ScenarioTestCase):
     def setUp(self):
-        super(HeatScenarioTestCase, self).setUp()
+        super().setUp()
         self.stack = mock.Mock()
         self.scenario = utils.HeatScenario(self.context)
         self.default_template = "heat_template_version: 2013-05-23"
@@ -286,7 +287,7 @@ class HeatScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(scenario.atomic_actions(),
                                        "heat.show_output")
 
-    def test_stack_show_output_via_API(self):
+    def test_stack_show_output_via_API(self):  # noqa: N802
         scenario = utils.HeatScenario(self.context)
         scenario._stack_show_output_via_API(
             self.stack, self.default_output_key)
@@ -303,7 +304,7 @@ class HeatScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(scenario.atomic_actions(),
                                        "heat.list_output")
 
-    def test_stack_list_output_via_API(self):
+    def test_stack_list_output_via_API(self):  # noqa: N802
         scenario = utils.HeatScenario(self.context)
         scenario._stack_list_output_via_API(self.stack)
         self.clients("heat").stacks.get.assert_called_once_with(

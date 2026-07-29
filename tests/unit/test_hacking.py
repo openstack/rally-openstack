@@ -14,13 +14,10 @@ import inspect
 import io
 import tokenize
 
-import ddt
-
 from tests.hacking import checks
 from tests.unit import test
 
 
-@ddt.ddt
 class HackingTestCase(test.TestCase):
 
     def _assert_good_samples(self, checker, samples, module_file="f"):
@@ -56,8 +53,11 @@ class HackingTestCase(test.TestCase):
         self.assertIsNone(obj)
 
     def test_correct_usage_of_assert_from_mock(self):
-        correct_method_names = ["assert_any_call", "assert_called_once_with",
-                                "assert_called_with", "assert_has_calls"]
+        correct_method_names = ["assert_any_call", "assert_called",
+                                "assert_called_once",
+                                "assert_called_once_with",
+                                "assert_called_with", "assert_has_calls",
+                                "assert_not_called"]
         for name in correct_method_names:
             line = "some_mock.%s(asd)" % name
             self.assertEqual(0, len(
@@ -72,42 +72,13 @@ class HackingTestCase(test.TestCase):
         self.assertEqual(4, actual_number)
         self.assertTrue(actual_msg.startswith("N301"))
 
-    def test_wrong_usage_of_assert_called_from_mock(self):
-        fake_method = "rtfm.assert_called()"
+    def test_wrong_usage_of_called_once_with_from_mock(self):
+        fake_method = "rtfm.called_once_with()"
 
         actual_number, actual_msg = next(checks.check_assert_methods_from_mock(
             fake_method, "./tests/fake/test", False))
         self.assertEqual(4, actual_number)
-        self.assertTrue(actual_msg.startswith("N302"))
-
-    def test_wrong_usage_of_assert_called_once_from_mock(self):
-        fake_method = "rtfm.assert_called_once()"
-
-        actual_number, actual_msg = next(checks.check_assert_methods_from_mock(
-            fake_method, "./tests/fake/test", False))
-        self.assertEqual(4, actual_number)
-        self.assertTrue(actual_msg.startswith("N303"))
-
-    def test_check_wrong_logging_import(self):
-        bad_imports = ["from oslo_log import log",
-                       "import oslo_log",
-                       "import logging"]
-        good_imports = ["from rally.common import logging",
-                        "from rally.common.logging",
-                        "import rally.common.logging"]
-
-        for bad in bad_imports:
-            checkres = checks.check_import_of_logging(bad, "fakefile")
-            self.assertIsNotNone(next(checkres))
-
-        for bad in bad_imports:
-            checkres = checks.check_import_of_logging(
-                bad, "./rally/common/logging.py")
-            self.assertEqual([], list(checkres))
-
-        for good in good_imports:
-            checkres = checks.check_import_of_logging(good, "fakefile")
-            self.assertEqual([], list(checkres))
+        self.assertTrue(actual_msg.startswith("N304"))
 
     def test_no_use_conf_debug_check(self):
         bad_samples = [
@@ -119,185 +90,20 @@ class HackingTestCase(test.TestCase):
         good_samples = ["if logging.is_debug()"]
         self._assert_good_samples(checks.no_use_conf_debug_check, good_samples)
 
-    @ddt.data(
-        {
-            "line": "self.assertTrue(isinstance(e, exception.BuildAbortExc))",
-            "result": 1
-        },
-        {
-            "line": "self.assertTrue()",
-            "result": 0
-        }
-    )
-    @ddt.unpack
-    def test_assert_true_instance(self, line, result):
-        self.assertEqual(result, len(list(checks.assert_true_instance(line))))
-
-    @ddt.data(
-        {
-            "line": "self.assertEqual(type(als['QuicAssist']), list)",
-            "result": 1
-        },
-        {
-            "line": "self.assertTrue()",
-            "result": 0
-        }
-    )
-    @ddt.unpack
-    def test_assert_equal_type(self, line, result):
-        self.assertEqual(result, len(list(checks.assert_equal_type(line))))
-
-    @ddt.data(
-        {"line": "self.assertEqual(A, None)", "result": 1},
-        {"line": "self.assertEqual(None, A)", "result": 1},
-        {"line": "self.assertIsNone()", "result": 0}
-    )
-    @ddt.unpack
-    def test_assert_equal_none(self, line, result):
-
-        self.assertEqual(result, len(list(checks.assert_equal_none(line))))
-
-    @ddt.data(
-        {"line": "self.assertNotEqual(A, None)", "result": 1},
-        {"line": "self.assertNotEqual(None, A)", "result": 1},
-        {"line": "self.assertIsNotNone()", "result": 0}
-    )
-    @ddt.unpack
-    def test_assert_not_equal_none(self, line, result):
-
-        self.assertEqual(result, len(list(checks.assert_not_equal_none(line))))
-
-    def test_assert_true_or_false_with_in_or_not_in(self):
-        good_lines = [
-            "self.assertTrue(any(A > 5 for A in B))",
-            "self.assertTrue(any(A > 5 for A in B), 'some message')",
-            "self.assertFalse(some in list1 and some2 in list2)"
-        ]
-        self._assert_good_samples(checks.assert_true_or_false_with_in,
-                                  good_lines)
-
-        bad_lines = [
-            "self.assertTrue(A in B)",
-            "self.assertFalse(A in B)",
-            "self.assertTrue(A not in B)",
-            "self.assertFalse(A not in B)",
-            "self.assertTrue(A in B, 'some message')",
-            "self.assertFalse(A in B, 'some message')",
-            "self.assertTrue(A not in B, 'some message')",
-            "self.assertFalse(A not in B, 'some message')",
-            "self.assertTrue(A in 'some string with spaces')",
-            "self.assertTrue(A in 'some string with spaces')",
-            "self.assertTrue(A in ['1', '2', '3'])",
-            "self.assertTrue(A in [1, 2, 3])"
-        ]
-        self._assert_bad_samples(checks.assert_true_or_false_with_in,
-                                 bad_lines)
-
-    def test_assert_equal_in(self):
-        good_lines = [
-            "self.assertEqual(any(a==1 for a in b), True)",
-            "self.assertEqual(True, any(a==1 for a in b))",
-            "self.assertEqual(any(a==1 for a in b), False)",
-            "self.assertEqual(False, any(a==1 for a in b))"
-        ]
-        self._assert_good_samples(checks.assert_equal_in, good_lines)
-
-        bad_lines = [
-            "self.assertEqual(a in b, True)",
-            "self.assertEqual(a not in b, True)",
-            "self.assertEqual('str' in 'string', True)",
-            "self.assertEqual('str' not in 'string', True)",
-            "self.assertEqual(True, a in b)",
-            "self.assertEqual(True, a not in b)",
-            "self.assertEqual(True, 'str' in 'string')",
-            "self.assertEqual(True, 'str' not in 'string')",
-            "self.assertEqual(a in b, False)",
-            "self.assertEqual(a not in b, False)",
-            "self.assertEqual('str' in 'string', False)",
-            "self.assertEqual('str' not in 'string', False)",
-            "self.assertEqual(False, a in b)",
-            "self.assertEqual(False, a not in b)",
-            "self.assertEqual(False, 'str' in 'string')",
-            "self.assertEqual(False, 'str' not in 'string')",
-        ]
-        self._assert_bad_samples(checks.assert_equal_in, bad_lines)
-
-    def test_check_no_direct_rally_objects_import(self):
-        bad_imports = ["from rally.common.objects import task",
-                       "import rally.common.objects.task"]
-
-        self._assert_bad_samples(checks.check_no_direct_rally_objects_import,
-                                 bad_imports)
-
-        self._assert_good_samples(
-            checks.check_no_direct_rally_objects_import,
-            bad_imports,
-            module_file="./rally/common/objects/__init__.py")
-
-        good_imports = ["from rally.common import objects"]
-        self._assert_good_samples(checks.check_no_direct_rally_objects_import,
-                                  good_imports)
-
-    def test_check_no_oslo_deprecated_import(self):
-        bad_imports = ["from oslo.config",
-                       "import oslo.config",
-                       "from oslo.db",
-                       "import oslo.db",
-                       "from oslo.i18n",
-                       "import oslo.i18n",
-                       "from oslo.serialization",
-                       "import oslo.serialization",
-                       "from oslo.utils",
-                       "import oslo.utils"]
-
-        self._assert_bad_samples(checks.check_no_oslo_deprecated_import,
-                                 bad_imports)
-
-    def test_check_quotas(self):
-        bad_lines = [
-            "a = '1'",
-            "a = \"a\" + 'a'",
-            "'",
-            "\"\"\"\"\"\" + ''''''"
-        ]
-        self._assert_bad_samples(checks.check_quotes, bad_lines)
-
-        good_lines = [
-            "\"'a'\" + \"\"\"a'''fdfd'''\"\"\"",
-            "\"fdfdfd\" + \"''''''\"",
-            "a = ''   # noqa "
-        ]
-        self._assert_good_samples(checks.check_quotes, good_lines)
-
-    def test_check_no_constructor_data_struct(self):
-        bad_struct = [
-            "= dict()",
-            "= list()"
-        ]
-        self._assert_bad_samples(checks.check_no_constructor_data_struct,
-                                 bad_struct)
-
-        good_struct = [
-            "= []",
-            "= {}",
-        ]
-        self._assert_good_samples(checks.check_no_constructor_data_struct,
-                                  good_struct)
-
     def test_check_dict_formatting_in_string(self):
         bad = [
-            "\"%(a)s\" % d",
-            "\"Split across \"\n\"multiple lines: %(a)f\" % d",
-            "\"%(a)X split across \"\n\"multiple lines\" % d",
-            "\"%(a)-5.2f: Split %(\"\n\"a)#Lu stupidly\" % d",
-            "\"Comment between \"  # wtf\n\"split lines: %(a) -6.2f\" % d",
-            "\"Two strings\" + \" added: %(a)-6.2f\" % d",
-            "\"half legit (%(a)s %(b)s)\" % d + \" half bogus: %(a)s\" % d",
-            "(\"Parenthesized: %(a)s\") % d",
-            "(\"Parenthesized \"\n\"concatenation: %(a)s\") % d",
-            "(\"Parenthesized \" + \"addition: %(a)s\") % d",
-            "\"Complete %s\" % (\"foolisness: %(a)s%(a)s\" % d)",
-            "\"Modulus %(a)s\" % {\"a\": (5 % 3)}"
+            '"%(a)s" % d',
+            '"Split across "\n"multiple lines: %(a)f" % d',
+            '"%(a)X split across "\n"multiple lines" % d',
+            '"%(a)-5.2f: Split %("\n"a)#Lu stupidly" % d',
+            '"Comment between "  # wtf\n"split lines: %(a) -6.2f" % d',
+            '"Two strings" + " added: %(a)-6.2f" % d',
+            '"half legit (%(a)s %(b)s)" % d + " half bogus: %(a)s" % d',
+            '("Parenthesized: %(a)s") % d',
+            '("Parenthesized "\n"concatenation: %(a)s") % d',
+            '("Parenthesized " + "addition: %(a)s") % d',
+            '"Complete %s" % ("foolisness: %(a)s%(a)s" % d)',
+            '"Modulus %(a)s" % {"a": (5 % 3)}'
         ]
         for sample in bad:
             sample = "print(%s)" % sample
@@ -308,15 +114,15 @@ class HackingTestCase(test.TestCase):
                 len(list(checks.check_dict_formatting_in_string(sample,
                                                                 tokens))))
 
-        sample = "print(\"%(a)05.2lF\" % d + \" added: %(a)s\" % d)"
+        sample = 'print("%(a)05.2lF" % d + " added: %(a)s" % d)'
         tokens = tokenize.generate_tokens(io.StringIO(sample).readline)
         self.assertEqual(
             2,
             len(list(checks.check_dict_formatting_in_string(sample, tokens))))
 
         good = [
-            "\"This one is okay: %(a)s %(b)s\" % d",
-            "\"So is %(a)s\"\n\"this one: %(b)s\" % d"
+            '"This one is okay: %(a)s %(b)s" % d',
+            '"So is %(a)s"\n"this one: %(b)s" % d'
         ]
         for sample in good:
             sample = "print(%s)" % sample
@@ -335,36 +141,6 @@ class HackingTestCase(test.TestCase):
             checks.check_raises,
             ["text = :raises Exception: if conditions"]
         )
-
-    def test_check_db_imports_of_cli(self):
-        line = "from rally.common import db"
-
-        next(checks.check_db_imports_in_cli(line, "./rally/cli/filename"))
-
-        checkres = checks.check_db_imports_in_cli(line, "./filename")
-        self.assertRaises(StopIteration, next, checkres)
-
-    def test_check_objects_imports_of_cli(self):
-        line = "from rally.common import objects"
-
-        next(checks.check_objects_imports_in_cli(line, "./rally/cli/filename"))
-
-        checkres = checks.check_objects_imports_in_cli(line, "./filename")
-        self.assertRaises(StopIteration, next, checkres)
-
-    def test_check_datetime_alias(self):
-        lines = ["import datetime as date",
-                 "import datetime",
-                 "import datetime as dto",
-                 "from datetime import datetime as dtime"]
-
-        for line in lines:
-            checkres = checks.check_datetime_alias(line)
-            self.assertIsNotNone(next(checkres))
-            self.assertEqual([], list(checkres))
-
-        line = "import datetime as dt"
-        checks.check_datetime_alias(line)
 
     def test_check_log_warn(self):
         bad_samples = ["LOG.warn('foo')", "LOG.warn(_('bar'))"]

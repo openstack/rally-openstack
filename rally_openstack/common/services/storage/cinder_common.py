@@ -478,7 +478,7 @@ class CinderMixin(atomic.ActionTimerMixin):
                 volume_type, specs)
 
 
-class UnifiedCinderMixin(object):
+class UnifiedCinderMixin:
 
     @staticmethod
     def _unify_backup(backup):

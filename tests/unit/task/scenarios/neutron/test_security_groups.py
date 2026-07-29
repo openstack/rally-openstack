@@ -10,12 +10,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from unittest import mock
 
-import copy
 import ddt
 
 from rally import exceptions as rally_exceptions
+
 from rally_openstack.task.scenarios.neutron import security_groups
 from tests.unit import test
 

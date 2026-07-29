@@ -22,6 +22,7 @@ from rally_openstack.task.contexts.manila import manila_security_services
 from rally_openstack.task.scenarios.manila import utils as manila_utils
 from tests.unit import test
 
+
 CONTEXT_NAME = consts.SECURITY_SERVICES_CONTEXT_NAME
 
 

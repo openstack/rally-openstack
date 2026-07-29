@@ -16,6 +16,7 @@
 from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.nova import keypairs
 from tests.unit import fakes
 from tests.unit import test

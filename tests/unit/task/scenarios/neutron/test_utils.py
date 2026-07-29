@@ -19,10 +19,12 @@ import ddt
 import netaddr
 
 from rally import exceptions
+
 from rally_openstack.common import consts
 from rally_openstack.common import credential
 from rally_openstack.task.scenarios.neutron import utils
 from tests.unit import test
+
 
 NETWORK_SERVICE = "rally_openstack.common.services.network"
 NET_UTILS = "%s.net_utils" % NETWORK_SERVICE
@@ -33,7 +35,7 @@ NEUTRON_UTILS = "rally_openstack.task.scenarios.neutron.utils"
 class NeutronScenarioTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(NeutronScenarioTestCase, self).setUp()
+        super().setUp()
         self.network = mock.Mock()
         self._clients = mock.MagicMock(
             credential=credential.OpenStackCredential(

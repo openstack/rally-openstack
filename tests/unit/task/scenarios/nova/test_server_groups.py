@@ -18,8 +18,10 @@ from unittest import mock
 import ddt
 
 from rally import exceptions as rally_exceptions
+
 from rally_openstack.task.scenarios.nova import server_groups
 from tests.unit import test
+
 
 SERVER_GROUPS_MODULE = "rally_openstack.task.scenarios.nova.server_groups"
 NOVA_SERVER_GROUPS = SERVER_GROUPS_MODULE + ".NovaServerGroups"

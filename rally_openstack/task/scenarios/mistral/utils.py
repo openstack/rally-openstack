@@ -14,10 +14,11 @@
 #    under the License.
 
 
+import yaml
+
 from rally.common import cfg
 from rally.task import atomic
 from rally.task import utils
-import yaml
 
 from rally_openstack.task import scenario
 

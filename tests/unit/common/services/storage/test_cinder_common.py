@@ -12,19 +12,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
 import uuid
+from unittest import mock
 
 import ddt
 
-from rally.common import cfg
 from rally import exceptions
+from rally.common import cfg
 
 from rally_openstack.common import service
 from rally_openstack.common.services.storage import block
 from rally_openstack.common.services.storage import cinder_common
 from tests.unit import fakes
 from tests.unit import test
+
 
 BASE_PATH = "rally_openstack.common.services.storage"
 CONF = cfg.CONF
@@ -38,7 +39,7 @@ class FullCinder(service.Service, cinder_common.CinderMixin):
 @ddt.ddt
 class CinderMixinTestCase(test.ScenarioTestCase):
     def setUp(self):
-        super(CinderMixinTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.cinder = self.clients.cinder.return_value
         self.name_generator = uuid.uuid1
@@ -91,7 +92,7 @@ class CinderMixinTestCase(test.ScenarioTestCase):
         manager = mock.MagicMock()
         resource = fakes.FakeResource(manager=manager, status="ERROR")
 
-        class NotFoundException(Exception):
+        class NotFoundException(Exception):  # noqa: N818
             http_status = 404
 
         manager.get = mock.MagicMock(side_effect=NotFoundException)
@@ -102,7 +103,7 @@ class CinderMixinTestCase(test.ScenarioTestCase):
         manager = mock.MagicMock()
         resource = fakes.FakeResource(manager=manager, status="ERROR")
 
-        class HTTPException(Exception):
+        class HTTPException(Exception):  # noqa: N818
             pass
 
         manager.get = mock.MagicMock(side_effect=HTTPException)
@@ -455,7 +456,7 @@ class FullUnifiedCinder(cinder_common.UnifiedCinderMixin,
 
 class UnifiedCinderMixinTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedCinderMixinTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.name_generator = mock.MagicMock()
         self.impl = mock.MagicMock()
@@ -466,7 +467,7 @@ class UnifiedCinderMixinTestCase(test.TestCase):
         self.service.version = self.version
 
     def test__unify_backup(self):
-        class SomeBackup(object):
+        class SomeBackup:
             id = 1
             name = "backup"
             volume_id = "volume"
@@ -478,7 +479,7 @@ class UnifiedCinderMixinTestCase(test.TestCase):
         self.assertEqual("st", backup.status)
 
     def test__unify_transfer(self):
-        class SomeTransfer(object):
+        class SomeTransfer:
             id = 1
             name = "transfer"
             volume_id = "volume"
@@ -490,7 +491,7 @@ class UnifiedCinderMixinTestCase(test.TestCase):
         self.assertEqual("st", transfer.status)
 
     def test__unify_qos(self):
-        class Qos(object):
+        class Qos:
             id = 1
             name = "qos"
             specs = {"key1": "value1"}
@@ -500,7 +501,7 @@ class UnifiedCinderMixinTestCase(test.TestCase):
         self.assertEqual({"key1": "value1"}, qos.specs)
 
     def test__unify_encryption_type(self):
-        class SomeEncryptionType(object):
+        class SomeEncryptionType:
             encryption_id = 1
             volume_type_id = "volume_type"
         encryption_type = self.service._unify_encryption_type(

@@ -43,8 +43,8 @@ class CreateAndListQos(cinder_utils.CinderBasic):
 
         pool_list = self.admin_cinder.list_qos()
         msg = ("Qos not included into list of available qos\n"
-               "created qos:{}\n"
-               "Pool of qos:{}").format(qos, pool_list)
+               f"created qos:{qos}\n"
+               f"Pool of qos:{pool_list}")
         self.assertIn(qos, pool_list, err_msg=msg)
 
 

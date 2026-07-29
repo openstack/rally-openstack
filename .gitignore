@@ -25,6 +25,8 @@ pip-log.txt
 # Unit test / coverage reports
 .coverage
 .tox
+.ruff_cache
+.mypy_cache
 nosetests.xml
 cover
 cover-master

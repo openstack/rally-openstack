@@ -20,6 +20,7 @@ from rally_openstack.task.scenarios.heat import utils as heat_utils
 from tests.unit import fakes
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts"
 SCN = "rally_openstack.task.scenarios"
 

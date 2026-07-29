@@ -17,6 +17,7 @@ from unittest import mock
 from rally_openstack.task.contexts.magnum import ca_certs
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.magnum"
 SCN = "rally_openstack.task.scenarios"
 

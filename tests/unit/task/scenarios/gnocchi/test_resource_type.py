@@ -21,7 +21,7 @@ from tests.unit import test
 class GnocchiResourceTypeTestCase(test.ScenarioTestCase):
 
     def get_test_context(self):
-        context = super(GnocchiResourceTypeTestCase, self).get_test_context()
+        context = super().get_test_context()
         context.update({
             "admin": {
                 "user_id": "fake",
@@ -36,7 +36,7 @@ class GnocchiResourceTypeTestCase(test.ScenarioTestCase):
         return context
 
     def setUp(self):
-        super(GnocchiResourceTypeTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.gnocchi.metric.GnocchiService")
         self.addCleanup(patch.stop)

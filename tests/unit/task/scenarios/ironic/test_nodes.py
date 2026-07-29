@@ -24,7 +24,7 @@ from tests.unit import test
 class IronicNodesTestCase(test.ScenarioTestCase):
 
     def test_create_and_list_node(self):
-        class Node(object):
+        class Node:
             def __init__(self, name):
                 self.name = name
 

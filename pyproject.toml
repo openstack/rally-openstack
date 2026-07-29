@@ -51,6 +51,95 @@ options = "rally_openstack.common.cfg.opts:list_opts"
 [project.entry-points."oslo.config.opts"]
 rally_openstack = "rally_openstack.common.cfg.opts:list_opts"
 
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+extend-exclude = ["tools"]
+
+[tool.ruff.lint]
+# Hacking (H...) and the Rally-specific N3xx checks stay in flake8;
+# ruff owns everything else.
+select = [
+    "E",       # pycodestyle errors
+    "W",       # pycodestyle warnings
+    "F",       # pyflakes
+    "I",       # isort: import grouping and ordering
+    "C4",      # flake8-comprehensions
+    "Q",       # flake8-quotes
+    "A",       # flake8-builtins
+    "N",       # pep8-naming
+    "TID",     # flake8-tidy-imports (banned-api)
+    "PGH003",  # `type: ignore` must name the specific error code
+    "PGH004",  # `noqa` must name the specific rule code
+    "PLC0414", # band redundant aliases
+    "ICN",     # flake8-import-conventions
+    "UP",      # pyupgrade
+]
+ignore = [
+    "E731", # do not assign a lambda expression, use a def
+    "C402", # allow dict(<generator>) instead of forcing a dict comprehension
+    "C408", # allow dict(a=1) / list() constructor calls (e.g. ansible arg specs)
+    "UP031", # keep %-style string formatting
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["rally_openstack", "tests"]
+force-single-line = true
+lines-after-imports = 2
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "rally",
+    "first-party",
+    "local-folder",
+]
+
+[tool.ruff.lint.isort.sections]
+rally = ["rally"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+multiline-quotes = "double"
+docstring-quotes = "double"
+
+[tool.ruff.lint.flake8-import-conventions.aliases]
+datetime = "dt"
+typing = "t"
+typing_extensions = "te"
+"rally.common.logging" = "logging"
+
+[tool.ruff.lint.flake8-import-conventions]
+# Builtins are imported as modules: forbid `from <stdlib> import ...` so the
+# standard library is imported whole (e.g. `import os`, then `os.path`).
+# `__future__` and `unittest` (`from unittest import mock`) stay allowed, as
+# does `importlib` (`from importlib.metadata import version`).
+banned-from = [
+    "abc", "argparse", "ast", "asyncio", "base64", "bisect", "builtins",
+    "calendar", "cmath", "codecs", "collections", "configparser",
+    "contextlib", "copy", "csv", "ctypes", "dataclasses", "datetime",
+    "decimal", "difflib", "dis", "email", "enum", "errno", "functools", "gc",
+    "getpass", "gettext", "glob", "gzip", "hashlib", "heapq", "hmac", "html",
+    "http", "inspect", "io", "ipaddress", "itertools", "json", "logging",
+    "math", "mimetypes", "multiprocessing", "numbers", "operator", "os",
+    "pathlib", "pickle", "platform", "pprint", "queue", "random", "re",
+    "secrets", "select", "shlex", "shutil", "signal", "socket", "sqlite3",
+    "ssl", "stat", "string", "struct", "subprocess", "sys", "tempfile",
+    "textwrap", "threading", "time", "token", "tokenize", "traceback",
+    "types", "typing", "typing_extensions", "unicodedata", "urllib", "uuid",
+    "warnings", "weakref", "xml", "zipfile", "zlib",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# ansible role dirs are hyphenated by convention -> not valid module names;
+# an inline noqa is impossible (the package __init__.py files are empty).
+"tests/ci/playbooks/**" = ["N999"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"logging".msg = "Use `rally.common.logging` instead of the stdlib logging."
+"oslo_log".msg = "Use `rally.common.logging` instead of oslo_log."
+"oslo.utils".msg = "The oslo.* namespace is deprecated, use oslo_utils."
+
 [tool.mypy]
 files = [
     "rally_openstack",

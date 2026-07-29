@@ -26,7 +26,7 @@ class RallyJobsTestCase(test.TestCase):
     zuul_jobs_path = os.path.join(root_dir, ".zuul.d")
 
     def setUp(self):
-        super(RallyJobsTestCase, self).setUp()
+        super().setUp()
         with open(os.path.join(self.zuul_jobs_path, "zuul.yaml")) as f:
             self.zuul_cfg = yaml.safe_load(f)
 

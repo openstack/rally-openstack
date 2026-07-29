@@ -29,7 +29,7 @@ class FullUnifiedKeystone(keystone_common.UnifiedKeystoneMixin,
 
 class UnifiedKeystoneMixinTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedKeystoneMixinTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.name_generator = mock.MagicMock()
         self.impl = mock.MagicMock()
@@ -40,7 +40,7 @@ class UnifiedKeystoneMixinTestCase(test.TestCase):
         self.service.version = self.version
 
     def test__unify_service(self):
-        class SomeFakeService(object):
+        class SomeFakeService:
             id = 123123123123123
             name = "asdfasdfasdfasdfadf"
             other_var = "asdfasdfasdfasdfasdfasdfasdf"
@@ -51,7 +51,7 @@ class UnifiedKeystoneMixinTestCase(test.TestCase):
         self.assertEqual(SomeFakeService.name, service.name)
 
     def test__unify_role(self):
-        class SomeFakeRole(object):
+        class SomeFakeRole:
             id = 123123123123123
             name = "asdfasdfasdfasdfadf"
             other_var = "asdfasdfasdfasdfasdfasdfasdf"
@@ -185,7 +185,7 @@ class FullKeystone(service.Service, keystone_common.KeystoneMixin):
 
 class KeystoneMixinTestCase(test.TestCase):
     def setUp(self):
-        super(KeystoneMixinTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.kc = self.clients.keystone.return_value
         self.name_generator = mock.MagicMock()
@@ -225,7 +225,7 @@ class KeystoneMixinTestCase(test.TestCase):
         self.kc.services.get.assert_called_once_with(service_id)
 
     def test_get_service_by_name(self):
-        class FakeService(object):
+        class FakeService:
             def __init__(self, name):
                 self.name = name
         service_name = "fake_name"

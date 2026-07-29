@@ -19,9 +19,11 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
+
 from rally_openstack.task.contexts.manila import consts
 from rally_openstack.task.contexts.manila import manila_share_networks
 from tests.unit import test
+
 
 MANILA_UTILS_PATH = (
     "rally_openstack.task.scenarios.manila.utils.ManilaScenario.")
@@ -29,7 +31,7 @@ MANILA_UTILS_PATH = (
 MOCK_USER_CREDENTIAL = mock.MagicMock()
 
 
-class Fake(object):
+class Fake:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)

@@ -34,7 +34,7 @@ class RallyJobsTestCase(test.TestCase):
         os.path.dirname(rally_openstack.__file__), "..", "rally-jobs")
 
     def setUp(self):
-        super(RallyJobsTestCase, self).setUp()
+        super().setUp()
         self.tmp_dir = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.tmp_dir, ".rally"))
         shutil.copytree(os.path.join(self.rally_jobs_path, "extra"),
@@ -58,7 +58,7 @@ class RallyJobsTestCase(test.TestCase):
 
         args = {}
         if os.path.exists(args_file):
-            with open(args_file, "r") as f:
+            with open(args_file) as f:
                 args = yaml.safe_load(f)
             if not isinstance(args, dict):
                 raise TypeError(

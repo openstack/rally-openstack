@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.IntOpt("resource_deletion_timeout",
                default=600,

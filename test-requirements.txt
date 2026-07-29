@@ -3,6 +3,7 @@
 # process, which may cause wedges in the gate later.
 
 hacking>=3.0
+ruff>=0.14.0
 fixtures                                               # Apache-2.0 or BSD
 
 pytest

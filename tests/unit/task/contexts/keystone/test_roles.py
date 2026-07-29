@@ -16,9 +16,11 @@
 from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.task.contexts.keystone import roles
 from tests.unit import fakes
 from tests.unit import test
+
 
 CTX = "rally_openstack.task.contexts.keystone.roles"
 

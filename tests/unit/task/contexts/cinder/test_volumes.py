@@ -22,6 +22,7 @@ from rally.task import context
 from rally_openstack.task.contexts.cinder import volumes
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts"
 SERVICE = "rally_openstack.common.services.storage"
 

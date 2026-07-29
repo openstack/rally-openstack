@@ -15,12 +15,12 @@
 
 from docutils import frontend
 from docutils import nodes
-from docutils.parsers import rst
 from docutils import utils
+from docutils.parsers import rst
 
-from rally.common.plugin import plugin
-from rally.common import validation
 from rally import plugins
+from rally.common import validation
+from rally.common.plugin import plugin
 from rally.task import scenario
 
 from tests.unit import test
@@ -38,7 +38,7 @@ def _parse_rst(text):
 class DocstringsTestCase(test.TestCase):
 
     def setUp(self):
-        super(DocstringsTestCase, self).setUp()
+        super().setUp()
         plugins.load()
 
     def _validate_code_block(self, plg_cls, code_block):

@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
 import uuid
+from unittest import mock
 
 import ddt
 
@@ -28,7 +28,7 @@ PATH = "rally_openstack.common.services.identity.keystone_v2"
 @ddt.ddt
 class KeystoneV2ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(KeystoneV2ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.kc = self.clients.keystone.return_value
         self.name_generator = mock.MagicMock()
@@ -191,7 +191,7 @@ class KeystoneV2ServiceTestCase(test.TestCase):
 @ddt.ddt
 class UnifiedKeystoneV2ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedKeystoneV2ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.service = keystone_v2.UnifiedKeystoneV2Service(self.clients)
         self.service._impl = mock.MagicMock()
@@ -208,7 +208,7 @@ class UnifiedKeystoneV2ServiceTestCase(test.TestCase):
                           "non-default")
 
     def test__unify_tenant(self):
-        class KeystoneV2Tenant(object):
+        class KeystoneV2Tenant:
             def __init__(self, domain_id="domain_id"):
                 self.id = str(uuid.uuid4())
                 self.name = str(uuid.uuid4())
@@ -223,8 +223,9 @@ class UnifiedKeystoneV2ServiceTestCase(test.TestCase):
         self.assertNotEqual(tenant.domain_id, project.domain_id)
 
     def test__unify_user(self):
-        class KeystoneV2User(object):
-            def __init__(self, tenantId=None):
+        class KeystoneV2User:
+            def __init__(self,
+                         tenantId=None):  # noqa: N803
                 self.id = str(uuid.uuid4())
                 self.name = str(uuid.uuid4())
                 if tenantId is not None:

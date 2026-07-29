@@ -21,9 +21,10 @@ import subprocess
 
 from ansible.module_utils.basic import AnsibleModule
 
+from rally import plugins
 from rally.cli import cliutils
 from rally.common.plugin import discover
-from rally import plugins
+
 
 try:
     from rally_openstack.common import consts
@@ -44,7 +45,7 @@ def skip_if_service(service):
     return wrapper
 
 
-class ResourceManager(object):
+class ResourceManager:
 
     REQUIRED_SERVICE = None
     STR_ATTRS = ("id", "name")
@@ -426,7 +427,7 @@ class Octavia(ResourceManager):
         return self.client.amphora_list()["amphorae"]
 
 
-class CloudResources(object):
+class CloudResources:
     """List and compare cloud resources.
 
     resources = CloudResources(auth_url=..., ...)

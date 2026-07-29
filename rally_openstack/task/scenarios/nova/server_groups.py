@@ -60,9 +60,8 @@ class CreateAndListServerGroups(utils.NovaScenario):
 
         server_groups_list = self._list_server_groups(all_projects)
         msg = ("Server Group not included into list of server groups\n"
-               "Created server group: {}\n"
-               "list of server groups: {}").format(server_group,
-                                                   server_groups_list)
+               f"Created server group: {server_group}\n"
+               f"list of server groups: {server_groups_list}")
         self.assertIn(server_group, server_groups_list, err_msg=msg)
 
 

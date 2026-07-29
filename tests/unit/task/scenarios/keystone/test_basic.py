@@ -18,6 +18,7 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.keystone import basic
 from tests.unit import test
 
@@ -26,7 +27,7 @@ from tests.unit import test
 class KeystoneBasicTestCase(test.ScenarioTestCase):
 
     def get_test_context(self):
-        context = super(KeystoneBasicTestCase, self).get_test_context()
+        context = super().get_test_context()
         context.update({
             "admin": {
                 "id": "fake_user_id",
@@ -42,7 +43,7 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         return context
 
     def setUp(self):
-        super(KeystoneBasicTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.identity.identity.Identity")
         self.addCleanup(patch.stop)

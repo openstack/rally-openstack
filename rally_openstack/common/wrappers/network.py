@@ -17,9 +17,9 @@ import abc
 
 from neutronclient.common import exceptions as neutron_exceptions
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.common.services.network import net_utils
@@ -49,7 +49,7 @@ class NetworkWrapperException(exceptions.RallyException):
     msg_fmt = "%(message)s"
 
 
-class NetworkWrapper(object, metaclass=abc.ABCMeta):
+class NetworkWrapper(metaclass=abc.ABCMeta):
     """Base class for network service implementations.
 
     We actually have two network services implementations, with different API:
@@ -118,14 +118,14 @@ class NeutronWrapper(NetworkWrapper):
     LB_PROTOCOL = "HTTP"
 
     def __init__(self, *args, **kwargs):
-        super(NeutronWrapper, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        class _SingleClientWrapper(object):
-            def neutron(_self):
+        class _SingleClientWrapper:
+            def neutron(_self):  # noqa: N805
                 return self.client
 
             @property
-            def credential(_self):
+            def credential(_self):  # noqa: N805
                 return self.clients.credential
 
         self.neutron = neutron.NeutronService(

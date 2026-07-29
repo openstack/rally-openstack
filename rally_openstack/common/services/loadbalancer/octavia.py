@@ -12,12 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 from rally.task import atomic
 from rally.task import service
 from rally.task import utils
+
 
 CONF = cfg.CONF
 

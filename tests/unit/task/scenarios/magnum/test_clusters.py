@@ -17,6 +17,7 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.magnum import clusters
 from tests.unit import test
 

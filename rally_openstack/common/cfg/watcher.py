@@ -14,6 +14,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("watcher_audit_launch_poll_interval",
                  default=2.0,

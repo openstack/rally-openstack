@@ -19,16 +19,16 @@ import re
 
 import yaml
 
+from rally import exceptions
 from rally.common import logging
 from rally.common import validation
-from rally import exceptions
 from rally.plugins.common import validators
 from rally.task import types
 
 from rally_openstack.common import consts
+from rally_openstack.task import types as openstack_types
 from rally_openstack.task.contexts.keystone import roles
 from rally_openstack.task.contexts.nova import flavors as flavors_ctx
-from rally_openstack.task import types as openstack_types
 
 
 LOG = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class RequiredOpenStackValidator(validation.RequiredPlatformValidator):
         :param admin: requires admin credential
         :param users: requires user credentials
         """
-        super(RequiredOpenStackValidator, self).__init__(platform="openstack")
+        super().__init__(platform="openstack")
         self.admin = admin
         self.users = users
 
@@ -103,7 +103,7 @@ class ImageExistsValidator(validation.Validator):
                            to get image id value.
         :param nullable: defines image id param is required
         """
-        super(ImageExistsValidator, self).__init__()
+        super().__init__()
         self.param_name = param_name
         self.nullable = nullable
 
@@ -150,7 +150,7 @@ class ExternalNetworkExistsValidator(validation.Validator):
 
         :param param_name: name of validated network
         """
-        super(ExternalNetworkExistsValidator, self).__init__()
+        super().__init__()
         self.param_name = param_name
 
     @with_roles_ctx()
@@ -168,11 +168,10 @@ class ExternalNetworkExistsValidator(validation.Validator):
             external_networks = [net["name"] for net in networks if
                                  net.get("router:external", False)]
             if ext_network not in external_networks:
-                message = ("External (floating) network with name {1} "
-                           "not found by user {0}. "
-                           "Available networks: {2}").format(creds.username,
-                                                             ext_network,
-                                                             networks)
+                message = (
+                    f"External (floating) network with name "
+                    f"{ext_network} not found by user {creds.username}. "
+                    f"Available networks: {networks}")
                 result.append(message)
         if result:
             self.fail("\n".join(result))
@@ -187,7 +186,7 @@ class RequiredNeutronExtensionsValidator(validation.Validator):
 
         :param extensions: list of Neutron extensions
         """
-        super(RequiredNeutronExtensionsValidator, self).__init__()
+        super().__init__()
         if isinstance(extensions, (list, tuple)):
             # services argument is a list, so it is a new way of validators
             #  usage, args in this case should not be provided
@@ -221,7 +220,7 @@ class FlavorExistsValidator(validation.Validator):
         :param param_name: defines which variable should be used
                            to get flavor id value.
         """
-        super(FlavorExistsValidator, self).__init__()
+        super().__init__()
 
         self.param_name = param_name
 
@@ -286,7 +285,7 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
         :param fail_on_404_image: flag what indicate whether to validate image
                                   or not.
         """
-        super(ImageValidOnFlavorValidator, self).__init__(flavor_param)
+        super().__init__(flavor_param)
         self.image_name = image_param
         self.fail_on_404_image = fail_on_404_image
         self.validate_disk = validate_disk
@@ -382,7 +381,7 @@ class RequiredServicesValidator(validation.Validator):
         :param services: list with names of required services
         """
 
-        super(RequiredServicesValidator, self).__init__()
+        super().__init__()
         if isinstance(services, (list, tuple)):
             # services argument is a list, so it is a new way of validators
             #  usage, args in this case should not be provided
@@ -424,10 +423,10 @@ class RequiredServicesValidator(validation.Validator):
 
             if service not in available_services:
                 self.fail(
-                    ("'{0}' service is not available. Hint: If '{0}' "
-                     "service has non-default service_type, try to setup "
-                     "it via 'api_versions@openstack' context."
-                     ).format(service))
+                    f"'{service}' service is not available. Hint: If "
+                    f"'{service}' service has non-default service_type, "
+                    "try to setup it via 'api_versions@openstack' context."
+                )
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -439,7 +438,7 @@ class ValidateHeatTemplateValidator(validation.Validator):
 
         :param params: list of parameters to be validated.
         """
-        super(ValidateHeatTemplateValidator, self).__init__()
+        super().__init__()
         if isinstance(params, (list, tuple)):
             # services argument is a list, so it is a new way of validators
             #  usage, args in this case should not be provided
@@ -467,7 +466,7 @@ class ValidateHeatTemplateValidator(validation.Validator):
             template_path = os.path.expanduser(template_path)
             if not os.path.exists(template_path):
                 self.fail("No file found by the given path %s" % template_path)
-            with open(template_path, "r") as f:
+            with open(template_path) as f:
                 try:
                     template_file = f.read()
                     for user in context["users"]:
@@ -491,7 +490,7 @@ class RequiredCinderServicesValidator(validation.Validator):
 
         :param services: Cinder service name
         """
-        super(RequiredCinderServicesValidator, self).__init__()
+        super().__init__()
         self.services = services
 
     @with_roles_ctx()
@@ -500,7 +499,7 @@ class RequiredCinderServicesValidator(validation.Validator):
         clients = context["admin"]["credential"].clients()
         for service in clients.cinder().services.list():
             if (service.binary == str(self.services)
-                    and service.state == str("up")):
+                    and service.state == "up"):
                 return
 
         self.fail("%s service is not available" % self.services)
@@ -516,7 +515,7 @@ class RequiredAPIVersionsValidator(validation.Validator):
         :param component: name of required component
         :param versions: version of required component
         """
-        super(RequiredAPIVersionsValidator, self).__init__()
+        super().__init__()
         self.component = component
         self.versions = versions
 
@@ -566,7 +565,7 @@ class VolumeTypeExistsValidator(validation.Validator):
                            existence.
         :param nullable: defines volume_type param is required
         """
-        super(VolumeTypeExistsValidator, self).__init__()
+        super().__init__()
         self.param = param_name
         self.nullable = nullable
 
@@ -602,7 +601,7 @@ class WorkbookContainsWorkflowValidator(validators.FileExistsValidator):
         :param workbook_param: parameter containing the workbook definition
         :param workflow_param: parameter containing the workflow name
         """
-        super(WorkbookContainsWorkflowValidator, self).__init__(workflow_param)
+        super().__init__(workflow_param)
         self.workbook = workbook_param
         self.workflow = workflow_param
 
@@ -614,7 +613,7 @@ class WorkbookContainsWorkflowValidator(validators.FileExistsValidator):
             self._file_access_ok(wb_path, mode=os.R_OK,
                                  param_name=self.workbook)
 
-            with open(wb_path, "r") as wb_def:
+            with open(wb_path) as wb_def:
                 wb_def = yaml.safe_load(wb_def)
                 if wf_name not in wb_def["workflows"]:
                     self.fail("workflow '%s' not found in the definition '%s'"
@@ -630,7 +629,7 @@ class RequiredContextConfigValidator(validation.Validator):
         :param context_name: string efining context name
         :param context_config: dictionary of required key/value pairs
         """
-        super(RequiredContextConfigValidator, self).__init__()
+        super().__init__()
         self.context_name = context_name
         self.context_config = context_config
 

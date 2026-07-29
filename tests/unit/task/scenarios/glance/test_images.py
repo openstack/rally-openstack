@@ -16,9 +16,11 @@
 from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.glance import images
 from tests.unit import fakes
 from tests.unit import test
+
 
 BASE = "rally_openstack.task.scenarios.glance.images"
 GLANCE_V2_PATH = ("rally_openstack.common.services.image.glance_v2."
@@ -28,7 +30,7 @@ GLANCE_V2_PATH = ("rally_openstack.common.services.image.glance_v2."
 class GlanceBasicTestCase(test.ScenarioTestCase):
 
     def get_test_context(self):
-        context = super(GlanceBasicTestCase, self).get_test_context()
+        context = super().get_test_context()
         context.update({
             "admin": {
                 "id": "fake_user_id",
@@ -44,7 +46,7 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         return context
 
     def setUp(self):
-        super(GlanceBasicTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.image.image.Image")
         self.addCleanup(patch.stop)

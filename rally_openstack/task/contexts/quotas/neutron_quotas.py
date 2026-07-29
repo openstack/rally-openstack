@@ -13,7 +13,7 @@
 #    under the License.
 
 
-class NeutronQuotas(object):
+class NeutronQuotas:
     """Management of Neutron quotas."""
 
     QUOTAS_SCHEMA = {

@@ -21,7 +21,7 @@ class BarbicanBase(scenario.OpenStackScenario):
     """Base class for Barbican scenarios with basic atomic actions."""
 
     def __init__(self, context=None, admin_context=None, clients=None):
-        super(BarbicanBase, self).__init__(context, admin_context, clients)
+        super().__init__(context, admin_context, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_barbican = barbican.BarbicanService(
                 self._admin_clients, name_generator=self.generate_random_name,

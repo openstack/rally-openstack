@@ -21,7 +21,7 @@ class OctaviaBase(scenario.OpenStackScenario):
     """Base class for Octavia scenarios with basic atomic actions."""
 
     def __init__(self, context=None, admin_clients=None, clients=None):
-        super(OctaviaBase, self).__init__(context, admin_clients, clients)
+        super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_octavia = octavia.Octavia(
                 self._admin_clients, name_generator=self.generate_random_name,

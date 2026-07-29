@@ -57,7 +57,7 @@ class GlanceMixin(atomic.ActionTimerMixin):
                                                   do_checksum=do_checksum)
 
 
-class UnifiedGlanceMixin(object):
+class UnifiedGlanceMixin:
 
     @staticmethod
     def _unify_image(image):

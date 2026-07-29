@@ -19,8 +19,8 @@ from rally.common import logging
 from rally.common import validation
 
 from rally_openstack.common.services.network import neutron
-from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
+from rally_openstack.task.cleanup import manager as resource_manager
 
 
 LOG = logging.getLogger(__name__)
@@ -136,9 +136,9 @@ class AllowSSH(context.OpenStackContext):
                 description="Allow ssh access to VMs created by Rally")
             secgroups_per_tenant[tenant_id] = secgroup
 
-            existing_rules = set(
+            existing_rules = {
                 _rule_to_key(rule)
-                for rule in secgroup.get("security_group_rules", []))
+                for rule in secgroup.get("security_group_rules", [])}
             for new_rule in _RULES_TO_ADD:
                 if _rule_to_key(new_rule) not in existing_rules:
                     secgroup.setdefault("security_group_rules", [])

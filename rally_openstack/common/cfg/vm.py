@@ -14,6 +14,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("vm_ping_poll_interval",
                  default=1.0,

@@ -24,11 +24,12 @@ from rally_openstack.task.contexts.manila import manila_shares
 from rally_openstack.task.scenarios.manila import utils as manila_utils
 from tests.unit import test
 
+
 MANILA_UTILS_PATH = (
     "rally_openstack.task.scenarios.manila.utils.ManilaScenario.")
 
 
-class Fake(object):
+class Fake:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -53,7 +54,7 @@ class SharesTestCase(test.TestCase):
         for t_id in range(self.TENANTS_AMOUNT):
             tenants[str(t_id)] = {"name": str(t_id)}
         users = []
-        for t_id in sorted(list(tenants.keys())):
+        for t_id in sorted(tenants.keys()):
             for i in range(self.USERS_PER_TENANT):
                 users.append({
                     "id": i, "tenant_id": t_id,

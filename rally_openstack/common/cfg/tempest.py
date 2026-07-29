@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.StrOpt("img_url",
                default="http://download.cirros-cloud.net/"

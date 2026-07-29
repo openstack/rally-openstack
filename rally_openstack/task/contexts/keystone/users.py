@@ -20,12 +20,12 @@ import copy
 import typing as t
 import uuid
 
+from rally import exceptions
 from rally.common import broker
 from rally.common import cfg
 from rally.common import logging
 from rally.common import utils
 from rally.common import validation
-from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential
@@ -111,7 +111,7 @@ class UserGenerator(context.OpenStackContext):
     }
 
     def __init__(self, context):
-        super(UserGenerator, self).__init__(context)
+        super().__init__(context)
 
         creds = self.env["platforms"]["openstack"]
         if creds.get("admin"):

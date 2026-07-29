@@ -24,6 +24,7 @@ from watcherclient.common.apiclient import exceptions as watcher_exceptions
 from rally_openstack.task.cleanup import resources
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.cleanup.resources"
 GLANCE_V2_PATH = ("rally_openstack.common.services.image.glance_v2."
                   "GlanceV2Service")
@@ -369,7 +370,7 @@ class NeutronTrunkTestcase(test.TestCase):
 
     def test_list_with_not_found(self):
 
-        class NotFound(Exception):
+        class NotFound(Exception):  # noqa: N818
             status_code = 404
 
         user = mock.MagicMock()
@@ -494,7 +495,7 @@ class NeutronPortTestCase(test.TestCase):
                         r for r in routers
                         if r["id"] == port["device_id"]][0]["name"]
 
-        class FakeNeutronClient(object):
+        class FakeNeutronClient:
 
             list_ports = mock.Mock()
             list_routers = mock.Mock()
@@ -538,7 +539,7 @@ class NeutronSecurityGroupTestCase(test.TestCase):
 
     def test_list_with_not_found(self):
 
-        class NotFound(Exception):
+        class NotFound(Exception):  # noqa: N818
             status_code = 404
 
         neut = resources.NeutronSecurityGroup()
@@ -1000,8 +1001,8 @@ class WatcherActionPlanTestCase(test.TestCase):
 
 class CinderImageVolumeCacheTestCase(test.TestCase):
 
-    class Resource(object):
-        def __init__(self, id=None, name=None):
+    class Resource:
+        def __init__(self, id=None, name=None):  # noqa: A002
             self.id = id
             self.name = name
 

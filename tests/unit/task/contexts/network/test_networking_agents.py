@@ -17,13 +17,14 @@ from unittest import mock
 from rally_openstack.task.contexts.network import networking_agents
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.network"
 
 
 class NetworkingAgentsTestCase(test.TestCase):
 
     def setUp(self):
-        super(NetworkingAgentsTestCase, self).setUp()
+        super().setUp()
 
         self.config = {}
         self.context = test.get_test_context()

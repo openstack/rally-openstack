@@ -15,14 +15,14 @@
 
 import pkgutil
 
+from rally import exceptions
 from rally.common import utils as rutils
 from rally.common import validation
-from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
+from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task.scenarios.heat import utils as heat_utils
 
 

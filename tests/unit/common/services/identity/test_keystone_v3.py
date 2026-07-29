@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
 import uuid
+from unittest import mock
 
 import ddt
 
@@ -30,7 +30,7 @@ PATH = "rally_openstack.common.services.identity.keystone_v3"
 @ddt.ddt
 class KeystoneV3ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(KeystoneV3ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.kc = self.clients.keystone.return_value
         self.name_generator = mock.MagicMock()
@@ -181,7 +181,7 @@ class KeystoneV3ServiceTestCase(test.TestCase):
         project_id = "project"
         domain_name = "domain"
 
-        class Role(object):
+        class Role:
             def __init__(self, name):
                 self.name = name
                 self.id = str(uuid.uuid4())
@@ -346,7 +346,7 @@ class KeystoneV3ServiceTestCase(test.TestCase):
 @ddt.ddt
 class UnifiedKeystoneV3ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedKeystoneV3ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.service = keystone_v3.UnifiedKeystoneV3Service(self.clients)
         self.service._impl = mock.MagicMock()
@@ -357,7 +357,7 @@ class UnifiedKeystoneV3ServiceTestCase(test.TestCase):
                               keystone_v3.UnifiedKeystoneV3Service)
 
     def test__unify_project(self):
-        class KeystoneV3Project(object):
+        class KeystoneV3Project:
             def __init__(self):
                 self.id = str(uuid.uuid4())
                 self.name = str(uuid.uuid4())
@@ -372,7 +372,7 @@ class UnifiedKeystoneV3ServiceTestCase(test.TestCase):
         self.assertEqual(project.domain_id, unified_project.domain_id)
 
     def test__unify_user(self):
-        class KeystoneV3User(object):
+        class KeystoneV3User:
             def __init__(self, project_id=None):
                 self.id = str(uuid.uuid4())
                 self.name = str(uuid.uuid4())

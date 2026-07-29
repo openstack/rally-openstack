@@ -15,8 +15,8 @@
 
 import copy
 
-from rally.common import validation
 from rally import exceptions
+from rally.common import validation
 
 from rally_openstack.task import context
 from rally_openstack.task.contexts.vm import custom_image

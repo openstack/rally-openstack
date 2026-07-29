@@ -27,7 +27,7 @@ class CheckCleanupResourcesValidator(validation.Validator):
 
         :param admin_required: describes access level to resource
         """
-        super(CheckCleanupResourcesValidator, self).__init__()
+        super().__init__()
         self.admin_required = admin_required
 
     def validate(self, context, config, plugin_cls, plugin_cfg):
@@ -40,7 +40,7 @@ class CheckCleanupResourcesValidator(validation.Validator):
                 "Couldn't find cleanup resource managers: %s" % missing)
 
 
-class CleanupMixin(object):
+class CleanupMixin:
 
     CONFIG_SCHEMA = {
         "type": "array",

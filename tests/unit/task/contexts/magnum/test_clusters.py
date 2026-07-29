@@ -19,6 +19,7 @@ from rally_openstack.task.contexts.magnum import clusters
 from rally_openstack.task.scenarios.magnum import utils as magnum_utils
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.magnum"
 SCN = "rally_openstack.task.scenarios"
 

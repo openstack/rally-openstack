@@ -15,14 +15,15 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("octavia_create_loadbalancer_timeout",
-                 default=float(500.0),
+                 default=500.0,
                  help="Octavia create loadbalancer timeout"),
     cfg.FloatOpt("octavia_delete_loadbalancer_timeout",
-                 default=float(50.0),
+                 default=50.0,
                  help="Octavia delete loadbalancer timeout"),
     cfg.FloatOpt("octavia_create_loadbalancer_poll_interval",
-                 default=float(2.0),
+                 default=2.0,
                  help="Octavia create loadbalancer poll interval")
 ]}

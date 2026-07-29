@@ -19,6 +19,7 @@ import traceback
 from rally.common import cfg
 from rally.common import logging
 from rally.env import platform
+
 from rally_openstack.common import osclients
 
 

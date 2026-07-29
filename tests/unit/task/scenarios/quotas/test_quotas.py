@@ -22,7 +22,7 @@ from tests.unit import test
 class QuotasTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(QuotasTestCase, self).setUp()
+        super().setUp()
         self.context.update({
             "user": {
                 "tenant_id": "fake",

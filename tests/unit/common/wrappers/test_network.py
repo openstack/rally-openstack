@@ -35,7 +35,7 @@ class Owner(utils.RandomNameGeneratorMixin):
 @ddt.ddt
 class NeutronWrapperTestCase(test.TestCase):
     def setUp(self):
-        super(NeutronWrapperTestCase, self).setUp()
+        super().setUp()
         self.owner = Owner()
         self.owner.generate_random_name = mock.Mock()
         clients = mock.MagicMock()
@@ -44,7 +44,7 @@ class NeutronWrapperTestCase(test.TestCase):
             clients, self.owner, config={})
         self._nc = self.wrapper.neutron.client
 
-    def test_SUBNET_IP_VERSION(self):
+    def test_SUBNET_IP_VERSION(self):  # noqa: N802
         self.assertEqual(4, network.NeutronWrapper.SUBNET_IP_VERSION)
 
     @mock.patch(

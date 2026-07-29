@@ -28,7 +28,7 @@ class ExitError(Exception):
 
 class PyTestLauncherTestCase(test.TestCase):
     def setUp(self):
-        super(PyTestLauncherTestCase, self).setUp()
+        super().setUp()
 
         sp_patcher = mock.patch("%s.subprocess" % PATH)
         self.sp = sp_patcher.start()

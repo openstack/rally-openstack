@@ -28,7 +28,7 @@ BASE = "rally_openstack.task.cleanup.manager"
 class SeekAndDestroyTestCase(test.TestCase):
 
     def setUp(self):
-        super(SeekAndDestroyTestCase, self).setUp()
+        super().setUp()
         # clear out the client cache
         manager.SeekAndDestroy.cache = {}
 
@@ -368,7 +368,7 @@ class ResourceManagerTestCase(test.TestCase):
         class A(utils.RandomNameGeneratorMixin):
             pass
 
-        class B(object):
+        class B:
             pass
 
         mock_itersubclasses.return_value = [A, B]

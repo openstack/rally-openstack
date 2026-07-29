@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import random
 
-from rally.common import validation
 from rally import exceptions
+from rally.common import validation
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
@@ -271,8 +271,8 @@ class OpenStackAPIVersions(context.OpenStackContext):
                         msg="Setting 'service_name' is admin only operation.")
                 if not services_from_admin:
                     services_from_admin = dict(
-                        [(s.name, s.type)
-                         for s in admin_clients.keystone().services.list()])
+                        (s.name, s.type)
+                        for s in admin_clients.keystone().services.list())
                 if conf["service_name"] not in services_from_admin:
                     raise exceptions.ValidationError(
                         "There is no '%s' service in your environment"

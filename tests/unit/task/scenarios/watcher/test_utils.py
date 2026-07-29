@@ -16,8 +16,10 @@
 from unittest import mock
 
 from rally.common import cfg
+
 from rally_openstack.task.scenarios.watcher import utils
 from tests.unit import test
+
 
 CONF = cfg.CONF
 

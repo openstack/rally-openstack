@@ -22,7 +22,7 @@ from tests.unit import test
 class OpenStackCredentialTestCase(test.TestCase):
 
     def setUp(self):
-        super(OpenStackCredentialTestCase, self).setUp()
+        super().setUp()
         self.credential = credential.OpenStackCredential(
             "foo_url", "foo_user", "foo_password",
             tenant_name="foo_tenant")

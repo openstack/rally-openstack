@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.FloatOpt("magnum_cluster_create_prepoll_delay",
                  default=5.0,

@@ -19,6 +19,7 @@ from rally_openstack.common import consts
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.gnocchi import utils as gnocchiutils
 
+
 """Scenarios for Gnocchi archive policy."""
 
 

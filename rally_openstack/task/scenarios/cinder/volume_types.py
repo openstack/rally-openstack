@@ -122,8 +122,8 @@ class CreateAndListVolumeTypes(cinder_utils.CinderBasic):
 
         pool_list = self.admin_cinder.list_types()
         msg = ("type not included into list of available types "
-               "created type: {}\n"
-               "pool of types: {}\n").format(volume_type, pool_list)
+               f"created type: {volume_type}\n"
+               f"pool of types: {pool_list}\n")
         self.assertIn(volume_type.id,
                       [vtype.id for vtype in pool_list],
                       err_msg=msg)

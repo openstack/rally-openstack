@@ -20,7 +20,7 @@ from tests.unit import test
 
 class NeutronQuotasTestCase(test.TestCase):
     def setUp(self):
-        super(NeutronQuotasTestCase, self).setUp()
+        super().setUp()
         self.quotas = {
             "network": 20,
             "subnet": 20,

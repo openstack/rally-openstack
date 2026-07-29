@@ -16,8 +16,8 @@
 from rally.common import validation
 
 from rally_openstack.common import osclients
-from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task import context
+from rally_openstack.task.cleanup import manager as resource_manager
 
 
 @validation.add("required_platform", platform="openstack", users=True)

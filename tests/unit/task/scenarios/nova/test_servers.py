@@ -18,6 +18,7 @@ from unittest import mock
 import ddt
 
 from rally import exceptions as rally_exceptions
+
 from rally_openstack.task.scenarios.nova import servers
 from tests.unit import fakes
 from tests.unit import test

@@ -41,7 +41,7 @@ class TenantIteratorTestCase(test.TestCase):
         expected_result = [
             ({"id": "0", "tenant_id": str(i)}, str(i)) for i in range(
                 tenants_count)]
-        real_result = [
-            i for i in DummyContext({"users": users})._iterate_per_tenants()]
+        real_result = list(
+            DummyContext({"users": users})._iterate_per_tenants())
 
         self.assertEqual(expected_result, real_result)

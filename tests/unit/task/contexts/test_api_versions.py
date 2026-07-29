@@ -14,8 +14,8 @@ from unittest import mock
 
 import ddt
 
-from rally.common import utils
 from rally import exceptions
+from rally.common import utils
 from rally.task import context
 
 from rally_openstack.task.contexts import api_versions
@@ -26,7 +26,7 @@ from tests.unit import test
 class OpenStackServicesTestCase(test.TestCase):
 
     def setUp(self):
-        super(OpenStackServicesTestCase, self).setUp()
+        super().setUp()
         self.mock_clients = mock.patch(
             "rally_openstack.common.osclients.Clients").start()
         osclient_kc = self.mock_clients.return_value.keystone

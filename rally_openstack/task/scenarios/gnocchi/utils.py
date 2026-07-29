@@ -20,7 +20,7 @@ class GnocchiBase(scenario.OpenStackScenario):
     """Base class for Gnocchi scenarios with basic atomic actions."""
 
     def __init__(self, context=None, admin_clients=None, clients=None):
-        super(GnocchiBase, self).__init__(context, admin_clients, clients)
+        super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_gnocchi = metric.GnocchiService(
                 self._admin_clients, name_generator=self.generate_random_name,

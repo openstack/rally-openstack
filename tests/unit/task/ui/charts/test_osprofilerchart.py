@@ -51,7 +51,7 @@ class OSProfilerChartTestCase(test.TestCase):
         with mock.patch.object(osp_chart, "open", mock_open):
             r = osp_chart.OSProfilerChart._generate_osprofiler_report(data)
         self.assertEqual(
-            "local=false | data={\n    \"ts\": \"2018-07-03T02:00:00\"\n}",
+            'local=false | data={\n    "ts": "2018-07-03T02:00:00"\n}',
             r
         )
         self.assertEqual(1, mock_open.call_count)

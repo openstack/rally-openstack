@@ -17,6 +17,7 @@ from unittest import mock
 from rally_openstack.task.scenarios.zaqar import basic
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.scenarios.zaqar.basic"
 
 

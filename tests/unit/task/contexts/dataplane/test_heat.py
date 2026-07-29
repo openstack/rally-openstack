@@ -19,6 +19,7 @@ from unittest import mock
 from rally_openstack.task.contexts.dataplane import heat as heat_dataplane
 from tests.unit import test
 
+
 MOD = "rally_openstack.task.contexts.dataplane.heat."
 
 

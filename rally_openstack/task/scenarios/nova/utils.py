@@ -14,9 +14,9 @@
 #    under the License.
 
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 from rally.task import atomic
 from rally.task import utils
 
@@ -544,7 +544,7 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
                                                          **kwargs)
 
     @atomic.action_timer("nova.get_server_group")
-    def _get_server_group(self, id):
+    def _get_server_group(self, id):  # noqa: A002
         """Get a specific server group.
 
         :param id: Unique ID of the server group to get

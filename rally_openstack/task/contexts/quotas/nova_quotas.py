@@ -13,7 +13,7 @@
 #    under the License.
 
 
-class NovaQuotas(object):
+class NovaQuotas:
     """Management of Nova quotas."""
 
     QUOTAS_SCHEMA = {
@@ -91,5 +91,5 @@ class NovaQuotas(object):
 
     def get(self, tenant_id):
         response = self.clients.nova().quotas.get(tenant_id)
-        return dict([(k, getattr(response, k))
-                     for k in self.QUOTAS_SCHEMA["properties"]])
+        return dict((k, getattr(response, k))
+                    for k in self.QUOTAS_SCHEMA["properties"])

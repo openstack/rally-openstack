@@ -12,15 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
-
 import os
+from unittest import mock
 
 from kubernetes import client as kubernetes_client
 from kubernetes.client.rest import ApiException
+
 from rally import exceptions
+
 from rally_openstack.task.scenarios.magnum import utils
 from tests.unit import test
+
 
 MAGNUM_UTILS = "rally_openstack.task.scenarios.magnum.utils"
 
@@ -29,7 +31,7 @@ CONF = utils.CONF
 
 class MagnumScenarioTestCase(test.ScenarioTestCase):
     def setUp(self):
-        super(MagnumScenarioTestCase, self).setUp()
+        super().setUp()
         self.cluster_template = mock.Mock()
         self.cluster = mock.Mock()
         self.pod = mock.Mock()
@@ -162,10 +164,10 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         cluster = self.scenario._get_cluster(cluster_uuid)
         self.cluster_template.tls_disabled = False
         client.cluster_templates.get.return_value = self.cluster_template
-        dir = self.context["ca_certs_directory"]
-        key_file = os.path.join(dir, cluster_uuid.__add__(".key"))
-        cert_file = os.path.join(dir, cluster_uuid.__add__(".crt"))
-        ca_certs = os.path.join(dir, cluster_uuid.__add__("_ca.crt"))
+        directory = self.context["ca_certs_directory"]
+        key_file = os.path.join(directory, cluster_uuid.__add__(".key"))
+        cert_file = os.path.join(directory, cluster_uuid.__add__(".crt"))
+        ca_certs = os.path.join(directory, cluster_uuid.__add__("_ca.crt"))
         config = mock_configuration_object.return_value
         config.host = cluster.api_address
         config.ssl_ca_cert = ca_certs

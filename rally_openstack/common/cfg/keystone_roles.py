@@ -15,6 +15,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.IntOpt("roles_context_resource_management_workers",
                default=30,

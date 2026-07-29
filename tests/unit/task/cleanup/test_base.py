@@ -27,7 +27,7 @@ class ResourceDecoratorTestCase(test.TestCase):
     def test_resource(self):
 
         @base.resource("service", "res")
-        class Fake(object):
+        class Fake:
             pass
 
         self.assertEqual("service", Fake._service)
@@ -91,10 +91,10 @@ class ResourceManagerTestCase(test.TestCase):
     @mock.patch("%s.ResourceManager._manager" % BASE)
     def test_is_deleted_exceptions(self, mock_resource_manager__manager):
 
-        class Fake500Exc(Exception):
+        class Fake500Exc(Exception):  # noqa: N818
             code = 500
 
-        class Fake404Exc(Exception):
+        class Fake404Exc(Exception):  # noqa: N818
             code = 404
 
         mock_resource_manager__manager.side_effect = [

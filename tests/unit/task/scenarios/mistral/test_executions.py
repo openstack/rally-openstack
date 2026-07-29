@@ -18,6 +18,7 @@ from unittest import mock
 from rally_openstack.task.scenarios.mistral import executions
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.scenarios.mistral.executions"
 MISTRAL_WBS_BASE = "rally_openstack.task.scenarios.mistral.workbooks"
 

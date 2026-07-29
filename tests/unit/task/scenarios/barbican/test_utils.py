@@ -22,8 +22,8 @@ from tests.unit import test
 class BarbicanBaseTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(BarbicanBaseTestCase, self).setUp()
-        self.context = super(BarbicanBaseTestCase, self).get_test_context()
+        super().setUp()
+        self.context = super().get_test_context()
         self.context.update({
             "admin": {
                 "id": "fake_user_id",

@@ -19,8 +19,8 @@ import re
 
 import requests
 
-from rally.common import logging
 from rally import exceptions
+from rally.common import logging
 from rally.task import utils as task_utils
 from rally.verification import context
 from rally.verification import utils
@@ -42,7 +42,7 @@ class TempestContext(context.VerifierContext):
     RESOURCE_NAME_FORMAT = "rally_verify_XXXXXXXX_XXXXXXXX"
 
     def __init__(self, ctx):
-        super(TempestContext, self).__init__(ctx)
+        super().__init__(ctx)
 
         openstack_platform = self.verifier.env.data["platforms"]["openstack"]
         admin_creds = credential.OpenStackCredential(
@@ -154,8 +154,8 @@ class TempestContext(context.VerifierContext):
                  conf.CONF.openstack.swift_reseller_admin_role,
                  conf.CONF.openstack.heat_stack_owner_role,
                  conf.CONF.openstack.heat_stack_user_role]
-        existing_roles = set(role.name.lower()
-                             for role in keystoneclient.roles.list())
+        existing_roles = {role.name.lower()
+                          for role in keystoneclient.roles.list()}
 
         for role in roles:
             if role.lower() not in existing_roles:
@@ -171,16 +171,16 @@ class TempestContext(context.VerifierContext):
             if helper_method:
                 res = helper_method(*args, **kwargs)
                 if res:
-                    value = res["network"]["name"] if ("network" in
-                                                       option) else res.id
-            LOG.debug("Setting value '%s' to option '%s'." % (value, option))
+                    if "network" in option:
+                        value = res["network"]["name"]
+                    else:
+                        value = res.id
+            LOG.debug(f"Setting value '{value}' to option '{option}'.")
             self.conf.set(section, option, value)
-            LOG.debug("Option '{opt}' is configured. "
-                      "{opt} = {value}".format(opt=option, value=value))
+            LOG.debug(f"Option '{option}' is configured. {option} = {value}")
         else:
-            LOG.debug("Option '{opt}' is already configured "
-                      "in Tempest config file. {opt} = {opt_val}"
-                      .format(opt=option, opt_val=option_value))
+            LOG.debug(f"Option '{option}' is already configured "
+                      f"in Tempest config file. {option} = {option_value}")
 
     def _discover_image(self):
         LOG.debug("Trying to discover a public image with name matching "
@@ -281,9 +281,10 @@ class TempestContext(context.VerifierContext):
         for flavor in novaclient.flavors.list():
             if (flavor.ram == flv_ram
                     and flavor.vcpus == 1 and flavor.disk >= flv_disk):
-                LOG.debug("The following flavor discovered: '{0}'. "
-                          "Using flavor '{0}' (ID = {1}) for the tests."
-                          .format(flavor.name, flavor.id))
+                LOG.debug(
+                    f"The following flavor discovered: '{flavor.name}'. "
+                    f"Using flavor '{flavor.name}' (ID = {flavor.id}) "
+                    f"for the tests.")
                 return flavor
 
         LOG.debug("There is no flavor with the mentioned properties.")

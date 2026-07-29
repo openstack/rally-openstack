@@ -17,11 +17,12 @@ from unittest import mock
 
 import fixtures
 
-from rally.common import cfg
 from rally import exceptions
+from rally.common import cfg
 
 from rally_openstack.common.services.loadbalancer import octavia
 from tests.unit import test
+
 
 BASE_PATH = "rally_openstack.common.services.loadbalancer"
 CONF = cfg.CONF
@@ -29,7 +30,7 @@ CONF = cfg.CONF
 
 class LoadBalancerServiceTestCase(test.TestCase):
     def setUp(self):
-        super(LoadBalancerServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.name_generator = mock.MagicMock()
         self.service = octavia.Octavia(self.clients,

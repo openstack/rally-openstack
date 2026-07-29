@@ -21,13 +21,14 @@ from novaclient import exceptions as nova_exceptions
 from rally_openstack.task.contexts.nova import flavors
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.nova"
 
 
 class FlavorsGeneratorTestCase(test.TestCase):
 
     def setUp(self):
-        super(FlavorsGeneratorTestCase, self).setUp()
+        super().setUp()
         self.context = {
             "config": {
                 "flavors": [{

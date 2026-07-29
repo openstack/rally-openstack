@@ -18,6 +18,7 @@ from unittest import mock
 from rally_openstack.task.scenarios.mistral import workbooks
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.scenarios.mistral.workbooks"
 
 
@@ -30,7 +31,7 @@ class MistralWorkbooksTestCase(test.ScenarioTestCase):
 
     @mock.patch("%s.CreateWorkbook._create_workbook" % BASE)
     def test_create_workbook(self, mock_create_workbook__create_workbook):
-        definition = "---\nversion: \"2.0\"\nname: wb"
+        definition = '---\nversion: "2.0"\nname: wb'
         fake_wb = mock.MagicMock()
         fake_wb.name = "wb"
         mock_create_workbook__create_workbook.return_value = fake_wb
@@ -43,7 +44,7 @@ class MistralWorkbooksTestCase(test.ScenarioTestCase):
     def test_create_delete_workbook(self,
                                     mock_create_workbook__create_workbook,
                                     mock_create_workbook__delete_workbook):
-        definition = "---\nversion: \"2.0\"\nname: wb"
+        definition = '---\nversion: "2.0"\nname: wb'
         fake_wb = mock.MagicMock()
         fake_wb.name = "wb"
         mock_create_workbook__create_workbook.return_value = fake_wb

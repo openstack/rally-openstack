@@ -19,6 +19,7 @@ from rally.common import utils as commonutils
 from rally.task import atomic
 from rally.task import service
 
+
 LOG = logging.getLogger(__name__)
 
 
@@ -29,9 +30,9 @@ class GrafanaService(service.Service):
 
         :param spec: param contains monitoring system info: IPs, ports, creds
         """
-        super(GrafanaService, self).__init__(None,
-                                             name_generator=name_generator,
-                                             atomic_inst=atomic_inst)
+        super().__init__(None,
+                         name_generator=name_generator,
+                         atomic_inst=atomic_inst)
         self._spec = spec
 
     @atomic.action_timer("grafana.check_metric")

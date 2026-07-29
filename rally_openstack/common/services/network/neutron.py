@@ -14,9 +14,9 @@
 
 import itertools
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 from rally.task import atomic
 from rally.task import service
 
@@ -56,7 +56,7 @@ def _create_network_arg_adapter():
     return _args_adapter(_NETWORK_ARGS_MAP)
 
 
-class _NoneObj(object):
+class _NoneObj:
     def __len__(self):
         return 0
 
@@ -74,7 +74,7 @@ class NeutronService(service.Service):
     """A helper class for Neutron API"""
 
     def __init__(self, *args, **kwargs):
-        super(NeutronService, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._cached_supported_extensions = None
         self._client = None
 

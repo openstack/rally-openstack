@@ -21,7 +21,7 @@ from tests.unit import test
 class CinderBackupTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(CinderBackupTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.storage.block.BlockStorage")
         self.addCleanup(patch.stop)

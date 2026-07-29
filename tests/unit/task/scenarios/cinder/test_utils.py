@@ -41,7 +41,7 @@ class CinderBasicTestCase(test.ScenarioTestCase):
         return context
 
     def setUp(self):
-        super(CinderBasicTestCase, self).setUp()
+        super().setUp()
 
     @mock.patch("random.choice")
     def test_get_random_server(self, mock_choice):

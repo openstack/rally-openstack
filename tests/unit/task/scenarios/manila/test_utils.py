@@ -18,9 +18,11 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
+
 from rally_openstack.task.contexts.manila import consts
 from rally_openstack.task.scenarios.manila import utils
 from tests.unit import test
+
 
 BM_UTILS = "rally.task.utils."
 
@@ -29,7 +31,7 @@ BM_UTILS = "rally.task.utils."
 class ManilaScenarioTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(ManilaScenarioTestCase, self).setUp()
+        super().setUp()
         self.scenario = utils.ManilaScenario(self.context)
 
     def test__create_share(self):
@@ -437,11 +439,11 @@ class ManilaScenarioTestCase(test.ScenarioTestCase):
         scenario.clients.return_value.shares.set_metadata.assert_has_calls([
             mock.call(
                 share["id"],
-                dict([(j, j + 1) for j in data[
-                    i * set_size * 2: (i + 1) * set_size * 2: 2]])
+                dict((j, j + 1) for j in data[
+                    i * set_size * 2: (i + 1) * set_size * 2: 2])
             ) for i in range(sets)
         ])
-        self.assertEqual([i for i in range(0, gen_name_calls, 2)], keys)
+        self.assertEqual(list(range(0, gen_name_calls, 2)), keys)
 
     @ddt.data(None, [], {"fake_set"}, {"fake_key": "fake_value"})
     def test__delete_metadata_wrong_params(self, keys):
@@ -452,7 +454,7 @@ class ManilaScenarioTestCase(test.ScenarioTestCase):
         )
 
     @ddt.data(
-        {"keys": [i for i in range(30)]},
+        {"keys": list(range(30))},
         {"keys": list(range(7)), "delete_size": 2},
         {"keys": list(range(7)), "delete_size": 3},
         {"keys": list(range(7)), "delete_size": 4},

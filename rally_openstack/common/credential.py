@@ -15,6 +15,7 @@
 
 from rally.common import logging
 
+
 LOG = logging.getLogger(__file__)
 
 
@@ -39,7 +40,7 @@ class OpenStackCredential(dict):
         if https_cert and https_key:
             https_cert = (https_cert, https_key)
 
-        super(OpenStackCredential, self).__init__([
+        super().__init__([
             ("auth_url", auth_url),
             ("username", username),
             ("password", password),

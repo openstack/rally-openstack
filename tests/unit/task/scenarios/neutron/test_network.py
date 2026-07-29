@@ -20,13 +20,14 @@ import ddt
 from rally_openstack.task.scenarios.neutron import network
 from tests.unit import test
 
+
 BASE = "rally_openstack.task.scenarios.neutron.network"
 
 
 @ddt.ddt
 class NeutronNetworksTestCase(test.TestCase):
     def setUp(self):
-        super(NeutronNetworksTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch("rally_openstack.common.osclients.Clients")
         self.clients = patch.start().return_value
         self.clients.credential.api_info = {}

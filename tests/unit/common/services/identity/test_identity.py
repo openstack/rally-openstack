@@ -23,7 +23,7 @@ from tests.unit import test
 @ddt.ddt
 class IdentityTestCase(test.TestCase):
     def setUp(self):
-        super(IdentityTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
 
     def get_service_with_fake_impl(self):

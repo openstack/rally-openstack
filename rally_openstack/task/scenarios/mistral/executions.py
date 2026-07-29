@@ -14,9 +14,10 @@
 
 import json
 
+import yaml
+
 from rally.task import types
 from rally.task import validation
-import yaml
 
 from rally_openstack.common import consts
 from rally_openstack.task import scenario

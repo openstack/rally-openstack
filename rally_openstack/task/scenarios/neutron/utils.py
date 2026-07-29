@@ -15,9 +15,9 @@
 
 import random
 
+from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally import exceptions
 from rally.task import atomic
 from rally.task import utils
 
@@ -35,7 +35,7 @@ class NeutronBaseScenario(scenario.OpenStackScenario):
     """Base class for Neutron scenarios with basic atomic actions."""
 
     def __init__(self, *args, **kwargs):
-        super(NeutronBaseScenario, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if hasattr(self, "_clients"):
             self.neutron = neutron.NeutronService(
                 clients=self._clients,

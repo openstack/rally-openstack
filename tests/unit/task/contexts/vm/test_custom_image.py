@@ -33,7 +33,7 @@ class FakeImageGenerator(custom_image.BaseCustomImageGenerator):
 class BaseCustomImageContextVMTestCase(test.TestCase):
 
     def setUp(self):
-        super(BaseCustomImageContextVMTestCase, self).setUp()
+        super().setUp()
 
         self.context = test.get_test_context()
         self.context.update({

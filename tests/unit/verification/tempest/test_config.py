@@ -18,6 +18,7 @@ from unittest import mock
 import ddt
 
 from rally.common import cfg
+
 from rally_openstack.common import osclients
 from rally_openstack.verification.tempest import config
 from tests.unit import fakes
@@ -46,7 +47,7 @@ PATH = "rally_openstack.verification.tempest.config"
 class TempestConfigfileManagerTestCase(test.TestCase):
 
     def setUp(self):
-        super(TempestConfigfileManagerTestCase, self).setUp()
+        super().setUp()
         env = fakes.FakeEnvironment(
             env_uuid="fake_env",
             data={

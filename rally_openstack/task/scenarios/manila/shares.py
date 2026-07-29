@@ -13,15 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally.common import logging
 from rally import exceptions
+from rally.common import logging
 from rally.task import types
 from rally.task import utils as rally_utils
 from rally.task import validation
 
 from rally_openstack.common import consts
-from rally_openstack.task.contexts.manila import consts as manila_consts
 from rally_openstack.task import scenario
+from rally_openstack.task.contexts.manila import consts as manila_consts
 from rally_openstack.task.scenarios.manila import utils
 from rally_openstack.task.scenarios.vm import utils as vm_utils
 

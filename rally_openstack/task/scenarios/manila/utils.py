@@ -15,13 +15,13 @@
 
 import random
 
-from rally.common import cfg
 from rally import exceptions
+from rally.common import cfg
 from rally.task import atomic
 from rally.task import utils
 
-from rally_openstack.task.contexts.manila import consts
 from rally_openstack.task import scenario
+from rally_openstack.task.contexts.manila import consts
 
 
 CONF = cfg.CONF

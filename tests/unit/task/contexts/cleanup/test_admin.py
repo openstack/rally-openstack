@@ -20,8 +20,8 @@ import ddt
 from rally.common import utils
 from rally.task import context
 
-from rally_openstack.task.contexts.cleanup import admin
 from rally_openstack.task import scenario
+from rally_openstack.task.contexts.cleanup import admin
 from tests.unit import test
 
 

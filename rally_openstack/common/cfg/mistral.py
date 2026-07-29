@@ -14,6 +14,7 @@
 
 from rally.common import cfg
 
+
 OPTS = {"openstack": [
     cfg.IntOpt(
         "mistral_execution_timeout",

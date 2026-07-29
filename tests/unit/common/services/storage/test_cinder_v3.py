@@ -22,6 +22,7 @@ from rally_openstack.common.services.storage import cinder_v3
 from tests.unit import fakes
 from tests.unit import test
 
+
 BASE_PATH = "rally_openstack.common.services.storage"
 CONF = cfg.CONF
 
@@ -29,7 +30,7 @@ CONF = cfg.CONF
 @ddt.ddt
 class CinderV3ServiceTestCase(test.ScenarioTestCase):
     def setUp(self):
-        super(CinderV3ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.cinder = self.clients.cinder.return_value
         self.name_generator = mock.MagicMock()
@@ -278,13 +279,13 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
 
 class UnifiedCinderV3ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedCinderV3ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.service = cinder_v3.UnifiedCinderV3Service(self.clients)
         self.service._impl = mock.MagicMock()
 
     def test__unify_volume(self):
-        class SomeVolume(object):
+        class SomeVolume:
             id = 1
             name = "volume"
             size = 1
@@ -304,7 +305,7 @@ class UnifiedCinderV3ServiceTestCase(test.TestCase):
         self.assertEqual("st", volume.status)
 
     def test__unify_snapshot(self):
-        class SomeSnapshot(object):
+        class SomeSnapshot:
             id = 1
             name = "snapshot"
             volume_id = "volume"

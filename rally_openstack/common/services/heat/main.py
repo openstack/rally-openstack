@@ -16,6 +16,7 @@ from rally.common import utils as common_utils
 from rally.task import atomic
 from rally.task import utils
 
+
 CONF = cfg.CONF
 
 

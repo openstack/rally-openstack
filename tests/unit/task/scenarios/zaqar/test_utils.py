@@ -18,6 +18,7 @@ from rally_openstack.task.scenarios.zaqar import utils
 from tests.unit import fakes
 from tests.unit import test
 
+
 UTILS = "rally_openstack.task.scenarios.zaqar.utils."
 
 

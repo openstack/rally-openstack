@@ -27,7 +27,7 @@ PATH = "rally_openstack.common.services.image"
 @ddt.ddt
 class GlanceV2ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(GlanceV2ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.gc = self.clients.glance.return_value
         self.name_generator = mock.MagicMock()
@@ -391,7 +391,7 @@ class GlanceV2ServiceTestCase(test.TestCase):
 @ddt.ddt
 class UnifiedGlanceV2ServiceTestCase(test.TestCase):
     def setUp(self):
-        super(UnifiedGlanceV2ServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock()
         self.service = glance_v2.UnifiedGlanceV2Service(self.clients)
         self.service._impl = mock.create_autospec(self.service._impl)

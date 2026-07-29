@@ -15,6 +15,7 @@
 from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.common import credential
 from rally_openstack.common.services.network import neutron
 from tests.unit import test
@@ -25,7 +26,7 @@ PATH = "rally_openstack.common.services.network.neutron"
 
 class NeutronServiceTestCase(test.TestCase):
     def setUp(self):
-        super(NeutronServiceTestCase, self).setUp()
+        super().setUp()
         self.clients = mock.MagicMock(
             credential=credential.OpenStackCredential(
                 auth_url="example.com",

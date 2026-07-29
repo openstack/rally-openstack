@@ -18,8 +18,8 @@ from unittest import mock
 
 from rally_openstack.task.contexts.network import routers as router_context
 from rally_openstack.task.scenarios.neutron import utils as neutron_utils
-
 from tests.unit import test
+
 
 SCN = "rally_openstack.task.scenarios"
 CTX = "rally_openstack.task.contexts.network.routers"

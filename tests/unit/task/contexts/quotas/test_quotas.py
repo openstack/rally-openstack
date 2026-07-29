@@ -17,11 +17,13 @@ import copy
 from unittest import mock
 
 import ddt
+
 from rally.common import logging
 from rally.task import context
 
 from rally_openstack.task.contexts.quotas import quotas
 from tests.unit import test
+
 
 QUOTAS_PATH = "rally_openstack.task.contexts.quotas"
 
@@ -30,7 +32,7 @@ QUOTAS_PATH = "rally_openstack.task.contexts.quotas"
 class QuotasTestCase(test.TestCase):
 
     def setUp(self):
-        super(QuotasTestCase, self).setUp()
+        super().setUp()
         self.unlimited = -1
         self.context = {
             "config": {

@@ -19,8 +19,8 @@ import uuid
 from ansible.module_utils.basic import AnsibleModule
 
 from rally import api
-from rally.env import env_mgr
 from rally import plugins
+from rally.env import env_mgr
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential

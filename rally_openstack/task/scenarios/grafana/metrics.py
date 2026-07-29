@@ -22,6 +22,7 @@ from rally_openstack.common import consts
 from rally_openstack.common.services.grafana import grafana as grafana_service
 from rally_openstack.task import scenario
 
+
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 

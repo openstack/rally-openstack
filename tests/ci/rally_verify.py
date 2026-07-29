@@ -15,8 +15,9 @@
 import argparse
 import collections
 import gzip
+import inspect
 import json
-import logging
+import logging  # noqa: TID251
 import os
 import re
 import subprocess
@@ -31,6 +32,7 @@ from rally.env import env_mgr
 from rally_openstack.common import consts
 from rally_openstack.common import credential
 
+
 LOG = logging.getLogger("verify-job")
 LOG.setLevel(logging.DEBUG)
 
@@ -39,22 +41,23 @@ LOG.setLevel(logging.DEBUG)
 _call_count = 0
 
 
-class Status(object):
+class Status:
     PASS = "success"
     ERROR = "error"
     SKIPPED = "skip"
     FAILURE = "fail"
 
 
-class Step(object):
+class Step:
     COMMAND = None
     DEPENDS_ON = None
     CALL_ARGS = {}
 
     BASE_DIR = "rally-verify"
-    HTML_TEMPLATE = ("<span class=\"%(status)s\">[%(status)s]</span>\n"
-                     "<a href=\"%(output_file)s\">%(doc)s</a>\n"
-                     "<code>$ %(cmd)s</code>")
+    HTML_TEMPLATE = inspect.cleandoc("""
+        <span class="%(status)s">[%(status)s]</span>
+        <a href="%(output_file)s">%(doc)s</a>
+        <code>$ %(cmd)s</code>""")
 
     def __init__(self, args, rapi):
         self.args = args
@@ -338,7 +341,7 @@ class RunVerification(Step):
             self._generate_path("xfail-list.json"), xfail_tests)
 
     def run(self):
-        super(RunVerification, self).run()
+        super().run()
         if "Success: 0" in self.result["output"]:
             self.result["status"] = Status.FAILURE
 
@@ -380,9 +383,9 @@ class ReportVerificationMixin(Step):
 
     COMMAND = "verify report --uuid %(uuids)s --type %(type)s --to %(out)s"
 
-    HTML_TEMPLATE = ("<span class=\"%(status)s\">[%(status)s]</span>\n"
-                     "<a href=\"%(out)s\">%(doc)s</a> "
-                     "[<a href=\"%(output_file)s\">Output from CLI</a>]\n"
+    HTML_TEMPLATE = ('<span class="%(status)s">[%(status)s]</span>\n'
+                     '<a href="%(out)s">%(doc)s</a> '
+                     '[<a href="%(output_file)s">Output from CLI</a>]\n'
                      "<code>$ %(cmd)s</code>")
 
     def setUp(self):
@@ -406,7 +409,7 @@ class HtmlVerificationReport(ReportVerificationMixin):
     DEPENDS_ON = RunVerification
 
     def setUp(self):
-        super(HtmlVerificationReport, self).setUp()
+        super().setUp()
         self.CALL_ARGS["out"] = self.CALL_ARGS["out"][:-7]
 
 

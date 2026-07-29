@@ -17,8 +17,10 @@
 from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.designate import basic
 from tests.unit import test
+
 
 BASE = "rally_openstack.task.scenarios.designate.basic"
 

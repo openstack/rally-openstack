@@ -23,8 +23,7 @@ from rally_openstack.task.scenarios.neutron import utils
 
 
 def _create_random_route_target():
-    return "{}:{}".format(random.randint(0, 65535),
-                          random.randint(0, 4294967295))
+    return f"{random.randint(0, 65535)}:{random.randint(0, 4294967295)}"
 
 
 @validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
@@ -286,8 +285,8 @@ class CreateAndListNetworksAssocs(utils.NeutronScenario):
 
         network_id = network["id"]
         msg = ("Network not included into list of associated networks\n"
-               "Network created: {}\n"
-               "List of associations: {}").format(network, net_assocs)
+               f"Network created: {network}\n"
+               f"List of associations: {net_assocs}")
         list_networks = [net_assoc["network_id"] for net_assoc in net_assocs]
         self.assertIn(network_id, list_networks, err_msg=msg)
 
@@ -340,8 +339,8 @@ class CreateAndListRoutersAssocs(utils.NeutronScenario):
 
         router_id = router["id"]
         msg = ("Router not included into list of associated routers\n"
-               "Router created: {}\n"
-               "List of associations: {}").format(router, router_assocs)
+               f"Router created: {router}\n"
+               f"List of associations: {router_assocs}")
 
         list_routers = [r_assoc["router_id"] for r_assoc in router_assocs]
         self.assertIn(router_id, list_routers, err_msg=msg)

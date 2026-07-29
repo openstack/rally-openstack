@@ -28,7 +28,7 @@ LOG = logging.getLogger(__name__)
 
 class CinderBasic(scenario.OpenStackScenario):
     def __init__(self, context=None, admin_clients=None, clients=None):
-        super(CinderBasic, self).__init__(context, admin_clients, clients)
+        super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_cinder = block.BlockStorage(
                 self._admin_clients, name_generator=self.generate_random_name,

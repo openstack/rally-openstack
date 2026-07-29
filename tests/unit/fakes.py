@@ -18,8 +18,8 @@ import multiprocessing
 import random
 import re
 import string
-from unittest import mock
 import uuid
+from unittest import mock
 
 from glanceclient import exc
 from neutronclient.common import exceptions as neutron_exceptions
@@ -88,14 +88,14 @@ class FakeCredential(credential.OpenStackCredential):
         creds.setdefault("auth_url", "https://example.com")
         creds.setdefault("username", "admin")
         creds.setdefault("password", "pass")
-        super(FakeCredential, self).__init__(**creds)
+        super().__init__(**creds)
         self.clients = mock.Mock()
 
 
-class FakeResource(object):
+class FakeResource:
 
     def __init__(self, manager=None, name=None, status="ACTIVE", items=None,
-                 deployment_uuid=None, id=None):
+                 deployment_uuid=None, id=None):  # noqa: A002
         self.name = name or generate_uuid()
         self.status = status
         self.manager = manager
@@ -127,9 +127,9 @@ class FakeServer(FakeResource):
 
 class FakeImage(FakeResource):
 
-    def __init__(self, manager=None, id="image-id-0", min_ram=0,
+    def __init__(self, manager=None, id="image-id-0", min_ram=0,  # noqa: A002
                  size=0, min_disk=0, status="active", name=None):
-        super(FakeImage, self).__init__(manager, id=id, name=name)
+        super().__init__(manager, id=id, name=name)
         self.min_ram = min_ram
         self.size = size
         self.min_disk = min_disk
@@ -156,7 +156,7 @@ class FakeFloatingIPPool(FakeResource):
 class FakeTenant(FakeResource):
 
     def __init__(self, manager, name):
-        super(FakeTenant, self).__init__(manager, name=name)
+        super().__init__(manager, name=name)
 
 
 class FakeUser(FakeResource):
@@ -173,9 +173,9 @@ class FakeNetwork(FakeResource):
 
 class FakeFlavor(FakeResource):
 
-    def __init__(self, id="flavor-id-0", manager=None, ram=0, disk=0, vcpus=1,
+    def __init__(self, id="flavor-id-0", manager=None, ram=0, disk=0, vcpus=1,  # noqa: A002
                  name="flavor-name-0"):
-        super(FakeFlavor, self).__init__(manager, id=id)
+        super().__init__(manager, id=id)
         self.ram = ram
         self.disk = disk
         self.vcpus = vcpus
@@ -184,9 +184,9 @@ class FakeFlavor(FakeResource):
 
 class FakeSecret(FakeResource):
 
-    def __init__(self, id="secret-id-0", manager=None, secret_ref="secret_ref",
+    def __init__(self, id="secret-id-0", manager=None, secret_ref="secret_ref",  # noqa: A002
                  name="secret-name-0"):
-        super(FakeSecret, self).__init__(manager, id=id)
+        super().__init__(manager, id=id)
         self.secret_ref = secret_ref
 
 
@@ -212,8 +212,8 @@ class FakeQuotas(FakeResource):
 
 class FakeSecurityGroup(FakeResource):
 
-    def __init__(self, manager=None, rule_manager=None, id=None, name=None):
-        super(FakeSecurityGroup, self).__init__(manager, id=id, name=name)
+    def __init__(self, manager=None, rule_manager=None, id=None, name=None):  # noqa: A002
+        super().__init__(manager, id=id, name=name)
         self.rule_manager = rule_manager
 
     @property
@@ -224,7 +224,7 @@ class FakeSecurityGroup(FakeResource):
 
 class FakeSecurityGroupRule(FakeResource):
     def __init__(self, name, **kwargs):
-        super(FakeSecurityGroupRule, self).__init__(name)
+        super().__init__(name)
         if "cidr" in kwargs:
             kwargs["ip_range"] = {"cidr": kwargs["cidr"]}
             del kwargs["cidr"]
@@ -235,14 +235,14 @@ class FakeSecurityGroupRule(FakeResource):
 
 class FakeMetric(FakeResource):
     def __init_(self, manager=None, **kwargs):
-        super(FakeMetric, self).__init__(manager)
+        super().__init__(manager)
         self.metric = kwargs.get("metric_name")
         self.optional_args = kwargs.get("optional_args", {})
 
 
 class FakeAlarm(FakeResource):
     def __init__(self, manager=None, **kwargs):
-        super(FakeAlarm, self).__init__(manager)
+        super().__init__(manager)
         self.meter_name = kwargs.get("meter_name")
         self.threshold = kwargs.get("threshold")
         self.state = kwargs.get("state", "fake-alarm-state")
@@ -253,7 +253,7 @@ class FakeAlarm(FakeResource):
 
 class FakeSample(FakeResource):
     def __init__(self, manager=None, **kwargs):
-        super(FakeSample, self).__init__(manager)
+        super().__init__(manager)
         self.counter_name = kwargs.get("counter_name", "fake-counter-name")
         self.counter_type = kwargs.get("counter_type", "fake-counter-type")
         self.counter_unit = kwargs.get("counter_unit", "fake-counter-unit")
@@ -299,7 +299,7 @@ class FakeRole(FakeResource):
 
 class FakeQueue(FakeResource):
     def __init__(self, manager=None, name="myqueue"):
-        super(FakeQueue, self).__init__(manager, name)
+        super().__init__(manager, name)
         self.queue_name = name
         self.messages = FakeMessagesManager(name)
 
@@ -317,14 +317,14 @@ class FakeDbInstance(FakeResource):
 
 class FakeMessage(FakeResource):
     def __init__(self, manager=None, **kwargs):
-        super(FakeMessage, self).__init__(manager)
+        super().__init__(manager)
         self.body = kwargs.get("body", "fake-body")
         self.ttl = kwargs.get("ttl", 100)
 
 
 class FakeAvailabilityZone(FakeResource):
     def __init__(self, manager=None):
-        super(FakeAvailabilityZone, self).__init__(manager)
+        super().__init__(manager)
         self.zoneName = mock.MagicMock()
         self.zoneState = mock.MagicMock()
         self.hosts = mock.MagicMock()
@@ -332,19 +332,19 @@ class FakeAvailabilityZone(FakeResource):
 
 class FakeWorkbook(FakeResource):
     def __init__(self, manager=None):
-        super(FakeWorkbook, self).__init__(manager)
+        super().__init__(manager)
         self.workbook = mock.MagicMock()
 
 
 class FakeWorkflow(FakeResource):
     def __init__(self, manager=None):
-        super(FakeWorkflow, self).__init__(manager)
+        super().__init__(manager)
         self.workflow = mock.MagicMock()
 
 
 class FakeExecution(FakeResource):
     def __init__(self, manager=None):
-        super(FakeExecution, self).__init__(manager)
+        super().__init__(manager)
         self.execution = mock.MagicMock()
 
 
@@ -356,10 +356,10 @@ class FakeClusterTemplate(FakeResource):
     pass
 
 
-class FakeManager(object):
+class FakeManager:
 
     def __init__(self):
-        super(FakeManager, self).__init__()
+        super().__init__()
         self.cache = {}
         self.resources_order = []
 
@@ -395,7 +395,7 @@ class FakeManager(object):
 class FakeServerManager(FakeManager):
 
     def __init__(self, image_mgr=None):
-        super(FakeServerManager, self).__init__()
+        super().__init__()
         self.images = image_mgr or FakeImageManager()
 
     def get(self, resource_uuid):
@@ -437,7 +437,7 @@ class FakeServerManager(FakeManager):
 class FakeImageManager(FakeManager):
 
     def __init__(self):
-        super(FakeImageManager, self).__init__()
+        super().__init__()
 
     def get(self, resource_uuid):
         image = self.cache.get(resource_uuid)
@@ -445,7 +445,7 @@ class FakeImageManager(FakeManager):
             return image
         raise exc.HTTPNotFound("Image %s not found" % (resource_uuid))
 
-    def _create(self, image_class=FakeImage, name=None, id=None):
+    def _create(self, image_class=FakeImage, name=None, id=None):  # noqa: A002
         image = self._cache(image_class(self))
         image.owner = "dummy"
         image.id = image.uuid
@@ -615,7 +615,7 @@ class FakeCinderQuotasManager(FakeManager):
 
 class FakeSecurityGroupManager(FakeManager):
     def __init__(self, rule_manager=None):
-        super(FakeSecurityGroupManager, self).__init__()
+        super().__init__()
         self.rule_manager = rule_manager
         self.create("default")
 
@@ -655,7 +655,7 @@ class FakeSecurityGroupManager(FakeManager):
 
 class FakeSecurityGroupRuleManager(FakeManager):
     def __init__(self):
-        super(FakeSecurityGroupRuleManager, self).__init__()
+        super().__init__()
 
     def create(self, parent_group_id, **kwargs):
         kwargs["parent_group_id"] = parent_group_id
@@ -679,7 +679,7 @@ class FakeServicesManager(FakeManager):
 
 class FakeVolumeManager(FakeManager):
     def __init__(self):
-        super(FakeVolumeManager, self).__init__()
+        super().__init__()
         self.__volumes = {}
         self.__tenant_id = generate_uuid()
 
@@ -696,7 +696,7 @@ class FakeVolumeManager(FakeManager):
         return self.__volumes.values()
 
     def delete(self, resource):
-        super(FakeVolumeManager, self).delete(resource.id)
+        super().delete(resource.id)
         del self.__volumes[resource.id]
 
 
@@ -710,7 +710,7 @@ class FakeVolumeTypeManager(FakeManager):
 
 class FakeVolumeTransferManager(FakeManager):
     def __init__(self):
-        super(FakeVolumeTransferManager, self).__init__()
+        super().__init__()
         self.__volume_transfers = {}
 
     def list(self):
@@ -723,13 +723,13 @@ class FakeVolumeTransferManager(FakeManager):
         return self._cache(transfer)
 
     def delete(self, resource):
-        super(FakeVolumeTransferManager, self).delete(resource.id)
+        super().delete(resource.id)
         del self.__volume_transfers[resource.id]
 
 
 class FakeVolumeSnapshotManager(FakeManager):
     def __init__(self):
-        super(FakeVolumeSnapshotManager, self).__init__()
+        super().__init__()
         self.__snapshots = {}
         self.__tenant_id = generate_uuid()
 
@@ -745,13 +745,13 @@ class FakeVolumeSnapshotManager(FakeManager):
         return self.__snapshots.values()
 
     def delete(self, resource):
-        super(FakeVolumeSnapshotManager, self).delete(resource.id)
+        super().delete(resource.id)
         del self.__snapshots[resource.id]
 
 
 class FakeVolumeBackupManager(FakeManager):
     def __init__(self):
-        super(FakeVolumeBackupManager, self).__init__()
+        super().__init__()
         self.__backups = {}
         self.__tenant_id = generate_uuid()
 
@@ -765,7 +765,7 @@ class FakeVolumeBackupManager(FakeManager):
         return self.__backups.values()
 
     def delete(self, resource):
-        super(FakeVolumeBackupManager, self).delete(resource.id)
+        super().delete(resource.id)
         del self.__backups[resource.id]
 
 
@@ -805,7 +805,7 @@ class FakeMetricsManager(FakeManager):
 
 class FakeQueuesManager(FakeManager):
     def __init__(self):
-        super(FakeQueuesManager, self).__init__()
+        super().__init__()
         self.__queues = {}
 
     def create(self, name):
@@ -817,13 +817,13 @@ class FakeQueuesManager(FakeManager):
         return self.__queues.values()
 
     def delete(self, queue):
-        super(FakeQueuesManager, self).delete(queue.name)
+        super().delete(queue.name)
         del self.__queues[queue.name]
 
 
 class FakeDbInstanceManager(FakeManager):
     def __init__(self):
-        super(FakeDbInstanceManager, self).__init__()
+        super().__init__()
         self.__db_instances = {}
 
     def create(self, name, flavor_id, size):
@@ -849,7 +849,7 @@ class FakeDbInstanceManager(FakeManager):
 
 class FakeMessagesManager(FakeManager):
     def __init__(self, queue="myqueue"):
-        super(FakeMessagesManager, self).__init__()
+        super().__init__()
         self.__queue = queue
         self.__messages = {}
 
@@ -862,13 +862,13 @@ class FakeMessagesManager(FakeManager):
         return self.__messages.values()
 
     def delete(self, message):
-        super(FakeMessagesManager, self).delete(message.id)
+        super().delete(message.id)
         del self.__messages[message.id]
 
 
 class FakeAvailabilityZonesManager(FakeManager):
     def __init__(self):
-        super(FakeAvailabilityZonesManager, self).__init__()
+        super().__init__()
         self.zones = FakeAvailabilityZone()
 
     def list(self):
@@ -877,7 +877,7 @@ class FakeAvailabilityZonesManager(FakeManager):
 
 class FakeWorkbookManager(FakeManager):
     def __init__(self):
-        super(FakeWorkbookManager, self).__init__()
+        super().__init__()
         self.workbook = FakeWorkbook()
 
     def list(self):
@@ -886,7 +886,7 @@ class FakeWorkbookManager(FakeManager):
 
 class FakeWorkflowManager(FakeManager):
     def __init__(self):
-        super(FakeWorkflowManager, self).__init__()
+        super().__init__()
         self.workflow = FakeWorkflow()
 
     def list(self):
@@ -895,7 +895,7 @@ class FakeWorkflowManager(FakeManager):
 
 class FakeExecutionManager(FakeManager):
     def __init__(self):
-        super(FakeExecutionManager, self).__init__()
+        super().__init__()
         self.execution = FakeExecution()
 
     def list(self):
@@ -948,7 +948,7 @@ class FakeObjectManager(FakeManager):
         del container.items[object_name]
 
 
-class FakeServiceCatalog(object):
+class FakeServiceCatalog:
     def get_credentials(self):
         return {"image": [{"publicURL": "http://fake.to"}],
                 "metering": [{"publicURL": "http://fake.to"}],
@@ -958,14 +958,14 @@ class FakeServiceCatalog(object):
         return "http://fake.to"
 
 
-class FakeGlanceClient(object):
+class FakeGlanceClient:
 
     def __init__(self, version="1"):
         self.images = FakeImageManager()
         self.version = version
 
 
-class FakeCinderClient(object):
+class FakeCinderClient:
 
     def __init__(self):
         self.volumes = FakeVolumeManager()
@@ -976,7 +976,7 @@ class FakeCinderClient(object):
         self.quotas = FakeCinderQuotasManager()
 
 
-class FakeNovaClient(object):
+class FakeNovaClient:
 
     def __init__(self, failed_server_manager=False):
         self.images = FakeImageManager()
@@ -994,19 +994,19 @@ class FakeNovaClient(object):
         self.availability_zones = FakeAvailabilityZonesManager()
 
 
-class FakeHeatClient(object):
+class FakeHeatClient:
 
     def __init__(self):
         self.stacks = FakeStackManager()
 
 
-class FakeDesignateClient(object):
+class FakeDesignateClient:
 
     def __init__(self):
         self.domains = FakeDomainManager()
 
 
-class FakeKeystoneClient(object):
+class FakeKeystoneClient:
 
     def __init__(self):
         self.tenants = FakeTenantsManager()
@@ -1045,12 +1045,12 @@ class FakeKeystoneClient(object):
         return self.users.delete(uuid)
 
 
-class FakeGnocchiClient(object):
+class FakeGnocchiClient:
     def __init__(self):
         self.metric = FakeMetricManager()
 
 
-class FakeNeutronClient(object):
+class FakeNeutronClient:
 
     def __init__(self, **kwargs):
         self.__networks = {}
@@ -1185,7 +1185,7 @@ class FakeNeutronClient(object):
                      "device_owner": "",
                      "mac_address": generate_mac(),
                      "binding:profile": {},
-                     "binding:vif_details": {u"port_filter": True},
+                     "binding:vif_details": {"port_filter": True},
                      "security_groups": [],
                      "fixed_ips": [],
                      "device_id": "",
@@ -1389,20 +1389,20 @@ class FakeNeutronClient(object):
         return ""
 
 
-class FakeOctaviaClient(object):
+class FakeOctaviaClient:
 
     def __init__(self):
         pass
 
 
-class FakeIronicClient(object):
+class FakeIronicClient:
 
     def __init__(self):
         # TODO(romcheg):Fake Manager subclasses to manage BM nodes.
         pass
 
 
-class FakeZaqarClient(object):
+class FakeZaqarClient:
 
     def __init__(self):
         self.queues = FakeQueuesManager()
@@ -1411,13 +1411,13 @@ class FakeZaqarClient(object):
         return self.queues.create(name, **kwargs)
 
 
-class FakeTroveClient(object):
+class FakeTroveClient:
 
     def __init__(self):
         self.instances = FakeDbInstanceManager()
 
 
-class FakeMistralClient(object):
+class FakeMistralClient:
 
     def __init__(self):
         self.workbook = FakeWorkbookManager()
@@ -1429,32 +1429,32 @@ class FakeSwiftClient(FakeObjectManager):
     pass
 
 
-class FakeEC2Client(object):
+class FakeEC2Client:
 
     def __init__(self):
         pass
 
 
-class FakeMagnumClient(object):
+class FakeMagnumClient:
 
     def __init__(self):
         self.cluster_templates = FakeClusterTemplateManager()
 
 
-class FakeWatcherClient(object):
+class FakeWatcherClient:
 
     def __init__(self):
         self.strategy = FakeStrategyManager()
         self.goal = FakeGoalManager()
 
 
-class FakeBarbicanClient(object):
+class FakeBarbicanClient:
 
     def __init__(self):
         pass
 
 
-class FakeClients(object):
+class FakeClients:
 
     def __init__(self, credential_=None):
         self._nova = None
@@ -1557,7 +1557,7 @@ class FakeClients(object):
         return self._barbican
 
 
-class FakeRunner(object):
+class FakeRunner:
 
     CONFIG_SCHEMA = {
         "type": "object",
@@ -1650,7 +1650,7 @@ class FakeContext(context.Context):
         context_obj.setdefault("config", {})
         context_obj["config"].setdefault("fake", None)
         context_obj.setdefault("task", mock.MagicMock())
-        super(FakeContext, self).__init__(context_obj)
+        super().__init__(context_obj)
 
     def setup(self):
         pass
@@ -1687,7 +1687,7 @@ class FakeUserContext(FakeContext):
     tenants = {"uuid": {"name": "tenant"}}
 
     def __init__(self, ctx):
-        super(FakeUserContext, self).__init__(ctx)
+        super().__init__(ctx)
         self.context.setdefault("admin", FakeUserContext.admin)
         self.context.setdefault("users", [FakeUserContext.user])
         self.context.setdefault("tenants", FakeUserContext.tenants)
@@ -1708,7 +1708,7 @@ class FakeDeployment(dict):
         self.env_obj = mock.Mock()
 
     def get_platforms(self):
-        return [platform for platform in self["credentials"]]
+        return list(self["credentials"])
 
     def get_credentials_for(self, platform):
         return self["credentials"][platform][0]
@@ -1720,7 +1720,7 @@ class FakeDeployment(dict):
         return {}
 
 
-class FakeEnvironment(object):
+class FakeEnvironment:
     def __init__(self, env_uuid, data):
         self.uuid = env_uuid
         self.data = data
@@ -1730,7 +1730,7 @@ class FakeEnvironment(object):
         return self.data
 
 
-class FakeTask(dict, object):
+class FakeTask(dict):
 
     def __init__(self, task=None, temporary=False, **kwargs):
         self.is_temporary = temporary
@@ -1746,7 +1746,7 @@ class FakeTask(dict, object):
         return self
 
 
-class FakeAPI(object):
+class FakeAPI:
 
     def __init__(self):
         self._deployment = mock.create_autospec(api._Deployment)

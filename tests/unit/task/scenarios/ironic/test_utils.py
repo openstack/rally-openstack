@@ -18,6 +18,7 @@ from unittest import mock
 from rally_openstack.task.scenarios.ironic import utils
 from tests.unit import test
 
+
 IRONIC_UTILS = "rally_openstack.task.scenarios.ironic.utils"
 
 

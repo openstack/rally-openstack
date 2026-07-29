@@ -14,9 +14,12 @@
 #    under the License.
 
 from rally_openstack.common.cfg import cinder
+from rally_openstack.common.cfg import cleanup
 from rally_openstack.common.cfg import glance
 from rally_openstack.common.cfg import heat
 from rally_openstack.common.cfg import ironic
+from rally_openstack.common.cfg import keystone_roles
+from rally_openstack.common.cfg import keystone_users
 from rally_openstack.common.cfg import magnum
 from rally_openstack.common.cfg import manila
 from rally_openstack.common.cfg import mistral
@@ -25,16 +28,9 @@ from rally_openstack.common.cfg import nova
 from rally_openstack.common.cfg import octavia
 from rally_openstack.common.cfg import osclients
 from rally_openstack.common.cfg import profiler
+from rally_openstack.common.cfg import tempest
 from rally_openstack.common.cfg import vm
 from rally_openstack.common.cfg import watcher
-
-from rally_openstack.common.cfg import tempest
-
-from rally_openstack.common.cfg import keystone_roles
-from rally_openstack.common.cfg import keystone_users
-
-from rally_openstack.common.cfg import cleanup
-
 from rally_openstack.task.ui.charts import osprofilerchart
 
 
@@ -51,4 +47,4 @@ def list_opts():
         for category, opt in l_opts.items():
             opts.setdefault(category, [])
             opts[category].extend(opt)
-    return [(k, v) for k, v in opts.items()]
+    return list(opts.items())

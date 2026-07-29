@@ -24,7 +24,7 @@ class KeystoneBasic(scenario.OpenStackScenario):
     """Base class for Keystone scenarios with initialized service object."""
 
     def __init__(self, context=None, admin_clients=None, clients=None):
-        super(KeystoneBasic, self).__init__(context, admin_clients, clients)
+        super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_keystone = identity.Identity(
                 self._admin_clients, name_generator=self.generate_random_name,

@@ -33,7 +33,7 @@ def get_order(start):
     return iter(range(start, start + 99))
 
 
-class SynchronizedDeletion(object):
+class SynchronizedDeletion:
 
     def is_deleted(self):
         return True
@@ -119,7 +119,7 @@ class NovaServer(base.ResourceManager):
     def delete(self):
         if getattr(self.raw_resource, "OS-EXT-STS:locked", False):
             self.raw_resource.unlock()
-        super(NovaServer, self).delete()
+        super().delete()
 
 
 @base.resource("nova", "server_groups", order=next(_nova_order),
@@ -162,7 +162,7 @@ class NovaAggregate(SynchronizedDeletion, base.ResourceManager):
     def delete(self):
         for host in self.raw_resource.hosts:
             self.raw_resource.remove_host(host)
-        super(NovaAggregate, self).delete()
+        super().delete()
 
 
 # NEUTRON
@@ -214,7 +214,7 @@ class NeutronLbaasV1Mixin(NeutronMixin):
 
     def list(self):
         if self._neutron.supports_extension("lbaas", silent=True):
-            return super(NeutronLbaasV1Mixin, self).list()
+            return super().list()
         return []
 
 
@@ -240,7 +240,7 @@ class NeutronLbaasV2Mixin(NeutronMixin):
 
     def list(self):
         if self._neutron.supports_extension("lbaasv2", silent=True):
-            return super(NeutronLbaasV2Mixin, self).list()
+            return super().list()
         return []
 
 
@@ -362,7 +362,7 @@ class NeutronFloatingIP(NeutronMixin):
             #   We do not want to remove not-rally resources, so let's just do
             #   nothing here and move pre-newton logic into separate plugins
             return []
-        return super(NeutronFloatingIP, self).list()
+        return super().list()
 
 
 @base.resource("neutron", "trunk", order=next(_neutron_order),
@@ -372,7 +372,7 @@ class NeutronTrunk(NeutronMixin):
 
     def list(self):
         try:
-            return super(NeutronTrunk, self).list()
+            return super().list()
         except Exception as e:
             if getattr(e, "status_code", 400) == 404:
                 return []
@@ -387,15 +387,15 @@ class NeutronPort(NeutronMixin):
     #   our resource name templates.
 
     def __init__(self, *args, **kwargs):
-        super(NeutronPort, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._cache = {}
 
     @property
-    def ROUTER_INTERFACE_OWNERS(self):
+    def ROUTER_INTERFACE_OWNERS(self):  # noqa: N802
         return self._neutron.ROUTER_INTERFACE_OWNERS
 
     @property
-    def ROUTER_GATEWAY_OWNER(self):
+    def ROUTER_GATEWAY_OWNER(self):  # noqa: N802
         return self._neutron.ROUTER_GATEWAY_OWNER
 
     def _get_resources(self, resource):
@@ -460,7 +460,7 @@ class NeutronNetwork(NeutronMixin):
 class NeutronSecurityGroup(NeutronMixin):
     def list(self):
         try:
-            tenant_sgs = super(NeutronSecurityGroup, self).list()
+            tenant_sgs = super().list()
             # NOTE(pirsriva): Filter out "default" security group deletion
             # by non-admin role user
             return filter(lambda r: r["name"] != "default",
@@ -682,8 +682,7 @@ class DesignateZones(DesignateResource):
                                          criterion=criterion)
             if not items:
                 break
-            for item in items:
-                yield item
+            yield from items
             marker = items[-1]["id"]
 
 

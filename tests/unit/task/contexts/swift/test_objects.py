@@ -16,6 +16,7 @@
 from unittest import mock
 
 from rally import exceptions
+
 from rally_openstack.task.contexts.swift import objects
 from tests.unit import test
 

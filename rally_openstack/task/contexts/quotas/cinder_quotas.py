@@ -13,7 +13,7 @@
 #    under the License.
 
 
-class CinderQuotas(object):
+class CinderQuotas:
     """Management of Cinder quotas."""
 
     QUOTAS_SCHEMA = {
@@ -54,5 +54,5 @@ class CinderQuotas(object):
 
     def get(self, tenant_id):
         response = self.clients.cinder().quotas.get(tenant_id)
-        return dict([(k, getattr(response, k))
-                     for k in self.QUOTAS_SCHEMA["properties"]])
+        return dict((k, getattr(response, k))
+                    for k in self.QUOTAS_SCHEMA["properties"])

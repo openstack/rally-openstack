@@ -33,7 +33,8 @@ class CinderV1Service(service.Service, cinder_common.CinderMixin):
                       display_name=None, display_description=None,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
-                      metadata=None, imageRef=None):
+                      metadata=None,
+                      imageRef=None):  # noqa: N803
         """Creates a volume.
 
         :param size: Size of volume in GB
@@ -182,7 +183,9 @@ class UnifiedCinderV1Service(cinder_common.UnifiedCinderMixin,
                       name=None, description=None,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
-                      metadata=None, imageRef=None, scheduler_hints=None,
+                      metadata=None,
+                      imageRef=None,  # noqa: N803
+                      scheduler_hints=None,
                       backup_id=None):
         """Creates a volume.
 

@@ -20,7 +20,7 @@ import sys
 import warnings
 
 
-class _MoveSpec(object):
+class _MoveSpec:
     def __init__(self, deprecated, new, release):
         """init moved module info
 
@@ -132,7 +132,7 @@ _MOVES = [
 ]
 
 
-class ModuleLoader(object):
+class ModuleLoader:
 
     def __init__(self, move_spec):
         self.move_spec = move_spec

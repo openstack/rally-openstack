@@ -22,7 +22,7 @@ from tests.unit import test
 class BarbicanOrdersTestCase(test.ScenarioTestCase):
 
     def get_test_context(self):
-        context = super(BarbicanOrdersTestCase, self).get_test_context()
+        context = super().get_test_context()
         context.update({
             "admin": {
                 "user_id": "fake",
@@ -37,7 +37,7 @@ class BarbicanOrdersTestCase(test.ScenarioTestCase):
         return context
 
     def setUp(self):
-        super(BarbicanOrdersTestCase, self).setUp()
+        super().setUp()
         m = "rally_openstack.common.services.key_manager.barbican"
         patch = mock.patch("%s.BarbicanService" % m)
         self.addCleanup(patch.stop)

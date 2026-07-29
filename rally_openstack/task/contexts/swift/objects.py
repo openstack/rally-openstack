@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally import exceptions
 from rally.common import logging
 from rally.common import validation
-from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.task import context
 from rally_openstack.task.contexts.swift import utils as swift_utils
+
 
 LOG = logging.getLogger(__name__)
 

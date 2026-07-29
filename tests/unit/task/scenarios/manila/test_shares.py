@@ -18,6 +18,7 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
+
 from rally_openstack.task.scenarios.manila import shares
 from tests.unit import test
 
@@ -51,7 +52,7 @@ class ManilaSharesTestCase(test.ScenarioTestCase):
             return_value=("foo_server", self.ip))
         scenario._delete_server_with_fip = mock.Mock()
         scenario._run_command = mock.MagicMock(
-            return_value=(0, "{\"foo\": 42}", "foo_err"))
+            return_value=(0, '{"foo": 42}', "foo_err"))
         scenario.add_output = mock.Mock()
         self.context.update({"user": {"keypair": {"name": "keypair_name"},
                                       "credential": mock.MagicMock()}})

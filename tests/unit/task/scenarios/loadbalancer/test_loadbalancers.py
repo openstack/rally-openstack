@@ -22,14 +22,14 @@ from tests.unit import test
 class LoadBalancersTestCase(test.ScenarioTestCase):
 
     def setUp(self):
-        super(LoadBalancersTestCase, self).setUp()
+        super().setUp()
         patch = mock.patch(
             "rally_openstack.common.services.loadbalancer.octavia.Octavia")
         self.addCleanup(patch.stop)
         self.mock_loadbalancers = patch.start()
 
     def _get_context(self):
-        context = super(LoadBalancersTestCase, self).get_test_context()
+        context = super().get_test_context()
         context.update({
             "user": {
                 "id": "fake_user",

@@ -115,7 +115,7 @@ class OpenStackResourceTypeTestCase(test.TestCase):
 class FlavorTestCase(test.TestCase):
 
     def setUp(self):
-        super(FlavorTestCase, self).setUp()
+        super().setUp()
         self.clients = fakes.FakeClients()
         self.clients.nova().flavors._cache(fakes.FakeResource(name="m1.tiny",
                                                               id="1"))
@@ -175,7 +175,7 @@ class FlavorTestCase(test.TestCase):
 class GlanceImageTestCase(test.TestCase):
 
     def setUp(self):
-        super(GlanceImageTestCase, self).setUp()
+        super().setUp()
         self.clients = fakes.FakeClients()
         image1 = fakes.FakeResource(name="cirros-0.5.2-uec", id="100")
         self.clients.glance().images._cache(image1)
@@ -261,7 +261,7 @@ class GlanceImageArgsTestCase(test.TestCase):
 class EC2ImageTestCase(test.TestCase):
 
     def setUp(self):
-        super(EC2ImageTestCase, self).setUp()
+        super().setUp()
         self.clients = fakes.FakeClients()
         image1 = fakes.FakeResource(name="cirros-0.5.2-uec", id="100")
         self.clients.glance().images._cache(image1)
@@ -341,7 +341,7 @@ class EC2ImageTestCase(test.TestCase):
 class VolumeTypeTestCase(test.TestCase):
 
     def setUp(self):
-        super(VolumeTypeTestCase, self).setUp()
+        super().setUp()
         cinder = mock.patch("rally_openstack.task.types.block.BlockStorage")
         self.service = cinder.start().return_value
         self.addCleanup(cinder.stop)
@@ -386,7 +386,7 @@ class VolumeTypeTestCase(test.TestCase):
 class NeutronNetworkTestCase(test.TestCase):
 
     def setUp(self):
-        super(NeutronNetworkTestCase, self).setUp()
+        super().setUp()
         self.clients = fakes.FakeClients()
         net1_data = {"network": {
             "name": "net1"
@@ -419,7 +419,7 @@ class NeutronNetworkTestCase(test.TestCase):
 class WatcherStrategyTestCase(test.TestCase):
 
     def setUp(self):
-        super(WatcherStrategyTestCase, self).setUp()
+        super().setUp()
         self.clients = fakes.FakeClients()
         self.strategy = self.clients.watcher().strategy._cache(
             fakes.FakeResource(name="dummy", id="1"))
@@ -444,7 +444,7 @@ class WatcherStrategyTestCase(test.TestCase):
 class WatcherGoalTestCase(test.TestCase):
 
     def setUp(self):
-        super(WatcherGoalTestCase, self).setUp()
+        super().setUp()
         self.clients = fakes.FakeClients()
         self.goal = self.clients.watcher().goal._cache(
             fakes.FakeResource(name="dummy", id="1"))

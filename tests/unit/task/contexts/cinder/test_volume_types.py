@@ -17,13 +17,14 @@ from unittest import mock
 from rally_openstack.task.contexts.cinder import volume_types
 from tests.unit import test
 
+
 CTX = "rally_openstack.task.contexts.cinder.volume_types"
 SERVICE = "rally_openstack.common.services.storage"
 
 
 class VolumeTypeGeneratorTestCase(test.ContextTestCase):
     def setUp(self):
-        super(VolumeTypeGeneratorTestCase, self).setUp()
+        super().setUp()
         self.context.update({"admin": {"credential": "admin_creds"}})
 
     @mock.patch("%s.block.BlockStorage" % SERVICE)
