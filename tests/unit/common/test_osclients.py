@@ -18,7 +18,6 @@ from unittest import mock
 import ddt
 
 from rally import exceptions
-from rally.common import cfg
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential as oscredential
@@ -28,6 +27,7 @@ from tests.unit import test
 
 
 PATH = "rally_openstack.common.osclients"
+KEYSTONE_PATH = "rally_openstack.common.clients.keystone"
 
 
 @osclients.configure("dummy", supported_versions=("0.1", "1"),
@@ -79,10 +79,10 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
     @ddt.unpack
     def test_validate_version(self, version, valid):
         if valid:
-            DummyClient.validate_version(version)
+            DummyClient.spec.validate_version(version)
         else:
             self.assertRaises(exceptions.ValidationError,
-                              DummyClient.validate_version, version)
+                              DummyClient.spec.validate_version, version)
 
     def test_choose_service_type(self):
         default_service_type = "default_service_type"
@@ -111,9 +111,11 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
             "http://auth_url/v2.0", "user", "pass",
             endpoint_type=endpoint_type,
             region_name=region_name)
-        mock_choose_service_type = mock.MagicMock()
         osclient = osclients.OSClient(credential, mock.MagicMock())
-        osclient.choose_service_type = mock_choose_service_type
+        # a bare OSClient was never passed through @configure, so it has no
+        # spec of its own
+        osclient.spec = mock.MagicMock()
+        mock_choose_service_type = osclient.spec.choose_service_type
         mock_url_for = mock_keystone_service_catalog.url_for
         self.assertEqual(mock_url_for.return_value,
                          osclient._get_endpoint(service_type))
@@ -123,7 +125,8 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
         if endpoint_type:
             call_args["interface"] = endpoint_type
         mock_url_for.assert_called_once_with(**call_args)
-        mock_choose_service_type.assert_called_once_with(service_type)
+        mock_choose_service_type.assert_called_once_with(
+            credential, service_type)
 
 
 class CachedTestCase(test.TestCase):
@@ -255,7 +258,8 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         self.assertEqual(
             [mock.call(timeout=180.0, verify=True, cert=None),
              mock.call(auth=self.ksa_identity_plugin, timeout=180.0,
-                       verify=True, cert=None)],
+                       verify=True, cert=None,
+                       discovery_cache=credential.discovery_cache)],
             self.ksa_session.Session.call_args_list
         )
 
@@ -280,7 +284,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         keystone.auth_ref
         mock_keystone_get_session.assert_called_once_with()
 
-    @mock.patch("%s.LOG.exception" % PATH)
+    @mock.patch("%s.LOG.exception" % KEYSTONE_PATH)
     @mock.patch("%s.logging.is_debug" % PATH)
     def test_auth_ref_fails(self, mock_is_debug, mock_log_exception):
         mock_is_debug.return_value = False
@@ -297,7 +301,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         mock_is_debug.assert_called_once_with()
         auth_plugin.get_access.assert_called_once_with(session)
 
-    @mock.patch("%s.LOG.exception" % PATH)
+    @mock.patch("%s.LOG.exception" % KEYSTONE_PATH)
     @mock.patch("%s.logging.is_debug" % PATH)
     def test_auth_ref_fails_debug(self, mock_is_debug, mock_log_exception):
         mock_is_debug.return_value = True
@@ -314,7 +318,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         mock_is_debug.assert_called_once_with()
         auth_plugin.get_access.assert_called_once_with(session)
 
-    @mock.patch("%s.LOG.exception" % PATH)
+    @mock.patch("%s.LOG.exception" % KEYSTONE_PATH)
     @mock.patch("%s.logging.is_debug" % PATH)
     def test_auth_ref_fails_debug_with_native_keystone_error(
             self, mock_is_debug, mock_log_exception):
@@ -437,27 +441,28 @@ class OSClientsTestCase(test.TestCase):
         self.assertEqual("foo_region_name", clients.credential.region_name)
 
     def test_keystone(self):
-        self.assertNotIn("keystone", self.clients.cache)
-        client = self.clients.keystone()
+        # The `legacy=True` call returns the raw python-keystoneclient.
+        self.assertNotIn("keystone_legacy_client_None", self.clients.cache)
+        client = self.clients.keystone(legacy=True)
         self.assertEqual(self.fake_keystone, client)
-        credential = {"timeout": cfg.CONF.openstack_client_http_timeout,
-                      "insecure": False, "cacert": None}
-        kwargs = self.credential.to_dict()
-        kwargs.update(credential)
-        self.mock_create_keystone_client.assert_called_once_with()
-        self.assertEqual(self.fake_keystone, self.clients.cache["keystone"])
+        self.mock_create_keystone_client.assert_called_once_with(None)
+        self.assertEqual(
+            self.fake_keystone,
+            self.clients.cache["keystone_legacy_client_None"])
 
     def test_keystone_versions(self):
-        self.clients.keystone.validate_version(2)
-        self.clients.keystone.validate_version(3)
+        self.clients.keystone.spec.validate_version(2)
+        self.clients.keystone.spec.validate_version(3)
 
     def test_keysonte_service_type(self):
-        self.assertRaises(exceptions.RallyException,
-                          self.clients.keystone.is_service_type_configurable)
+        self.assertRaises(
+            exceptions.RallyException,
+            self.clients.keystone.spec.is_service_type_configurable)
 
     def test_verified_keystone(self):
         self.auth_ref.role_names = ["admin"]
-        self.assertEqual(self.mock_create_keystone_client.return_value,
+        # verified_keystone() now returns the rally-owned identity client.
+        self.assertEqual(self.clients.keystone,
                          self.clients.verified_keystone())
 
     def test_verified_keystone_user_not_admin(self):
@@ -505,12 +510,12 @@ class OSClientsTestCase(test.TestCase):
             self.assertEqual(fake_nova, self.clients.cache["nova"])
 
     def test_nova_validate_version(self):
-        osclients.Nova.validate_version("2")
+        osclients.Nova.spec.validate_version("2")
         self.assertRaises(exceptions.RallyException,
-                          osclients.Nova.validate_version, "foo")
+                          osclients.Nova.spec.validate_version, "foo")
 
     def test_nova_service_type(self):
-        self.clients.nova.is_service_type_configurable()
+        self.clients.nova.spec.is_service_type_configurable()
 
     @mock.patch("%s.Neutron._get_endpoint" % PATH)
     def test_neutron(self, mock_neutron__get_endpoint):
@@ -651,14 +656,14 @@ class OSClientsTestCase(test.TestCase):
             self.assertEqual(fake_cinder, self.clients.cache["cinder"])
 
     def test_cinder_validate_version(self):
-        osclients.Cinder.validate_version("2")
-        osclients.Cinder.validate_version("3")
-        osclients.Cinder.validate_version("3.0")
-        osclients.Cinder.validate_version("3.10")
+        osclients.Cinder.spec.validate_version("2")
+        osclients.Cinder.spec.validate_version("3")
+        osclients.Cinder.spec.validate_version("3.0")
+        osclients.Cinder.spec.validate_version("3.10")
         self.assertRaises(exceptions.RallyException,
-                          osclients.Cinder.validate_version, "foo")
+                          osclients.Cinder.spec.validate_version, "foo")
         self.assertRaises(exceptions.RallyException,
-                          osclients.Cinder.validate_version, "3.1000")
+                          osclients.Cinder.spec.validate_version, "3.1000")
 
     @mock.patch("%s.Manila._get_endpoint" % PATH)
     def test_manila(self, mock_manila__get_endpoint):
@@ -682,10 +687,10 @@ class OSClientsTestCase(test.TestCase):
                 self.clients.cache["manila"])
 
     def test_manila_validate_version(self):
-        osclients.Manila.validate_version("2.0")
-        osclients.Manila.validate_version("2.32")
+        osclients.Manila.spec.validate_version("2.0")
+        osclients.Manila.spec.validate_version("2.32")
         self.assertRaises(exceptions.RallyException,
-                          osclients.Manila.validate_version, "foo")
+                          osclients.Manila.spec.validate_version, "foo")
 
     def test_gnocchi(self):
         fake_gnocchi = fakes.FakeGnocchiClient()
@@ -983,3 +988,162 @@ class AuthenticationFailedTestCase(test.TestCase):
             "authenticate. Please check that your auth_url is correct. "
             "Unable to establish connection to https://example.com",
             exc.format_message())
+
+
+class ClientsContainerTestCase(test.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.credential = oscredential.OpenStackCredential(
+            "http://auth_url/v2.0", "user", "pass", "tenant")
+
+    def test_getattr_legacy_client_is_memoized(self):
+        clients = osclients.Clients(self.credential)
+        nova = clients.nova
+        self.assertIs(nova, clients.nova)
+        self.assertIn("client:nova", clients.cache)
+        # a legacy OSClient is built without the container/atomic sink
+        self.assertIsNone(nova._clients)
+
+    def test_getattr_ported_client_is_attached(self):
+        clients = osclients.Clients(self.credential)
+        keystone = clients.keystone
+        self.assertIs(keystone, clients.keystone)
+        # a ported client is attached to the owning container
+        self.assertIs(clients, keystone._clients)
+
+    def test_getattr_private_name_raises(self):
+        clients = osclients.Clients(self.credential)
+        self.assertRaises(AttributeError, lambda: clients._whatever)
+
+    def test_clear(self):
+        clients = osclients.Clients(self.credential)
+        self.assertTrue(clients.nova)
+        clients.cache["foo"] = "bar"
+        clients.clear()
+        self.assertEqual({}, clients.cache)
+
+    def test_override(self):
+        clients = osclients.Clients(self.credential)
+        clients.cache["session"] = "shared-session"
+        overridden = clients.override(keystone="3")
+        self.assertEqual(
+            "3", overridden.credential.api_info["keystone"]["version"])
+        # the override inherits shared resources (session/token reuse)
+        self.assertEqual("shared-session", overridden.cache["session"])
+        # the original credential is untouched
+        self.assertNotIn("keystone", clients.credential.api_info)
+
+    def test_override_does_not_inherit_client_handles(self):
+        clients = osclients.Clients(self.credential)
+        keystone = clients.keystone
+        overridden = clients.override(keystone="3")
+        self.assertNotIn("client:keystone", overridden.cache)
+        # a fresh handle, attached to the container that pinned the version
+        self.assertIsNot(keystone, overridden.keystone)
+        self.assertIs(overridden, overridden.keystone._clients)
+        # and the original keeps its own
+        self.assertIs(keystone, clients.keystone)
+
+    def test_override_cache_writes_do_not_leak_back(self):
+        clients = osclients.Clients(self.credential)
+        overridden = clients.override(keystone="3")
+        overridden.cache["sdk_connection_identity_api_version=3"] = "pinned"
+        self.assertNotIn(
+            "sdk_connection_identity_api_version=3", clients.cache)
+
+    def test_sdk_service_config(self):
+        self.credential.api_info = {
+            # keystone has no default_service_type, so version only
+            "keystone": {"version": 3},
+            # service_type equal to the default emits the version only
+            "nova": {"version": 2, "service_type": "compute"},
+            # a non-default service_type produces a canonical api_version key
+            # plus a service_type override keyed by the canonical type
+            "cinder": {"version": 3, "service_type": "volumev3"},
+            # real client, no version and default service_type -> nothing
+            "glance": {},
+            # unknown client -> PluginNotFound -> skipped
+            "not_a_client": {"version": 1},
+        }
+        config = osclients.Clients(self.credential)._sdk_service_config()
+        self.assertEqual(
+            {"identity_api_version": "3",
+             "compute_api_version": "2",
+             "block_storage_api_version": "3",
+             "block_storage_service_type": "volumev3"}, config)
+
+    def test_conn_is_built_and_cached(self):
+        clients = osclients.Clients(self.credential)
+        keystone = mock.Mock()
+        keystone.get_session.return_value = ("fake-session", "plugin")
+        keystone.identity_endpoint_override = "http://auth_url/v2.0"
+        clients.cache["client:keystone"] = keystone
+
+        # the real openstacksdk import emits a warnings-as-error deprecation,
+        # so stub the module the property imports.
+        fake_openstack = mock.Mock()
+        with mock.patch.dict(
+                "sys.modules",
+                {"openstack": fake_openstack,
+                 "openstack.connection": fake_openstack.connection}):
+            conn = clients._conn
+            # subsequent access is served from the cache (built once)
+            self.assertIs(conn, clients._conn)
+
+        connection = fake_openstack.connection.Connection
+        connection.assert_called_once_with(
+            session="fake-session",
+            region_name=self.credential.region_name,
+            identity_endpoint_override="http://auth_url/v2.0")
+        self.assertEqual(connection.return_value, conn)
+
+    def test_refresh_token_no_seeded_auth(self):
+        clients = osclients.Clients(self.credential)
+        keystone = mock.Mock()
+        clients.cache["client:keystone"] = keystone
+        clients.refresh_token_if_needed()
+        self.assertFalse(keystone.get_session.called)
+
+    def test_refresh_token_non_string_auth_is_ignored(self):
+        self.credential.auth = mock.Mock()
+        clients = osclients.Clients(self.credential)
+        keystone = mock.Mock()
+        clients.cache["client:keystone"] = keystone
+        clients.refresh_token_if_needed()
+        self.assertFalse(keystone.get_session.called)
+
+    def test_refresh_token_still_valid(self):
+        self.credential.auth = "auth-state"
+        clients = osclients.Clients(self.credential)
+        keystone = mock.Mock()
+        plugin = mock.Mock()
+        keystone.get_session.return_value = ("session", plugin)
+        plugin.get_access.return_value.will_expire_soon.return_value = False
+        clients.cache["client:keystone"] = keystone
+
+        clients.refresh_token_if_needed()
+
+        self.assertFalse(plugin.invalidate.called)
+
+    def test_refresh_token_refreshes_when_expiring(self):
+        self.credential.auth = "auth-state"
+        clients = osclients.Clients(self.credential)
+        keystone = mock.Mock()
+        plugin = mock.Mock()
+        keystone.get_session.return_value = ("session", plugin)
+        plugin.get_access.return_value.will_expire_soon.return_value = True
+        clients.cache["client:keystone"] = keystone
+
+        clients.refresh_token_if_needed()
+
+        plugin.invalidate.assert_called_once_with()
+        # get_access is called again after invalidation
+        self.assertEqual(2, plugin.get_access.call_count)
+
+    def test_create_from_env_unavailable(self):
+        with mock.patch(
+                "rally_openstack.environment.platforms.existing.OpenStack"
+                ".create_spec_from_sys_environ",
+                return_value={"available": False, "message": "nope"}):
+            self.assertRaises(ValueError, osclients.Clients.create_from_env)

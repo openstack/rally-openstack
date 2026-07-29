@@ -12,7 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally.common import logging
 from rally.task import service
+
+
+LOG = logging.getLogger(__name__)
 
 
 Project = service.make_resource_cls("Project", ["id", "name", "domain_id"])
@@ -23,9 +27,29 @@ Role = service.make_resource_cls("Role", properties=["id", "name"])
 
 
 class Identity(service.UnifiedService):
+    """Deprecated identity service wrapper.
+
+    Superseded by the rally-owned identity client reachable as the
+    ``clients.keystone`` attribute (openstacksdk-backed, version-agnostic).
+    Kept for backward compatibility with out-of-tree plugins.
+    """
+
+    #: process-wide guard so the deprecation is logged only once
+    _deprecation_logged = False
+
+    def __init__(self, *args, **kwargs):
+        if not Identity._deprecation_logged:
+            LOG.warning(
+                "The identity.Identity service layer is deprecated and will "
+                "be removed. Use the rally-owned identity client (the "
+                "`clients.keystone` attribute) instead."
+            )
+            Identity._deprecation_logged = True
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def is_applicable(cls, clients):
-        cloud_version = clients.keystone().version.split(".")[0][1:]
+        cloud_version = clients.keystone.version
         return cloud_version == cls._meta_get("impl")._meta_get("version")
 
     @service.should_be_overridden

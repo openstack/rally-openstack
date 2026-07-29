@@ -34,13 +34,15 @@ class KeystoneV2ServiceTestCase(test.TestCase):
         self.name_generator = mock.MagicMock()
         self.service = keystone_v2.KeystoneV2Service(
             self.clients, name_generator=self.name_generator)
+        self.service._ng_cache = mock.MagicMock()
+        self.ng = self.service._ng_cache
 
     def test_create_tenant(self):
         name = "name"
         tenant = self.service.create_tenant(name)
 
-        self.assertEqual(tenant, self.kc.tenants.create.return_value)
-        self.kc.tenants.create.assert_called_once_with(name)
+        self.assertEqual(tenant, self.ng.create_project.return_value)
+        self.ng.create_project.assert_called_once_with(name)
 
     @ddt.data({"tenant_id": "fake_id", "name": True, "enabled": True,
                "description": True},
@@ -58,23 +60,23 @@ class KeystoneV2ServiceTestCase(test.TestCase):
         name = "foo" if name is True else name
         description = "bar" if description is True else description
 
-        self.kc.tenants.update.assert_called_once_with(
-            tenant_id, name=name, description=description, enabled=enabled)
+        self.ng.update_project.assert_called_once_with(
+            tenant_id, name=name, enabled=enabled, description=description)
 
     def test_delete_tenant(self):
         tenant_id = "fake_id"
         self.service.delete_tenant(tenant_id)
-        self.kc.tenants.delete.assert_called_once_with(tenant_id)
+        self.ng.delete_project.assert_called_once_with(tenant_id)
 
     def test_list_tenants(self):
-        self.assertEqual(self.kc.tenants.list.return_value,
+        self.assertEqual(self.ng.list_projects.return_value,
                          self.service.list_tenants())
-        self.kc.tenants.list.assert_called_once_with()
+        self.ng.list_projects.assert_called_once_with()
 
     def test_get_tenant(self):
         tenant_id = "fake_id"
         self.service.get_tenant(tenant_id)
-        self.kc.tenants.get.assert_called_once_with(tenant_id)
+        self.ng.get_project.assert_called_once_with(tenant_id)
 
     def test_create_user(self):
         name = "name"
@@ -128,20 +130,17 @@ class KeystoneV2ServiceTestCase(test.TestCase):
               {"name": "some", "service_type": "st", "description": "d"})
     @ddt.unpack
     def test_create_service(self, name, service_type, description):
-        self.assertEqual(self.kc.services.create.return_value,
-                         self.service.create_service(name=name,
-                                                     service_type=service_type,
-                                                     description=description))
-        name = name or self.name_generator.return_value
-        service_type = service_type or "rally_test_type"
-        description = description or self.name_generator.return_value
-        self.kc.services.create.assert_called_once_with(
-            name, service_type=service_type, description=description)
+        self.assertEqual(
+            self.ng.create_service.return_value,
+            self.service.create_service(name=name, service_type=service_type,
+                                        description=description))
+        self.ng.create_service.assert_called_once_with(
+            name=name, service_type=service_type, description=description)
 
     def test_create_role(self):
         name = "some"
         self.service.create_role(name)
-        self.kc.roles.create.assert_called_once_with(name)
+        self.ng.create_role.assert_called_once_with(name)
 
     def test_add_role(self):
         role_id = "fake_id"
@@ -149,22 +148,22 @@ class KeystoneV2ServiceTestCase(test.TestCase):
         tenant_id = "tenant_id"
 
         self.service.add_role(role_id, user_id=user_id, tenant_id=tenant_id)
-        self.kc.roles.add_user_role.assert_called_once_with(
-            user=user_id, role=role_id, tenant=tenant_id)
+        self.ng.add_role.assert_called_once_with(
+            role_id=role_id, user_id=user_id, project_id=tenant_id)
 
     def test_list_roles(self):
-        self.assertEqual(self.kc.roles.list.return_value,
+        self.assertEqual(self.ng.list_roles.return_value,
                          self.service.list_roles())
-        self.kc.roles.list.assert_called_once_with()
+        self.ng.list_roles.assert_called_once_with()
 
     def test_list_roles_for_user(self):
         user_id = "user_id"
         tenant_id = "tenant_id"
-        self.assertEqual(self.kc.roles.roles_for_user.return_value,
-                         self.service.list_roles_for_user(user_id,
-                                                          tenant_id=tenant_id))
-        self.kc.roles.roles_for_user.assert_called_once_with(user_id,
-                                                             tenant_id)
+        self.assertEqual(
+            self.ng.list_role_assignments.return_value,
+            self.service.list_roles_for_user(user_id, tenant_id=tenant_id))
+        self.ng.list_role_assignments.assert_called_once_with(
+            user_id, project_id=tenant_id)
 
     def test_revoke_role(self):
         role_id = "fake_id"
@@ -174,8 +173,8 @@ class KeystoneV2ServiceTestCase(test.TestCase):
         self.service.revoke_role(role_id, user_id=user_id,
                                  tenant_id=tenant_id)
 
-        self.kc.roles.remove_user_role.assert_called_once_with(
-            user=user_id, role=role_id, tenant=tenant_id)
+        self.ng.revoke_role.assert_called_once_with(
+            role_id=role_id, user_id=user_id, project_id=tenant_id)
 
     def test_create_ec2credentials(self):
         user_id = "fake_id"
@@ -197,7 +196,7 @@ class UnifiedKeystoneV2ServiceTestCase(test.TestCase):
         self.service._impl = mock.MagicMock()
 
     def test_init_identity_service(self):
-        self.clients.keystone.return_value.version = "v2.0"
+        self.clients.keystone.version = "2"
         self.assertIsInstance(identity.Identity(self.clients)._impl,
                               keystone_v2.UnifiedKeystoneV2Service)
 

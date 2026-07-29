@@ -785,28 +785,16 @@ class RequiredAPIVersionsValidatorTestCase(test.TestCase):
         self.config = copy.deepcopy(config)
         self.context = copy.deepcopy(context)
 
-    def _get_keystone_v2_mock_client(self):
-        keystone = mock.Mock()
-        del keystone.projects
-        keystone.tenants = mock.Mock()
-        return keystone
-
-    def _get_keystone_v3_mock_client(self):
-        keystone = mock.Mock()
-        del keystone.tenants
-        keystone.projects = mock.Mock()
-        return keystone
-
     def test_validate(self):
         validator = validators.RequiredAPIVersionsValidator("keystone",
                                                             [2.0, 3])
 
         clients = self.context["users"][0]["credential"].clients()
 
-        clients.keystone.return_value = self._get_keystone_v3_mock_client()
+        clients.keystone.version = "3"
         validator.validate(self.context, self.config, None, None)
 
-        clients.keystone.return_value = self._get_keystone_v2_mock_client()
+        clients.keystone.version = "2"
         validator.validate(self.context, self.config, None, None)
 
     def test_validate_with_keystone_v2(self):
@@ -814,10 +802,10 @@ class RequiredAPIVersionsValidatorTestCase(test.TestCase):
                                                             [2.0])
 
         clients = self.context["users"][0]["credential"].clients()
-        clients.keystone.return_value = self._get_keystone_v2_mock_client()
+        clients.keystone.version = "2"
         validator.validate(self.context, self.config, None, None)
 
-        clients.keystone.return_value = self._get_keystone_v3_mock_client()
+        clients.keystone.version = "3"
         e = self.assertRaises(
             validators.validation.ValidationError,
             validator.validate, self.context, self.config, None, None)
@@ -829,10 +817,10 @@ class RequiredAPIVersionsValidatorTestCase(test.TestCase):
                                                             [3])
 
         clients = self.context["users"][0]["credential"].clients()
-        clients.keystone.return_value = self._get_keystone_v3_mock_client()
+        clients.keystone.version = "3"
         validator.validate(self.context, self.config, None, None)
 
-        clients.keystone.return_value = self._get_keystone_v2_mock_client()
+        clients.keystone.version = "2"
         e = self.assertRaises(
             validators.validation.ValidationError,
             validator.validate, self.context, self.config, None, None)

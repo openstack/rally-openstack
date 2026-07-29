@@ -13,397 +13,40 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import abc
+from __future__ import annotations
+
+import copy
 import os
-from urllib.parse import urlparse
-from urllib.parse import urlunparse
+import typing as t
 
 from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
-from rally.common.plugin import plugin
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential as oscred
+from rally_openstack.common.clients import base
+from rally_openstack.common.clients import keystone
+
+
+if t.TYPE_CHECKING:
+    import openstack.connection
+
+
+# backward compatibility
+AuthenticationFailed = base.AuthenticationFailed
+Keystone = keystone.Keystone
+BaseClient = base.BaseClient
+OSClient = base.OSClient
+configure = base.configure
 
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class AuthenticationFailed(exceptions.AuthenticationFailed):
-    error_code = 220
-
-    msg_fmt = ("Failed to authenticate to %(url)s for user '%(username)s'"
-               " in project '%(project)s': %(message)s")
-    msg_fmt_2 = "%(message)s"
-
-    def __init__(self, error, url, username, project):
-        kwargs = {
-            "error": error,
-            "url": url,
-            "username": username,
-            "project": project
-        }
-        self._helpful_trace = False
-
-        from keystoneauth1 import exceptions as ks_exc
-
-        if isinstance(error, (ks_exc.ConnectionError,
-                              ks_exc.DiscoveryFailure)):
-            # this type of errors is general for all users no need to include
-            # username, project name. The original error message should be
-            # self-sufficient
-            self.msg_fmt = self.msg_fmt_2
-            message = error.message
-            if (message.startswith("Unable to establish connection to")
-                    or isinstance(error, ks_exc.DiscoveryFailure)):
-                if "Max retries exceeded with url" in message:
-                    if "HTTPConnectionPool" in message:
-                        splitter = ": HTTPConnectionPool"
-                    else:
-                        splitter = ": HTTPSConnectionPool"
-                    message = message.split(splitter, 1)[0]
-        elif isinstance(error, ks_exc.Unauthorized):
-            message = error.message.split(" (HTTP 401)", 1)[0]
-        else:
-            # something unexpected. include exception class as well.
-            self._helpful_trace = True
-            message = "[%s] %s" % (error.__class__.__name__, str(error))
-        super().__init__(message=message, **kwargs)
-
-    def is_trace_helpful(self):
-        return self._helpful_trace
-
-
-def configure(name, default_version=None, default_service_type=None,
-              supported_versions=None):
-    """OpenStack client class wrapper.
-
-    Each client class has to be wrapped by configure() wrapper. It
-    sets essential configuration of client classes.
-
-    :param name: Name of the client
-    :param default_version: Default version for client
-    :param default_service_type: Default service type of endpoint(If this
-        variable is not specified, validation will assume that your client
-        doesn't allow to specify service type.
-    :param supported_versions: List of supported versions(If this variable is
-        not specified, `OSClient.validate_version` method will raise an
-        exception that client doesn't support setting any versions. If this
-        logic is wrong for your client, you should override `validate_version`
-        in client object)
-    """
-    def wrapper(cls):
-        cls = plugin.configure(name=name, platform="openstack")(cls)
-        cls._meta_set("default_version", default_version)
-        cls._meta_set("default_service_type", default_service_type)
-        cls._meta_set("supported_versions", supported_versions or [])
-        return cls
-
-    return wrapper
-
-
-@plugin.base()
-class OSClient(plugin.Plugin):
-    """Base class for OpenStack clients"""
-
-    def __init__(self, credential, cache_obj=None):
-        self.credential = credential
-        if not isinstance(self.credential, oscred.OpenStackCredential):
-            self.credential = oscred.OpenStackCredential(**self.credential)
-        self.cache = cache_obj if cache_obj is not None else {}
-
-    def choose_version(self, version=None):
-        """Return version string.
-
-        Choose version between transmitted(preferable value if present),
-        version from api_info(configured from a context) and default.
-        """
-        # NOTE(andreykurilin): The result of choose is converted to string,
-        # since most of clients contain map for versioned modules, where a key
-        # is a string value of version. Example of map and its usage:
-        #
-        #     from oslo_utils import importutils
-        #     ...
-        #     version_map = {"1": "someclient.v1.client.Client",
-        #                    "2": "someclient.v2.client.Client"}
-        #
-        #     def Client(version, *args, **kwargs):
-        #         cls = importutils.import_class(version_map[version])
-        #         return cls(*args, **kwargs)
-        #
-        # That is why type of version so important and we should ensure that
-        # version is a string object.
-        # For those clients which doesn't accept string value(for example
-        # zaqarclient), this method should be overridden.
-        version = (version
-                   or self.credential.api_info.get(self.get_name(), {}).get(
-                       "version") or self._meta_get("default_version"))
-        if version is not None:
-            version = str(version)
-        return version
-
-    @classmethod
-    def get_supported_versions(cls):
-        return cls._meta_get("supported_versions")
-
-    @classmethod
-    def validate_version(cls, version):
-        supported_versions = cls.get_supported_versions()
-        if supported_versions:
-            if str(version) not in supported_versions:
-                raise exceptions.ValidationError(
-                    "'%(vers)s' is not supported. Should be one of "
-                    "'%(supported)s'"
-                    % {"vers": version, "supported": supported_versions})
-        else:
-            raise exceptions.RallyException("Setting version is not supported")
-        try:
-            float(version)
-        except ValueError:
-            raise exceptions.ValidationError(
-                "'%s' is invalid. Should be numeric value." % version
-            ) from None
-
-    def choose_service_type(self, service_type=None):
-        """Return service_type string.
-
-        Choose service type between transmitted(preferable value if present),
-        service type from api_info(configured from a context) and default.
-        """
-        return (service_type
-                or self.credential.api_info.get(self.get_name(), {}).get(
-                    "service_type") or self._meta_get("default_service_type"))
-
-    @classmethod
-    def is_service_type_configurable(cls):
-        """Just checks that client supports setting service type."""
-        if cls._meta_get("default_service_type") is None:
-            raise exceptions.RallyException(
-                "Setting service type is not supported.")
-
-    @property
-    def keystone(self):
-        return OSClient.get("keystone")(self.credential, self.cache)
-
-    def _get_endpoint(self, service_type=None):
-        kw = {"service_type": self.choose_service_type(service_type),
-              "region_name": self.credential.region_name}
-        if self.credential.endpoint_type:
-            kw["interface"] = self.credential.endpoint_type
-        api_url = self.keystone.service_catalog.url_for(**kw)
-        return api_url
-
-    def _get_auth_info(self, user_key="username",
-                       password_key="password",
-                       auth_url_key="auth_url",
-                       project_name_key="project_id",
-                       domain_name_key="domain_name",
-                       user_domain_name_key="user_domain_name",
-                       project_domain_name_key="project_domain_name",
-                       cacert_key="cacert",
-                       endpoint_type="endpoint_type",
-                       ):
-        kw = {
-            user_key: self.credential.username,
-            password_key: self.credential.password,
-            auth_url_key: self.credential.auth_url,
-            cacert_key: self.credential.https_cacert,
-        }
-        if project_name_key:
-            kw.update({project_name_key: self.credential.tenant_name})
-
-        if "v2.0" not in self.credential.auth_url:
-            kw.update({
-                domain_name_key: self.credential.domain_name})
-            kw.update({
-                user_domain_name_key:
-                self.credential.user_domain_name or "Default"})
-            kw.update({
-                project_domain_name_key:
-                self.credential.project_domain_name or "Default"})
-        if self.credential.endpoint_type:
-            kw[endpoint_type] = self.credential.endpoint_type
-        return kw
-
-    @abc.abstractmethod
-    def create_client(self, *args, **kwargs):
-        """Create new instance of client."""
-
-    def __call__(self, *args, **kwargs):
-        """Return initialized client instance."""
-        key = "{}{}{}".format(self.get_name(),
-                              str(args) if args else "",
-                              str(kwargs) if kwargs else "")
-        if key not in self.cache:
-            self.cache[key] = self.create_client(*args, **kwargs)
-        return self.cache[key]
-
-    @classmethod
-    def get(
-        cls,
-        name: str,
-        platform: str = "openstack",  # type: ignore[override]
-        allow_hidden: bool = False
-    ) -> type["OSClient"]:
-        return super().get(
-            name,
-            platform=platform,
-            allow_hidden=allow_hidden
-        )
-
-
-@configure("keystone", supported_versions=("2", "3"))
-class Keystone(OSClient):
-    """Wrapper for KeystoneClient which hides OpenStack auth details."""
-
-    @property
-    def keystone(self):
-        raise exceptions.RallyException(
-            "Method 'keystone' is restricted for keystoneclient. :)")
-
-    @property
-    def service_catalog(self):
-        return self.auth_ref.service_catalog
-
-    @property
-    def auth_ref(self):
-        try:
-            if "keystone_auth_ref" not in self.cache:
-                sess, plugin = self.get_session()
-                self.cache["keystone_auth_ref"] = plugin.get_access(sess)
-        except Exception as original_e:
-            e = AuthenticationFailed(
-                error=original_e,
-                username=self.credential.username,
-                project=self.credential.tenant_name,
-                url=self.credential.auth_url
-            )
-            if logging.is_debug() and e.is_trace_helpful():
-                LOG.exception("Unable to authenticate for user"
-                              " %(username)s in project"
-                              " %(tenant_name)s" %
-                              {"username": self.credential.username,
-                               "tenant_name": self.credential.tenant_name})
-
-            raise e from None
-        return self.cache["keystone_auth_ref"]
-
-    def get_session(self, version=None):
-        key = "keystone_session_and_plugin_%s" % version
-        if key not in self.cache:
-            from keystoneauth1 import discover
-            from keystoneauth1 import identity
-            from keystoneauth1 import session
-
-            version = self.choose_version(version)
-            auth_url = self.credential.auth_url
-            if version is not None:
-                auth_url = self._remove_url_version()
-
-            password_args = {
-                "auth_url": auth_url,
-                "username": self.credential.username,
-                "password": self.credential.password,
-                "tenant_name": self.credential.tenant_name
-            }
-
-            if version is None:
-                # NOTE(rvasilets): If version not specified than we discover
-                # available version with the smallest number. To be able to
-                # discover versions we need session
-                temp_session = session.Session(
-                    verify=(self.credential.https_cacert
-                            or not self.credential.https_insecure),
-                    cert=self.credential.https_cert,
-                    timeout=CONF.openstack_client_http_timeout)
-                version = str(discover.Discover(
-                    temp_session,
-                    password_args["auth_url"]).version_data()[0]["version"][0])
-                temp_session.session.close()
-
-            if "v2.0" not in password_args["auth_url"] and version != "2":
-                password_args.update({
-                    "user_domain_name": self.credential.user_domain_name,
-                    "domain_name": self.credential.domain_name,
-                    "project_domain_name": self.credential.project_domain_name
-                })
-            identity_plugin = identity.Password(**password_args)
-            sess = session.Session(
-                auth=identity_plugin,
-                verify=(self.credential.https_cacert
-                        or not self.credential.https_insecure),
-                cert=self.credential.https_cert,
-                timeout=CONF.openstack_client_http_timeout)
-            self.cache[key] = (sess, identity_plugin)
-        return self.cache[key]
-
-    def _remove_url_version(self):
-        """Remove any version from the auth_url.
-
-        The keystone Client code requires that auth_url be the root url
-        if a version override is used.
-        """
-        url = urlparse(self.credential.auth_url)
-        path = url.path.rstrip("/")
-        if path.endswith("v2.0") or path.endswith("v3"):
-            path = os.path.join(*os.path.split(path)[:-1])
-            parts = (url.scheme, url.netloc, path, url.params, url.query,
-                     url.fragment)
-            return urlunparse(parts)
-        return self.credential.auth_url
-
-    def create_client(self, version=None):
-        """Return a keystone client.
-
-        :param version: Keystone API version, can be one of:
-            ("2", "3")
-
-        If this object was constructed with a version in the api_info
-        then that will be used unless the version parameter is passed.
-        """
-        import keystoneclient
-        from keystoneclient import client
-
-        # Use the version in the api_info if provided, otherwise fall
-        # back to the passed version (which may be None, in which case
-        # keystoneclient chooses).
-        version = self.choose_version(version)
-
-        sess, auth_plugin = self.get_session(version=version)
-
-        kw = {"version": version, "session": sess,
-              "timeout": CONF.openstack_client_http_timeout}
-        # check for keystone version
-        if auth_plugin._user_domain_name and self.credential.region_name:
-            kw["region_name"] = self.credential.region_name
-
-        if keystoneclient.__version__[0] == "1":
-            # NOTE(andreykurilin): let's leave this hack for envs which uses
-            #  old(<2.0.0) keystoneclient version. Upstream fix:
-            #  https://github.com/openstack/python-keystoneclient/commit/d9031c252848d89270a543b67109a46f9c505c86
-            from keystoneauth1 import plugin
-            kw["auth_url"] = sess.get_endpoint(interface=plugin.AUTH_INTERFACE)
-        if self.credential.endpoint_type:
-            kw["interface"] = self.credential.endpoint_type
-
-        # NOTE(amyge):
-        # In auth_ref(), plugin.get_access(sess) only returns a auth_ref object
-        # and won't check the authentication access until it is actually being
-        # called. To catch the authentication failure in auth_ref(), we will
-        # have to call self.auth_ref.auth_token here to actually use auth_ref.
-        self.auth_ref
-
-        return client.Client(**kw)
-
-
-@configure("nova", default_version="2", default_service_type="compute")
-class Nova(OSClient):
-    """Wrapper for NovaClient which returns a authenticated native client."""
-
-    @classmethod
-    def validate_version(cls, version):
+class NovaSpec(base.ClientSpec):
+    def validate_version(self, version):
         from novaclient import api_versions
         from novaclient import exceptions as nova_exc
 
@@ -412,6 +55,12 @@ class Nova(OSClient):
         except nova_exc.UnsupportedVersion:
             raise exceptions.RallyException(
                 "Version string '%s' is unsupported." % version) from None
+
+
+@base.configure("nova", default_version="2", default_service_type="compute",
+                spec=NovaSpec)
+class Nova(base.OSClient):
+    """Wrapper for NovaClient which returns a authenticated native client."""
 
     def create_client(self, version=None, service_type=None):
         """Return nova client."""
@@ -424,9 +73,10 @@ class Nova(OSClient):
         return client
 
 
-@configure("neutron", default_version="2.0", default_service_type="network",
-           supported_versions=["2.0"])
-class Neutron(OSClient):
+@base.configure("neutron", default_version="2.0",
+                default_service_type="network",
+                supported_versions=["2.0"])
+class Neutron(base.OSClient):
     """Wrapper for NeutronClient which returns an authenticated native client.
 
     """
@@ -447,9 +97,9 @@ class Neutron(OSClient):
         return client
 
 
-@configure("octavia", default_version="2",
-           default_service_type="load-balancer", supported_versions=["2"])
-class Octavia(OSClient):
+@base.configure("octavia", default_version="2",
+                default_service_type="load-balancer", supported_versions=["2"])
+class Octavia(base.OSClient):
     """Wrapper for OctaviaClient which returns an authenticated native client.
 
     """
@@ -469,9 +119,9 @@ class Octavia(OSClient):
         return client
 
 
-@configure("glance", default_version="2", default_service_type="image",
-           supported_versions=["1", "2"])
-class Glance(OSClient):
+@base.configure("glance", default_version="2", default_service_type="image",
+                supported_versions=["1", "2"])
+class Glance(base.OSClient):
     """Wrapper for GlanceClient which returns an authenticated native client.
 
     """
@@ -488,9 +138,10 @@ class Glance(OSClient):
         return client
 
 
-@configure("heat", default_version="1", default_service_type="orchestration",
-           supported_versions=["1"])
-class Heat(OSClient):
+@base.configure("heat", default_version="1",
+                default_service_type="orchestration",
+                supported_versions=["1"])
+class Heat(base.OSClient):
     """Wrapper for HeatClient which returns an authenticated native client."""
 
     def create_client(self, version=None, service_type=None):
@@ -511,14 +162,8 @@ class Heat(OSClient):
         return client
 
 
-@configure("cinder", default_version="3", default_service_type="block-storage")
-class Cinder(OSClient):
-    """Wrapper for CinderClient which returns an authenticated native client.
-
-    """
-
-    @classmethod
-    def validate_version(cls, version):
+class CinderSpec(base.ClientSpec):
+    def validate_version(self, version):
         from cinderclient import api_versions
         from cinderclient import exceptions as cinder_exc
 
@@ -538,6 +183,14 @@ class Cinder(OSClient):
             raise exceptions.RallyException(
                 "Version string '%s' is unsupported." % version) from None
 
+
+@base.configure("cinder", default_version="3",
+                default_service_type="block-storage", spec=CinderSpec)
+class Cinder(base.OSClient):
+    """Wrapper for CinderClient which returns an authenticated native client.
+
+    """
+
     def create_client(self, version=None, service_type=None):
         """Return cinder client."""
         from cinderclient import client as cinder
@@ -549,14 +202,8 @@ class Cinder(OSClient):
         return client
 
 
-@configure("manila", default_version="2",
-           default_service_type="shared-file-system")
-class Manila(OSClient):
-    """Wrapper for ManilaClient which returns an authenticated native client.
-
-    """
-    @classmethod
-    def validate_version(cls, version):
+class ManilaSpec(base.ClientSpec):
+    def validate_version(self, version):
         from manilaclient import api_versions
         from manilaclient import exceptions as manila_exc
 
@@ -565,6 +212,14 @@ class Manila(OSClient):
         except manila_exc.UnsupportedVersion:
             raise exceptions.RallyException(
                 "Version string '%s' is unsupported." % version) from None
+
+
+@base.configure("manila", default_version="2",
+                default_service_type="shared-file-system", spec=ManilaSpec)
+class Manila(base.OSClient):
+    """Wrapper for ManilaClient which returns an authenticated native client.
+
+    """
 
     def create_client(self, version=None, service_type=None):
         """Return manila client."""
@@ -577,9 +232,9 @@ class Manila(OSClient):
         return manila_client
 
 
-@configure("gnocchi", default_service_type="metric", default_version="1",
-           supported_versions=["1"])
-class Gnocchi(OSClient):
+@base.configure("gnocchi", default_service_type="metric", default_version="1",
+                supported_versions=["1"])
+class Gnocchi(base.OSClient):
     """Wrapper for GnocchiClient which returns an authenticated native client.
 
     """
@@ -599,9 +254,10 @@ class Gnocchi(OSClient):
         return gclient
 
 
-@configure("ironic", default_version="1", default_service_type="baremetal",
-           supported_versions=["1"])
-class Ironic(OSClient):
+@base.configure("ironic", default_version="1",
+                default_service_type="baremetal",
+                supported_versions=["1"])
+class Ironic(base.OSClient):
     """Wrapper for IronicClient which returns an authenticated native client.
 
     """
@@ -610,23 +266,27 @@ class Ironic(OSClient):
         """Return Ironic client."""
         from ironicclient import client as ironic
 
+        ironic_version = self.choose_version(version)
+        # ironic always has a default version
+        assert ironic_version is not None
         client = ironic.get_client(
-            self.choose_version(version),
+            ironic_version,
             session=self.keystone.get_session()[0],
             endpoint=self._get_endpoint(service_type))
         return client
 
 
-@configure("zaqar", default_version="2", default_service_type="messaging",
-           supported_versions=["2"])
-class Zaqar(OSClient):
+@base.configure("zaqar", default_version="2", default_service_type="messaging",
+                supported_versions=["2"])
+class Zaqar(base.OSClient):
     """Wrapper for ZaqarClient which returns an authenticated native client.
 
     """
 
     def choose_version(self, version=None):
         # zaqarclient accepts only int as version
-        return int(super().choose_version(version))
+        version = super().choose_version(version)
+        return int(version) if version is not None else None
 
     def create_client(self, version=None, service_type=None):
         """Return Zaqar client."""
@@ -637,9 +297,9 @@ class Zaqar(OSClient):
         return client
 
 
-@configure("designate", default_version="2", default_service_type="dns",
-           supported_versions=["2"])
-class Designate(OSClient):
+@base.configure("designate", default_version="2", default_service_type="dns",
+                supported_versions=["2"])
+class Designate(base.OSClient):
     """Wrapper for DesignateClient which returns authenticated native client.
 
     """
@@ -658,9 +318,9 @@ class Designate(OSClient):
                              endpoint_override=api_url)
 
 
-@configure("trove", default_version="1.0", supported_versions=["1.0"],
-           default_service_type="database")
-class Trove(OSClient):
+@base.configure("trove", default_version="1.0", supported_versions=["1.0"],
+                default_service_type="database")
+class Trove(base.OSClient):
     """Wrapper for TroveClient which returns an authenticated native client.
 
     """
@@ -675,8 +335,8 @@ class Trove(OSClient):
         return client
 
 
-@configure("mistral", default_service_type="workflowv2")
-class Mistral(OSClient):
+@base.configure("mistral", default_service_type="workflowv2")
+class Mistral(base.OSClient):
     """Wrapper for MistralClient which returns an authenticated native client.
 
     """
@@ -692,8 +352,8 @@ class Mistral(OSClient):
         return client
 
 
-@configure("swift", default_service_type="object-store")
-class Swift(OSClient):
+@base.configure("swift", default_service_type="object-store")
+class Swift(base.OSClient):
     """Wrapper for SwiftClient which returns an authenticated native client.
 
     """
@@ -714,9 +374,9 @@ class Swift(OSClient):
         return client
 
 
-@configure("magnum", default_version="1", supported_versions=["1"],
-           default_service_type="container-infra",)
-class Magnum(OSClient):
+@base.configure("magnum", default_version="1", supported_versions=["1"],
+                default_service_type="container-infra",)
+class Magnum(base.OSClient):
     """Wrapper for MagnumClient which returns an authenticated native client.
 
     """
@@ -734,9 +394,10 @@ class Magnum(OSClient):
             magnum_url=api_url)
 
 
-@configure("watcher", default_version="1", default_service_type="infra-optim",
-           supported_versions=["1"])
-class Watcher(OSClient):
+@base.configure("watcher", default_version="1",
+                default_service_type="infra-optim",
+                supported_versions=["1"])
+class Watcher(base.OSClient):
     """Wrapper for WatcherClient which returns an authenticated native client.
 
     """
@@ -753,8 +414,9 @@ class Watcher(OSClient):
         return client
 
 
-@configure("barbican", default_version="1", default_service_type="key-manager")
-class Barbican(OSClient):
+@base.configure("barbican", default_version="1",
+                default_service_type="key-manager")
+class Barbican(base.OSClient):
     """Wrapper for BarbicanClient which returns an authenticated native client.
 
     """
@@ -775,13 +437,52 @@ class Barbican(OSClient):
 class Clients:
     """This class simplify and unify work with OpenStack python clients."""
 
-    def __init__(self, credential, cache=None):
+    def __init__(
+        self,
+        credential: oscred.OpenStackCredential,
+        cache: dict[str, t.Any] | None = None,
+        *,
+        atomic_inst: list | None = None,
+        name_generator: t.Callable[[], str] | None = None,
+        sleeper: t.Callable[[float], None] | None = None,
+    ) -> None:
         self.credential = credential
-        self.cache = cache or {}
+        self.cache: dict[str, t.Any] = cache or {}
+        self._atomic_inst = atomic_inst if atomic_inst is not None else []
+        self._name_generator = name_generator
+        self._sleeper = sleeper
 
-    def __getattr__(self, client_name):
-        """Lazy load of clients."""
-        return OSClient.get(client_name)(self.credential, self.cache)
+    if t.TYPE_CHECKING:
+        # keystone is the one ported client; declare its type so
+        # ``clients.keystone`` resolves to Keystone instead of the ``Any``
+        # that ``__getattr__`` returns for every other (legacy) service. At
+        # runtime ``__getattr__`` builds and memoizes it like the rest.
+        keystone: Keystone
+
+    def __getattr__(self, name: str) -> t.Any:
+        """Return the client for a service name.
+
+        The runtime context (this container, the atomic sink, the name
+        generator, the idle sleeper) is passed only to *ported* clients. A
+        legacy :class:`~...clients.base.OSClient` subclass -- including every
+        out-of-tree plugin -- keeps its historic ``(credential, cache)``
+        constructor, so it is built without those kwargs.
+        """
+        if name.startswith("_"):
+            raise AttributeError(name)
+        key = f"client:{name}"
+        if key not in self.cache:
+            client_cls = base.BaseClient.get(name)
+            if issubclass(client_cls, base.OSClient):
+                self.cache[key] = client_cls(self.credential, self.cache)
+            else:
+                self.cache[key] = client_cls(
+                    self.credential, self.cache,
+                    clients=self,
+                    atomic_inst=self._atomic_inst,
+                    name_generator=self._name_generator,
+                    sleeper=self._sleeper)
+        return self.cache[key]
 
     @classmethod
     def create_from_env(cls):
@@ -808,20 +509,21 @@ class Clients:
         return cls(oscred)
 
     def clear(self):
-        """Remove all cached client handles."""
+        """Remove all cached client handles and shared resources."""
         self.cache = {}
 
     def verified_keystone(self):
         """Ensure keystone endpoints are valid and then authenticate
 
-        :returns: Keystone Client
+        :returns: rally-owned identity client
         """
         # Ensure that user is admin
-        if "admin" not in [role.lower() for role in
-                           self.keystone.auth_ref.role_names]:
+        if "admin" not in [
+            role.lower() for role in (self.keystone.auth_ref.role_names or [])
+        ]:
             raise exceptions.InvalidAdminException(
                 username=self.credential.username)
-        return self.keystone()
+        return self.keystone
 
     def services(self):
         """Return available services names and types.
@@ -839,3 +541,87 @@ class Clients:
             self.cache["services_data"] = services_data
 
         return self.cache["services_data"]
+
+    def override(self, **client_versions: str) -> Clients:
+        """Return a Clients pinned to specific API versions."""
+        credential = copy.deepcopy(self.credential)
+        for client_name, version in client_versions.items():
+            credential["api_info"].setdefault(client_name, {})
+            credential["api_info"][client_name]["version"] = str(version)
+        cache = {key: value for key, value in self.cache.items()
+                 if not key.startswith("client:")}
+        return Clients(credential,
+                       cache=cache,
+                       atomic_inst=self._atomic_inst,
+                       name_generator=self._name_generator,
+                       sleeper=self._sleeper)
+
+    def _sdk_service_config(self) -> dict[str, str]:
+        """Build openstacksdk per-service config."""
+        config: dict[str, str] = {}
+        for client_name in self.credential.api_info:
+            try:
+                spec = base.BaseClient.get(client_name).spec
+            except exceptions.PluginNotFound:
+                continue
+            sdk_type = spec.sdk_service_type
+            if not sdk_type:
+                continue
+            prefix = sdk_type.replace("-", "_")
+            version = self.credential.api_info[client_name].get("version")
+            if version:
+                config[f"{prefix}_api_version"] = str(version)
+            service_type = spec.choose_service_type(self.credential)
+            if service_type and service_type != sdk_type:
+                config[f"{prefix}_service_type"] = service_type
+        return config
+
+    @property
+    def _conn(self) -> openstack.connection.Connection:
+        """Return an openstacksdk Connection sharing the keystone session."""
+        service_config = self._sdk_service_config()
+        key = "sdk_connection_"
+        key += "_".join(
+            f"{name}={value}"
+            for name, value in sorted(service_config.items())
+        )
+        if key not in self.cache:
+            import openstack.connection
+
+            session = self.keystone.get_session()[0]
+            self.cache[key] = openstack.connection.Connection(
+                session=session,
+                region_name=self.credential.region_name,
+                # Point the identity proxy straight at the versioned endpoint
+                # so openstacksdk does not re-discover the identity version on
+                # proxy init.
+                identity_endpoint_override=(
+                    self.keystone.identity_endpoint_override),
+                # Per-service api_version/service_type kwargs go to the SDK's
+                # ``**kwargs``. The cast keeps the splat from being matched
+                # against the named Connection params.
+                **t.cast("dict[str, t.Any]", service_config),
+            )
+        return self.cache[key]
+
+    def refresh_token_if_needed(self):
+        """Proactively refresh a reused token near expiry (untimed).
+
+        The token captured by the context is reused across iterations. If it
+        is about to expire, refresh it here at iteration init, before any
+        atomic action, so the refresh request never lands inside a measured
+        action. Does nothing when no token was seeded (the plugin authenticates
+        on first use anyway) or when the token is still valid.
+        """
+        # A seeded auth state is the string produced by ``get_auth_state()``;
+        # anything else (None, or a test mock) means there is nothing to
+        # refresh.
+        if not isinstance(self.credential.auth, str):
+            return
+        sess, plugin = self.keystone.get_session()
+        margin = CONF.openstack_client_token_refresh_margin
+        if plugin.get_access(sess).will_expire_soon(margin):
+            plugin.invalidate()
+            # overwrite the auth_ref memoized by the keystone client, otherwise
+            # it would keep handing out the token we have just invalidated.
+            self.cache["keystone_auth_ref"] = plugin.get_access(sess)

@@ -24,12 +24,9 @@ from rally_openstack.common.services.identity import keystone_common
 @service.service("keystone", service_type="identity", version="2")
 class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
 
-    @atomic.action_timer("keystone_v2.create_tenant")
     def create_tenant(self, tenant_name=None):
-        tenant_name = tenant_name or self.generate_random_name()
-        return self._clients.keystone("2").tenants.create(tenant_name)
+        return self._ng.create_project(tenant_name)
 
-    @atomic.action_timer("keystone_v2.update_tenant")
     def update_tenant(self, tenant_id, name=None, enabled=None,
                       description=None):
         """Update tenant name and description.
@@ -45,21 +42,18 @@ class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
             name = self.generate_random_name()
         if description is True:
             description = self.generate_random_name()
-        self._clients.keystone("2").tenants.update(
-            tenant_id, name=name, description=description, enabled=enabled)
+        self._ng.update_project(tenant_id, name=name, enabled=enabled,
+                                description=description)
 
-    @atomic.action_timer("keystone_v2.delete_tenant")
     def delete_tenant(self, tenant_id):
-        return self._clients.keystone("2").tenants.delete(tenant_id)
+        return self._ng.delete_project(tenant_id)
 
-    @atomic.action_timer("keystone_v2.list_tenants")
     def list_tenants(self):
-        return self._clients.keystone("2").tenants.list()
+        return self._ng.list_projects()
 
-    @atomic.action_timer("keystone_v2.get_tenant")
     def get_tenant(self, tenant_id):
         """Get tenant."""
-        return self._clients.keystone("2").tenants.get(tenant_id)
+        return self._ng.get_project(tenant_id)
 
     @atomic.action_timer("keystone_v2.create_user")
     def create_user(self, username=None, password=None, email=None,
@@ -67,11 +61,9 @@ class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
         username = username or self.generate_random_name()
         password = password or str(uuid.uuid4())
         email = email or (username + "@rally.me")
-        return self._clients.keystone("2").users.create(name=username,
-                                                        password=password,
-                                                        email=email,
-                                                        tenant_id=tenant_id,
-                                                        enabled=enabled)
+        return self._kc.users.create(name=username, password=password,
+                                     email=email, tenant_id=tenant_id,
+                                     enabled=enabled)
 
     @atomic.action_timer("keystone_v2.create_users")
     def create_users(self, tenant_id, number_of_users, user_create_args=None):
@@ -96,14 +88,12 @@ class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
                 "Failed to update '%s', since Keystone V2 allows to update "
                 "only '%s'." % ("', '".join(restricted),
                                 "', '".join(allowed_args)))
-        self._clients.keystone("2").users.update(user_id, **kwargs)
+        self._kc.users.update(user_id, **kwargs)
 
     @atomic.action_timer("keystone_v2.update_user_password")
     def update_user_password(self, user_id, password):
-        self._clients.keystone("2").users.update_password(user_id,
-                                                          password=password)
+        self._kc.users.update_password(user_id, password=password)
 
-    @atomic.action_timer("keystone_v2.create_service")
     def create_service(self, name=None, service_type=None, description=None):
         """Creates keystone service.
 
@@ -112,39 +102,26 @@ class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
         :param description: description of the service
         :returns: keystone service instance
         """
-        name = name or self.generate_random_name()
-        service_type = service_type or "rally_test_type"
-        description = description or self.generate_random_name()
-        return self._clients.keystone("2").services.create(
-            name,
-            service_type=service_type,
-            description=description)
+        return self._ng.create_service(name=name, service_type=service_type,
+                                       description=description)
 
-    @atomic.action_timer("keystone_v2.create_role")
     def create_role(self, name=None):
-        name = name or self.generate_random_name()
-        return self._clients.keystone("2").roles.create(name)
+        return self._ng.create_role(name)
 
-    @atomic.action_timer("keystone_v2.add_role")
     def add_role(self, role_id, user_id, tenant_id):
-        self._clients.keystone("2").roles.add_user_role(
-            user=user_id, role=role_id, tenant=tenant_id)
+        self._ng.add_role(role_id=role_id, user_id=user_id,
+                          project_id=tenant_id)
 
-    @atomic.action_timer("keystone_v2.list_roles")
     def list_roles(self):
         """List all roles."""
-        return self._clients.keystone("2").roles.list()
+        return self._ng.list_roles()
 
-    @atomic.action_timer("keystone_v2.list_roles_for_user")
     def list_roles_for_user(self, user_id, tenant_id=None):
-        return self._clients.keystone("2").roles.roles_for_user(
-            user_id, tenant_id)
+        return self._ng.list_role_assignments(user_id, project_id=tenant_id)
 
-    @atomic.action_timer("keystone_v2.revoke_role")
     def revoke_role(self, role_id, user_id, tenant_id):
-        self._clients.keystone("2").roles.remove_user_role(user=user_id,
-                                                           role=role_id,
-                                                           tenant=tenant_id)
+        self._ng.revoke_role(role_id=role_id, user_id=user_id,
+                             project_id=tenant_id)
 
     @atomic.action_timer("keystone_v2.create_ec2creds")
     def create_ec2credentials(self, user_id, tenant_id):
@@ -155,8 +132,7 @@ class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
 
         :returns: Created ec2-credentials object
         """
-        return self._clients.keystone("2").ec2.create(user_id,
-                                                      tenant_id=tenant_id)
+        return self._kc.ec2.create(user_id, tenant_id=tenant_id)
 
 
 @service.compat_layer(KeystoneV2Service)

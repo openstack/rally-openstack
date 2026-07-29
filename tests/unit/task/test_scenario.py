@@ -53,14 +53,18 @@ class OpenStackScenarioTestCase(test.TestCase):
         scenario = base_scenario.OpenStackScenario(self.context)
         self.assertEqual(self.context, scenario.context)
         self.osclients.mock.assert_called_once_with(
-            self.context["admin"]["credential"])
+            self.context["admin"]["credential"],
+            atomic_inst=mock.ANY, name_generator=mock.ANY,
+            sleeper=mock.ANY)
 
     def test_init_admin_clients(self):
+        admin_clients = mock.Mock()
         scenario = base_scenario.OpenStackScenario(
-            self.context, admin_clients="foobar")
+            self.context, admin_clients=admin_clients)
         self.assertEqual(self.context, scenario.context)
 
-        self.assertEqual("foobar", scenario._admin_clients)
+        self.assertEqual(admin_clients, scenario._admin_clients)
+        admin_clients.refresh_token_if_needed.assert_called_once_with()
 
     def test_init_user_context(self):
         user = {"credential": mock.Mock(), "tenant_id": "foo"}
@@ -74,21 +78,30 @@ class OpenStackScenarioTestCase(test.TestCase):
         self.assertEqual(self.context["tenants"]["foo"],
                          scenario.context["tenant"])
 
-        self.osclients.mock.assert_called_once_with(user["credential"])
+        self.osclients.mock.assert_called_once_with(
+            user["credential"],
+            atomic_inst=mock.ANY, name_generator=mock.ANY,
+            sleeper=mock.ANY)
 
     def test_init_clients(self):
+        admin_clients = mock.Mock()
+        clients = mock.Mock()
         scenario = base_scenario.OpenStackScenario(self.context,
-                                                   admin_clients="spam",
-                                                   clients="ham")
-        self.assertEqual("spam", scenario._admin_clients)
-        self.assertEqual("ham", scenario._clients)
+                                                   admin_clients=admin_clients,
+                                                   clients=clients)
+        self.assertEqual(admin_clients, scenario._admin_clients)
+        self.assertEqual(clients, scenario._clients)
+        admin_clients.refresh_token_if_needed.assert_called_once_with()
+        clients.refresh_token_if_needed.assert_called_once_with()
 
     def test_init_user_clients(self):
+        clients = mock.Mock()
         scenario = base_scenario.OpenStackScenario(
-            self.context, clients="foobar")
+            self.context, clients=clients)
         self.assertEqual(self.context, scenario.context)
 
-        self.assertEqual("foobar", scenario._clients)
+        self.assertEqual(clients, scenario._clients)
+        clients.refresh_token_if_needed.assert_called_once_with()
 
     @ddt.data(([], 0),
               ([("admin", CREDENTIAL_WITHOUT_HMAC)], 0),

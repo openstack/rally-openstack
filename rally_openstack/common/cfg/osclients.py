@@ -21,6 +21,14 @@ OPTS = {
         cfg.FloatOpt(
             "openstack_client_http_timeout",
             default=180.0,
-            help="HTTP timeout for any of OpenStack service in seconds")
+            help="HTTP timeout for any of OpenStack service in seconds"),
+        cfg.IntOpt(
+            "openstack_client_token_refresh_margin",
+            default=600,
+            help="When a token reused across scenario iterations is within "
+                 "this many seconds of expiry, it is refreshed once at "
+                 "iteration init (before any atomic action) so the refresh "
+                 "never pollutes a measured action's duration. Should be "
+                 "generously larger than keystoneauth's own ~120s floor.")
     ]
 }

@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally import exceptions
 from rally.common import logging
 from rally.task import validation
 
-from rally_openstack.common.services.identity import identity
 from rally_openstack.task import scenario
 
 
@@ -26,13 +26,9 @@ class KeystoneBasic(scenario.OpenStackScenario):
     def __init__(self, context=None, admin_clients=None, clients=None):
         super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
-            self.admin_keystone = identity.Identity(
-                self._admin_clients, name_generator=self.generate_random_name,
-                atomic_inst=self.atomic_actions())
+            self.admin_keystone = self._admin_clients.keystone
         if hasattr(self, "_clients"):
-            self.keystone = identity.Identity(
-                self._clients, name_generator=self.generate_random_name,
-                atomic_inst=self.atomic_actions())
+            self.keystone = self._clients.keystone
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
@@ -142,8 +138,14 @@ class CreateTenantWithUsers(KeystoneBasic):
         :returns: keystone tenant instance
         """
         tenant = self.admin_keystone.create_project(**kwargs)
-        self.admin_keystone.create_users(tenant.id,
-                                         number_of_users=users_per_tenant)
+        # the same role for every user, so it is resolved once rather than
+        # listing all role definitions per created user.
+        role = self.admin_keystone.find_role("member")
+        for _ in range(users_per_tenant):
+            user = self.admin_keystone.create_user(project_id=tenant.id)
+            if role is not None:
+                self.admin_keystone.add_role(role_id=role.id, user_id=user.id,
+                                             project_id=tenant.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
@@ -231,7 +233,8 @@ class CreateAddAndListUserRoles(KeystoneBasic):
         role = self.admin_keystone.create_role()
         self.admin_keystone.add_role(user_id=user_id, role_id=role.id,
                                      project_id=tenant_id)
-        self.admin_keystone.list_roles(user_id=user_id, project_id=tenant_id)
+        self.admin_keystone.list_role_assignments(
+            user_id, project_id=tenant_id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
@@ -263,7 +266,11 @@ class GetEntities(KeystoneBasic):
         if service_name is None:
             service = self.admin_keystone.create_service()
         else:
-            service = self.admin_keystone.get_service_by_name(service_name)
+            services = self.admin_keystone.list_services(name=service_name)
+            if not services:
+                raise exceptions.GetResourceNotFound(
+                    resource=f"Service({service_name})")
+            service = services[0]
         self.admin_keystone.get_service(service.id)
 
 
@@ -356,11 +363,13 @@ class CreateAndListServices(KeystoneBasic):
 class CreateAndListEc2Credentials(KeystoneBasic):
 
     def run(self):
-        """Create and List all keystone ec2-credentials."""
-        self.keystone.create_ec2credentials(
-            self.context["user"]["id"],
+        """Create and list all keystone ec2-credentials."""
+        self.keystone.create_credential(
+            "ec2",
+            user_id=self.context["user"]["id"],
             project_id=self.context["tenant"]["id"])
-        self.keystone.list_ec2credentials(self.context["user"]["id"])
+        self.keystone.list_credentials(
+            user_id=self.context["user"]["id"], cred_type="ec2")
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -371,11 +380,11 @@ class CreateAndDeleteEc2Credential(KeystoneBasic):
 
     def run(self):
         """Create and delete keystone ec2-credential."""
-        creds = self.keystone.create_ec2credentials(
-            self.context["user"]["id"],
+        cred = self.keystone.create_credential(
+            "ec2",
+            user_id=self.context["user"]["id"],
             project_id=self.context["tenant"]["id"])
-        self.keystone.delete_ec2credential(
-            self.context["user"]["id"], access=creds.access)
+        self.keystone.delete_credential(cred.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
@@ -436,9 +445,11 @@ class CreateAndUpdateUser(KeystoneBasic):
 
         user = self.admin_keystone.create_user(**create_user_kwargs)
         self.admin_keystone.update_user(user.id, **update_user_kwargs)
-        user_data = self.admin_clients("keystone").users.get(user.id)
+        user_data = self.admin_keystone.get_user(user.id)
 
-        for args in update_user_kwargs:
-            msg = ("%s isn't updated" % args)
-            self.assertEqual(getattr(user_data, str(args)),
-                             update_user_kwargs[args], err_msg=msg)
+        for key, expected in update_user_kwargs.items():
+            # the openstacksdk user resource exposes ``enabled`` as
+            # ``is_enabled``.
+            attr = "is_enabled" if key == "enabled" else key
+            msg = ("%s isn't updated" % key)
+            self.assertEqual(getattr(user_data, attr), expected, err_msg=msg)

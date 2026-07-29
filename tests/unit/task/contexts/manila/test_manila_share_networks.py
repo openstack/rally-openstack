@@ -291,8 +291,10 @@ class ShareNetworksTestCase(test.TestCase):
         ]
         mock_manila_scenario__create_share_network.assert_has_calls(
             expected_calls * (self.TENANTS_AMOUNT * networks_per_tenant))
-        mock_clients.assert_has_calls([mock.call(MOCK_USER_CREDENTIAL)
-                                      for i in range(self.TENANTS_AMOUNT)])
+        mock_clients.assert_has_calls(
+            [mock.call(MOCK_USER_CREDENTIAL, atomic_inst=mock.ANY,
+                       name_generator=mock.ANY, sleeper=mock.ANY)
+             for i in range(self.TENANTS_AMOUNT)], any_order=True)
 
     @ddt.data(True, False)
     @mock.patch("rally_openstack.common.osclients.Clients")
@@ -329,8 +331,10 @@ class ShareNetworksTestCase(test.TestCase):
         expected_calls = [mock.call(**sn_args), mock.call().to_dict()]
         mock_manila_scenario__create_share_network.assert_has_calls(
             expected_calls * (self.TENANTS_AMOUNT * networks_per_tenant))
-        mock_clients.assert_has_calls([mock.call(MOCK_USER_CREDENTIAL)
-                                      for i in range(self.TENANTS_AMOUNT)])
+        mock_clients.assert_has_calls(
+            [mock.call(MOCK_USER_CREDENTIAL, atomic_inst=mock.ANY,
+                       name_generator=mock.ANY, sleeper=mock.ANY)
+             for i in range(self.TENANTS_AMOUNT)], any_order=True)
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     @mock.patch(MANILA_UTILS_PATH + "_create_share_network")
@@ -354,8 +358,10 @@ class ShareNetworksTestCase(test.TestCase):
         expected_calls = [mock.call(), mock.call().to_dict()]
         mock_manila_scenario__create_share_network.assert_has_calls(
             expected_calls * self.TENANTS_AMOUNT)
-        mock_clients.assert_has_calls([mock.call(MOCK_USER_CREDENTIAL)
-                                      for i in range(self.TENANTS_AMOUNT)])
+        mock_clients.assert_has_calls(
+            [mock.call(MOCK_USER_CREDENTIAL, atomic_inst=mock.ANY,
+                       name_generator=mock.ANY, sleeper=mock.ANY)
+             for i in range(self.TENANTS_AMOUNT)], any_order=True)
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     @mock.patch(MANILA_UTILS_PATH + "_delete_share_network")
@@ -378,7 +384,8 @@ class ShareNetworksTestCase(test.TestCase):
         self.assertFalse(mock_manila_scenario__delete_share_network.called)
         self.assertEqual(2, mock_clients.call_count)
         for user in self.ctxt_use_existing["users"]:
-            self.assertIn(mock.call(user["credential"]),
+            self.assertIn(mock.call(user["credential"], atomic_inst=mock.ANY,
+                                    name_generator=mock.ANY, sleeper=mock.ANY),
                           mock_clients.mock_calls)
 
     @mock.patch("rally_openstack.task.contexts.manila.manila_share_networks."

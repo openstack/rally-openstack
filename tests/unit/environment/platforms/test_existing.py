@@ -284,14 +284,15 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         self._check_health_schema(result)
         self.assertEqual({"available": True}, result)
         mock_clients.assert_has_calls(
-            [mock.call(pdata["users"][0]), mock.call().keystone(),
-             mock.call(pdata["users"][1]), mock.call().keystone(),
+            [mock.call(pdata["users"][0]),
+             mock.call(pdata["users"][1]),
              mock.call(pdata["admin"]), mock.call().verified_keystone()])
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_failed_with_native_rally_exc(self, mock_clients):
         e = exceptions.RallyException("foo")
-        mock_clients.return_value.keystone.side_effect = e
+        type(mock_clients.return_value.keystone).auth_ref = mock.PropertyMock(
+            side_effect=e)
         pdata = {"admin": None,
                  "users": [{"username": "balbab", "password": "12345"}]}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
@@ -324,7 +325,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_failed_users(self, mock_clients):
-        mock_clients.return_value.keystone.side_effect = Exception
+        type(mock_clients.return_value.keystone).auth_ref = mock.PropertyMock(
+            side_effect=Exception)
         pdata = {"admin": None,
                  "users": [{"username": "balbab", "password": "12345"}]}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
@@ -351,7 +353,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         mock_clients.assert_has_calls(
             [mock.call(pdata["admin"]), mock.call().verified_keystone(),
              mock.call().fakeclient.choose_version(),
-             mock.call().fakeclient.validate_version(
+             mock.call().fakeclient.spec.validate_version(
                  mock_clients.return_value.fakeclient.choose_version
                  .return_value),
              mock.call().fakeclient.create_client()])
@@ -365,7 +367,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         def validate_version(version):
             raise exceptions.RallyException("Version is not supported.")
         (mock_clients.return_value.fakeclient
-         .validate_version) = validate_version
+         .spec.validate_version) = validate_version
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual({"available": False,

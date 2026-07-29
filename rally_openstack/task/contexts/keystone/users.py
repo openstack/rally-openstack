@@ -30,9 +30,12 @@ from rally.common import validation
 from rally_openstack.common import consts
 from rally_openstack.common import credential
 from rally_openstack.common import osclients
-from rally_openstack.common.services.identity import identity
 from rally_openstack.common.services.network import neutron
 from rally_openstack.task import context
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.common.clients import keystone
 
 
 LOG = logging.getLogger(__name__)
@@ -150,12 +153,16 @@ class UserGenerator(context.OpenStackContext):
         def consume(cache, args):
             domain, task_id, i = args
             if "client" not in cache:
-                clients = osclients.Clients(self.credential)
-                cache["client"] = identity.Identity(
-                    clients, name_generator=self.generate_random_name)
-            tenant = cache["client"].create_project(domain_name=domain)
-            tenant_dict = {"id": tenant.id, "name": tenant.name, "users": []}
-            tenants.append(tenant_dict)
+                clients = osclients.Clients(
+                    self.credential,
+                    name_generator=self.generate_random_name)
+                cache["client"] = clients.keystone
+            ks: keystone.Keystone = cache["client"]
+            project = ks.create_project(domain=domain)
+            project_dict = {
+                "id": project.id, "name": project.name, "users": []
+            }
+            tenants.append(project_dict)
 
         # NOTE(msdubov): consume() will fill the tenants list in the closure.
         broker.run(publish, consume, threads)
@@ -165,10 +172,32 @@ class UserGenerator(context.OpenStackContext):
 
         return tenants_dict
 
+    def _get_default_role_id(self) -> str | None:
+        """Resolve the role every created user gets, once.
+
+        The role is the same for all of them, so it is looked up here instead
+        of per user -- a lookup lists every role definition in the cloud, and
+        doing that once per created user is the dominant cost of this context
+        on a large tenants x users_per_tenant grid.
+
+        Returns None when no role should be assigned: keystone v2 grants the
+        default role itself when a user is created inside a tenant, and a
+        misconfigured role name is a warning rather than a failure.
+        """
+        ks = osclients.Clients(self.credential).keystone
+        if ks.version == "2":
+            return None
+        default_role = cfg.CONF.openstack.keystone_default_role
+        role = ks.find_role(default_role)
+        if role is None:
+            LOG.warning(f"Unable to set {default_role} role to created users.")
+            return None
+        return role.id
+
     def _create_users(self, threads):
         # NOTE(msdubov): This should be called after _create_tenants().
         users_per_tenant = self.config["users_per_tenant"]
-        default_role = cfg.CONF.openstack.keystone_default_role
+        default_role_id = self._get_default_role_id()
 
         users = collections.deque()
 
@@ -186,14 +215,17 @@ class UserGenerator(context.OpenStackContext):
         def consume(cache, args):
             username, password, project_dom, user_dom, tenant_id = args
             if "client" not in cache:
-                clients = osclients.Clients(self.credential)
-                cache["client"] = identity.Identity(
-                    clients, name_generator=self.generate_random_name)
-            client = cache["client"]
+                clients = osclients.Clients(
+                    self.credential,
+                    name_generator=self.generate_random_name)
+                cache["client"] = clients.keystone
+            client: keystone.Keystone = cache["client"]
             user = client.create_user(username, password=password,
                                       project_id=tenant_id,
-                                      domain_name=user_dom,
-                                      default_role=default_role)
+                                      domain=user_dom)
+            if default_role_id is not None:
+                client.add_role(role_id=default_role_id, user_id=user.id,
+                                project_id=tenant_id)
             user_credential = credential.OpenStackCredential(
                 auth_url=self.credential["auth_url"],
                 username=user.name,
@@ -259,6 +291,10 @@ class UserGenerator(context.OpenStackContext):
             user_clients = osclients.Clients(user_credential)
             user_id = user_clients.keystone.auth_ref.user_id
             tenant_id = user_clients.keystone.auth_ref.project_id
+            # the user is authenticated now, so keep that auth state instead
+            # of paying for a second authentication in _seed_auth_state.
+            user_credential.auth = (
+                user_clients.keystone.get_session()[1].get_auth_state())
 
             if tenant_id not in self.context["tenants"]:
                 self.context["tenants"][tenant_id] = {
@@ -281,6 +317,41 @@ class UserGenerator(context.OpenStackContext):
             self.use_existing_users()
         else:
             self.create_users()
+
+        self._seed_auth_state()
+
+    def _seed_auth_state(self):
+        """Authenticate each user (and admin) once so iterations reuse it.
+
+        Credentials that are already authenticated (the existing_users path
+        does it while resolving user and tenant ids) are skipped.
+        """
+        credentials = [user["credential"] for user in self.context["users"]]
+        admin = self.context.get("admin", {}).get("credential")
+        if admin is not None:
+            credentials.append(admin)
+        if not credentials:
+            return
+
+        def publish(queue):
+            for cred in credentials:
+                if not cred.auth:
+                    queue.append(cred)
+
+        def consume(cache, cred):
+            clients = osclients.Clients(cred)
+            sess, plugin = clients.keystone.get_session()
+            plugin.get_access(sess)
+            cred.auth = plugin.get_auth_state()
+
+        # NOTE(andreykurilin): resource_management_workers is defaulted only
+        #   for the new-users path, while this runs for existing users too.
+        threads = min(
+            self.config.get(
+                "resource_management_workers",
+                cfg.CONF.openstack.users_context_resource_management_workers),
+            len(credentials))
+        broker.run(publish, consume, threads)
 
     def _remove_default_security_group(self):
         """Delete default security group for tenants."""
@@ -310,7 +381,7 @@ class UserGenerator(context.OpenStackContext):
         def consume(cache, resource_id):
             if "client" not in cache:
                 clients = osclients.Clients(self.credential)
-                cache["client"] = identity.Identity(clients)
+                cache["client"] = clients.keystone
             getattr(cache["client"], func_name)(resource_id)
         return consume
 

@@ -21,7 +21,6 @@ from rally.common import validation
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.common.services.identity import identity
 from rally_openstack.task import context
 
 
@@ -47,78 +46,80 @@ class RoleGenerator(context.OpenStackContext):
     def __init__(self, ctx):
         super().__init__(ctx)
         self.credential = self.context["admin"]["credential"]
-        self.workers = (
-            cfg.CONF.openstack.roles_context_resource_management_workers)
+        # One identity client for the whole context. setup() authenticates it
+        # in the single-threaded publish step before the broker threads run.
+        self.keystone = osclients.Clients(self.credential).keystone
 
-    def _get_role_object(self, context_role):
-        """Check if role exists.
+    def _find_role(self, context_role: str):
+        """Return the role with the given name.
 
-        :param context_role: name of existing role.
+        :param context_role: name of an existing role.
         """
-        keystone = identity.Identity(osclients.Clients(self.credential))
-        default_roles = keystone.list_roles()
-        for def_role in default_roles:
-            if str(def_role.name) == context_role:
-                return def_role
-        else:
-            raise exceptions.NotFoundException(
-                "There is no role with name `%s`" % context_role)
+        roles = self.keystone.list_roles(name=context_role)
+        if roles:
+            return roles[0]
+        raise exceptions.NotFoundException(
+            f"There is no role with name `{context_role}`")
 
-    def _get_user_role_ids(self, user_id, project_id):
-        keystone = identity.Identity(osclients.Clients(self.credential))
-        user_roles = keystone.list_roles(user_id=user_id,
-                                         project_id=project_id)
-        return [role.id for role in user_roles]
-
-    def _get_consumer(self, func_name):
+    def _get_consumer(self, *, revoke: bool):
         def consume(cache, args):
             role_id, user_id, project_id = args
-            if "client" not in cache:
-                clients = osclients.Clients(self.credential)
-                cache["client"] = identity.Identity(clients)
-            getattr(cache["client"], func_name)(role_id=role_id,
-                                                user_id=user_id,
-                                                project_id=project_id)
+            if revoke:
+                self.keystone.revoke_role(
+                    role_id=role_id, user_id=user_id, project_id=project_id
+                )
+            else:
+                self.keystone.add_role(
+                    role_id=role_id, user_id=user_id, project_id=project_id
+                )
         return consume
 
-    def setup(self):
+    def setup(self) -> None:
         """Add all roles to users."""
-        threads = self.workers
+        threads = cfg.CONF.openstack.roles_context_resource_management_workers
         roles_dict = {}
 
         def publish(queue):
             for context_role in self.config:
-                role = self._get_role_object(context_role)
+                role = self._find_role(context_role)
                 roles_dict[role.id] = role.name
-                LOG.debug("Adding role %(role_name)s having ID %(role_id)s "
-                          "to all users using %(threads)s threads"
-                          % {"role_name": role.name,
-                             "role_id": role.id,
-                             "threads": threads})
+                LOG.debug(
+                    f"Adding role {role.name} having ID {role.id} to all "
+                    f"users using {threads} threads"
+                )
                 for user in self.context["users"]:
                     if "roles" not in user:
-                        user["roles"] = self._get_user_role_ids(
-                            user["id"],
-                            user["tenant_id"])
+                        user_roles = self.keystone.list_role_assignments(
+                            user["id"], project_id=user["tenant_id"]
+                        )
+                        user["roles"] = [role.id for role in user_roles]
                         user["assigned_roles"] = []
+
                     if role.id not in user["roles"]:
                         args = (role.id, user["id"], user["tenant_id"])
                         queue.append(args)
                         user["assigned_roles"].append(role.id)
 
-        broker.run(publish, self._get_consumer("add_role"), threads)
+        broker.run(
+            publish,
+            self._get_consumer(revoke=False),
+            cfg.CONF.openstack.roles_context_resource_management_workers
+        )
         self.context["roles"] = roles_dict
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Remove assigned roles from users."""
-        threads = self.workers
 
         def publish(queue):
             for role_id in self.context["roles"]:
-                LOG.debug("Removing assigned role %s from all users" % role_id)
+                LOG.debug(f"Removing assigned role {role_id} from all users")
                 for user in self.context["users"]:
                     if role_id in user["assigned_roles"]:
                         args = (role_id, user["id"], user["tenant_id"])
                         queue.append(args)
 
-        broker.run(publish, self._get_consumer("revoke_role"), threads)
+        broker.run(
+            publish,
+            self._get_consumer(revoke=True),
+            cfg.CONF.openstack.roles_context_resource_management_workers
+        )

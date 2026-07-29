@@ -14,7 +14,7 @@
 
 from rally.task import atomic
 
-from rally_openstack.common import osclients
+from rally_openstack.common.clients import keystone
 from rally_openstack.common.services.identity import identity
 
 
@@ -92,41 +92,54 @@ class UnifiedKeystoneMixin:
 
 class KeystoneMixin(atomic.ActionTimerMixin):
 
+    _ng_cache: keystone.Keystone | None = None
+
+    @property
+    def _ng(self) -> keystone.Keystone:
+        """openstacksdk-backed identity client, pinned to this version."""
+        if self._ng_cache is None:
+            self._ng_cache = self._clients.keystone(self.version, legacy=False)
+        return self._ng_cache
+
+    @property
+    def _kc(self):
+        """Raw versioned python-keystoneclient (legacy surface)."""
+        return self._clients.keystone(self.version, legacy=True)
+
     def list_users(self):
         aname = "keystone_v%s.list_users" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).users.list()
+            return self._kc.users.list()
 
     def delete_user(self, user_id):
         """Deletes user by its id."""
         aname = "keystone_v%s.delete_user" % self.version
         with atomic.ActionTimer(self, aname):
-            self._clients.keystone(self.version).users.delete(user_id)
+            self._kc.users.delete(user_id)
 
     def get_user(self, user_id):
         """Get user by its id."""
         aname = "keystone_v%s.get_user" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).users.get(user_id)
+            return self._kc.users.get(user_id)
 
     def delete_service(self, service_id):
         """Deletes service."""
         aname = "keystone_v%s.delete_service" % self.version
         with atomic.ActionTimer(self, aname):
-            self._clients.keystone(self.version).services.delete(service_id)
+            self._kc.services.delete(service_id)
 
     def list_services(self):
         """List all services."""
         aname = "keystone_v%s.list_services" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).services.list()
+            return self._kc.services.list()
 
     def get_service(self, service_id):
         """Get service."""
         aname = "keystone_v%s.get_services" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).services.get(
-                service_id)
+            return self._kc.services.get(service_id)
 
     def get_service_by_name(self, name):
         """List all services to find proper one."""
@@ -138,19 +151,19 @@ class KeystoneMixin(atomic.ActionTimerMixin):
         """Deletes role."""
         aname = "keystone_v%s.delete_role" % self.version
         with atomic.ActionTimer(self, aname):
-            self._clients.keystone(self.version).roles.delete(role_id)
+            self._kc.roles.delete(role_id)
 
     def list_roles(self):
         """List all roles."""
         aname = "keystone_v%s.list_roles" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).roles.list()
+            return self._kc.roles.list()
 
     def get_role(self, role_id):
         """Get role."""
         aname = "keystone_v%s.get_role" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).roles.get(role_id)
+            return self._kc.roles.get(role_id)
 
     def list_ec2credentials(self, user_id):
         """List of access/secret pairs for a user_id.
@@ -161,7 +174,7 @@ class KeystoneMixin(atomic.ActionTimerMixin):
         """
         aname = "keystone_v%s.list_ec2creds" % self.version
         with atomic.ActionTimer(self, aname):
-            return self._clients.keystone(self.version).ec2.list(user_id)
+            return self._kc.ec2.list(user_id)
 
     def delete_ec2credential(self, user_id, access):
         """Delete ec2credential.
@@ -171,17 +184,13 @@ class KeystoneMixin(atomic.ActionTimerMixin):
         """
         aname = "keystone_v%s.delete_ec2creds" % self.version
         with atomic.ActionTimer(self, aname):
-            self._clients.keystone(self.version).ec2.delete(user_id=user_id,
-                                                            access=access)
+            self._kc.ec2.delete(user_id=user_id, access=access)
 
     def fetch_token(self):
         """Authenticate user token."""
         aname = "keystone_v%s.fetch_token" % self.version
         with atomic.ActionTimer(self, aname):
-            # use another instance of osclients.Clients to avoid usage of
-            # cached keystone session
-            clients = osclients.Clients(credential=self._clients.credential)
-            return clients.keystone.auth_ref.auth_token
+            return self._ng.fetch_token()
 
     def validate_token(self, token):
         """Validate user token.
@@ -190,4 +199,4 @@ class KeystoneMixin(atomic.ActionTimerMixin):
         """
         aname = "keystone_v%s.validate_token" % self.version
         with atomic.ActionTimer(self, aname):
-            self._clients.keystone(self.version).tokens.validate(token)
+            self._kc.tokens.validate(token)
