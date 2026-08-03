@@ -644,6 +644,10 @@ module = "rally_openstack.task.scenarios.neutron.bgpvpn"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
+module = "rally_openstack.task.scenarios.neutron.fwaas"
+disable_error_code = ["no-untyped-def"]
+
+[[tool.mypy.overrides]]
 module = "rally_openstack.task.scenarios.neutron.loadbalancer_v1"
 disable_error_code = ["no-untyped-def"]
 

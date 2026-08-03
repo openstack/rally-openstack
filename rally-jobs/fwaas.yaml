@@ -1,0 +1,46 @@
+---
+version: 2
+title: Task for rally-task-fwaas job
+subtasks:
+  - title: NeutronFWaaS.create_and_list_firewall_rules tests
+    scenario:
+      NeutronFWaaS.create_and_list_firewall_rules: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronFWaaS.create_and_delete_firewall_rules tests
+    scenario:
+      NeutronFWaaS.create_and_delete_firewall_rules: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronFWaaS.create_and_update_firewall_rules tests
+    scenario:
+      NeutronFWaaS.create_and_update_firewall_rules: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0

@@ -339,6 +339,52 @@ class NeutronBgpvpnTestCase(test.TestCase):
         self.assertEqual(neut.list(), admin_bgpvpns["bgpvpns"])
 
 
+class NeutronFirewallRuleTestCase(test.TestCase):
+
+    def get_firewall_rule_resource(self, extensions=None):
+        if extensions is None:
+            extensions = []
+        user = mock.MagicMock()
+        neut = resources.NeutronFirewallRule(user=user)
+        neut.tenant_uuid = "user_tenant"
+        neut._manager = mock.Mock()
+        user.neutron.return_value.list_extensions.return_value = {
+            "extensions": [{"alias": ext} for ext in extensions]
+        }
+        return neut
+
+    def test_list_fwaas_available(self):
+        neut = self.get_firewall_rule_resource(extensions=["fwaas_v2"])
+        rules = {
+            "firewall_rules": [
+                {"tenant_id": "user_tenant", "id": "rule-1"},
+                {"tenant_id": "other", "id": "rule-2"},
+                {"project_id": "user_tenant", "id": "rule-3"},
+            ]
+        }
+        neut._manager().list_fwaas_firewall_rules.return_value = rules
+
+        self.assertEqual("firewall_rule", neut._resource)
+        self.assertEqual(
+            [rules["firewall_rules"][0], rules["firewall_rules"][2]],
+            neut.list())
+        neut._manager().list_fwaas_firewall_rules.assert_called_once_with(
+            tenant_id="user_tenant")
+
+    def test_list_fwaas_unavailable(self):
+        neut = self.get_firewall_rule_resource()
+
+        self.assertEqual([], neut.list())
+        self.assertFalse(neut._manager().list_fwaas_firewall_rules.called)
+
+    def test_delete(self):
+        neut = self.get_firewall_rule_resource(extensions=["fwaas_v2"])
+        neut.raw_resource = {"id": "rule-id"}
+        neut.delete()
+        neut._manager().delete_fwaas_firewall_rule.assert_called_once_with(
+            "rule-id")
+
+
 class NeutronFloatingIPTestCase(test.TestCase):
 
     def test_name(self):

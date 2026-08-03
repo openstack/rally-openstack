@@ -33,6 +33,15 @@ Added
   time. A reused token is proactively refreshed just before it expires, so the
   refresh request never lands inside a measured action.
 
+* Neutron FWaaS v2 firewall rule scenarios:
+
+  * ``NeutronFWaaS.create_and_list_firewall_rules``
+  * ``NeutronFWaaS.create_and_delete_firewall_rules``
+  * ``NeutronFWaaS.create_and_update_firewall_rules``
+
+* Dedicated non-voting CI job ``rally-task-fwaas`` that enables
+  ``neutron-fwaas`` and runs the new FWaaS scenarios.
+
 Changed
 ~~~~~~~
 

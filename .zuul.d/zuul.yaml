@@ -41,6 +41,18 @@
               - rally_openstack/task/contexts/designate
               - rally_openstack/task/scenarios/designate
               - tests/ci/playbooks
+        - rally-task-fwaas:
+            irrelevant-files: *trivial-files
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-fwaas.yaml
+              - rally-jobs/fwaas.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/scenarios/neutron/fwaas.py
+              - rally_openstack/task/scenarios/neutron/utils.py
+              - tests/ci/playbooks
+            voting: false
         #- rally-task-heat:
         #    voting: false
         #- rally-task-ironic

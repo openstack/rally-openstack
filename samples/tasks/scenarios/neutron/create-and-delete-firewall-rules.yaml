@@ -1,0 +1,19 @@
+---
+version: 2
+title: Neutron Create And Delete Firewall Rules
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and delete firewall rules
+  scenario:
+    NeutronFWaaS.create_and_delete_firewall_rules: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

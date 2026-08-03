@@ -1443,6 +1443,70 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron._add_subports_to_trunk")
 
+    def test__create_firewall_rule(self):
+        expected = {"firewall_rule": {"id": "rule-id", "name": "random_name"}}
+        nc = self.clients("neutron")
+        nc.create_fwaas_firewall_rule.return_value = expected
+
+        result = self.scenario._create_firewall_rule(
+            description="fake-description")
+
+        self.assertEqual(expected, result)
+        nc.create_fwaas_firewall_rule.assert_called_once_with(
+            {"firewall_rule": {
+                "protocol": "tcp",
+                "action": "allow",
+                "destination_port": "22",
+                "ip_version": 4,
+                "enabled": True,
+                "description": "fake-description",
+                "name": self.random_name,
+            }})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.create_firewall_rule")
+
+    def test__list_firewall_rules(self):
+        rules = [{"id": "rule-1"}, {"id": "rule-2"}]
+        nc = self.clients("neutron")
+        nc.list_fwaas_firewall_rules.return_value = {
+            "firewall_rules": rules
+        }
+        self.assertEqual(rules, self.scenario._list_firewall_rules())
+        nc.list_fwaas_firewall_rules.assert_called_once_with(True)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.list_firewall_rules")
+
+    def test__update_firewall_rule(self):
+        firewall_rule = {"firewall_rule": {"id": "rule-id"}}
+        expected = {"firewall_rule": {
+            "id": "rule-id",
+            "name": self.random_name,
+            "description": "updated"
+        }}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_rule.return_value = expected
+
+        result = self.scenario._update_firewall_rule(
+            firewall_rule, description="updated")
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_rule.assert_called_once_with(
+            "rule-id",
+            {"firewall_rule": {
+                "description": "updated",
+                "name": self.random_name,
+            }})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.update_firewall_rule")
+
+    def test__delete_firewall_rule(self):
+        firewall_rule = {"firewall_rule": {"id": "rule-id"}}
+        nc = self.clients("neutron")
+        self.scenario._delete_firewall_rule(firewall_rule)
+        nc.delete_fwaas_firewall_rule.assert_called_once_with("rule-id")
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.delete_firewall_rule")
+
 
 class NeutronScenarioFunctionalTestCase(test.ScenarioTestCase):
 

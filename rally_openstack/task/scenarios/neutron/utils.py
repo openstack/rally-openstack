@@ -887,3 +887,57 @@ class NeutronScenario(NeutronBaseScenario):
 
     def _list_ports_by_device_id(self, device_id):
         return self.neutron.list_ports(device_id=device_id)
+
+    @atomic.action_timer("neutron.create_firewall_rule")
+    def _create_firewall_rule(self, **firewall_rule_create_args):
+        """Create Neutron firewall rule.
+
+        :param firewall_rule_create_args: dict, POST /v2.0/fwaas/firewall_rules
+                                          request options
+        :returns: dict, neutron firewall rule
+        """
+        rule = {
+            "protocol": "tcp",
+            "action": "allow",
+            "destination_port": "22",
+            "ip_version": 4,
+            "enabled": True,
+        }
+        rule.update(firewall_rule_create_args)
+        rule["name"] = self.generate_random_name()
+        return self.clients("neutron").create_fwaas_firewall_rule(
+            {"firewall_rule": rule})
+
+    @atomic.action_timer("neutron.list_firewall_rules")
+    def _list_firewall_rules(self, **kwargs):
+        """Return list of Neutron firewall rules.
+
+        :param kwargs: dict, GET /v2.0/fwaas/firewall_rules request options
+        :returns: firewall rules list
+        """
+        return self.clients("neutron").list_fwaas_firewall_rules(
+            True, **kwargs)["firewall_rules"]
+
+    @atomic.action_timer("neutron.update_firewall_rule")
+    def _update_firewall_rule(self, firewall_rule,
+                              **firewall_rule_update_args):
+        """Update Neutron firewall rule.
+
+        :param firewall_rule: dict, neutron firewall_rule
+        :param firewall_rule_update_args: dict, PUT /v2.0/fwaas/firewall_rules
+                                          update options
+        :returns: dict, updated neutron firewall rule
+        """
+        firewall_rule_update_args["name"] = self.generate_random_name()
+        return self.clients("neutron").update_fwaas_firewall_rule(
+            firewall_rule["firewall_rule"]["id"],
+            {"firewall_rule": firewall_rule_update_args})
+
+    @atomic.action_timer("neutron.delete_firewall_rule")
+    def _delete_firewall_rule(self, firewall_rule):
+        """Delete Neutron firewall rule.
+
+        :param firewall_rule: dict, neutron firewall_rule
+        """
+        self.clients("neutron").delete_fwaas_firewall_rule(
+            firewall_rule["firewall_rule"]["id"])
