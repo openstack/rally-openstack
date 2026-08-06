@@ -45,7 +45,7 @@
 
 - name: Check the existence of custom plugins
   stat:
-    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs/plugins'
+    path: '{{ rally_source_dir }}/rally-jobs/plugins'
   register: custom_plugins_stat
 
 - name: Copy custom plugins, if they are presented
@@ -65,7 +65,7 @@
 
 - name: Check the existence of extra files
   stat:
-    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs/extra'
+    path: '{{ rally_source_dir }}/rally-jobs/extra'
   register: extra_files_stat
 
 - name: Copy extra files, if they are presented
@@ -142,20 +142,9 @@
           openstack flavor create --id 42 --ram 64 --disk 0 --vcpus 1 m1.nano
       fi
 
-- name: Resolve the rally_task path
-  set_fact:
-    # A relative rally_task is resolved against the checkout of the project
-    # that runs the job.
-    # An absolute path is used as-is, so another project (e.g. rally) can point
-    # the job at a task file living in the rally-openstack checkout.
-    rally_task_path: >-
-      {{ rally_task
-         if rally_task is match('^[/~]')
-         else ansible_user_dir ~ '/' ~ zuul.project.src_dir ~ '/' ~ rally_task }}
-
 - name: Check the existence of rally_task
   stat:
-    path: '{{ rally_task_path }}'
+    path: '{{ rally_source_dir }}/{{ rally_task }}'
   register: rally_task_file_stat
 
 - name: Fail if Rally task file is missed.
@@ -171,7 +160,7 @@
 
 - name: Check the existence of task_args_file
   stat:
-    path: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/{{ rally_task_args_file }}'
+    path: '{{ rally_source_dir }}/{{ rally_task_args_file }}'
   register: task_args_file_stat
 
 - name: Copy task_args_file

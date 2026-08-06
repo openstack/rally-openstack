@@ -1,0 +1,40 @@
+- name: Generate a HTML report
+  become: true
+  become_user: stack
+  shell:
+    executable: /bin/bash
+    cmd: |
+      set -e
+      cd {{ rally_results_dir }}
+      rally task report --deployment devstack --html-static --out report.html
+
+- name: Generate a JSON report
+  become: true
+  become_user: stack
+  command: rally task report --deployment devstack --json --out {{ rally_results_dir }}/report.json
+
+- name: Produce an old results file
+  become: true
+  become_user: stack
+  shell: "rally task results > {{ rally_results_dir }}/results.json"
+
+- name: Get task UUIDs to generate trends report
+  become: true
+  become_user: stack
+  shell: rally task list --uuids-only | xargs
+  register: task_uuids
+
+- name: Make a trends report
+  become: true
+  become_user: stack
+  command: rally task trends --tasks {{ task_uuids.stdout }} --out {{ rally_results_dir }}/trends.html
+
+- name: Make a JUnit report
+  become: true
+  become_user: stack
+  command: rally task export --deployment devstack --type junit-xml --to {{ rally_results_dir }}/junit.xml
+
+- name: Make an ElasticSearch file
+  become: true
+  become_user: stack
+  command: rally task export --deployment devstack --type elastic --to {{ rally_results_dir }}/elasticsearch.txt
