@@ -44,7 +44,17 @@
         #- rally-task-heat:
         #    voting: false
         #- rally-task-ironic
-        - rally-task-keystone-glance-swift:
+        - rally-task-glance:
+            irrelevant-files: *trivial-files
+            files:
+              - .zuul.d/rally-task-glance.yaml
+              - rally-jobs/glance.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/scenarios/glance
+              - rally_openstack/task/contexts/glance
+              - tests/ci/playbooks
+        - rally-task-keystone-swift:
             irrelevant-files: *trivial-files
         #- rally-task-magnum:
         #    voting: false
@@ -119,7 +129,9 @@
             irrelevant-files: *trivial-files
         #- rally-task-heat
         #- rally-task-ironic
-        - rally-task-keystone-glance-swift:
+        - rally-task-glance:
+            irrelevant-files: *trivial-files
+        - rally-task-keystone-swift:
             irrelevant-files: *trivial-files
         - rally-task-mistral:
             irrelevant-files: *trivial-files
