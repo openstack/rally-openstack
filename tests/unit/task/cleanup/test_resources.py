@@ -38,18 +38,19 @@ class SynchronizedDeletionTestCase(test.TestCase):
 
 class QuotaMixinTestCase(test.TestCase):
 
-    @mock.patch("%s.identity.Identity" % BASE)
-    def test_list(self, mock_identity):
+    def test_list(self):
         quota = resources.QuotaMixin()
         quota.tenant_uuid = None
         quota.user = mock.MagicMock()
         self.assertEqual([], quota.list())
-        self.assertFalse(mock_identity.called)
+        self.assertFalse(quota.user.keystone.get_project.called)
 
         quota.tenant_uuid = mock.MagicMock()
-        self.assertEqual([mock_identity.return_value.get_project.return_value],
-                         quota.list())
-        mock_identity.assert_called_once_with(quota.user)
+        self.assertEqual(
+            [quota.user.keystone.get_project.return_value],
+            quota.list())
+        quota.user.keystone.get_project.assert_called_once_with(
+            quota.tenant_uuid)
 
 
 class MagnumMixinTestCase(test.TestCase):
@@ -673,49 +674,32 @@ class ZaqarQueuesTestCase(test.TestCase):
         user.zaqar().queues.assert_called_once_with()
 
 
-class KeystoneMixinTestCase(test.TestCase):
+class KeystoneResourcesTestCase(test.TestCase):
 
-    def test_is_deleted(self):
-        self.assertTrue(resources.KeystoneMixin().is_deleted())
+    _resources = ((resources.KeystoneUser, "user"),
+                  (resources.KeystoneProject, "project"),
+                  (resources.KeystoneService, "service"),
+                  (resources.KeystoneRole, "role"))
 
-    def get_keystone_mixin(self):
-        kmixin = resources.KeystoneMixin()
-        kmixin._service = "keystone"
-        return kmixin
+    def test_manager(self):
+        for cls, _resource in self._resources:
+            mgr = cls(admin=mock.MagicMock())
+            self.assertEqual(mgr.admin.keystone, mgr._manager())
 
-    @mock.patch("%s.identity" % BASE)
-    def test_manager(self, mock_identity):
-        keystone_mixin = self.get_keystone_mixin()
-        keystone_mixin.admin = mock.MagicMock()
-        self.assertEqual(mock_identity.Identity.return_value,
-                         keystone_mixin._manager())
-        mock_identity.Identity.assert_called_once_with(
-            keystone_mixin.admin)
+    def test_delete(self):
+        for cls, resource in self._resources:
+            mgr = cls(admin=mock.MagicMock())
+            mgr.id = lambda: "id_a"
+            mgr.delete()
+            getattr(mgr.admin.keystone,
+                    f"delete_{resource}").assert_called_once_with("id_a")
 
-    @mock.patch("%s.identity" % BASE)
-    def test_delete(self, mock_identity):
-        keystone_mixin = self.get_keystone_mixin()
-        keystone_mixin._resource = "some_resource"
-        keystone_mixin.id = lambda: "id_a"
-        keystone_mixin.admin = mock.MagicMock()
-
-        keystone_mixin.delete()
-        mock_identity.Identity.assert_called_once_with(keystone_mixin.admin)
-        identity_service = mock_identity.Identity.return_value
-        identity_service.delete_some_resource.assert_called_once_with("id_a")
-
-    @mock.patch("%s.identity" % BASE)
-    def test_list(self, mock_identity):
-        keystone_mixin = self.get_keystone_mixin()
-        keystone_mixin._resource = "some_resource2"
-        keystone_mixin.admin = mock.MagicMock()
-        identity = mock_identity.Identity
-
-        self.assertSequenceEqual(
-            identity.return_value.list_some_resource2s.return_value,
-            keystone_mixin.list())
-        identity.assert_called_once_with(keystone_mixin.admin)
-        identity.return_value.list_some_resource2s.assert_called_once_with()
+    def test_list(self):
+        for cls, resource in self._resources:
+            mgr = cls(admin=mock.MagicMock())
+            list_method = getattr(mgr.admin.keystone, f"list_{resource}s")
+            self.assertEqual(list_method.return_value, mgr.list())
+            list_method.assert_called_once_with()
 
 
 class KeystoneEc2TestCase(test.TestCase):
@@ -732,30 +716,25 @@ class KeystoneEc2TestCase(test.TestCase):
         user_client = mock.Mock()
         admin_client = mock.Mock()
 
-        with mock.patch("%s.identity.Identity" % BASE, autospec=True) as p:
-            identity = p.return_value
-            manager = resources.KeystoneEc2(user=user_client,
-                                            admin=admin_client)
-            self.assertEqual(identity.list_ec2credentials.return_value,
-                             manager.list())
-            p.assert_called_once_with(user_client)
-            identity.list_ec2credentials.assert_called_once_with(
-                manager.user_id)
+        manager = resources.KeystoneEc2(user=user_client, admin=admin_client)
+        self.assertEqual(
+            user_client.keystone.list_credentials.return_value,
+            manager.list())
+        user_client.keystone.list_credentials.assert_called_once_with(
+            user_id=manager.user_id, cred_type="ec2")
 
     def test_delete(self):
         user_client = mock.Mock()
         admin_client = mock.Mock()
         raw_resource = mock.Mock()
 
-        with mock.patch("%s.identity.Identity" % BASE, autospec=True) as p:
-            manager = resources.KeystoneEc2(user=user_client,
-                                            admin=admin_client,
-                                            resource=raw_resource)
-            manager.delete()
+        manager = resources.KeystoneEc2(user=user_client,
+                                        admin=admin_client,
+                                        resource=raw_resource)
+        manager.delete()
 
-            p.assert_called_once_with(user_client)
-            p.return_value.delete_ec2credential.assert_called_once_with(
-                manager.user_id, access=raw_resource.access)
+        user_client.keystone.delete_credential.assert_called_once_with(
+            raw_resource.id)
 
 
 class SwiftMixinTestCase(test.TestCase):

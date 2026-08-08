@@ -16,6 +16,61 @@ Changelog
 .. Release notes for existing releases are MUTABLE! If there is something that
    was missed or can be improved, feel free to change it!
 
+[unreleased]
+------------
+
+Added
+~~~~~
+
+* The Identity (Keystone) service is now implemented on top of the unified
+  ``openstacksdk`` instead of ``python-keystoneclient``. It is reachable as the
+  ``clients.keystone`` attribute and exposes version-agnostic methods that work
+  across Keystone v2 and v3.
+
+* Authentication is now performed once, in the ``users`` context, and the
+  resulting token is cached and reused across all iterations of a workload (for
+  both the regular users and the admin) instead of re-authenticating every
+  time. A reused token is proactively refreshed just before it expires, so the
+  refresh request never lands inside a measured action.
+
+Changed
+~~~~~~~
+
+* The OpenStack client and service utilities have been restructured into a
+  dedicated ``rally_openstack.common.clients`` package (``base``, ``keystone``,
+  ...), splitting the previously monolithic ``osclients`` module.
+  This is the foundation for gradually moving every service off its
+  per-project ``python-*client`` onto ``openstacksdk``.
+
+* ``OpenStackCredential`` is now a typed dataclass instead of a plain dict.
+  Dict-style access (``credential["auth_url"]``) is kept for backward
+  compatibility.
+
+Deprecated
+~~~~~~~~~~
+
+* The ``identity.Identity`` service layer, together with the ``keystone_v2`` /
+  ``keystone_v3`` service implementations, is deprecated in favour of the
+  ``clients.keystone`` client. Using it now emits a warning.
+
+* Accessing the raw ``python-keystoneclient`` via ``clients.keystone(...)`` is
+  deprecated. It stays the default for backward compatibility but emits a
+  warning; use the ``clients.keystone`` attribute (or
+  ``clients.keystone(legacy=False)``) for the openstacksdk-backed client.
+
+* ``OpenStackCredential.clients()`` is deprecated and emits a warning. A
+  credential is plain data that crosses the process boundary, while a client
+  container holds live sessions and connections, so the two should not be
+  reachable through each other. Build the container explicitly instead:
+  ``osclients.Clients(credential)``.
+
+Fixed
+~~~~~
+
+* Proactive token refresh for the clients built by a scenario never actually
+  worked; it does now, so long-running workloads no longer risk a reused token
+  expiring in the middle of a measured action.
+
 [4.1.0] - 2026-07-23
 --------------------
 

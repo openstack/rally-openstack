@@ -41,20 +41,36 @@ class OpenStackScenario(scenario.Scenario):
         if context:
             if admin_clients is None and "admin" in context:
                 self._admin_clients = osclients.Clients(
-                    context["admin"]["credential"])
+                    context["admin"]["credential"],
+                    atomic_inst=self.atomic_actions(),
+                    name_generator=self.generate_random_name,
+                    sleeper=self.sleep_between
+                )
             if clients is None:
                 if "users" in context and "user" not in context:
                     self._choose_user(context)
 
                 if "user" in context:
                     self._clients = osclients.Clients(
-                        context["user"]["credential"])
+                        context["user"]["credential"],
+                        atomic_inst=self.atomic_actions(),
+                        name_generator=self.generate_random_name,
+                        sleeper=self.sleep_between
+                    )
 
         if admin_clients:
             self._admin_clients = admin_clients
 
         if clients:
             self._clients = clients
+
+        # Refresh a reused, near-expiry token before any measured action, for
+        # both context-built and explicitly-passed clients. Does nothing when
+        # no token was seeded or it is still valid.
+        for _clients in (getattr(self, "_admin_clients", None),
+                         getattr(self, "_clients", None)):
+            if _clients is not None:
+                _clients.refresh_token_if_needed()
 
         self._init_profiler(context)
 

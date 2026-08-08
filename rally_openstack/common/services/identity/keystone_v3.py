@@ -32,11 +32,11 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
 
         try:
             # First try to find domain by ID
-            return self._clients.keystone("3").domains.get(
+            return self._kc.domains.get(
                 domain_name_or_id).id
         except kc_exceptions.NotFound:
             # Domain not found by ID, try to find it by name
-            domains = self._clients.keystone("3").domains.list(
+            domains = self._kc.domains.list(
                 name=domain_name_or_id)
             if domains:
                 return domains[0].id
@@ -44,14 +44,9 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
             raise exceptions.GetResourceNotFound(
                 resource="KeystoneDomain(%s)" % domain_name_or_id)
 
-    @atomic.action_timer("keystone_v3.create_project")
     def create_project(self, project_name=None, domain_name="Default"):
-        project_name = project_name or self.generate_random_name()
-        domain_id = self._get_domain_id(domain_name)
-        return self._clients.keystone("3").projects.create(name=project_name,
-                                                           domain=domain_id)
+        return self._ng.create_project(project_name, domain=domain_name)
 
-    @atomic.action_timer("keystone_v3.update_project")
     def update_project(self, project_id, name=None, enabled=None,
                        description=None):
         """Update tenant name and description.
@@ -67,23 +62,19 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
             name = self.generate_random_name()
         if description is True:
             description = self.generate_random_name()
-        self._clients.keystone("3").projects.update(
-            project_id, name=name, description=description, enabled=enabled)
+        self._ng.update_project(project_id, name=name, enabled=enabled,
+                                description=description)
 
-    @atomic.action_timer("keystone_v3.delete_project")
     def delete_project(self, project_id):
-        self._clients.keystone("3").projects.delete(project_id)
+        self._ng.delete_project(project_id)
 
-    @atomic.action_timer("keystone_v3.list_projects")
     def list_projects(self):
-        return self._clients.keystone("3").projects.list()
+        return self._ng.list_projects()
 
-    @atomic.action_timer("keystone_v3.get_project")
     def get_project(self, project_id):
         """Get project."""
-        return self._clients.keystone("3").projects.get(project_id)
+        return self._ng.get_project(project_id)
 
-    @atomic.action_timer("keystone_v3.create_user")
     def create_user(self, username=None, password=None, project_id=None,
                     domain_name="Default", enabled=True,
                     default_role="member"):
@@ -97,30 +88,21 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
         :param enabled: whether the user is enabled.
         :param default_role: user's default role
         """
-        domain_id = self._get_domain_id(domain_name)
-        username = username or self.generate_random_name()
-        user = self._clients.keystone("3").users.create(
-            name=username, password=password, default_project=project_id,
-            domain=domain_id, enabled=enabled)
-
-        if project_id:
-            # we can't setup role without project_id
-            roles = self.list_roles()
-            for role in roles:
-                if default_role == role.name.lower():
-                    self.add_role(role_id=role.id,
-                                  user_id=user.id,
+        user = self._ng.create_user(
+            username=username, password=password, project_id=project_id,
+            domain=domain_name, enabled=enabled)
+        if project_id and default_role:
+            # NOTE(andreykurilin): the client does not grant a role on user
+            #   creation, so this layer keeps doing it to stay compatible.
+            #   New code resolves the role once and calls add_role itself
+            #   instead of paying for a role listing per user.
+            role = self._ng.find_role(default_role)
+            if role is None:
+                LOG.warning(f"Unable to set {default_role} role to created "
+                            f"user.")
+            else:
+                self._ng.add_role(role_id=role.id, user_id=user.id,
                                   project_id=project_id)
-                    return user
-            for role in roles:
-                if default_role == role.name.lower().strip("_"):
-                    self.add_role(role_id=role.id,
-                                  user_id=user.id,
-                                  project_id=project_id)
-                    return user
-
-            LOG.warning("Unable to set %s role to created user." %
-                        default_role)
         return user
 
     @atomic.action_timer("keystone_v3.create_users")
@@ -145,7 +127,7 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
         if domain_name:
             domain = self._get_domain_id(domain_name)
 
-        self._clients.keystone("3").users.update(
+        self._kc.users.update(
             user_id, name=name, domain=domain, project=project_id,
             password=password, email=email, description=description,
             enabled=enabled, default_project=default_project)
@@ -164,43 +146,30 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
         name = name or self.generate_random_name()
         service_type = service_type or "rally_test_type"
         description = description or self.generate_random_name()
-        return self._clients.keystone("3").services.create(
+        return self._kc.services.create(
             name, type=service_type, description=description, enabled=enabled)
 
-    @atomic.action_timer("keystone_v3.create_role")
     def create_role(self, name=None, domain_name=None):
-        domain_id = None
-        if domain_name:
-            domain_id = self._get_domain_id(domain_name)
-        name = name or self.generate_random_name()
-        return self._clients.keystone("3").roles.create(name, domain=domain_id)
+        return self._ng.create_role(name=name, domain=domain_name)
 
-    @atomic.action_timer("keystone_v3.add_role")
     def add_role(self, role_id, user_id, project_id):
-        self._clients.keystone("3").roles.grant(role=role_id,
-                                                user=user_id,
-                                                project=project_id)
+        self._ng.add_role(role_id=role_id, user_id=user_id,
+                          project_id=project_id)
 
-    @atomic.action_timer("keystone_v3.list_roles")
     def list_roles(self, user_id=None, project_id=None, domain_name=None):
         """List all roles."""
-        domain_id = None
-        if domain_name:
-            domain_id = self._get_domain_id(domain_name)
-        return self._clients.keystone("3").roles.list(user=user_id,
-                                                      project=project_id,
-                                                      domain=domain_id)
+        if user_id:
+            return self._ng.list_role_assignments(
+                user_id, project_id=project_id, domain=domain_name)
+        return self._ng.list_roles(domain=domain_name)
 
-    @atomic.action_timer("keystone_v3.revoke_role")
     def revoke_role(self, role_id, user_id, project_id):
-        self._clients.keystone("3").roles.revoke(role=role_id,
-                                                 user=user_id,
-                                                 project=project_id)
+        self._ng.revoke_role(role_id=role_id, user_id=user_id,
+                             project_id=project_id)
 
-    @atomic.action_timer("keystone_v3.create_domain")
     def create_domain(self, name, description=None, enabled=True):
-        return self._clients.keystone("3").domains.create(
-            name, description=description, enabled=enabled)
+        return self._ng.create_domain(name, description=description,
+                                      is_enabled=enabled)
 
     @atomic.action_timer("keystone_v3.create_ec2creds")
     def create_ec2credentials(self, user_id, project_id):
@@ -211,8 +180,7 @@ class KeystoneV3Service(service.Service, keystone_common.KeystoneMixin):
 
         :returns: Created ec2-credentials object
         """
-        return self._clients.keystone("3").ec2.create(user_id,
-                                                      project_id=project_id)
+        return self._kc.ec2.create(user_id, project_id=project_id)
 
 
 @service.compat_layer(KeystoneV3Service)

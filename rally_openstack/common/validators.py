@@ -528,13 +528,12 @@ class RequiredAPIVersionsValidator(validation.Validator):
         for user in context["users"]:
             clients = user["credential"].clients()
             if self.component == "keystone":
-                if "2.0" not in versions and hasattr(
-                        clients.keystone(), "tenants"):
+                found_version = clients.keystone.version
+                if "2.0" not in versions and found_version == "2":
                     self.fail(msg % {"component": self.component,
                                      "version": versions_str,
                                      "found_version": "2.0"})
-                if "3" not in versions and hasattr(
-                        clients.keystone(), "projects"):
+                if "3" not in versions and found_version == "3":
                     self.fail(msg % {"component": self.component,
                                      "version": versions_str,
                                      "found_version": "3"})

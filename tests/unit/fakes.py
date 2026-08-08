@@ -1038,11 +1038,22 @@ class FakeKeystoneClient:
     def list_services(self):
         return self.services.list()
 
-    def list_roles(self):
+    def list_roles(self, user_id=None, project_id=None, domain_name=None):
         return self.roles.list()
+
+    def add_role(self, role_id, user_id, project_id):
+        return self.roles.add_user_role(user=user_id, role=role_id,
+                                        tenant=project_id)
+
+    def revoke_role(self, role_id, user_id, project_id):
+        return self.roles.remove_user_role(user=user_id, role=role_id,
+                                           tenant=project_id)
 
     def delete_user(self, uuid):
         return self.users.delete(uuid)
+
+    def get_session(self):
+        return (self.session, mock.Mock())
 
 
 class FakeGnocchiClient:
@@ -1478,7 +1489,7 @@ class FakeClients:
             password="fake_password",
             tenant_name="fake_tenant_name")
 
-    def keystone(self, version=None):
+    def keystone(self, version=None, *, legacy=False):
         if not self._keystone:
             self._keystone = FakeKeystoneClient()
         return self._keystone

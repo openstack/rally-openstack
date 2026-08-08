@@ -18,7 +18,6 @@ from unittest import mock
 from rally import exceptions
 
 from rally_openstack.task.contexts.keystone import roles
-from tests.unit import fakes
 from tests.unit import test
 
 
@@ -27,12 +26,28 @@ CTX = "rally_openstack.task.contexts.keystone.roles"
 
 class RoleGeneratorTestCase(test.TestCase):
 
-    def create_default_roles_and_patch_add_remove_functions(self, fc):
-        fc.keystone().roles.add_user_role = mock.MagicMock()
-        fc.keystone().roles.remove_user_role = mock.MagicMock()
-        fc.keystone().roles.create("r1", "test_role1")
-        fc.keystone().roles.create("r2", "test_role2")
-        self.assertEqual(2, len(fc.keystone().roles.list()))
+    def _mock_keystone(self, mock_osclients, user_roles=None):
+        """Set up the mock keystone client with two roles (r1, r2).
+
+        ``list_roles()`` returns both role definitions (optionally filtered by
+        name); ``list_role_assignments()`` returns ``user_roles`` (empty by
+        default, so setup queues add_role).
+        """
+        role1 = mock.Mock(id="r1")
+        role1.name = "test_role1"
+        role2 = mock.Mock(id="r2")
+        role2.name = "test_role2"
+
+        def list_roles(name=None, domain_name=None):
+            roles = [role1, role2]
+            if name is not None:
+                roles = [r for r in roles if r.name == name]
+            return roles
+
+        keystone = mock_osclients.Clients.return_value.keystone
+        keystone.list_roles.side_effect = list_roles
+        keystone.list_role_assignments.return_value = user_roles or []
+        return keystone
 
     @property
     def context(self):
@@ -49,9 +64,7 @@ class RoleGeneratorTestCase(test.TestCase):
 
     @mock.patch("%s.osclients" % CTX)
     def test_add_role(self, mock_osclients):
-        fc = fakes.FakeClients()
-        mock_osclients.Clients.return_value = fc
-        self.create_default_roles_and_patch_add_remove_functions(fc)
+        keystone = self._mock_keystone(mock_osclients)
 
         ctx = roles.RoleGenerator(self.context)
         ctx.context["users"] = [{"id": "u1", "tenant_id": "t1"},
@@ -61,12 +74,16 @@ class RoleGeneratorTestCase(test.TestCase):
 
         expected = {"r1": "test_role1", "r2": "test_role2"}
         self.assertEqual(expected, ctx.context["roles"])
+        keystone.add_role.assert_has_calls([
+            mock.call(role_id="r1", user_id="u1", project_id="t1"),
+            mock.call(role_id="r1", user_id="u2", project_id="t2"),
+            mock.call(role_id="r2", user_id="u1", project_id="t1"),
+            mock.call(role_id="r2", user_id="u2", project_id="t2"),
+        ], any_order=True)
 
     @mock.patch("%s.osclients" % CTX)
     def test_add_role_which_does_not_exist(self, mock_osclients):
-        fc = fakes.FakeClients()
-        mock_osclients.Clients.return_value = fc
-        self.create_default_roles_and_patch_add_remove_functions(fc)
+        self._mock_keystone(mock_osclients)
 
         ctx = roles.RoleGenerator(self.context)
         ctx.context["users"] = [{"id": "u1", "tenant_id": "t1"},
@@ -74,7 +91,7 @@ class RoleGeneratorTestCase(test.TestCase):
         ctx.config = ["unknown_role"]
         ctx.credential = mock.MagicMock()
         ex = self.assertRaises(exceptions.NotFoundException,
-                               ctx._get_role_object, "unknown_role")
+                               ctx._find_role, "unknown_role")
 
         expected = ("The resource can not be found: There is no role "
                     "with name `unknown_role`")
@@ -82,9 +99,7 @@ class RoleGeneratorTestCase(test.TestCase):
 
     @mock.patch("%s.osclients" % CTX)
     def test_remove_role(self, mock_osclients):
-        fc = fakes.FakeClients()
-        mock_osclients.Clients.return_value = fc
-        self.create_default_roles_and_patch_add_remove_functions(fc)
+        keystone = self._mock_keystone(mock_osclients)
 
         ctx = roles.RoleGenerator(self.context)
         ctx.context["roles"] = {"r1": "test_role1",
@@ -96,57 +111,48 @@ class RoleGeneratorTestCase(test.TestCase):
         ctx.credential = mock.MagicMock()
         ctx.cleanup()
         calls = [
-            mock.call(user="u1", role="r1", tenant="t1"),
-            mock.call(user="u2", role="r1", tenant="t2"),
-            mock.call(user="u1", role="r2", tenant="t1"),
-            mock.call(user="u2", role="r2", tenant="t2")
+            mock.call(role_id="r1", user_id="u1", project_id="t1"),
+            mock.call(role_id="r1", user_id="u2", project_id="t2"),
+            mock.call(role_id="r2", user_id="u1", project_id="t1"),
+            mock.call(role_id="r2", user_id="u2", project_id="t2"),
         ]
-
-        fc.keystone().roles.remove_user_role.assert_has_calls(calls,
-                                                              any_order=True)
+        keystone.revoke_role.assert_has_calls(calls, any_order=True)
 
     @mock.patch("%s.osclients" % CTX)
     def test_setup_and_cleanup(self, mock_osclients):
-        fc = fakes.FakeClients()
-        mock_osclients.Clients.return_value = fc
-        self.create_default_roles_and_patch_add_remove_functions(fc)
+        keystone = self._mock_keystone(mock_osclients)
 
-        def _get_user_role_ids_side_effect(user_id, project_id):
-            return ["r1", "r2"] if user_id == "u3" else []
+        def list_role_assignments(user_id, project_id=None, domain_name=None):
+            if user_id == "u3":
+                return [mock.Mock(id="r1"), mock.Mock(id="r2")]
+            return []
+        keystone.list_role_assignments.side_effect = list_role_assignments
 
         with roles.RoleGenerator(self.context) as ctx:
             ctx.context["users"] = [{"id": "u1", "tenant_id": "t1"},
                                     {"id": "u2", "tenant_id": "t2"},
                                     {"id": "u3", "tenant_id": "t3"}]
 
-            ctx._get_user_role_ids = mock.MagicMock()
-            ctx._get_user_role_ids.side_effect = _get_user_role_ids_side_effect
             ctx.setup()
             ctx.credential = mock.MagicMock()
             calls = [
-                mock.call(user="u1", role="r1", tenant="t1"),
-                mock.call(user="u2", role="r1", tenant="t2"),
-                mock.call(user="u1", role="r2", tenant="t1"),
-                mock.call(user="u2", role="r2", tenant="t2"),
+                mock.call(role_id="r1", user_id="u1", project_id="t1"),
+                mock.call(role_id="r1", user_id="u2", project_id="t2"),
+                mock.call(role_id="r2", user_id="u1", project_id="t1"),
+                mock.call(role_id="r2", user_id="u2", project_id="t2"),
             ]
-            fc.keystone().roles.add_user_role.assert_has_calls(calls,
-                                                               any_order=True)
-            self.assertEqual(
-                4, fc.keystone().roles.add_user_role.call_count)
-            self.assertEqual(
-                0, fc.keystone().roles.remove_user_role.call_count)
+            keystone.add_role.assert_has_calls(calls, any_order=True)
+            self.assertEqual(4, keystone.add_role.call_count)
+            self.assertEqual(0, keystone.revoke_role.call_count)
             self.assertEqual(2, len(ctx.context["roles"]))
-            self.assertEqual(2, len(fc.keystone().roles.list()))
 
         # Cleanup (called by context manager)
-        self.assertEqual(2, len(fc.keystone().roles.list()))
-        self.assertEqual(4, fc.keystone().roles.add_user_role.call_count)
-        self.assertEqual(4, fc.keystone().roles.remove_user_role.call_count)
+        self.assertEqual(4, keystone.add_role.call_count)
+        self.assertEqual(4, keystone.revoke_role.call_count)
         calls = [
-            mock.call(user="u1", role="r1", tenant="t1"),
-            mock.call(user="u2", role="r1", tenant="t2"),
-            mock.call(user="u1", role="r2", tenant="t1"),
-            mock.call(user="u2", role="r2", tenant="t2")
+            mock.call(role_id="r1", user_id="u1", project_id="t1"),
+            mock.call(role_id="r1", user_id="u2", project_id="t2"),
+            mock.call(role_id="r2", user_id="u1", project_id="t1"),
+            mock.call(role_id="r2", user_id="u2", project_id="t2"),
         ]
-        fc.keystone().roles.remove_user_role.assert_has_calls(calls,
-                                                              any_order=True)
+        keystone.revoke_role.assert_has_calls(calls, any_order=True)

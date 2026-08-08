@@ -13,16 +13,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.common import cfg
 from rally.common import logging
 from rally.task import utils as task_utils
 
-from rally_openstack.common.services.identity import identity
 from rally_openstack.common.services.image import glance_v2
 from rally_openstack.common.services.image import image
 from rally_openstack.common.services.network import neutron
 from rally_openstack.task.cleanup import base
 from rally_openstack.task.scenarios.nova import utils as nova_utils
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.common import osclients
+    from rally_openstack.common.clients import keystone
 
 
 CONF = cfg.CONF
@@ -35,7 +41,7 @@ def get_order(start):
 
 class SynchronizedDeletion:
 
-    def is_deleted(self):
+    def is_deleted(self) -> bool:
         return True
 
 
@@ -50,8 +56,9 @@ class QuotaMixin(SynchronizedDeletion, base.ResourceManager):
     def list(self):
         if not self.tenant_uuid:
             return []
-        client = self._admin_required and self.admin or self.user
-        project = identity.Identity(client).get_project(self.tenant_uuid)
+        client: osclients.Clients = (
+            self._admin_required and self.admin or self.user)
+        project = client.keystone.get_project(self.tenant_uuid)
         return [project]
 
 
@@ -915,42 +922,56 @@ class WatcherAudit(WatcherMixin):
 _keystone_order = get_order(9000)
 
 
-class KeystoneMixin(SynchronizedDeletion):
-
-    def _manager(self):
-        return identity.Identity(self.admin)
-
-    def delete(self):
-        delete_method = getattr(self._manager(), "delete_%s" % self._resource)
-        delete_method(self.id())
-
-    def list(self):
-        resources = self._resource + "s"
-        return getattr(self._manager(), "list_%s" % resources)()
-
-
 @base.resource("keystone", "user", order=next(_keystone_order),
                admin_required=True, perform_for_admin_only=True)
-class KeystoneUser(KeystoneMixin, base.ResourceManager):
-    pass
+class KeystoneUser(SynchronizedDeletion, base.ResourceManager):
+    def _manager(self) -> "keystone.Keystone":
+        return self.admin.keystone
+
+    def delete(self) -> None:
+        self._manager().delete_user(self.id())
+
+    def list(self) -> list:
+        return self._manager().list_users()
 
 
 @base.resource("keystone", "project", order=next(_keystone_order),
                admin_required=True, perform_for_admin_only=True)
-class KeystoneProject(KeystoneMixin, base.ResourceManager):
-    pass
+class KeystoneProject(SynchronizedDeletion, base.ResourceManager):
+    def _manager(self) -> "keystone.Keystone":
+        return self.admin.keystone
+
+    def delete(self) -> None:
+        self._manager().delete_project(self.id())
+
+    def list(self) -> list:
+        return self._manager().list_projects()
 
 
 @base.resource("keystone", "service", order=next(_keystone_order),
                admin_required=True, perform_for_admin_only=True)
-class KeystoneService(KeystoneMixin, base.ResourceManager):
-    pass
+class KeystoneService(SynchronizedDeletion, base.ResourceManager):
+    def _manager(self) -> "keystone.Keystone":
+        return self.admin.keystone
+
+    def delete(self) -> None:
+        self._manager().delete_service(self.id())
+
+    def list(self) -> list:
+        return self._manager().list_services()
 
 
 @base.resource("keystone", "role", order=next(_keystone_order),
                admin_required=True, perform_for_admin_only=True)
-class KeystoneRole(KeystoneMixin, base.ResourceManager):
-    pass
+class KeystoneRole(SynchronizedDeletion, base.ResourceManager):
+    def _manager(self) -> "keystone.Keystone":
+        return self.admin.keystone
+
+    def delete(self) -> None:
+        self._manager().delete_role(self.id())
+
+    def list(self) -> list:
+        return self._manager().list_roles()
 
 
 # NOTE(andreykurilin): unfortunately, ec2 credentials doesn't have name
@@ -959,8 +980,8 @@ class KeystoneRole(KeystoneMixin, base.ResourceManager):
 @base.resource("keystone", "ec2", tenant_resource=True,
                order=next(_keystone_order))
 class KeystoneEc2(SynchronizedDeletion, base.ResourceManager):
-    def _manager(self):
-        return identity.Identity(self.user)
+    def _manager(self) -> "keystone.Keystone":
+        return self.user.keystone
 
     def id(self):
         return "n/a"
@@ -973,11 +994,11 @@ class KeystoneEc2(SynchronizedDeletion, base.ResourceManager):
         return self.user.keystone.auth_ref.user_id
 
     def list(self):
-        return self._manager().list_ec2credentials(self.user_id)
+        return self._manager().list_credentials(
+            user_id=self.user_id, cred_type="ec2")
 
     def delete(self):
-        self._manager().delete_ec2credential(
-            self.user_id, access=self.raw_resource.access)
+        self._manager().delete_credential(self.raw_resource.id)
 
 # BARBICAN
 

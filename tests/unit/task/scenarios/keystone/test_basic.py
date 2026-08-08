@@ -44,20 +44,25 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
 
     def setUp(self):
         super().setUp()
+        # KeystoneBasic reads ``self._admin_clients.keystone`` /
+        # ``self._clients.keystone`` (the ported identity client). Both share
+        # the same PropertyMock, so admin and user keystone resolve to one
+        # mock.
         patch = mock.patch(
-            "rally_openstack.common.services.identity.identity.Identity")
+            "rally_openstack.common.osclients.Clients.keystone",
+            new_callable=mock.PropertyMock, create=True)
         self.addCleanup(patch.stop)
-        self.mock_identity = patch.start()
+        self.mock_keystone = patch.start().return_value
 
     def test_create_user(self):
         scenario = basic.CreateUser(self.context)
 
         scenario.run(password="tttt", project_id="id")
-        self.mock_identity.return_value.create_user.assert_called_once_with(
+        self.mock_keystone.create_user.assert_called_once_with(
             password="tttt", project_id="id")
 
     def test_create_delete_user(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         fake_email = "abcd"
         fake_user = identity_service.create_user.return_value
@@ -71,7 +76,7 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.delete_user.assert_called_once_with(fake_user.id)
 
     def test_create_user_set_enabled_and_delete(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         scenario = basic.CreateUserSetEnabledAndDelete(self.context)
 
@@ -86,7 +91,7 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.delete_user.assert_called_once_with(fake_user.id)
 
     def test_user_authenticate_and_validate_token(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
         scenario = basic.AuthenticateUserAndValidateToken(self.context)
 
         fake_token = identity_service.fetch_token.return_value
@@ -101,11 +106,11 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
 
         scenario.run(enabled=True)
 
-        self.mock_identity.return_value.create_project.assert_called_once_with(
+        self.mock_keystone.create_project.assert_called_once_with(
             enabled=True)
 
     def test_create_tenant_with_users(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         fake_project = identity_service.create_project.return_value
         number_of_users = 1
@@ -115,8 +120,8 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         scenario.run(users_per_tenant=number_of_users, enabled=True)
 
         identity_service.create_project.assert_called_once_with(enabled=True)
-        identity_service.create_users.assert_called_once_with(
-            fake_project.id, number_of_users=number_of_users)
+        identity_service.create_user.assert_called_once_with(
+            project_id=fake_project.id)
 
     def test_create_and_list_users(self):
         scenario = basic.CreateAndListUsers(self.context)
@@ -125,12 +130,12 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         project_id = "id"
 
         scenario.run(password=passwd, project_id=project_id)
-        self.mock_identity.return_value.create_user.assert_called_once_with(
+        self.mock_keystone.create_user.assert_called_once_with(
             password=passwd, project_id=project_id)
-        self.mock_identity.return_value.list_users.assert_called_once_with()
+        self.mock_keystone.list_users.assert_called_once_with()
 
     def test_create_and_list_tenants(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
         scenario = basic.CreateAndListTenants(self.context)
         scenario.run(enabled=True)
         identity_service.create_project.assert_called_once_with(enabled=True)
@@ -141,38 +146,38 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         fake_user = self.context["user"]["id"]
         fake_role = mock.MagicMock()
 
-        self.mock_identity.return_value.create_role.return_value = fake_role
+        self.mock_keystone.create_role.return_value = fake_role
 
         scenario = basic.AddAndRemoveUserRole(self.context)
         scenario.run()
 
-        self.mock_identity.return_value.create_role.assert_called_once_with()
-        self.mock_identity.return_value.add_role.assert_called_once_with(
+        self.mock_keystone.create_role.assert_called_once_with()
+        self.mock_keystone.add_role.assert_called_once_with(
             role_id=fake_role.id, user_id=fake_user, project_id=fake_tenant)
 
-        self.mock_identity.return_value.revoke_role.assert_called_once_with(
+        self.mock_keystone.revoke_role.assert_called_once_with(
             fake_role.id, user_id=fake_user, project_id=fake_tenant)
 
     def test_create_and_delete_role(self):
         fake_role = mock.MagicMock()
-        self.mock_identity.return_value.create_role.return_value = fake_role
+        self.mock_keystone.create_role.return_value = fake_role
 
         scenario = basic.CreateAndDeleteRole(self.context)
         scenario.run()
 
-        self.mock_identity.return_value.create_role.assert_called_once_with()
-        self.mock_identity.return_value.delete_role.assert_called_once_with(
+        self.mock_keystone.create_role.assert_called_once_with()
+        self.mock_keystone.delete_role.assert_called_once_with(
             fake_role.id)
 
     def test_create_and_get_role(self):
         fake_role = mock.MagicMock()
-        self.mock_identity.return_value.create_role.return_value = fake_role
+        self.mock_keystone.create_role.return_value = fake_role
 
         scenario = basic.CreateAndGetRole(self.context)
         scenario.run()
 
-        self.mock_identity.return_value.create_role.assert_called_once_with()
-        self.mock_identity.return_value.get_role.assert_called_once_with(
+        self.mock_keystone.create_role.assert_called_once_with()
+        self.mock_keystone.get_role.assert_called_once_with(
             fake_role.id)
 
     def test_create_and_list_user_roles(self):
@@ -180,53 +185,53 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         fake_tenant = self.context["tenant"]["id"]
         fake_user = self.context["user"]["id"]
         fake_role = mock.MagicMock()
-        self.mock_identity.return_value.create_role.return_value = fake_role
+        self.mock_keystone.create_role.return_value = fake_role
 
         scenario.run()
 
-        self.mock_identity.return_value.create_role.assert_called_once_with()
-        self.mock_identity.return_value.add_role.assert_called_once_with(
+        self.mock_keystone.create_role.assert_called_once_with()
+        self.mock_keystone.add_role.assert_called_once_with(
             user_id=fake_user, role_id=fake_role.id, project_id=fake_tenant)
-        self.mock_identity.return_value.list_roles.assert_called_once_with(
-            user_id=fake_user, project_id=fake_tenant)
+        self.mock_keystone.list_role_assignments.assert_called_once_with(
+            fake_user, project_id=fake_tenant)
 
     def test_create_and_list_roles(self):
         # Positive case
         scenario = basic.CreateAddListRoles(self.context)
         create_kwargs = {"fakewargs": "name"}
         list_kwargs = {"fakewargs": "f"}
-        self.mock_identity.return_value.create_role = mock.Mock(
+        self.mock_keystone.create_role = mock.Mock(
             return_value="role1")
-        self.mock_identity.return_value.list_roles = mock.Mock(
+        self.mock_keystone.list_roles = mock.Mock(
             return_value=("role1", "role2"))
         scenario.run(create_role_kwargs=create_kwargs,
                      list_role_kwargs=list_kwargs)
-        self.mock_identity.return_value.create_role.assert_called_once_with(
+        self.mock_keystone.create_role.assert_called_once_with(
             **create_kwargs)
-        self.mock_identity.return_value.list_roles.assert_called_once_with(
+        self.mock_keystone.list_roles.assert_called_once_with(
             **list_kwargs)
 
         # Negative case 1: role isn't created
-        self.mock_identity.return_value.create_role.return_value = None
+        self.mock_keystone.create_role.return_value = None
         self.assertRaises(exceptions.RallyAssertionError,
                           scenario.run, create_role_kwargs=create_kwargs,
                           list_role_kwargs=list_kwargs)
-        self.mock_identity.return_value.create_role.assert_called_with(
+        self.mock_keystone.create_role.assert_called_with(
             **create_kwargs)
 
         # Negative case 2: role was created but included into list
-        self.mock_identity.return_value.create_role.return_value = "role3"
+        self.mock_keystone.create_role.return_value = "role3"
         self.assertRaises(exceptions.RallyAssertionError,
                           scenario.run, create_role_kwargs=create_kwargs,
                           list_role_kwargs=list_kwargs)
-        self.mock_identity.return_value.create_role.assert_called_with(
+        self.mock_keystone.create_role.assert_called_with(
             **create_kwargs)
-        self.mock_identity.return_value.list_roles.assert_called_with(
+        self.mock_keystone.list_roles.assert_called_with(
             **list_kwargs)
 
     @ddt.data(None, "keystone", "fooservice")
     def test_get_entities(self, service_name):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         fake_project = identity_service.create_project.return_value
         fake_user = identity_service.create_user.return_value
@@ -248,18 +253,18 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
 
         if service_name is None:
             identity_service.create_service.assert_called_once_with()
-            self.assertFalse(identity_service.get_service_by_name.called)
+            self.assertFalse(identity_service.list_services.called)
             identity_service.get_service.assert_called_once_with(
                 fake_service.id)
         else:
-            identity_service.get_service_by_name.assert_called_once_with(
-                service_name)
+            identity_service.list_services.assert_called_once_with(
+                name=service_name)
             self.assertFalse(identity_service.create_service.called)
             identity_service.get_service.assert_called_once_with(
-                identity_service.get_service_by_name.return_value.id)
+                identity_service.list_services.return_value[0].id)
 
     def test_create_and_delete_service(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
         scenario = basic.CreateAndDeleteService(self.context)
 
         service_type = "test_service_type"
@@ -274,7 +279,7 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
             fake_service.id)
 
     def test_create_update_and_delete_tenant(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         scenario = basic.CreateUpdateAndDeleteTenant(self.context)
 
@@ -291,7 +296,7 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.delete_project(fake_project.id)
 
     def test_create_user_update_password(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         scenario = basic.CreateUserUpdatePassword(self.context)
 
@@ -308,16 +313,15 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
             fake_user.id, password=fake_password)
 
     def test_create_and_update_user(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         scenario = basic.CreateAndUpdateUser(self.context)
-        scenario.admin_clients("keystone").users.get = mock.MagicMock()
         fake_user = identity_service.create_user.return_value
 
         create_args = {"fakearg1": "f"}
         update_args = {"fakearg1": "fakearg"}
-        setattr(self.admin_clients("keystone").users.get.return_value,
-                "fakearg1", "fakearg")
+        # the scenario reads the updated attribute back via get_user
+        identity_service.get_user.return_value.fakearg1 = "fakearg"
 
         scenario.run(create_user_kwargs=create_args,
                      update_user_kwargs=update_args)
@@ -325,9 +329,10 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.create_user.assert_called_once_with(**create_args)
         identity_service.update_user.assert_called_once_with(
             fake_user.id, **update_args)
+        identity_service.get_user.assert_called_once_with(fake_user.id)
 
     def test_create_and_list_services(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         scenario = basic.CreateAndListServices(self.context)
         service_type = "test_service_type"
@@ -340,32 +345,34 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.list_services.assert_called_once_with()
 
     def test_create_and_list_ec2credentials(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
         scenario = basic.CreateAndListEc2Credentials(self.context)
 
         scenario.run()
 
-        identity_service.create_ec2credentials.assert_called_once_with(
-            self.context["user"]["id"],
+        identity_service.create_credential.assert_called_once_with(
+            "ec2",
+            user_id=self.context["user"]["id"],
             project_id=self.context["tenant"]["id"])
-        identity_service.list_ec2credentials.assert_called_with(
-            self.context["user"]["id"])
+        identity_service.list_credentials.assert_called_with(
+            user_id=self.context["user"]["id"], cred_type="ec2")
 
     def test_create_and_delete_ec2credential(self):
-        identity_service = self.mock_identity.return_value
+        identity_service = self.mock_keystone
 
-        fake_creds = identity_service.create_ec2credentials.return_value
+        fake_cred = identity_service.create_credential.return_value
 
         scenario = basic.CreateAndDeleteEc2Credential(self.context)
 
         scenario.run()
 
-        identity_service.create_ec2credentials.assert_called_once_with(
-            self.context["user"]["id"],
+        identity_service.create_credential.assert_called_once_with(
+            "ec2",
+            user_id=self.context["user"]["id"],
             project_id=self.context["tenant"]["id"])
-        identity_service.delete_ec2credential.assert_called_once_with(
-            self.context["user"]["id"], access=fake_creds.access)
+        identity_service.delete_credential.assert_called_once_with(
+            fake_cred.id)
 
     def test_add_and_remove_user_role(self):
         context = self.context
@@ -373,13 +380,13 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         user_id = context["user"]["id"]
 
         fake_role = mock.MagicMock()
-        self.mock_identity.return_value.create_role.return_value = fake_role
+        self.mock_keystone.create_role.return_value = fake_role
 
         scenario = basic.AddAndRemoveUserRole(context)
         scenario.run()
 
-        self.mock_identity.return_value.create_role.assert_called_once_with()
-        self.mock_identity.return_value.add_role.assert_called_once_with(
+        self.mock_keystone.create_role.assert_called_once_with()
+        self.mock_keystone.add_role.assert_called_once_with(
             role_id=fake_role.id, user_id=user_id, project_id=tenant_id)
-        self.mock_identity.return_value.revoke_role.assert_called_once_with(
+        self.mock_keystone.revoke_role.assert_called_once_with(
             fake_role.id, user_id=user_id, project_id=tenant_id)

@@ -32,6 +32,8 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
         self.osclients_patcher = mock.patch("%s.osclients" % CTX)
         self.osclients = self.osclients_patcher.start()
         self.addCleanup(self.osclients_patcher.stop)
+        self.keystone = self.osclients.Clients.return_value.keystone
+        self.keystone.get_session.return_value = (mock.Mock(), mock.Mock())
 
         self.deployment_uuid = "deployment_id"
 
@@ -204,6 +206,8 @@ class UserGeneratorForExistingUsersTestCase(test.ScenarioTestCase):
         auth_ref = AuthRef()
 
         mock_clients.return_value.keystone.auth_ref = auth_ref
+        mock_clients.return_value.keystone.get_session.return_value = (
+            mock.Mock(), mock.Mock())
 
         self.platforms["openstack"]["users"] = user_list
 
@@ -239,6 +243,10 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         self.osclients_patcher = mock.patch("%s.osclients" % CTX)
         self.osclients = self.osclients_patcher.start()
         self.addCleanup(self.osclients_patcher.stop)
+        self.keystone = self.osclients.Clients.return_value.keystone
+        ks_plugin = mock.Mock()
+        ks_plugin.get_auth_state.return_value = None
+        self.keystone.get_session.return_value = (mock.Mock(), ks_plugin)
 
         # Force the case of creating new users
         self.platforms = {
@@ -338,8 +346,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         self.assertFalse(
             self.osclients.Clients.return_value.neutron.called)
 
-    @mock.patch("%s.identity" % CTX)
-    def test__create_tenants(self, mock_identity):
+    def test__create_tenants(self):
         self.context["config"]["users"]["tenants"] = 1
         user_generator = users.UserGenerator(self.context)
         tenants = user_generator._create_tenants(1)
@@ -347,8 +354,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         _id, tenant = tenants.popitem()
         self.assertIn("name", tenant)
 
-    @mock.patch("%s.identity" % CTX)
-    def test__create_users(self, mock_identity):
+    def test__create_users(self):
         self.context["config"]["users"]["users_per_tenant"] = 2
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
@@ -359,8 +365,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
             self.assertIn("id", user)
             self.assertIn("credential", user)
 
-    @mock.patch("%s.identity" % CTX)
-    def test__create_users_user_password(self, mock_identity):
+    def test__create_users_user_password(self):
         self.context["config"]["users"]["users_per_tenant"] = 2
         self.context["config"]["users"]["user_password"] = "TrustMe"
         user_generator = users.UserGenerator(self.context)
@@ -373,26 +378,22 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
             self.assertIn("credential", user)
             self.assertEqual("TrustMe", user["credential"]["password"])
 
-    @mock.patch("%s.identity" % CTX)
-    def test__delete_tenants(self, mock_identity):
+    def test__delete_tenants(self):
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
                                              "t2": {"id": "t2", "name": "t2"}}
         user_generator._delete_tenants()
         self.assertEqual(0, len(user_generator.context["tenants"]))
 
-    @mock.patch("%s.identity" % CTX)
-    def test__delete_tenants_failure(self, mock_identity):
-        identity_service = mock_identity.Identity.return_value
-        identity_service.delete_project.side_effect = Exception()
+    def test__delete_tenants_failure(self):
+        self.keystone.delete_project.side_effect = Exception()
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
                                              "t2": {"id": "t2", "name": "t2"}}
         user_generator._delete_tenants()
         self.assertEqual(0, len(user_generator.context["tenants"]))
 
-    @mock.patch("%s.identity" % CTX)
-    def test__delete_users(self, mock_identity):
+    def test__delete_users(self):
         user_generator = users.UserGenerator(self.context)
         user1 = mock.MagicMock()
         user2 = mock.MagicMock()
@@ -400,10 +401,8 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator._delete_users()
         self.assertEqual(0, len(user_generator.context["users"]))
 
-    @mock.patch("%s.identity" % CTX)
-    def test__delete_users_failure(self, mock_identity):
-        identity_service = mock_identity.Identity.return_value
-        identity_service.delete_user.side_effect = Exception()
+    def test__delete_users_failure(self):
+        self.keystone.delete_user.side_effect = Exception()
         user_generator = users.UserGenerator(self.context)
         user1 = mock.MagicMock()
         user2 = mock.MagicMock()
@@ -411,8 +410,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator._delete_users()
         self.assertEqual(0, len(user_generator.context["users"]))
 
-    @mock.patch("%s.identity" % CTX)
-    def test_setup_and_cleanup(self, mock_identity):
+    def test_setup_and_cleanup(self):
         with users.UserGenerator(self.context) as ctx:
 
             ctx.setup()
@@ -429,11 +427,9 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         self.assertEqual(0, len(ctx.context["tenants"]))
 
     @mock.patch("rally.common.broker.LOG.warning")
-    @mock.patch("%s.identity" % CTX)
     def test_setup_and_cleanup_with_error_during_create_user(
-            self, mock_identity, mock_log_warning):
-        identity_service = mock_identity.Identity.return_value
-        identity_service.create_user.side_effect = Exception()
+            self, mock_log_warning):
+        self.keystone.create_user.side_effect = Exception()
         with users.UserGenerator(self.context) as ctx:
             self.assertRaises(exceptions.ContextSetupFailure, ctx.setup)
             mock_log_warning.assert_called_with(
@@ -442,10 +438,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         # Ensure that tenants get deleted anyway
         self.assertEqual(0, len(ctx.context["tenants"]))
 
-    @mock.patch("%s.identity" % CTX)
-    def test_users_and_tenants_in_context(self, mock_identity):
-        identity_service = mock_identity.Identity.return_value
-
+    def test_users_and_tenants_in_context(self):
         credential = oscredential.OpenStackCredential(
             "foo_url", "foo", "foo_pass",
             https_insecure=True,
@@ -454,12 +447,13 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         tmp_context["config"]["users"] = {"tenants": 1,
                                           "users_per_tenant": 2,
                                           "resource_management_workers": 1}
-        tmp_context["env"]["platforms"]["openstack"]["admin"] = credential
+        tmp_context["env"]["platforms"]["openstack"]["admin"] = (
+            credential.to_dict())
 
         credential_dict = credential.to_dict()
         user_list = [mock.MagicMock(id="id_%d" % i)
                      for i in range(self.users_num)]
-        identity_service.create_user.side_effect = user_list
+        self.keystone.create_user.side_effect = user_list
 
         with users.UserGenerator(tmp_context) as ctx:
             ctx.generate_random_name = mock.Mock()
@@ -495,8 +489,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
                 self.assertEqual(orig_user.id, user["id"])
                 self.assertEqual(tenant_id, user["tenant_id"])
 
-    @mock.patch("%s.identity" % CTX)
-    def test_users_contains_correct_endpoint_type(self, mock_identity):
+    def test_users_contains_correct_endpoint_type(self):
         credential = oscredential.OpenStackCredential(
             "foo_url", "foo", "foo_pass",
             endpoint_type=consts.EndpointType.INTERNAL)
@@ -508,7 +501,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
                     "resource_management_workers": 1
                 }
             },
-            "env": {"platforms": {"openstack": {"admin": credential,
+            "env": {"platforms": {"openstack": {"admin": credential.to_dict(),
                                                 "users": []}}},
             "task": {"uuid": "task_id", "deployment_uuid": "deployment_id"}
         }
@@ -519,8 +512,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         for user in users_:
             self.assertEqual("internal", user["credential"].endpoint_type)
 
-    @mock.patch("%s.identity" % CTX)
-    def test_users_contains_default_endpoint_type(self, mock_identity):
+    def test_users_contains_default_endpoint_type(self):
         credential = oscredential.OpenStackCredential(
             "foo_url", "foo", "foo_pass")
         config = {
@@ -531,7 +523,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
                     "resource_management_workers": 1
                 }
             },
-            "env": {"platforms": {"openstack": {"admin": credential,
+            "env": {"platforms": {"openstack": {"admin": credential.to_dict(),
                                                 "users": []}}},
             "task": {"uuid": "task_id", "deployment_uuid": "deployment_id"}
         }

@@ -199,7 +199,7 @@ class OpenStack(platform.Platform):
                 if self.platform_data["admin"] == user:
                     clients.verified_keystone()
                 else:
-                    clients.keystone()
+                    clients.keystone.auth_ref
             except osclients.exceptions.RallyException as e:
                 # all rally native exceptions should provide user-friendly
                 # messages
@@ -236,7 +236,7 @@ class OpenStack(platform.Platform):
                                 % name)}
             client = getattr(clients, name)
             try:
-                client.validate_version(client.choose_version())
+                client.spec.validate_version(client.choose_version())
                 client.create_client()
             except osclients.exceptions.RallyException as e:
                 return {

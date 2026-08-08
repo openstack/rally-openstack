@@ -7,6 +7,7 @@ pbr!=2.1.0                                             # Apache License, Version
 gnocchiclient                                          # Apache Software License
 keystoneauth1
 kubernetes                                             # Apache License Version 2.0
+openstacksdk                                           # Apache License, Version 2.0
 os-faults>=0.2.0                                       # Apache Software License
 osprofiler                                             # Apache License, Version 2.0
 python-barbicanclient                                  # Apache Software License

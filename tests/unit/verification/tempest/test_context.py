@@ -153,13 +153,13 @@ class TempestContextTestCase(test.TestCase):
         role4 = CONF.openstack.heat_stack_user_role
 
         client = self.context.clients.verified_keystone()
-        client.roles.list.return_value = [fakes.FakeRole(name=role1),
+        client.list_roles.return_value = [fakes.FakeRole(name=role1),
                                           fakes.FakeRole(name=role2)]
-        client.roles.create.side_effect = [fakes.FakeFlavor(name=role3),
-                                           fakes.FakeFlavor(name=role4)]
+        client.create_role.side_effect = [fakes.FakeFlavor(name=role3),
+                                          fakes.FakeFlavor(name=role4)]
 
         self.context._create_tempest_roles()
-        self.assertEqual(2, client.roles.create.call_count)
+        self.assertEqual(2, client.create_role.call_count)
 
         created_roles = [role.name for role in self.context._created_roles]
         self.assertIn(role3, created_roles)
@@ -305,8 +305,8 @@ class TempestContextTestCase(test.TestCase):
         self.context._created_roles = [fakes.FakeRole(), fakes.FakeRole()]
 
         self.context._cleanup_tempest_roles()
-        client = self.context.clients.keystone()
-        self.assertEqual(2, client.roles.delete.call_count)
+        client = self.context.clients.keystone
+        self.assertEqual(2, client.delete_role.call_count)
 
     @mock.patch("rally_openstack.common.services.image.image.Image")
     def test__cleanup_images(self, mock_image):

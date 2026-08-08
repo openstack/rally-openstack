@@ -208,10 +208,6 @@ module = "rally_openstack.common.consts"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.common.credential"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.common.osclients"
 disable_error_code = ["no-untyped-def"]
 

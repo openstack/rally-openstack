@@ -149,18 +149,18 @@ class TempestContext(context.VerifierContext):
             self.conf.write(configfile)
 
     def _create_tempest_roles(self):
-        keystoneclient = self.clients.verified_keystone()
+        keystone = self.clients.verified_keystone()
         roles = [conf.CONF.openstack.swift_operator_role,
                  conf.CONF.openstack.swift_reseller_admin_role,
                  conf.CONF.openstack.heat_stack_owner_role,
                  conf.CONF.openstack.heat_stack_user_role]
         existing_roles = {role.name.lower()
-                          for role in keystoneclient.roles.list()}
+                          for role in keystone.list_roles()}
 
         for role in roles:
             if role.lower() not in existing_roles:
                 LOG.debug("Creating role '%s'." % role)
-                self._created_roles.append(keystoneclient.roles.create(role))
+                self._created_roles.append(keystone.create_role(role))
 
     def _configure_option(self, section, option, value=None,
                           helper_method=None, *args, **kwargs):
@@ -335,10 +335,10 @@ class TempestContext(context.VerifierContext):
         return net
 
     def _cleanup_tempest_roles(self):
-        keystoneclient = self.clients.keystone()
+        keystone = self.clients.keystone
         for role in self._created_roles:
             LOG.debug("Deleting role '%s'." % role.name)
-            keystoneclient.roles.delete(role.id)
+            keystone.delete_role(role.id)
             LOG.debug("Role '%s' has been deleted." % role.name)
 
     def _cleanup_images(self):
