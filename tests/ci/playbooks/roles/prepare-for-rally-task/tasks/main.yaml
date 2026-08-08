@@ -45,7 +45,7 @@
 
 - name: Check the existence of custom plugins
   stat:
-    path: '{{ rally_source_dir }}/rally-jobs/plugins'
+    path: '{{ rally_task_src_dir }}/rally-jobs/plugins'
   register: custom_plugins_stat
 
 - name: Copy custom plugins, if they are presented
@@ -65,7 +65,7 @@
 
 - name: Check the existence of extra files
   stat:
-    path: '{{ rally_source_dir }}/rally-jobs/extra'
+    path: '{{ rally_task_src_dir }}/rally-jobs/extra'
   register: extra_files_stat
 
 - name: Copy extra files, if they are presented
@@ -144,12 +144,12 @@
 
 - name: Check the existence of rally_task
   stat:
-    path: '{{ rally_source_dir }}/{{ rally_task }}'
+    path: '{{ rally_task_src_dir }}/{{ rally_task }}'
   register: rally_task_file_stat
 
 - name: Fail if Rally task file is missed.
   fail:
-    msg: "'{{ rally_task_path }}' Rally task file is missed."
+    msg: "'{{ rally_task_src_dir }}/{{ rally_task }}' Rally task file is missed."
   when: not rally_task_file_stat.stat.exists
 
 - name: Copy task file
@@ -160,7 +160,7 @@
 
 - name: Check the existence of task_args_file
   stat:
-    path: '{{ rally_source_dir }}/{{ rally_task_args_file }}'
+    path: '{{ rally_task_src_dir }}/{{ rally_task_args_file }}'
   register: task_args_file_stat
 
 - name: Copy task_args_file

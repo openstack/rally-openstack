@@ -1,4 +1,5 @@
-rally_source_dir: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}'
+# The checkout that owns rally_task, rally_task_args_file and rally-jobs/.
+rally_task_src_dir: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}'
 rally_dummy_qcow2_image: ""
 rally_dummy_raw_image: ""
 rally_use_existing_users: false

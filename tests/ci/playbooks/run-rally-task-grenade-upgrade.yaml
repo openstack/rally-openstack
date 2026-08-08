@@ -11,15 +11,15 @@
     rally_dummy_raw_image: "{{ rally_home_dir }}/extra/dummy_image.raw"
     rally_results_dir: '{{ rally_home_dir }}/results'
     rally_task_args_file: "100-percent-not-exist-file"
-    rally_source_dir: '/opt/stack/old/rally-openstack'
+    rally_task_src_dir: '/opt/stack/old/rally-openstack'
   pre_tasks:
     - name: Copy rally-jobs for stack user access
       become: true
       shell:
         cmd: |
-          mkdir -p {{ rally_source_dir }}
-          cp -r {{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs {{ rally_source_dir }}/
-          chown -R stack:stack {{ rally_source_dir }}
+          mkdir -p {{ rally_task_src_dir }}
+          cp -r {{ ansible_user_dir }}/{{ zuul.project.src_dir }}/rally-jobs {{ rally_task_src_dir }}/
+          chown -R stack:stack {{ rally_task_src_dir }}
         executable: /bin/bash
   roles:
     - prepare-for-rally-task
