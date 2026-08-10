@@ -44,3 +44,59 @@ subtasks:
     sla:
       failure_rate:
         max: 0
+  - title: NeutronFWaaS.create_and_list_firewall_policies tests
+    scenario:
+      NeutronFWaaS.create_and_list_firewall_policies: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronFWaaS.create_and_delete_firewall_policies tests
+    scenario:
+      NeutronFWaaS.create_and_delete_firewall_policies: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronFWaaS.create_and_update_firewall_policies tests
+    scenario:
+      NeutronFWaaS.create_and_update_firewall_policies: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronFWaaS.create_policy_add_and_remove_rules tests
+    scenario:
+      NeutronFWaaS.create_policy_add_and_remove_rules: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0

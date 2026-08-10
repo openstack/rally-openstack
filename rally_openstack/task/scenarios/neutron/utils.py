@@ -941,3 +941,79 @@ class NeutronScenario(NeutronBaseScenario):
         """
         self.clients("neutron").delete_fwaas_firewall_rule(
             firewall_rule["firewall_rule"]["id"])
+
+    @atomic.action_timer("neutron.create_firewall_policy")
+    def _create_firewall_policy(self, **firewall_policy_create_args):
+        """Create Neutron firewall policy.
+
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        :returns: dict, neutron firewall policy
+        """
+        policy = {}
+        policy.update(firewall_policy_create_args)
+        policy["name"] = self.generate_random_name()
+        return self.clients("neutron").create_fwaas_firewall_policy(
+            {"firewall_policy": policy})
+
+    @atomic.action_timer("neutron.list_firewall_policies")
+    def _list_firewall_policies(self, **kwargs):
+        """Return list of Neutron firewall policies.
+
+        :param kwargs: dict, GET /v2.0/fwaas/firewall_policies request options
+        :returns: firewall policies list
+        """
+        return self.clients("neutron").list_fwaas_firewall_policies(
+            True, **kwargs)["firewall_policies"]
+
+    @atomic.action_timer("neutron.update_firewall_policy")
+    def _update_firewall_policy(self, firewall_policy,
+                                **firewall_policy_update_args):
+        """Update Neutron firewall policy.
+
+        :param firewall_policy: dict, neutron firewall_policy
+        :param firewall_policy_update_args: dict,
+            PUT /v2.0/fwaas/firewall_policies update options
+        :returns: dict, updated neutron firewall policy
+        """
+        firewall_policy_update_args["name"] = self.generate_random_name()
+        return self.clients("neutron").update_fwaas_firewall_policy(
+            firewall_policy["firewall_policy"]["id"],
+            {"firewall_policy": firewall_policy_update_args})
+
+    @atomic.action_timer("neutron.delete_firewall_policy")
+    def _delete_firewall_policy(self, firewall_policy):
+        """Delete Neutron firewall policy.
+
+        :param firewall_policy: dict, neutron firewall_policy
+        """
+        self.clients("neutron").delete_fwaas_firewall_policy(
+            firewall_policy["firewall_policy"]["id"])
+
+    @atomic.action_timer("neutron.insert_firewall_rule_in_policy")
+    def _insert_firewall_rule_in_policy(self, firewall_policy, firewall_rule,
+                                        **insert_args):
+        """Insert a firewall rule into a firewall policy.
+
+        :param firewall_policy: dict, neutron firewall_policy
+        :param firewall_rule: dict, neutron firewall_rule
+        :param insert_args: optional insert_before / insert_after rule IDs
+        :returns: dict, updated neutron firewall policy
+        """
+        body = {"firewall_rule_id": firewall_rule["firewall_rule"]["id"]}
+        body.update(insert_args)
+        return self.clients("neutron").insert_rule_fwaas_firewall_policy(
+            firewall_policy["firewall_policy"]["id"], body)
+
+    @atomic.action_timer("neutron.remove_firewall_rule_from_policy")
+    def _remove_firewall_rule_from_policy(self, firewall_policy,
+                                          firewall_rule):
+        """Remove a firewall rule from a firewall policy.
+
+        :param firewall_policy: dict, neutron firewall_policy
+        :param firewall_rule: dict, neutron firewall_rule
+        :returns: dict, updated neutron firewall policy
+        """
+        body = {"firewall_rule_id": firewall_rule["firewall_rule"]["id"]}
+        return self.clients("neutron").remove_rule_fwaas_firewall_policy(
+            firewall_policy["firewall_policy"]["id"], body)

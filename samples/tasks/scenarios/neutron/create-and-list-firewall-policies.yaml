@@ -1,0 +1,19 @@
+---
+version: 2
+title: Neutron Create And List Firewall Policies
+description: Test creating Neutron networking resources
+subtasks:
+- title: Create and list firewall policies
+  scenario:
+    NeutronFWaaS.create_and_list_firewall_policies: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+  sla:
+    failure_rate:
+      max: 0

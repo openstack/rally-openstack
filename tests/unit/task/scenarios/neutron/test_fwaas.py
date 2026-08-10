@@ -79,3 +79,93 @@ class NeutronFWaaSTestCase(test.TestCase):
         scenario._update_firewall_rule.assert_called_once_with(
             scenario._create_firewall_rule.return_value,
             **firewall_rule_update_data)
+
+    @ddt.data(
+        {},
+        {"firewall_policy_create_args": {}},
+        {"firewall_policy_create_args": {"description": "fake-description"}},
+    )
+    @ddt.unpack
+    def test_create_and_list_firewall_policies(
+            self, firewall_policy_create_args=None):
+        scenario = fwaas.CreateAndListFirewallPolicies()
+        firewall_policy_data = firewall_policy_create_args or {}
+        scenario._create_firewall_policy = mock.Mock()
+        scenario._list_firewall_policies = mock.Mock()
+        scenario.run(firewall_policy_create_args=firewall_policy_create_args)
+        scenario._create_firewall_policy.assert_called_once_with(
+            **firewall_policy_data)
+        scenario._list_firewall_policies.assert_called_once_with()
+
+    @ddt.data(
+        {},
+        {"firewall_policy_create_args": {}},
+        {"firewall_policy_create_args": {"description": "fake-description"}},
+    )
+    @ddt.unpack
+    def test_create_and_delete_firewall_policies(
+            self, firewall_policy_create_args=None):
+        scenario = fwaas.CreateAndDeleteFirewallPolicies()
+        firewall_policy_data = firewall_policy_create_args or {}
+        scenario._create_firewall_policy = mock.Mock()
+        scenario._delete_firewall_policy = mock.Mock()
+        scenario.run(firewall_policy_create_args=firewall_policy_create_args)
+        scenario._create_firewall_policy.assert_called_once_with(
+            **firewall_policy_data)
+        scenario._delete_firewall_policy.assert_called_once_with(
+            scenario._create_firewall_policy.return_value)
+
+    @ddt.data(
+        {},
+        {"firewall_policy_create_args": {}},
+        {"firewall_policy_create_args": {"description": "fake-description"}},
+        {"firewall_policy_update_args": {}},
+        {"firewall_policy_update_args": {"description": "fake-updated-descr"}},
+    )
+    @ddt.unpack
+    def test_create_and_update_firewall_policies(
+            self, firewall_policy_create_args=None,
+            firewall_policy_update_args=None):
+        scenario = fwaas.CreateAndUpdateFirewallPolicies()
+        firewall_policy_data = firewall_policy_create_args or {}
+        firewall_policy_update_data = firewall_policy_update_args or {}
+        scenario._create_firewall_policy = mock.Mock()
+        scenario._update_firewall_policy = mock.Mock()
+        scenario.run(firewall_policy_create_args=firewall_policy_create_args,
+                     firewall_policy_update_args=firewall_policy_update_args)
+        scenario._create_firewall_policy.assert_called_once_with(
+            **firewall_policy_data)
+        scenario._update_firewall_policy.assert_called_once_with(
+            scenario._create_firewall_policy.return_value,
+            **firewall_policy_update_data)
+
+    @ddt.data(
+        {},
+        {"firewall_rule_create_args": {"description": "fake-rule"}},
+        {"firewall_policy_create_args": {"description": "fake-policy"}},
+        {"firewall_rule_create_args": {"description": "fake-rule"},
+         "firewall_policy_create_args": {"description": "fake-policy"}},
+    )
+    @ddt.unpack
+    def test_create_policy_add_and_remove_rules(
+            self, firewall_rule_create_args=None,
+            firewall_policy_create_args=None):
+        scenario = fwaas.CreatePolicyAddAndRemoveRules()
+        firewall_rule_data = firewall_rule_create_args or {}
+        firewall_policy_data = firewall_policy_create_args or {}
+        scenario._create_firewall_rule = mock.Mock()
+        scenario._create_firewall_policy = mock.Mock()
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._remove_firewall_rule_from_policy = mock.Mock()
+        scenario.run(firewall_rule_create_args=firewall_rule_create_args,
+                     firewall_policy_create_args=firewall_policy_create_args)
+        scenario._create_firewall_rule.assert_called_once_with(
+            **firewall_rule_data)
+        scenario._create_firewall_policy.assert_called_once_with(
+            **firewall_policy_data)
+        scenario._insert_firewall_rule_in_policy.assert_called_once_with(
+            scenario._create_firewall_policy.return_value,
+            scenario._create_firewall_rule.return_value)
+        scenario._remove_firewall_rule_from_policy.assert_called_once_with(
+            scenario._create_firewall_policy.return_value,
+            scenario._create_firewall_rule.return_value)

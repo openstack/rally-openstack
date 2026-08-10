@@ -1507,6 +1507,101 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.delete_firewall_rule")
 
+    def test__create_firewall_policy(self):
+        expected = {
+            "firewall_policy": {"id": "policy-id", "name": "random_name"}
+        }
+        nc = self.clients("neutron")
+        nc.create_fwaas_firewall_policy.return_value = expected
+
+        result = self.scenario._create_firewall_policy(
+            description="fake-description")
+
+        self.assertEqual(expected, result)
+        nc.create_fwaas_firewall_policy.assert_called_once_with(
+            {"firewall_policy": {
+                "description": "fake-description",
+                "name": self.random_name,
+            }})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.create_firewall_policy")
+
+    def test__list_firewall_policies(self):
+        policies = [{"id": "policy-1"}, {"id": "policy-2"}]
+        nc = self.clients("neutron")
+        nc.list_fwaas_firewall_policies.return_value = {
+            "firewall_policies": policies
+        }
+        self.assertEqual(policies, self.scenario._list_firewall_policies())
+        nc.list_fwaas_firewall_policies.assert_called_once_with(True)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.list_firewall_policies")
+
+    def test__update_firewall_policy(self):
+        firewall_policy = {"firewall_policy": {"id": "policy-id"}}
+        expected = {"firewall_policy": {
+            "id": "policy-id",
+            "name": self.random_name,
+            "description": "updated"
+        }}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_policy.return_value = expected
+
+        result = self.scenario._update_firewall_policy(
+            firewall_policy, description="updated")
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_policy.assert_called_once_with(
+            "policy-id",
+            {"firewall_policy": {
+                "description": "updated",
+                "name": self.random_name,
+            }})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.update_firewall_policy")
+
+    def test__delete_firewall_policy(self):
+        firewall_policy = {"firewall_policy": {"id": "policy-id"}}
+        nc = self.clients("neutron")
+        self.scenario._delete_firewall_policy(firewall_policy)
+        nc.delete_fwaas_firewall_policy.assert_called_once_with("policy-id")
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.delete_firewall_policy")
+
+    def test__insert_firewall_rule_in_policy(self):
+        firewall_policy = {"firewall_policy": {"id": "policy-id"}}
+        firewall_rule = {"firewall_rule": {"id": "rule-id"}}
+        expected = {"firewall_policy": {"id": "policy-id"}}
+        nc = self.clients("neutron")
+        nc.insert_rule_fwaas_firewall_policy.return_value = expected
+
+        result = self.scenario._insert_firewall_rule_in_policy(
+            firewall_policy, firewall_rule)
+
+        self.assertEqual(expected, result)
+        nc.insert_rule_fwaas_firewall_policy.assert_called_once_with(
+            "policy-id", {"firewall_rule_id": "rule-id"})
+        self._test_atomic_action_timer(
+            self.scenario.atomic_actions(),
+            "neutron.insert_firewall_rule_in_policy")
+
+    def test__remove_firewall_rule_from_policy(self):
+        firewall_policy = {"firewall_policy": {"id": "policy-id"}}
+        firewall_rule = {"firewall_rule": {"id": "rule-id"}}
+        expected = {"firewall_policy": {"id": "policy-id"}}
+        nc = self.clients("neutron")
+        nc.remove_rule_fwaas_firewall_policy.return_value = expected
+
+        result = self.scenario._remove_firewall_rule_from_policy(
+            firewall_policy, firewall_rule)
+
+        self.assertEqual(expected, result)
+        nc.remove_rule_fwaas_firewall_policy.assert_called_once_with(
+            "policy-id", {"firewall_rule_id": "rule-id"})
+        self._test_atomic_action_timer(
+            self.scenario.atomic_actions(),
+            "neutron.remove_firewall_rule_from_policy")
+
 
 class NeutronScenarioFunctionalTestCase(test.ScenarioTestCase):
 

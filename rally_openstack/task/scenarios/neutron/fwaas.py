@@ -97,3 +97,114 @@ class CreateAndUpdateFirewallRules(utils.NeutronScenario):
             **firewall_rule_create_args)
         self._update_firewall_rule(firewall_rule,
                                    **firewall_rule_update_args)
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_and_list_firewall_policies",
+    platform="openstack")
+class CreateAndListFirewallPolicies(utils.NeutronScenario):
+
+    def run(self, firewall_policy_create_args=None):
+        """Create and list Neutron firewall policies.
+
+        Measure the "neutron firewall-policy-create" and "neutron
+        firewall-policy-list" command performance.
+
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        """
+        firewall_policy_create_args = firewall_policy_create_args or {}
+        self._create_firewall_policy(**firewall_policy_create_args)
+        self._list_firewall_policies()
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_and_delete_firewall_policies",
+    platform="openstack")
+class CreateAndDeleteFirewallPolicies(utils.NeutronScenario):
+
+    def run(self, firewall_policy_create_args=None):
+        """Create and delete Neutron firewall policies.
+
+        Measure the "neutron firewall-policy-create" and "neutron
+        firewall-policy-delete" command performance.
+
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        """
+        firewall_policy_create_args = firewall_policy_create_args or {}
+        firewall_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._delete_firewall_policy(firewall_policy)
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_and_update_firewall_policies",
+    platform="openstack")
+class CreateAndUpdateFirewallPolicies(utils.NeutronScenario):
+
+    def run(self, firewall_policy_create_args=None,
+            firewall_policy_update_args=None):
+        """Create and update Neutron firewall policies.
+
+        Measure the "neutron firewall-policy-create" and "neutron
+        firewall-policy-update" command performance.
+
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        :param firewall_policy_update_args: dict,
+            PUT /v2.0/fwaas/firewall_policies update options
+        """
+        firewall_policy_create_args = firewall_policy_create_args or {}
+        firewall_policy_update_args = firewall_policy_update_args or {}
+        firewall_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._update_firewall_policy(firewall_policy,
+                                     **firewall_policy_update_args)
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_policy_add_and_remove_rules",
+    platform="openstack")
+class CreatePolicyAddAndRemoveRules(utils.NeutronScenario):
+
+    def run(self, firewall_rule_create_args=None,
+            firewall_policy_create_args=None):
+        """Create a policy, then add and remove a firewall rule.
+
+        Measure firewall policy create plus insert-rule and remove-rule
+        performance.
+
+        :param firewall_rule_create_args: dict,
+            POST /v2.0/fwaas/firewall_rules request options
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        """
+        firewall_rule_create_args = firewall_rule_create_args or {}
+        firewall_policy_create_args = firewall_policy_create_args or {}
+        firewall_rule = self._create_firewall_rule(
+            **firewall_rule_create_args)
+        firewall_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._insert_firewall_rule_in_policy(firewall_policy, firewall_rule)
+        self._remove_firewall_rule_from_policy(firewall_policy, firewall_rule)
