@@ -432,6 +432,52 @@ class NeutronFirewallPolicyTestCase(test.TestCase):
             "policy-id")
 
 
+class NeutronFirewallGroupTestCase(test.TestCase):
+
+    def get_firewall_group_resource(self, extensions=None):
+        if extensions is None:
+            extensions = []
+        user = mock.MagicMock()
+        neut = resources.NeutronFirewallGroup(user=user)
+        neut.tenant_uuid = "user_tenant"
+        neut._manager = mock.Mock()
+        user.neutron.return_value.list_extensions.return_value = {
+            "extensions": [{"alias": ext} for ext in extensions]
+        }
+        return neut
+
+    def test_list_fwaas_available(self):
+        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
+        groups = {
+            "firewall_groups": [
+                {"tenant_id": "user_tenant", "id": "group-1"},
+                {"tenant_id": "other", "id": "group-2"},
+                {"project_id": "user_tenant", "id": "group-3"},
+            ]
+        }
+        neut._manager().list_fwaas_firewall_groups.return_value = groups
+
+        self.assertEqual("firewall_group", neut._resource)
+        self.assertEqual(
+            [groups["firewall_groups"][0], groups["firewall_groups"][2]],
+            neut.list())
+        neut._manager().list_fwaas_firewall_groups.assert_called_once_with(
+            tenant_id="user_tenant")
+
+    def test_list_fwaas_unavailable(self):
+        neut = self.get_firewall_group_resource()
+
+        self.assertEqual([], neut.list())
+        self.assertFalse(neut._manager().list_fwaas_firewall_groups.called)
+
+    def test_delete(self):
+        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
+        neut.raw_resource = {"id": "group-id"}
+        neut.delete()
+        neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
+            "group-id")
+
+
 class NeutronFloatingIPTestCase(test.TestCase):
 
     def test_name(self):

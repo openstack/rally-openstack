@@ -169,3 +169,62 @@ class NeutronFWaaSTestCase(test.TestCase):
         scenario._remove_firewall_rule_from_policy.assert_called_once_with(
             scenario._create_firewall_policy.return_value,
             scenario._create_firewall_rule.return_value)
+
+    @ddt.data(
+        {},
+        {"firewall_group_create_args": {}},
+        {"firewall_group_create_args": {"description": "fake-description"}},
+    )
+    @ddt.unpack
+    def test_create_and_list_firewall_groups(
+            self, firewall_group_create_args=None):
+        scenario = fwaas.CreateAndListFirewallGroups()
+        firewall_group_data = firewall_group_create_args or {}
+        scenario._create_firewall_group = mock.Mock()
+        scenario._list_firewall_groups = mock.Mock()
+        scenario.run(firewall_group_create_args=firewall_group_create_args)
+        scenario._create_firewall_group.assert_called_once_with(
+            **firewall_group_data)
+        scenario._list_firewall_groups.assert_called_once_with()
+
+    @ddt.data(
+        {},
+        {"firewall_group_create_args": {}},
+        {"firewall_group_create_args": {"description": "fake-description"}},
+    )
+    @ddt.unpack
+    def test_create_and_delete_firewall_groups(
+            self, firewall_group_create_args=None):
+        scenario = fwaas.CreateAndDeleteFirewallGroups()
+        firewall_group_data = firewall_group_create_args or {}
+        scenario._create_firewall_group = mock.Mock()
+        scenario._delete_firewall_group = mock.Mock()
+        scenario.run(firewall_group_create_args=firewall_group_create_args)
+        scenario._create_firewall_group.assert_called_once_with(
+            **firewall_group_data)
+        scenario._delete_firewall_group.assert_called_once_with(
+            scenario._create_firewall_group.return_value)
+
+    @ddt.data(
+        {},
+        {"firewall_group_create_args": {}},
+        {"firewall_group_create_args": {"description": "fake-description"}},
+        {"firewall_group_update_args": {}},
+        {"firewall_group_update_args": {"description": "fake-updated-descr"}},
+    )
+    @ddt.unpack
+    def test_create_and_update_firewall_groups(
+            self, firewall_group_create_args=None,
+            firewall_group_update_args=None):
+        scenario = fwaas.CreateAndUpdateFirewallGroups()
+        firewall_group_data = firewall_group_create_args or {}
+        firewall_group_update_data = firewall_group_update_args or {}
+        scenario._create_firewall_group = mock.Mock()
+        scenario._update_firewall_group = mock.Mock()
+        scenario.run(firewall_group_create_args=firewall_group_create_args,
+                     firewall_group_update_args=firewall_group_update_args)
+        scenario._create_firewall_group.assert_called_once_with(
+            **firewall_group_data)
+        scenario._update_firewall_group.assert_called_once_with(
+            scenario._create_firewall_group.return_value,
+            **firewall_group_update_data)

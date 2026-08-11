@@ -1602,6 +1602,67 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
             self.scenario.atomic_actions(),
             "neutron.remove_firewall_rule_from_policy")
 
+    def test__create_firewall_group(self):
+        expected = {
+            "firewall_group": {"id": "group-id", "name": "random_name"}
+        }
+        nc = self.clients("neutron")
+        nc.create_fwaas_firewall_group.return_value = expected
+
+        result = self.scenario._create_firewall_group(
+            description="fake-description")
+
+        self.assertEqual(expected, result)
+        nc.create_fwaas_firewall_group.assert_called_once_with(
+            {"firewall_group": {
+                "description": "fake-description",
+                "name": self.random_name,
+            }})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.create_firewall_group")
+
+    def test__list_firewall_groups(self):
+        groups = [{"id": "group-1"}, {"id": "group-2"}]
+        nc = self.clients("neutron")
+        nc.list_fwaas_firewall_groups.return_value = {
+            "firewall_groups": groups
+        }
+        self.assertEqual(groups, self.scenario._list_firewall_groups())
+        nc.list_fwaas_firewall_groups.assert_called_once_with(True)
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.list_firewall_groups")
+
+    def test__update_firewall_group(self):
+        firewall_group = {"firewall_group": {"id": "group-id"}}
+        expected = {"firewall_group": {
+            "id": "group-id",
+            "name": self.random_name,
+            "description": "updated"
+        }}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_group.return_value = expected
+
+        result = self.scenario._update_firewall_group(
+            firewall_group, description="updated")
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_group.assert_called_once_with(
+            "group-id",
+            {"firewall_group": {
+                "description": "updated",
+                "name": self.random_name,
+            }})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.update_firewall_group")
+
+    def test__delete_firewall_group(self):
+        firewall_group = {"firewall_group": {"id": "group-id"}}
+        nc = self.clients("neutron")
+        self.scenario._delete_firewall_group(firewall_group)
+        nc.delete_fwaas_firewall_group.assert_called_once_with("group-id")
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.delete_firewall_group")
+
 
 class NeutronScenarioFunctionalTestCase(test.ScenarioTestCase):
 

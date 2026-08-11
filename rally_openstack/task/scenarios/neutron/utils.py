@@ -1017,3 +1017,51 @@ class NeutronScenario(NeutronBaseScenario):
         body = {"firewall_rule_id": firewall_rule["firewall_rule"]["id"]}
         return self.clients("neutron").remove_rule_fwaas_firewall_policy(
             firewall_policy["firewall_policy"]["id"], body)
+
+    @atomic.action_timer("neutron.create_firewall_group")
+    def _create_firewall_group(self, **firewall_group_create_args):
+        """Create Neutron firewall group.
+
+        :param firewall_group_create_args: dict,
+            POST /v2.0/fwaas/firewall_groups request options
+        :returns: dict, neutron firewall group
+        """
+        group = {}
+        group.update(firewall_group_create_args)
+        group["name"] = self.generate_random_name()
+        return self.clients("neutron").create_fwaas_firewall_group(
+            {"firewall_group": group})
+
+    @atomic.action_timer("neutron.list_firewall_groups")
+    def _list_firewall_groups(self, **kwargs):
+        """Return list of Neutron firewall groups.
+
+        :param kwargs: dict, GET /v2.0/fwaas/firewall_groups request options
+        :returns: firewall groups list
+        """
+        return self.clients("neutron").list_fwaas_firewall_groups(
+            True, **kwargs)["firewall_groups"]
+
+    @atomic.action_timer("neutron.update_firewall_group")
+    def _update_firewall_group(self, firewall_group,
+                               **firewall_group_update_args):
+        """Update Neutron firewall group.
+
+        :param firewall_group: dict, neutron firewall_group
+        :param firewall_group_update_args: dict,
+            PUT /v2.0/fwaas/firewall_groups update options
+        :returns: dict, updated neutron firewall group
+        """
+        firewall_group_update_args["name"] = self.generate_random_name()
+        return self.clients("neutron").update_fwaas_firewall_group(
+            firewall_group["firewall_group"]["id"],
+            {"firewall_group": firewall_group_update_args})
+
+    @atomic.action_timer("neutron.delete_firewall_group")
+    def _delete_firewall_group(self, firewall_group):
+        """Delete Neutron firewall group.
+
+        :param firewall_group: dict, neutron firewall_group
+        """
+        self.clients("neutron").delete_fwaas_firewall_group(
+            firewall_group["firewall_group"]["id"])

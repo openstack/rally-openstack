@@ -356,6 +356,26 @@ class NeutronBgpvpn(NeutronMixin):
         return []
 
 
+@base.resource("neutron", "firewall_group", order=next(_neutron_order),
+               tenant_resource=True)
+class NeutronFirewallGroup(NeutronMixin):
+
+    def list(self):
+        if not self._neutron.supports_extension("fwaas_v2", silent=True):
+            return []
+        result = self._manager().list_fwaas_firewall_groups(
+            tenant_id=self.tenant_uuid)["firewall_groups"]
+        if self.tenant_uuid:
+            result = [
+                g for g in result
+                if g.get("tenant_id", g.get("project_id")) == self.tenant_uuid
+            ]
+        return result
+
+    def delete(self):
+        self._manager().delete_fwaas_firewall_group(self.id())
+
+
 @base.resource("neutron", "firewall_policy", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronFirewallPolicy(NeutronMixin):

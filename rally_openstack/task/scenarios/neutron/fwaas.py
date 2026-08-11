@@ -208,3 +208,82 @@ class CreatePolicyAddAndRemoveRules(utils.NeutronScenario):
             **firewall_policy_create_args)
         self._insert_firewall_rule_in_policy(firewall_policy, firewall_rule)
         self._remove_firewall_rule_from_policy(firewall_policy, firewall_rule)
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_and_list_firewall_groups",
+    platform="openstack")
+class CreateAndListFirewallGroups(utils.NeutronScenario):
+
+    def run(self, firewall_group_create_args=None):
+        """Create and list Neutron firewall groups.
+
+        Measure the "neutron firewall-group-create" and "neutron
+        firewall-group-list" command performance.
+
+        :param firewall_group_create_args: dict,
+            POST /v2.0/fwaas/firewall_groups request options
+        """
+        firewall_group_create_args = firewall_group_create_args or {}
+        self._create_firewall_group(**firewall_group_create_args)
+        self._list_firewall_groups()
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_and_delete_firewall_groups",
+    platform="openstack")
+class CreateAndDeleteFirewallGroups(utils.NeutronScenario):
+
+    def run(self, firewall_group_create_args=None):
+        """Create and delete Neutron firewall groups.
+
+        Measure the "neutron firewall-group-create" and "neutron
+        firewall-group-delete" command performance.
+
+        :param firewall_group_create_args: dict,
+            POST /v2.0/fwaas/firewall_groups request options
+        """
+        firewall_group_create_args = firewall_group_create_args or {}
+        firewall_group = self._create_firewall_group(
+            **firewall_group_create_args)
+        self._delete_firewall_group(firewall_group)
+
+
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.create_and_update_firewall_groups",
+    platform="openstack")
+class CreateAndUpdateFirewallGroups(utils.NeutronScenario):
+
+    def run(self, firewall_group_create_args=None,
+            firewall_group_update_args=None):
+        """Create and update Neutron firewall groups.
+
+        Measure the "neutron firewall-group-create" and "neutron
+        firewall-group-update" command performance.
+
+        :param firewall_group_create_args: dict,
+            POST /v2.0/fwaas/firewall_groups request options
+        :param firewall_group_update_args: dict,
+            PUT /v2.0/fwaas/firewall_groups update options
+        """
+        firewall_group_create_args = firewall_group_create_args or {}
+        firewall_group_update_args = firewall_group_update_args or {}
+        firewall_group = self._create_firewall_group(
+            **firewall_group_create_args)
+        self._update_firewall_group(firewall_group,
+                                    **firewall_group_update_args)
