@@ -68,6 +68,8 @@ Changed
   Dict-style access (``credential["auth_url"]``) is kept for backward
   compatibility.
 
+* Bump minimal required version to Rally 5.1.0. Switch docker image to use it.
+
 Deprecated
 ~~~~~~~~~~
 
@@ -92,6 +94,11 @@ Fixed
 * Proactive token refresh for the clients built by a scenario never actually
   worked; it does now, so long-running workloads no longer risk a reused token
   expiring in the middle of a measured action.
+
+* The certification task (``tasks/openstack/task.yaml``) passed an empty
+  ``image_location`` to the Glance scenarios when ``glance_image_location`` was
+  set to an empty string (as ``task_arguments.yaml`` does) instead of falling
+  back to the default image url.
 
 [4.1.0] - 2026-07-23
 --------------------

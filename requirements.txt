@@ -1,13 +1,13 @@
 requests!=2.20.0,!=2.24.0                              # Apache License, Version 2.0
 
-rally>=5.0.0                                           # Apache License, Version 2.0
+rally>=5.1.0                                           # Apache License, Version 2.0
 pbr!=2.1.0                                             # Apache License, Version 2.0
 
 # OpenStack related
 gnocchiclient                                          # Apache Software License
 keystoneauth1
 kubernetes                                             # Apache License Version 2.0
-openstacksdk                                           # Apache License, Version 2.0
+openstacksdk
 os-faults>=0.2.0                                       # Apache Software License
 osprofiler                                             # Apache License, Version 2.0
 python-barbicanclient                                  # Apache Software License

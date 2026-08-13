@@ -27,7 +27,7 @@
 - name: Make a trends report
   become: true
   become_user: stack
-  command: rally task trends --tasks {{ task_uuids.stdout }} --out {{ rally_results_dir }}/trends.html
+  command: rally task trends {{ task_uuids.stdout }} --out {{ rally_results_dir }}/trends.html
 
 - name: Make a JUnit report
   become: true

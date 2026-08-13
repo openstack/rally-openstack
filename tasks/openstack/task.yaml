@@ -1,5 +1,5 @@
 ---
-{%- set glance_image_location = glance_image_location|default("https://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img") %}
+{%- set glance_image_location = glance_image_location|default("https://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img", true) %}
 {%- set image_name = image_name|default("^(cirros.*-disk|TestVM)$") %}
 {%- set flavor_name = flavor_name|default("m1.tiny") %}
 {%- set use_existing_users = use_existing_users|default(false) %}

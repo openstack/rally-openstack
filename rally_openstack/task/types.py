@@ -35,8 +35,9 @@ configure = plugin.configure
 class OpenStackResourceType(types.ResourceType):
     """A base class for OpenStack ResourceTypes plugins with help-methods"""
 
-    def __init__(self, context=None, cache=None):
-        super().__init__(context, cache)
+    def __init__(self, context=None, cache=None, scenario_cls=None):
+        super().__init__(
+            context=context, cache=cache, scenario_cls=scenario_cls)
 
         self._clients = None
         if self._context.get("admin"):
