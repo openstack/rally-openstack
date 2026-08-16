@@ -63,6 +63,18 @@ class NeutronQuotas:
             "trunk": {
                 "type": "integer",
                 "minimum": -1
+            },
+            "firewall_policy": {
+                "type": "integer",
+                "minimum": -1
+            },
+            "firewall_group": {
+                "type": "integer",
+                "minimum": -1
+            },
+            "firewall_rule": {
+                "type": "integer",
+                "minimum": -1
             }
         }
     }

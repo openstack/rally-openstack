@@ -228,3 +228,215 @@ class NeutronFWaaSTestCase(test.TestCase):
         scenario._update_firewall_group.assert_called_once_with(
             scenario._create_firewall_group.return_value,
             **firewall_group_update_data)
+
+    def test_associate_disassociate_firewall_group_router_ports(self):
+        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
+        scenario.context = {
+            "tenant": {
+                "networks": [{"id": "network-id", "router_id": "router-id",
+                              "router_port_id": "port-id"}]
+            },
+            "iteration": 1,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": ["port-id"]}})
+        scenario._disassociate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": []}})
+
+        scenario.run()
+
+        scenario._create_firewall_rule.assert_called_once()
+        self.assertEqual(2, scenario._create_firewall_policy.call_count)
+        call_count = scenario._insert_firewall_rule_in_policy.call_count
+        self.assertEqual(2, call_count)
+        scenario._create_firewall_group.assert_called_once()
+        scenario._associate_firewall_group_port.assert_called_once()
+        scenario._disassociate_firewall_group_port.assert_called_once()
+
+    def test_associate_disassociate_firewall_group_router_ports_network_sel(
+            self):
+        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
+        scenario.context = {
+            "tenant": {
+                "networks": [
+                    {"id": "network-0", "router_id": "router-0",
+                     "router_port_id": "port-0"},
+                    {"id": "network-1", "router_id": "router-1",
+                     "router_port_id": "port-1"},
+                ]
+            },
+            "iteration": 3,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": ["port-id"]}})
+        scenario._disassociate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": []}})
+
+        scenario.run()
+
+        scenario._associate_firewall_group_port.assert_called_once_with(
+            scenario._create_firewall_group.return_value,
+            {"port": {"id": "port-1"}})
+
+    def test_associate_disassociate_firewall_group_router_ports_skips_finally_when_associate_fails(  # noqa: E501
+            self):
+        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
+        scenario.context = {
+            "tenant": {
+                "networks": [{"id": "network-id", "router_id": "router-id",
+                              "router_port_id": "port-id"}]
+            },
+            "iteration": 1,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            side_effect=RuntimeError("associate failed"))
+        scenario._disassociate_firewall_group_port = mock.Mock()
+
+        self.assertRaises(RuntimeError, scenario.run)
+        scenario._disassociate_firewall_group_port.assert_not_called()
+
+    def test_associate_disassociate_firewall_group_router_ports_fails_on_disassociate(  # noqa: E501
+            self):
+        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
+        scenario.context = {
+            "tenant": {
+                "networks": [{"id": "network-id", "router_id": "router-id",
+                              "router_port_id": "port-id"}]
+            },
+            "iteration": 1,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": ["port-id"]}})
+        scenario._disassociate_firewall_group_port = mock.Mock(
+            side_effect=RuntimeError("disassociate failed"))
+
+        self.assertRaises(RuntimeError, scenario.run)
+        scenario._disassociate_firewall_group_port.assert_called_once()
+
+    def test_update_policy_on_active_firewall_group(self):
+        scenario = fwaas.UpdatePolicyOnActiveFirewallGroup()
+        scenario.context = {
+            "tenant": {
+                "networks": [{"id": "network-id", "router_id": "router-id",
+                              "router_port_id": "port-id"}]
+            },
+            "iteration": 1,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": ["port-id"]}})
+        scenario._update_firewall_group = mock.Mock()
+        scenario._disassociate_firewall_group_port = mock.Mock()
+
+        scenario.run()
+
+        # 2 rules: initial + updated
+        self.assertEqual(2, scenario._create_firewall_rule.call_count)
+        # 3 policies: ingress, egress, updated
+        self.assertEqual(3, scenario._create_firewall_policy.call_count)
+        call_count = scenario._insert_firewall_rule_in_policy.call_count
+        self.assertEqual(3, call_count)
+        scenario._create_firewall_group.assert_called_once()
+        scenario._associate_firewall_group_port.assert_called_once()
+        scenario._update_firewall_group.assert_called_once()
+        scenario._disassociate_firewall_group_port.assert_called_once()
+
+    def test_update_policy_on_active_firewall_group_network_selection(self):
+        scenario = fwaas.UpdatePolicyOnActiveFirewallGroup()
+        scenario.context = {
+            "tenant": {
+                "networks": [
+                    {"id": "network-0", "router_id": "router-0",
+                     "router_port_id": "port-0"},
+                    {"id": "network-1", "router_id": "router-1",
+                     "router_port_id": "port-1"},
+                ]
+            },
+            "iteration": 3,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": ["port-id"]}})
+        scenario._update_firewall_group = mock.Mock()
+        scenario._disassociate_firewall_group_port = mock.Mock()
+
+        scenario.run()
+
+        scenario._associate_firewall_group_port.assert_called_once_with(
+            scenario._create_firewall_group.return_value,
+            {"port": {"id": "port-1"}})
+
+    def test_update_policy_on_active_firewall_group_disassociates_on_failure(
+            self):
+        scenario = fwaas.UpdatePolicyOnActiveFirewallGroup()
+        scenario.context = {
+            "tenant": {
+                "networks": [{"id": "network-id", "router_id": "router-id",
+                              "router_port_id": "port-id"}]
+            },
+            "iteration": 1,
+        }
+        scenario._create_firewall_rule = mock.Mock(
+            return_value={"firewall_rule": {"id": "rule-id"}})
+        scenario._create_firewall_policy = mock.Mock(
+            return_value={"firewall_policy": {"id": "policy-id"}})
+        scenario._insert_firewall_rule_in_policy = mock.Mock()
+        scenario._create_firewall_group = mock.Mock(
+            return_value={"firewall_group": {"id": "group-id", "ports": []}})
+        scenario._associate_firewall_group_port = mock.Mock(
+            return_value={"firewall_group": {
+                "id": "group-id", "ports": ["port-id"]}})
+        scenario._update_firewall_group = mock.Mock(
+            side_effect=RuntimeError("update failed"))
+        scenario._disassociate_firewall_group_port = mock.Mock()
+
+        self.assertRaises(RuntimeError, scenario.run)
+        scenario._disassociate_firewall_group_port.assert_called_once()
+

@@ -632,15 +632,32 @@ class WorkbookContainsWorkflowValidator(validators.FileExistsValidator):
 @validation.configure(name="required_context_config", platform="openstack")
 class RequiredContextConfigValidator(validation.Validator):
 
-    def __init__(self, context_name, context_config):
+    def __init__(self, context_name, context_config, exact=True):
         """Validate that context is configured according to requirements.
 
-        :param context_name: string refining context name
+        :param context_name: string defining context name
         :param context_config: dictionary of required key/value pairs
+        :param exact: bool, if True values must match exactly; if False
+            dict values are checked recursively so extra keys in the
+            actual config are allowed
         """
         super().__init__()
         self.context_name = context_name
         self.context_config = context_config
+        self.exact = exact
+
+    def _check_config(self, required, actual):
+        for key, value in required.items():
+            if key not in actual:
+                return False
+            if isinstance(value, dict) and not self.exact:
+                if not isinstance(actual[key], dict):
+                    return False
+                if not self._check_config(value, actual[key]):
+                    return False
+            elif actual[key] != value:
+                return False
+        return True
 
     def validate(self, context, config, plugin_cls, plugin_cfg):
         if self.context_name not in config.get("contexts", {}):
@@ -649,8 +666,49 @@ class RequiredContextConfigValidator(validation.Validator):
             return
         ctx_config = config["contexts"].get(self.context_name)
 
-        for key, value in self.context_config.items():
-            if key not in ctx_config or ctx_config[key] != value:
-                self.fail(
-                    f"The '{self.context_name}' context "
-                    f"expects '{self.context_config}'")
+        if not self._check_config(self.context_config, ctx_config):
+            self.fail(
+                f"The '{self.context_name}' context "
+                f"expects '{self.context_config}'")
+
+
+@validation.configure(name="required_networks_per_project",
+                      platform="openstack")
+class RequiredNetworksPerProjectValidator(validation.Validator):
+    """Validate that networks per project are sufficient for concurrency.
+
+    Each concurrent iteration may require one or more unique networks,
+    so the network context must provide enough networks per project to
+    cover the runner concurrency.
+
+    :param multiplier: int, number of networks each iteration needs
+        (default 1)
+    """
+
+    def __init__(self, multiplier=1):
+        super().__init__()
+        self.multiplier = multiplier
+
+    def validate(self, context, config, plugin_cls, plugin_cfg):
+        net_ctx = config.get("contexts", {}).get("network", {})
+        if not net_ctx:
+            return
+        networks_per_project = net_ctx.get("networks_per_tenant", 1)
+
+        users_ctx = config.get("contexts", {}).get("users", {})
+        projects = users_ctx.get("tenants", 1)
+
+        runner_cfg = config.get("runner", {})
+        concurrency = 1
+        for cfg in runner_cfg.values():
+            if isinstance(cfg, dict):
+                concurrency = cfg.get("concurrency", 1)
+
+        required = ((concurrency + projects - 1) // projects) * self.multiplier
+        if networks_per_project < required:
+            self.fail(
+                "Scenario requires at least ceil(concurrency / projects)"
+                " * %d networks per project. Got networks_per_tenant=%d"
+                " but need at least %d (concurrency=%d, projects=%d)."
+                % (self.multiplier, networks_per_project, required,
+                   concurrency, projects))

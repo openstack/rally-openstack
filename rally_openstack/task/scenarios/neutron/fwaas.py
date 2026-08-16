@@ -287,3 +287,139 @@ class CreateAndUpdateFirewallGroups(utils.NeutronScenario):
             **firewall_group_create_args)
         self._update_firewall_group(firewall_group,
                                     **firewall_group_update_args)
+
+
+@validation.add("required_networks_per_project")
+@validation.add("required_context_config", context_name="network",
+                context_config={"router": {"external": True}}, exact=False)
+@validation.add("required_contexts", contexts=["network"])
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.associate_disassociate_firewall_group_router_ports",
+    platform="openstack")
+class AssociateDisassociateFirewallGroupRouterPorts(utils.NeutronScenario):
+
+    def run(self, firewall_rule_create_args=None,
+            firewall_policy_create_args=None,
+            firewall_group_create_args=None):
+        """Associate and disassociate a firewall group on a router port.
+
+        Requires ``network`` context with ``router: {external: true}``
+        and ``networks_per_tenant >= ceil(concurrency / projects)``.
+
+        Measure associate and disassociate firewall group performance.
+
+        :param firewall_rule_create_args: dict,
+            POST /v2.0/fwaas/firewall_rules request options
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        :param firewall_group_create_args: dict,
+            POST /v2.0/fwaas/firewall_groups request options
+        """
+        firewall_rule_create_args = firewall_rule_create_args or {}
+        firewall_policy_create_args = firewall_policy_create_args or {}
+        firewall_group_create_args = firewall_group_create_args or {}
+
+        networks = self.context["tenant"]["networks"]
+        idx = self.context["iteration"] % len(networks)
+        network = networks[idx]
+        port = {"port": {"id": network["router_port_id"]}}
+
+        firewall_rule = self._create_firewall_rule(
+            **firewall_rule_create_args)
+        ingress_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._insert_firewall_rule_in_policy(
+            ingress_policy, firewall_rule)
+        egress_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._insert_firewall_rule_in_policy(egress_policy, firewall_rule)
+        firewall_group = self._create_firewall_group(
+            ingress_firewall_policy_id=ingress_policy[
+                "firewall_policy"]["id"],
+            egress_firewall_policy_id=egress_policy[
+                "firewall_policy"]["id"],
+            **firewall_group_create_args)
+
+        firewall_group = self._associate_firewall_group_port(
+            firewall_group, port)
+        self._disassociate_firewall_group_port(firewall_group)
+
+
+@validation.add("required_networks_per_project")
+@validation.add("required_context_config", context_name="network",
+                context_config={"router": {"external": True}}, exact=False)
+@validation.add("required_contexts", contexts=["network"])
+@validation.add("required_neutron_extensions", extensions=["fwaas_v2"])
+@validation.add("required_services",
+                services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"]},
+    name="NeutronFWaaS.update_policy_on_active_firewall_group",
+    platform="openstack")
+class UpdatePolicyOnActiveFirewallGroup(utils.NeutronScenario):
+
+    def run(self, firewall_rule_create_args=None,
+            firewall_policy_create_args=None,
+            firewall_group_create_args=None):
+        """Update ingress policy on an active firewall group.
+
+        Requires ``network`` context with ``router: {external: true}``
+        and ``networks_per_tenant >= ceil(concurrency / projects)``.
+
+        Attach a firewall group to a router port, swap the group's ingress
+        policy while it remains associated, then disassociate the port so it
+        can be reused by other iterations.
+
+        :param firewall_rule_create_args: dict,
+            POST /v2.0/fwaas/firewall_rules request options
+        :param firewall_policy_create_args: dict,
+            POST /v2.0/fwaas/firewall_policies request options
+        :param firewall_group_create_args: dict,
+            POST /v2.0/fwaas/firewall_groups request options
+        """
+        firewall_rule_create_args = firewall_rule_create_args or {}
+        firewall_policy_create_args = firewall_policy_create_args or {}
+        firewall_group_create_args = firewall_group_create_args or {}
+
+        networks = self.context["tenant"]["networks"]
+        idx = self.context["iteration"] % len(networks)
+        network = networks[idx]
+        port = {"port": {"id": network["router_port_id"]}}
+
+        firewall_rule = self._create_firewall_rule(
+            **firewall_rule_create_args)
+        ingress_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._insert_firewall_rule_in_policy(
+            ingress_policy, firewall_rule)
+        egress_policy = self._create_firewall_policy(
+            **firewall_policy_create_args)
+        self._insert_firewall_rule_in_policy(egress_policy, firewall_rule)
+        firewall_group = self._create_firewall_group(
+            ingress_firewall_policy_id=ingress_policy[
+                "firewall_policy"]["id"],
+            egress_firewall_policy_id=egress_policy[
+                "firewall_policy"]["id"],
+            **firewall_group_create_args)
+
+        firewall_group = self._associate_firewall_group_port(
+            firewall_group, port)
+        try:
+            updated_rule = self._create_firewall_rule(
+                **firewall_rule_create_args)
+            updated_policy = self._create_firewall_policy(
+                **firewall_policy_create_args)
+            self._insert_firewall_rule_in_policy(
+                updated_policy, updated_rule)
+            self._update_firewall_group(
+                firewall_group,
+                ingress_firewall_policy_id=updated_policy[
+                    "firewall_policy"]["id"])
+        finally:
+            self._disassociate_firewall_group_port(firewall_group)

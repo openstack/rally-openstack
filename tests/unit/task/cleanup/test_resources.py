@@ -471,8 +471,40 @@ class NeutronFirewallGroupTestCase(test.TestCase):
 
     def test_delete(self):
         neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {"id": "group-id"}
+        neut.raw_resource = {"id": "group-id", "name": "my-group", "ports": []}
         neut.delete()
+        neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
+            "group-id")
+        self.assertFalse(neut._manager().update_fwaas_firewall_group.called)
+
+    def test_delete_with_ports(self):
+        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
+        neut.raw_resource = {
+            "id": "group-id", "name": "my-group",
+            "ports": ["port-1", "port-2"]}
+        neut.delete()
+        neut._manager().update_fwaas_firewall_group.assert_called_once_with(
+            "group-id", {"firewall_group": {"ports": []}})
+        neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
+            "group-id")
+
+    def test_delete_skip_default(self):
+        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
+        neut.raw_resource = {"id": "group-id", "name": "default", "ports": []}
+        neut.delete()
+        self.assertFalse(neut._manager().delete_fwaas_firewall_group.called)
+        self.assertFalse(neut._manager().update_fwaas_firewall_group.called)
+
+    def test_delete_with_ports_disassociate_fails(self):
+        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
+        neut.raw_resource = {
+            "id": "group-id", "name": "my-group",
+            "ports": ["port-1", "port-2"]}
+        neut._manager().update_fwaas_firewall_group.side_effect = Exception(
+            "PENDING state")
+        neut.delete()
+        neut._manager().update_fwaas_firewall_group.assert_called_once_with(
+            "group-id", {"firewall_group": {"ports": []}})
         neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
             "group-id")
 

@@ -1,0 +1,24 @@
+---
+version: 2
+title: Neutron Update Policy On Active Firewall Group
+description: Test FWaaS v2 policy swap on an active firewall group
+subtasks:
+- title: Update ingress policy on active firewall group
+  scenario:
+    NeutronFWaaS.update_policy_on_active_firewall_group: {}
+  runner:
+    constant:
+      times: 10
+      concurrency: 2
+  contexts:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+    network:
+      networks_per_tenant: 2
+      subnets_per_network: 1
+      router:
+        external: true
+  sla:
+    failure_rate:
+      max: 0

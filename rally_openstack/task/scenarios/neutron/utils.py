@@ -1065,3 +1065,65 @@ class NeutronScenario(NeutronBaseScenario):
         """
         self.clients("neutron").delete_fwaas_firewall_group(
             firewall_group["firewall_group"]["id"])
+
+    @atomic.action_timer("neutron.get_router_interface_port")
+    def _get_router_interface_port(self, router_id, network_id):
+        """Return router interface port on the given network.
+
+        :param router_id: str, router UUID
+        :param network_id: str, network UUID
+        :returns: dict, neutron port wrapped as {"port": ...}
+        :raises RuntimeError: if port not found
+        """
+        ports = self.neutron.list_ports(
+            device_id=router_id,
+            network_id=network_id,
+            device_owner="network:router_interface")
+        if ports:
+            return {"port": ports[0]}
+        raise RuntimeError(
+            "Router interface port not found for router %s on network %s"
+            % (router_id, network_id))
+
+    @atomic.action_timer("neutron.associate_firewall_group_port")
+    def _associate_firewall_group_port(self, firewall_group, port,
+                                       append=False):
+        """Associate a Neutron port with a firewall group.
+
+        :param firewall_group: dict, neutron firewall_group
+        :param port: dict, neutron port
+        :param append: bool, if True add port to existing group ports
+        :returns: dict, updated neutron firewall group
+        """
+        port_id = port["port"]["id"]
+        if append:
+            port_ids = list(
+                firewall_group["firewall_group"].get("ports") or [])
+            if port_id not in port_ids:
+                port_ids.append(port_id)
+        else:
+            port_ids = [port_id]
+        return self.clients("neutron").update_fwaas_firewall_group(
+            firewall_group["firewall_group"]["id"],
+            {"firewall_group": {"ports": port_ids}})
+
+    @atomic.action_timer("neutron.disassociate_firewall_group_port")
+    def _disassociate_firewall_group_port(self, firewall_group, port=None):
+        """Disassociate port(s) from a firewall group.
+
+        :param firewall_group: dict, neutron firewall_group
+        :param port: dict, neutron port, or None to remove all ports
+        :returns: dict, updated neutron firewall group
+        """
+        if port is None:
+            port_ids = []
+        else:
+            port_id = port["port"]["id"]
+            port_ids = [
+                p for p in (firewall_group["firewall_group"].get("ports")
+                            or [])
+                if p != port_id
+            ]
+        return self.clients("neutron").update_fwaas_firewall_group(
+            firewall_group["firewall_group"]["id"],
+            {"firewall_group": {"ports": port_ids}})

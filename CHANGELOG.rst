@@ -57,6 +57,11 @@ Added
   * ``NeutronFWaaS.create_and_delete_firewall_groups``
   * ``NeutronFWaaS.create_and_update_firewall_groups``
 
+* Neutron FWaaS v2 production scenarios:
+
+  * ``NeutronFWaaS.associate_disassociate_firewall_group_router_ports``
+  * ``NeutronFWaaS.update_policy_on_active_firewall_group``
+
 * Dedicated non-voting CI job ``rally-task-fwaas`` that enables
   ``neutron-fwaas`` and runs the new FWaaS scenarios.
 

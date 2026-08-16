@@ -1,0 +1,37 @@
+{
+    "version": 2,
+    "title": "Neutron Associate And Disassociate Firewall Group Router Ports",
+    "description": "Test FWaaS v2 firewall group association on router interface ports",
+    "subtasks": [
+        {
+            "title": "Associate and disassociate firewall group on router ports",
+            "scenario": {
+                "NeutronFWaaS.associate_disassociate_firewall_group_router_ports": {}
+            },
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
+                "users": {
+                    "tenants": 1,
+                    "users_per_tenant": 1
+                },
+                "network": {
+                    "networks_per_tenant": 2,
+                    "subnets_per_network": 1,
+                    "router": {
+                        "external": true
+                    }
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
+        }
+    ]
+}
