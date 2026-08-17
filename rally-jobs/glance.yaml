@@ -288,6 +288,7 @@ subtasks:
             container_format: bare
             disk_format: qcow2
             import_method: glance-direct
+            all_stores: false
         contexts:
           users:
             tenants: 1
@@ -301,14 +302,15 @@ subtasks:
             concurrency: 1
         sla:
           failure_rate:
-            max: 100
+            max: 0
       - description: web-download import from a remote URL
         scenario:
           GlanceImages.import_and_delete_image:
-            image_location: '{{ cirros_image_url_qcow2 }}'
+            image_location: "https://github.com/cirros-dev/cirros/releases/download/0.6.3/cirros-0.6.3-aarch64-disk.img"
             container_format: bare
             disk_format: qcow2
             import_method: web-download
+            all_stores: false
         contexts:
           users:
             tenants: 1
@@ -322,4 +324,4 @@ subtasks:
             concurrency: 1
         sla:
           failure_rate:
-            max: 100
+            max: 0

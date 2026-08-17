@@ -110,12 +110,6 @@ class RallyJobsTestCase(test.TestCase):
     #   at all, which means at least one successful iteration.
     #
     FULL_FAILURE_ALLOWED: dict[str, set[tuple[int, int, str]]] = {
-        # both workloads fail due to misconfiguration of import_type
-        #   and location
-        "glance.yaml": {
-            (10, 1, "GlanceImages.import_and_delete_image"),
-            (10, 2, "GlanceImages.import_and_delete_image"),
-        },
         # keystone rejects the pre-signed alarm_url used for scaling, see
         #   https://storyboard.openstack.org/#!/story/2011912
         "heat.yaml": {
