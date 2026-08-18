@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 import jsonschema
 
 from rally import exceptions as rally_exceptions
@@ -21,6 +23,7 @@ from rally.task import types
 from rally.task import validation
 
 from rally_openstack.common import consts
+from rally_openstack.common.services.storage import block
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 from rally_openstack.task.scenarios.neutron import utils as neutron_utils
@@ -33,8 +36,6 @@ from rally_openstack.task.scenarios.nova import utils
 LOG = logging.getLogger(__name__)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -44,7 +45,13 @@ LOG = logging.getLogger(__name__)
                     platform="openstack")
 class BootAndListServer(utils.NovaScenario):
 
-    def run(self, image, flavor, detailed=True, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        detailed: bool = True,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server from an image and then list all servers.
 
         Measure the "nova list" command performance.
@@ -77,7 +84,7 @@ class BootAndListServer(utils.NovaScenario):
 @scenario.configure(name="NovaServers.list_servers", platform="openstack")
 class ListServers(utils.NovaScenario):
 
-    def run(self, detailed=True):
+    def run(self, detailed: bool = True) -> None:
         """List all servers.
 
         This simple scenario test the nova list command by listing
@@ -89,8 +96,6 @@ class ListServers(utils.NovaScenario):
         self._list_servers(detailed)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -100,8 +105,15 @@ class ListServers(utils.NovaScenario):
                     platform="openstack")
 class BootAndDeleteServer(utils.NovaScenario):
 
-    def run(self, image, flavor, min_sleep=0, max_sleep=0,
-            force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot and delete a server.
 
         Optional 'min_sleep' and 'max_sleep' parameters allow the scenario
@@ -110,8 +122,8 @@ class BootAndDeleteServer(utils.NovaScenario):
 
         :param image: image to be used to boot an instance
         :param flavor: flavor to be used to boot an instance
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param force_delete: True if force_delete should be used
         :param kwargs: Optional additional arguments for server creation
         """
@@ -120,8 +132,6 @@ class BootAndDeleteServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -132,8 +142,16 @@ class BootAndDeleteServer(utils.NovaScenario):
                     platform="openstack")
 class BootAndDeleteMultipleServers(utils.NovaScenario):
 
-    def run(self, image, flavor, count=2, min_sleep=0,
-            max_sleep=0, force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        count: t.Annotated[int, scenario.Field(ge=1)] = 2,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot multiple servers in a single request and delete them.
 
         Deletion is done in parallel with one request per server, not
@@ -142,8 +160,8 @@ class BootAndDeleteMultipleServers(utils.NovaScenario):
         :param image: The image to boot from
         :param flavor: Flavor used to boot instance
         :param count: Number of instances to boot
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param force_delete: True if force_delete should be used
         :param kwargs: Optional additional arguments for instance creation
         """
@@ -153,8 +171,6 @@ class BootAndDeleteMultipleServers(utils.NovaScenario):
         self._delete_servers(servers, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", validate_disk=False)
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -166,9 +182,20 @@ class BootAndDeleteMultipleServers(utils.NovaScenario):
 class BootServerFromVolumeAndDelete(utils.NovaScenario,
                                     cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, volume_size, volume_type=None,
-            min_sleep=0, max_sleep=0, force_delete=False,
-            create_volume_kwargs=None, boot_server_kwargs=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        volume_type: str | None = None,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server from volume and then delete it.
 
         The scenario first creates a volume and then a server.
@@ -181,8 +208,8 @@ class BootServerFromVolumeAndDelete(utils.NovaScenario,
         :param volume_size: volume size (in GB)
         :param volume_type: specifies volume type when there are
                             multiple backends
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param force_delete: True if force_delete should be used
         :param boot_server_kwargs: optional arguments for VM creation
         :param create_volume_kwargs: optional arguments for volume creation
@@ -203,8 +230,6 @@ class BootServerFromVolumeAndDelete(utils.NovaScenario,
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -214,7 +239,14 @@ class BootServerFromVolumeAndDelete(utils.NovaScenario,
                     platform="openstack")
 class BootAndBounceServer(utils.NovaScenario):
 
-    def run(self, image, flavor, force_delete=False, actions=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        force_delete: bool = False,
+        actions: list[dict[str, int]] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server and run specified actions against it.
 
         Actions should be passed into the actions parameter. Available actions
@@ -245,8 +277,6 @@ class BootAndBounceServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -256,8 +286,15 @@ class BootAndBounceServer(utils.NovaScenario):
                     platform="openstack")
 class BootLockUnlockAndDelete(utils.NovaScenario):
 
-    def run(self, image, flavor, min_sleep=0,
-            max_sleep=0, force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server, lock it, then unlock and delete it.
 
         Optional 'min_sleep' and 'max_sleep' parameters allow the
@@ -280,8 +317,6 @@ class BootLockUnlockAndDelete(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -292,7 +327,13 @@ class BootLockUnlockAndDelete(utils.NovaScenario):
                     platform="openstack")
 class SnapshotServer(utils.NovaScenario):
 
-    def run(self, image, flavor, force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server, make its snapshot and delete both.
 
         :param image: image to be used to boot an instance
@@ -310,8 +351,6 @@ class SnapshotServer(utils.NovaScenario):
         self._delete_image(image)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -321,7 +360,13 @@ class SnapshotServer(utils.NovaScenario):
                     platform="openstack")
 class BootServer(utils.NovaScenario):
 
-    def run(self, image, flavor, auto_assign_nic=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        auto_assign_nic: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server.
 
         Assumes that cleanup is done elsewhere.
@@ -335,8 +380,6 @@ class BootServer(utils.NovaScenario):
                           auto_assign_nic=auto_assign_nic, **kwargs)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", validate_disk=False)
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -347,10 +390,18 @@ class BootServer(utils.NovaScenario):
                     platform="openstack")
 class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, volume_size,
-            volume_type=None, auto_assign_nic=False,
-            create_volume_kwargs=None, boot_server_kwargs=None,
-            **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        volume_type: str | None = None,
+        auto_assign_nic: bool = False,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server from volume.
 
         The scenario first creates a volume and then a server.
@@ -380,9 +431,6 @@ class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
                           **boot_server_kwargs)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"},
-               to_flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=(consts.Service.NOVA))
@@ -391,8 +439,15 @@ class BootServerFromVolume(utils.NovaScenario, cinder_utils.CinderBasic):
                     name="NovaServers.resize_server", platform="openstack")
 class ResizeServer(utils.NovaScenario):
 
-    def run(self, image, flavor, to_flavor, confirm=True,
-            force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        to_flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        confirm: bool = True,
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server, then resize and delete it.
 
         This test will confirm the resize by default,
@@ -415,9 +470,6 @@ class ResizeServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"},
-               to_flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -427,8 +479,15 @@ class ResizeServer(utils.NovaScenario):
                     platform="openstack")
 class ResizeShutoffServer(utils.NovaScenario):
 
-    def run(self, image, flavor, to_flavor, confirm=True,
-            force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        to_flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        confirm: bool = True,
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server and stop it, then resize and delete it.
 
         This test will confirm the resize by default,
@@ -452,9 +511,6 @@ class ResizeShutoffServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"},
-               to_flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -467,9 +523,21 @@ class ResizeShutoffServer(utils.NovaScenario):
 class BootServerAttachCreatedVolumeAndResize(utils.NovaScenario,
                                              cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, to_flavor, volume_size, min_sleep=0,
-            max_sleep=0, force_delete=False, confirm=True, do_delete=True,
-            boot_server_kwargs=None, create_volume_kwargs=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        to_flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        confirm: bool = True,
+        do_delete: bool = True,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a VM from image, attach a volume to it and resize.
 
         Simple test to create a VM and attach a volume, then resize the VM,
@@ -481,8 +549,8 @@ class BootServerAttachCreatedVolumeAndResize(utils.NovaScenario,
         :param flavor: VM flavor name
         :param to_flavor: flavor to be used to resize the booted instance
         :param volume_size: volume size (in GB)
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param force_delete: True if force_delete should be used
         :param confirm: True if need to confirm resize else revert resize
         :param do_delete: True if resources needs to be deleted explicitly
@@ -511,8 +579,6 @@ class BootServerAttachCreatedVolumeAndResize(utils.NovaScenario,
             self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -525,9 +591,21 @@ class BootServerAttachCreatedVolumeAndResize(utils.NovaScenario,
 class BootServerAttachCreatedVolumeAndExtend(utils.NovaScenario,
                                              cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, volume_size, new_volume_size, min_sleep=0,
-            max_sleep=0, force_delete=False, do_delete=True,
-            boot_server_kwargs=None, create_volume_kwargs=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        new_volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        do_delete: bool = True,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a VM from image, attach a volume then extend volume
 
         Simple test to create a VM and attach a volume, then extend the
@@ -542,8 +620,8 @@ class BootServerAttachCreatedVolumeAndExtend(utils.NovaScenario,
         :param flavor: VM flavor name
         :param volume_size: volume size (in GB)
         :param new_volume_size: new volume size (in GB)
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param force_delete: True if force_delete should be used
         :param do_delete: True if resources needs to be deleted explicitly
                         else use rally cleanup to remove resources
@@ -570,8 +648,6 @@ class BootServerAttachCreatedVolumeAndExtend(utils.NovaScenario,
                 integer_only=True)
 @validation.add("number", param_name="volume_size", minval=1,
                 integer_only=True)
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", validate_disk=False)
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -584,8 +660,16 @@ class BootServerAttachCreatedVolumeAndExtend(utils.NovaScenario,
 class BootServerAttachVolumeAndListAttachments(utils.NovaScenario,
                                                cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, volume_size=1, volume_num=2,
-            boot_server_kwargs=None, create_volume_kwargs=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec = 1,
+        volume_num: t.Annotated[int, scenario.Field(ge=1)] = 2,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a VM, attach N volume to it and list server's attachemnt.
 
         Measure the "nova volume-attachments" command performance.
@@ -616,9 +700,6 @@ class BootServerAttachVolumeAndListAttachments(utils.NovaScenario,
             self.assertIn(attachment, list_attachments, err_msg=msg)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"},
-               to_flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", validate_disk=False)
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -630,9 +711,21 @@ class BootServerAttachVolumeAndListAttachments(utils.NovaScenario,
 class BootServerFromVolumeAndResize(utils.NovaScenario,
                                     cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, to_flavor, volume_size, min_sleep=0,
-            max_sleep=0, force_delete=False, confirm=True, do_delete=True,
-            boot_server_kwargs=None, create_volume_kwargs=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        to_flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        force_delete: bool = False,
+        confirm: bool = True,
+        do_delete: bool = True,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Boot a server from volume, then resize and delete it.
 
         The scenario first creates a volume and then a server.
@@ -647,8 +740,8 @@ class BootServerFromVolumeAndResize(utils.NovaScenario,
         :param flavor: flavor to be used to boot an instance
         :param to_flavor: flavor to be used to resize the booted instance
         :param volume_size: volume size (in GB)
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param force_delete: True if force_delete should be used
         :param confirm: True if need to confirm resize else revert resize
         :param do_delete: True if resources needs to be deleted explicitly
@@ -680,8 +773,6 @@ class BootServerFromVolumeAndResize(utils.NovaScenario,
             self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -691,7 +782,13 @@ class BootServerFromVolumeAndResize(utils.NovaScenario,
                     platform="openstack")
 class SuspendAndResumeServer(utils.NovaScenario):
 
-    def run(self, image, flavor, force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a server, suspend, resume and then delete it
 
         :param image: image to be used to boot an instance
@@ -705,8 +802,6 @@ class SuspendAndResumeServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -716,7 +811,13 @@ class SuspendAndResumeServer(utils.NovaScenario):
                     platform="openstack")
 class PauseAndUnpauseServer(utils.NovaScenario):
 
-    def run(self, image, flavor, force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a server, pause, unpause and then delete it
 
         :param image: image to be used to boot an instance
@@ -730,8 +831,6 @@ class PauseAndUnpauseServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -741,7 +840,13 @@ class PauseAndUnpauseServer(utils.NovaScenario):
                     platform="openstack")
 class ShelveAndUnshelveServer(utils.NovaScenario):
 
-    def run(self, image, flavor, force_delete=False, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        force_delete: bool = False,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a server, shelve, unshelve and then delete it
 
         :param image: image to be used to boot an instance
@@ -755,8 +860,6 @@ class ShelveAndUnshelveServer(utils.NovaScenario):
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -767,8 +870,16 @@ class ShelveAndUnshelveServer(utils.NovaScenario):
                     platform="openstack")
 class BootAndLiveMigrateServer(utils.NovaScenario):
 
-    def run(self, image, flavor, block_migration=False, disk_over_commit=False,
-            min_sleep=0, max_sleep=0, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        block_migration: bool = False,
+        disk_over_commit: bool = False,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        **kwargs: t.Any,
+    ) -> None:
         """Live Migrate a server.
 
         This scenario launches a VM on a compute node available in
@@ -784,8 +895,8 @@ class BootAndLiveMigrateServer(utils.NovaScenario):
         :param block_migration: Specifies the migration type
         :param disk_over_commit: Specifies whether to allow overcommit
                                  on migrated instance or not
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param kwargs: Optional additional arguments for server creation
         """
         server = self._boot_server(image, flavor, **kwargs)
@@ -796,8 +907,6 @@ class BootAndLiveMigrateServer(utils.NovaScenario):
         self._delete_server(server)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", validate_disk=False)
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -811,10 +920,22 @@ class BootAndLiveMigrateServer(utils.NovaScenario):
 class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
                                          cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, volume_size, volume_type=None,
-            block_migration=False, disk_over_commit=False, force_delete=False,
-            min_sleep=0, max_sleep=0, create_volume_kwargs=None,
-            boot_server_kwargs=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        volume_type: str | None = None,
+        block_migration: bool = False,
+        disk_over_commit: bool = False,
+        force_delete: bool = False,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server from volume and then migrate it.
 
         The scenario first creates a volume and a server booted from
@@ -835,8 +956,8 @@ class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
         :param disk_over_commit: Specifies whether to allow overcommit
                                  on migrated instance or not
         :param force_delete: True if force_delete should be used
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         :param boot_server_kwargs: optional arguments for VM creation
         :param create_volume_kwargs: optional arguments for volume creation
         :param kwargs: Optional additional arguments for server creation
@@ -859,8 +980,6 @@ class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -874,9 +993,18 @@ class BootServerFromVolumeAndLiveMigrate(utils.NovaScenario,
 class BootServerAttachCreatedVolumeAndLiveMigrate(utils.NovaScenario,
                                                   cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, size, block_migration=False,
-            disk_over_commit=False, boot_server_kwargs=None,
-            create_volume_kwargs=None, min_sleep=0, max_sleep=0):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        block_migration: bool = False,
+        disk_over_commit: bool = False,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+    ) -> None:
         """Create a VM, attach a volume to it and live migrate.
 
         Simple test to create a VM and attach a volume, then migrate the VM,
@@ -894,8 +1022,8 @@ class BootServerAttachCreatedVolumeAndLiveMigrate(utils.NovaScenario,
                                  on migrated instance or not
         :param boot_server_kwargs: optional arguments for VM creation
         :param create_volume_kwargs: optional arguments for volume creation
-        :param min_sleep: Minimum sleep time in seconds (non-negative)
-        :param max_sleep: Maximum sleep time in seconds (non-negative)
+        :param min_sleep: Minimum sleep time in seconds
+        :param max_sleep: Maximum sleep time in seconds
         """
 
         if boot_server_kwargs is None:
@@ -918,8 +1046,6 @@ class BootServerAttachCreatedVolumeAndLiveMigrate(utils.NovaScenario,
         self._delete_server(server)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -930,7 +1056,12 @@ class BootServerAttachCreatedVolumeAndLiveMigrate(utils.NovaScenario,
                     platform="openstack")
 class BootAndMigrateServer(utils.NovaScenario):
 
-    def run(self, image, flavor, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        **kwargs: t.Any,
+    ) -> None:
         """Migrate a server.
 
         This scenario launches a VM on a compute node available in
@@ -953,9 +1084,6 @@ class BootAndMigrateServer(utils.NovaScenario):
         self._delete_server(server)
 
 
-@types.convert(from_image={"type": "glance_image"},
-               to_image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="from_image")
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
@@ -968,7 +1096,13 @@ class BootAndMigrateServer(utils.NovaScenario):
                     platform="openstack")
 class BootAndRebuildServer(utils.NovaScenario):
 
-    def run(self, from_image, to_image, flavor, **kwargs):
+    def run(
+        self,
+        from_image: t.Annotated[str, types.Convert("glance_image")],
+        to_image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        **kwargs: t.Any,
+    ) -> None:
         """Rebuild a server.
 
         This scenario launches a VM, then rebuilds that VM with a
@@ -987,8 +1121,6 @@ class BootAndRebuildServer(utils.NovaScenario):
 @logging.log_deprecated_args(
     "Use 'floating_network' for additional instance parameters.",
     "2.1.0", ["create_floating_ip_args"], once=True)
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1000,8 +1132,14 @@ class BootAndRebuildServer(utils.NovaScenario):
     platform="openstack")
 class BootAndAssociateFloatingIp(utils.NovaScenario):
 
-    def run(self, image, flavor, floating_network=None,
-            create_floating_ip_args=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        floating_network: str | None = None,
+        create_floating_ip_args: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server and associate a floating IP to it.
 
         :param image: image to be used to boot an instance
@@ -1027,8 +1165,6 @@ class BootAndAssociateFloatingIp(utils.NovaScenario):
         self._associate_floating_ip(server, floatingip)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -1037,11 +1173,17 @@ class BootAndAssociateFloatingIp(utils.NovaScenario):
 @scenario.configure(context={"cleanup@openstack": ["nova", "neutron"]},
                     name="NovaServers.boot_server_and_attach_interface",
                     platform="openstack")
-class BootServerAndAttachInterface(utils.NovaScenario,
-                                   neutron_utils.NeutronScenario):
-    def run(self, image, flavor, network_create_args=None,
-            subnet_create_args=None, subnet_cidr_start=None,
-            boot_server_args=None):
+class BootServerAndAttachInterface(  # type: ignore[misc]
+        utils.NovaScenario, neutron_utils.NeutronScenario):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        network_create_args: dict[str, t.Any] | None = None,
+        subnet_create_args: dict[str, t.Any] | None = None,
+        subnet_cidr_start: str | None = None,
+        boot_server_args: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create server and subnet, then attach the interface to it.
 
         This scenario measures the "nova interface-attach" command performance.
@@ -1058,12 +1200,10 @@ class BootServerAndAttachInterface(utils.NovaScenario,
         network = self._get_or_create_network(network_create_args)
         self._create_subnet(network, subnet_create_args, subnet_cidr_start)
 
-        server = self._boot_server(image, flavor, **boot_server_args)
+        server = self._boot_server(image, flavor, **(boot_server_args or {}))
         self._attach_interface(server, net_id=network["network"]["id"])
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1073,7 +1213,12 @@ class BootServerAndAttachInterface(utils.NovaScenario,
                     platform="openstack")
 class BootAndShowServer(utils.NovaScenario):
 
-    def run(self, image, flavor, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        **kwargs: t.Any,
+    ) -> None:
         """Show server details.
 
         This simple scenario tests the nova show command by retrieving
@@ -1088,8 +1233,6 @@ class BootAndShowServer(utils.NovaScenario):
         self._show_server(server)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1099,7 +1242,13 @@ class BootAndShowServer(utils.NovaScenario):
                     platform="openstack")
 class BootAndGetConsoleOutput(utils.NovaScenario):
 
-    def run(self, image, flavor, length=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        length: int | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Get text console output from server.
 
         This simple scenario tests the nova console-log command by retrieving
@@ -1116,8 +1265,6 @@ class BootAndGetConsoleOutput(utils.NovaScenario):
         self._get_server_console_output(server, length)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1127,7 +1274,13 @@ class BootAndGetConsoleOutput(utils.NovaScenario):
                     platform="openstack")
 class BootAndUpdateServer(utils.NovaScenario):
 
-    def run(self, image, flavor, description=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        description: str | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server, then update its name and description.
 
         The scenario first creates a server, then update it.
@@ -1142,8 +1295,6 @@ class BootAndUpdateServer(utils.NovaScenario):
         self._update_server(server, description)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -1155,9 +1306,18 @@ class BootAndUpdateServer(utils.NovaScenario):
 class BootServerFromVolumeSnapshot(utils.NovaScenario,
                                    cinder_utils.CinderBasic):
 
-    def run(self, image, flavor, volume_size, volume_type=None,
-            auto_assign_nic=False, create_volume_kwargs=None,
-            boot_server_kwargs=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        volume_type: str | None = None,
+        auto_assign_nic: bool = False,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server from a snapshot.
 
         The scenario first creates a volume and creates a
@@ -1192,8 +1352,6 @@ class BootServerFromVolumeSnapshot(utils.NovaScenario,
 @logging.log_deprecated_args(
     "Use 'floating_network' for additional instance parameters.",
     "2.1.0", ["create_floating_ip_args"], once=True)
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1205,8 +1363,14 @@ class BootServerFromVolumeSnapshot(utils.NovaScenario,
     platform="openstack")
 class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
 
-    def run(self, image, flavor, floating_network=None,
-            create_floating_ip_args=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        floating_network: str | None = None,
+        create_floating_ip_args: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server associate and dissociate a floating IP from it.
 
         The scenario first boot a server and create a floating IP. then
@@ -1237,8 +1401,6 @@ class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
         self._dissociate_floating_ip(server, floatingip)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1249,7 +1411,12 @@ class BootServerAssociateAndDissociateFloatingIP(utils.NovaScenario):
                     platform="openstack")
 class BootServerAndListInterfaces(utils.NovaScenario):
 
-    def run(self, image, flavor, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server and list interfaces attached to it.
 
         Measure the "nova boot" and "nova interface-list" command performance.
@@ -1265,8 +1432,6 @@ class BootServerAndListInterfaces(utils.NovaScenario):
 @validation.add(
     "enum", param_name="console_type",
     values=["novnc", "xvpvnc", "spice-html5", "rdp-html5", "serial", "webmks"])
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -1276,7 +1441,13 @@ class BootServerAndListInterfaces(utils.NovaScenario):
                     platform="openstack")
 class BootAndGetConsoleUrl(utils.NovaScenario):
 
-    def run(self, image, flavor, console_type, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        console_type: str,
+        **kwargs: t.Any,
+    ) -> None:
         """Retrieve a console url of a server.
 
         This simple scenario tests retrieving the console url of a server.

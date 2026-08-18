@@ -58,6 +58,8 @@ Added
 Changed
 ~~~~~~~
 
+* Bump minimal required version to Rally 5.1.1. Switch docker image to use it.
+
 * The OpenStack client and service utilities have been restructured into a
   dedicated ``rally_openstack.common.clients`` package (``base``, ``keystone``,
   ...), splitting the previously monolithic ``osclients`` module.
@@ -68,7 +70,33 @@ Changed
   Dict-style access (``credential["auth_url"]``) is kept for backward
   compatibility.
 
-* Bump minimal required version to Rally 5.1.0. Switch docker image to use it.
+* All resource type plugins  are ported to the latest interface of
+  Rally 5.1.1 and annotate the specification they accept. As a result
+  ``rally plugin show`` for resource types and scenarios documents every key
+  of the specification, and a task is checked against it before the workload
+  starts.
+
+* The ``size`` / ``volume_size`` arguments of the Cinder and Nova scenarios now
+  document their range form: either an integer (GB) or an object with exactly
+  the required ``min`` and ``max`` keys. A range carrying anything else (a typo
+  such as ``{"min": 1, "maximum": 5}``, or only one of the two keys) is now
+  rejected by the task validation instead of failing mid-workload.
+
+* Numeric arguments declare their bounds, so a nonsensical value is reported by
+  the task validation instead of failing (or silently doing nothing) in the
+  middle of a workload: sizes are at least 1 GB, sleeps and image minimums are
+  non-negative, and counts are at least 1.
+
+* ``GlanceImages.create_and_deactivate_image`` now pre-processes its
+  ``image_location`` with the ``path_or_url`` resource type, like every other
+  Glance scenario does.
+
+* The arguments that accept a fixed set of values are declared with a real
+  enumeration instead of the ``enum`` validator: the Glance
+  ``container_format`` / ``disk_format`` / ``import_method`` and the BGP VPN
+  ``bgpvpn_type``. The accepted values are published in ``rally plugin show``
+  and the plugin reference rather than only spelled out in prose,
+  and a wrong value is reported per argument.
 
 Deprecated
 ~~~~~~~~~~
@@ -99,6 +127,13 @@ Fixed
   ``image_location`` to the Glance scenarios when ``glance_image_location`` was
   set to an empty string (as ``task_arguments.yaml`` does) instead of falling
   back to the default image url.
+
+* ``NovaServers.boot_server_and_attach_interface`` crashed with a ``TypeError``
+  when its optional ``boot_server_args`` argument was omitted.
+
+* ``CinderVolumes.create_nested_snapshots_and_attach_volume`` accepted only the
+  ``{"min": ..., "max": ...}`` form of ``size`` — an integer, which every other
+  volume scenario accepts, raised a ``TypeError``.
 
 [4.1.0] - 2026-07-23
 --------------------

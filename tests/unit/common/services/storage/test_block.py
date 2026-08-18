@@ -14,10 +14,31 @@
 
 from unittest import mock
 
+from rally.utils import typeutils
+
 from rally_openstack.common.services.storage import block
 from rally_openstack.common.services.storage import cinder_v2
 from rally_openstack.common.services.storage import cinder_v3
 from tests.unit import test
+
+
+class VolumeSizeSpecTestCase(test.TestCase):
+
+    def test_schema_is_strict(self):
+        """A size range accepts nothing but an exact 'min' and 'max' pair."""
+        self.assertEqual(
+            {
+                "type": "object",
+                "properties": {
+                    "min": {"type": "integer", "minimum": 1,
+                            "description": "minimum size, in GB"},
+                    "max": {"type": "integer", "minimum": 1,
+                            "description": "maximum size, in GB"},
+                },
+                "required": ["min", "max"],
+                "additionalProperties": False,
+            },
+            typeutils.hint_to_schema(block.VolumeSizeSpec))
 
 
 class BlockTestCase(test.TestCase):

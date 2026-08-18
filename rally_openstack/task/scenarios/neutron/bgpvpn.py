@@ -10,6 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import enum
 import random
 
 from rally.task import validation
@@ -19,15 +20,20 @@ from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.neutron import utils
 
 
+class BgpvpnType(str, enum.Enum):
+    """Type of VPN and the technology behind it."""
+
+    L2 = "l2"
+    L3 = "l3"
+
+
 """Scenarios for Neutron Networking-Bgpvpn."""
 
 
-def _create_random_route_target():
+def _create_random_route_target() -> str:
     return f"{random.randint(0, 65535)}:{random.randint(0, 4294967295)}"
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_platform", platform="openstack", admin=True)
 @validation.add("required_services",
@@ -37,8 +43,14 @@ def _create_random_route_target():
                     platform="openstack")
 class CreateAndDeleteBgpvpns(utils.NeutronScenario):
 
-    def run(self, route_targets=None, import_targets=None,
-            export_targets=None, route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Create bgpvpn and delete the bgpvpn.
 
         Measure the "neutron bgpvpn-create" and neutron bgpvpn-delete
@@ -49,9 +61,9 @@ class CreateAndDeleteBgpvpns(utils.NeutronScenario):
         :param import_targets: Additional Route Targets that will be imported
         :param export_targets: Additional Route Targets that will be used
         for export.
-        :param route_distinguishers: List of route distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                     Acceptable formats: l2 and l3
+        :param route_distinguishers: Route Distinguishers to announce the
+        routes of the Neutron networks with
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
         bgpvpn = self._create_bgpvpn(route_targets=route_targets,
                                      import_targets=import_targets,
@@ -61,8 +73,6 @@ class CreateAndDeleteBgpvpns(utils.NeutronScenario):
         self._delete_bgpvpn(bgpvpn)
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_services", services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", admin=True)
@@ -71,8 +81,14 @@ class CreateAndDeleteBgpvpns(utils.NeutronScenario):
                     platform="openstack")
 class CreateAndListBgpvpns(utils.NeutronScenario):
 
-    def run(self, route_targets=None, import_targets=None,
-            export_targets=None, route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Create a bgpvpn and then list all bgpvpns
 
         Measure the "neutron bgpvpn-list" command performance.
@@ -82,9 +98,9 @@ class CreateAndListBgpvpns(utils.NeutronScenario):
         :param import_targets: Additional Route Targets that will be imported
         :param export_targets: Additional Route Targets that will be used
         for export.
-        :param route_distinguishers: List of route distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                     Acceptable formats: l2 and l3
+        :param route_distinguishers: Route Distinguishers to announce the
+        routes of the Neutron networks with
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
         bgpvpn = self._create_bgpvpn(route_targets=route_targets,
                                      import_targets=import_targets,
@@ -95,8 +111,6 @@ class CreateAndListBgpvpns(utils.NeutronScenario):
         self.assertIn(bgpvpn["bgpvpn"]["id"], [b["id"] for b in bgpvpns])
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_services", services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack", admin=True)
@@ -105,11 +119,19 @@ class CreateAndListBgpvpns(utils.NeutronScenario):
                     platform="openstack")
 class CreateAndUpdateBgpvpns(utils.NeutronScenario):
 
-    def run(self, update_name=False, route_targets=None,
-            import_targets=None, export_targets=None,
-            route_distinguishers=None, updated_route_targets=None,
-            updated_import_targets=None, updated_export_targets=None,
-            updated_route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        update_name: bool = False,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        updated_route_targets: list[str] | None = None,
+        updated_import_targets: list[str] | None = None,
+        updated_export_targets: list[str] | None = None,
+        updated_route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Create and Update bgpvpns
 
         Measure the "neutron bgpvpn-update" command performance.
@@ -129,8 +151,7 @@ class CreateAndUpdateBgpvpns(utils.NeutronScenario):
         :param route_distinguishers: list of route distinguisher strings
         :param updated_route_distinguishers: Updated list of route
         distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                            Acceptable formats: l2 and l3
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
         create_bgpvpn_args = {
             "route_targets": route_targets,
@@ -150,8 +171,6 @@ class CreateAndUpdateBgpvpns(utils.NeutronScenario):
         self._update_bgpvpn(bgpvpn, **update_bgpvpn_args)
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_services", services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack",
@@ -163,8 +182,14 @@ class CreateAndUpdateBgpvpns(utils.NeutronScenario):
                     platform="openstack")
 class CreateAndAssociateDissassociateNetworks(utils.NeutronScenario):
 
-    def run(self, route_targets=None, import_targets=None,
-            export_targets=None, route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Associate a network and disassociate it from a BGP VPN.
 
         Measure the "neutron bgpvpn-create", "neutron bgpvpn-net-assoc-create"
@@ -175,9 +200,9 @@ class CreateAndAssociateDissassociateNetworks(utils.NeutronScenario):
         :param import_targets: Additional Route Targets that will be imported
         :param export_targets: Additional Route Targets that will be used
         for export.
-        :param route_distinguishers: List of route distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                     Acceptable formats: l2 and l3
+        :param route_distinguishers: Route Distinguishers to announce the
+        routes of the Neutron networks with
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
         networks = self.context.get("tenant", {}).get("networks", [])
         network = networks[0]
@@ -193,8 +218,6 @@ class CreateAndAssociateDissassociateNetworks(utils.NeutronScenario):
         self._delete_bgpvpn_network_assoc(bgpvpn, net_asso)
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_services", services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack",
@@ -206,8 +229,14 @@ class CreateAndAssociateDissassociateNetworks(utils.NeutronScenario):
                     platform="openstack")
 class CreateAndAssociateDissassociateRouters(utils.NeutronScenario):
 
-    def run(self, route_targets=None, import_targets=None,
-            export_targets=None, route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Associate a router and disassociate it from a BGP VPN.
 
         Measure the "neutron bgpvpn-create",
@@ -219,9 +248,9 @@ class CreateAndAssociateDissassociateRouters(utils.NeutronScenario):
         :param import_targets: Additional Route Targets that will be imported
         :param export_targets: Additional Route Targets that will be used
         for export.
-        :param route_distinguishers: List of route distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                     Acceptable formats: l2 and l3
+        :param route_distinguishers: Route Distinguishers to announce the
+        routes of the Neutron networks with
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
 
         router = {
@@ -239,8 +268,6 @@ class CreateAndAssociateDissassociateRouters(utils.NeutronScenario):
         self._delete_bgpvpn_router_assoc(bgpvpn, router_asso)
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_services", services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack",
@@ -251,8 +278,14 @@ class CreateAndAssociateDissassociateRouters(utils.NeutronScenario):
                     platform="openstack")
 class CreateAndListNetworksAssocs(utils.NeutronScenario):
 
-    def run(self, route_targets=None, import_targets=None,
-            export_targets=None, route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Associate a network and list networks associations.
 
         Measure the "neutron bgpvpn-create",
@@ -264,9 +297,9 @@ class CreateAndListNetworksAssocs(utils.NeutronScenario):
         :param import_targets: Additional Route Targets that will be imported
         :param export_targets: Additional Route Targets that will be used
         for export.
-        :param route_distinguishers: List of route distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                     Acceptable formats: l2 and l3
+        :param route_distinguishers: Route Distinguishers to announce the
+        routes of the Neutron networks with
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
 
         networks = self.context.get("tenant", {}).get("networks", [])
@@ -291,8 +324,6 @@ class CreateAndListNetworksAssocs(utils.NeutronScenario):
         self.assertIn(network_id, list_networks, err_msg=msg)
 
 
-@validation.add("enum", param_name="bgpvpn_type", values=["l2", "l3"],
-                missed=True)
 @validation.add("required_neutron_extensions", extensions=["bgpvpn"])
 @validation.add("required_services", services=[consts.Service.NEUTRON])
 @validation.add("required_platform", platform="openstack",
@@ -303,8 +334,14 @@ class CreateAndListNetworksAssocs(utils.NeutronScenario):
                     platform="openstack")
 class CreateAndListRoutersAssocs(utils.NeutronScenario):
 
-    def run(self, route_targets=None, import_targets=None,
-            export_targets=None, route_distinguishers=None, bgpvpn_type="l3"):
+    def run(
+        self,
+        route_targets: list[str] | None = None,
+        import_targets: list[str] | None = None,
+        export_targets: list[str] | None = None,
+        route_distinguishers: list[str] | None = None,
+        bgpvpn_type: BgpvpnType = BgpvpnType.L3,
+    ) -> None:
         """Associate a router and list routers associations.
 
         Measure the "neutron bgpvpn-create",
@@ -316,9 +353,9 @@ class CreateAndListRoutersAssocs(utils.NeutronScenario):
         :param import_targets: Additional Route Targets that will be imported
         :param export_targets: Additional Route Targets that will be used
         for export.
-        :param route_distinguishers: List of route distinguisher strings
-        :param bgpvpn_type: type of VPN and the technology behind it.
-                     Acceptable formats: l2 and l3
+        :param route_distinguishers: Route Distinguishers to announce the
+        routes of the Neutron networks with
+        :param bgpvpn_type: type of VPN and the technology behind it
         """
 
         router = {

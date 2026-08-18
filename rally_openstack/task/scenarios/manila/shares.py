@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally import exceptions
 from rally.common import logging
 from rally.task import types
@@ -32,8 +34,8 @@ LOG = logging.getLogger(__name__)
 
 
 @validation.add("enum", param_name="share_proto",
-                values=["NFS", "CIFS", "GLUSTERFS", "HDFS", "CEPHFS"],
-                case_insensitive=True, missed=False)
+                values=list(utils.ShareProto), case_insensitive=True,
+                missed=False)
 @validation.add("required_services", services=[consts.Service.MANILA])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["manila"]},
@@ -63,8 +65,6 @@ class CreateAndDeleteShare(utils.ManilaScenario):
         self._delete_share(share)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", fail_on_404_image=False)
 @validation.add("number", param_name="port", minval=1, maxval=65535,
@@ -79,10 +79,20 @@ class CreateAndDeleteShare(utils.ManilaScenario):
                     name="ManilaShares.create_share_and_access_from_vm",
                     platform="openstack")
 class CreateShareAndAccessFromVM(utils.ManilaScenario, vm_utils.VMScenario):
-    def run(self, image, flavor, username, size=1, password=None,
-            floating_network=None, port=22,
-            use_floating_ip=True, force_delete=False, max_log_length=None,
-            **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        username: str,
+        size: t.Annotated[int, scenario.Field(ge=1)] = 1,
+        password: str | None = None,
+        floating_network: str | None = None,
+        port: int = 22,
+        use_floating_ip: bool = True,
+        force_delete: bool = False,
+        max_log_length: int | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a share and access it from a VM.
 
         - create NFS share
@@ -93,8 +103,7 @@ class CreateShareAndAccessFromVM(utils.ManilaScenario, vm_utils.VMScenario):
         - delete VM
         - delete share
 
-        :param size: share size in GB, should be greater than 0
-
+        :param size: share size in GB
         :param image: glance image name to use for the vm
         :param flavor: VM flavor name
         :param username: ssh username on server
@@ -188,8 +197,7 @@ class ListShares(utils.ManilaScenario):
 
 
 @validation.add("enum", param_name="share_proto",
-                values=["NFS", "CIFS", "GLUSTERFS", "HDFS", "CEPHFS"],
-                case_insensitive=True)
+                values=list(utils.ShareProto), case_insensitive=True)
 @validation.add("required_services", services=[consts.Service.MANILA])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["manila"]},
@@ -232,8 +240,7 @@ class CreateAndExtendShare(utils.ManilaScenario):
 
 
 @validation.add("enum", param_name="share_proto",
-                values=["NFS", "CIFS", "GLUSTERFS", "HDFS", "CEPHFS"],
-                case_insensitive=True)
+                values=list(utils.ShareProto), case_insensitive=True)
 @validation.add("required_services", services=[consts.Service.MANILA])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["manila"]},
@@ -357,8 +364,8 @@ class ListShareServers(utils.ManilaScenario):
 
 
 @validation.add("enum", param_name="share_proto",
-                values=["nfs", "cephfs", "cifs", "glusterfs", "hdfs"],
-                missed=False, case_insensitive=True)
+                values=list(utils.ShareProto), case_insensitive=True,
+                missed=False)
 @validation.add("required_services", services=[consts.Service.MANILA])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(
@@ -463,8 +470,7 @@ class AttachSecurityServiceToShareNetwork(utils.ManilaScenario):
 
 
 @validation.add("enum", param_name="share_proto",
-                values=["NFS", "CIFS", "GLUSTERFS", "HDFS", "CEPHFS"],
-                case_insensitive=True)
+                values=list(utils.ShareProto), case_insensitive=True)
 @validation.add("required_services", services=[consts.Service.MANILA])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["manila"]},

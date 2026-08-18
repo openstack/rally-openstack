@@ -93,12 +93,16 @@ class BaseCustomImageContextVMTestCase(test.TestCase):
                                                       foo_arg="foo_value")
         self.assertEqual({"id": "image"}, custom_image)
 
-        mock_flavor.assert_called_once_with(self.context)
+        mock_flavor.assert_called_once_with(
+            self.context, scenario_cls=mock_boot_runcommand_delete)
         mock_flavor.return_value.pre_process.assert_called_once_with(
-            resource_spec={"name": "flavor"}, config={})
-        mock_glance_image.assert_called_once_with(self.context)
+            resource_spec={"name": "flavor"},
+            config={"type": "nova_flavor"}, output_type=str)
+        mock_glance_image.assert_called_once_with(
+            self.context, scenario_cls=mock_boot_runcommand_delete)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            resource_spec={"name": "image"}, config={})
+            resource_spec={"name": "image"},
+            config={"type": "glance_image"}, output_type=str)
         mock_boot_runcommand_delete.assert_called_once_with(
             self.context, clients=mock_clients.return_value)
 

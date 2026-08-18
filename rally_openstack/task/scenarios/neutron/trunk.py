@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.common import cfg
 from rally.task import types
 from rally.task import validation
@@ -36,7 +38,11 @@ CONF = cfg.CONF
                     name="NeutronTrunks.create_and_list_trunks")
 class CreateAndListTrunks(neutron_utils.NeutronScenario):
 
-    def run(self, network_create_args=None, subport_count=10):
+    def run(
+        self,
+        network_create_args: dict[str, t.Any] | None = None,
+        subport_count: t.Annotated[int, scenario.Field(ge=1)] = 10,
+    ) -> None:
         """Create a given number of trunks with subports and list all trunks.
 
         :param network_create_args: dict, POST /v2.0/networks request
@@ -57,8 +63,6 @@ class CreateAndListTrunks(neutron_utils.NeutronScenario):
         self._list_subports_by_trunk(trunk["trunk"]["id"])
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=(consts.Service.NOVA,
@@ -67,10 +71,16 @@ class CreateAndListTrunks(neutron_utils.NeutronScenario):
 @scenario.configure(context={"cleanup@openstack": ["neutron", "nova"]},
                     name="NeutronTrunks.boot_server_with_subports",
                     platform="openstack")
-class BootServerWithSubports(nova_utils.NovaScenario,
-                             neutron_utils.NeutronScenario):
+class BootServerWithSubports(  # type: ignore[misc]
+        nova_utils.NovaScenario, neutron_utils.NeutronScenario):
 
-    def run(self, image, flavor, network_create_args=None, subport_count=10):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        network_create_args: dict[str, t.Any] | None = None,
+        subport_count: t.Annotated[int, scenario.Field(ge=1)] = 10,
+    ) -> None:
         """Boot a server with subports.
 
         Returns when the server is actually booted and in "ACTIVE" state.
@@ -100,8 +110,6 @@ class BootServerWithSubports(nova_utils.NovaScenario,
         self._boot_server(image, flavor, **kwargs)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=(consts.Service.NOVA,
@@ -110,10 +118,16 @@ class BootServerWithSubports(nova_utils.NovaScenario,
 @scenario.configure(context={"cleanup@openstack": ["neutron", "nova"]},
                     name="NeutronTrunks.boot_server_and_add_subports",
                     platform="openstack")
-class BootServerAndAddSubports(nova_utils.NovaScenario,
-                               neutron_utils.NeutronScenario):
+class BootServerAndAddSubports(  # type: ignore[misc]
+        nova_utils.NovaScenario, neutron_utils.NeutronScenario):
 
-    def run(self, image, flavor, network_create_args=None, subport_count=10):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        network_create_args: dict[str, t.Any] | None = None,
+        subport_count: t.Annotated[int, scenario.Field(ge=1)] = 10,
+    ) -> None:
         """Boot a server and add subports.
 
         Returns when the server is actually booted and in "ACTIVE" state.
@@ -143,8 +157,6 @@ class BootServerAndAddSubports(nova_utils.NovaScenario,
             self._add_subports_to_trunk(trunk["trunk"]["id"], subport_payload)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=(consts.Service.NOVA,
@@ -153,11 +165,17 @@ class BootServerAndAddSubports(nova_utils.NovaScenario,
 @scenario.configure(context={"cleanup@openstack": ["neutron", "nova"]},
                     name="NeutronTrunks.boot_server_and_batch_add_subports",
                     platform="openstack")
-class BootServerAndBatchAddSubports(nova_utils.NovaScenario,
-                                    neutron_utils.NeutronScenario):
+class BootServerAndBatchAddSubports(  # type: ignore[misc]
+        nova_utils.NovaScenario, neutron_utils.NeutronScenario):
 
-    def run(self, image, flavor, network_create_args=None,
-            subports_per_batch=10, batches=5):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        network_create_args: dict[str, t.Any] | None = None,
+        subports_per_batch: t.Annotated[int, scenario.Field(ge=1)] = 10,
+        batches: t.Annotated[int, scenario.Field(ge=1)] = 5,
+    ) -> None:
         """Boot a server and add subports in batches.
 
         Returns when the server is actually booted and in "ACTIVE" state.

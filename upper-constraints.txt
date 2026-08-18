@@ -94,7 +94,7 @@ python-troveclient===8.10.0
 python-watcherclient===4.10.0
 python-zaqarclient===4.5.0
 PyYAML===6.0.3
-rally===5.1.0
+rally===5.1.1
 referencing===0.37.0
 requests===2.34.2
 requests-oauthlib===2.0.0

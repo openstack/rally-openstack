@@ -14,6 +14,7 @@
 #    under the License.
 
 import random
+import typing as t
 
 from rally import exceptions
 from rally.common import logging
@@ -22,6 +23,7 @@ from rally.task import types
 from rally.task import validation
 
 from rally_openstack.common import consts
+from rally_openstack.common.services.storage import block
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 from rally_openstack.task.scenarios.glance import images
@@ -33,7 +35,6 @@ LOG = logging.getLogger(__name__)
 """Scenarios for Cinder Volumes."""
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -43,7 +44,13 @@ LOG = logging.getLogger(__name__)
                     platform="openstack")
 class CreateAndListVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, detailed=True, image=None, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        detailed: bool = True,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume and list all volumes.
 
         Measure the "cinder volume-list" command performance.
@@ -54,10 +61,7 @@ class CreateAndListVolume(cinder_utils.CinderBasic):
         performance of the "cinder volume-list" command depending on
         the number of images owned by users.
 
-        :param size: volume size (integer, in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param detailed: determines whether the volume listing should contain
                          detailed information about all of them
         :param image: image to be used to create volume
@@ -70,7 +74,6 @@ class CreateAndListVolume(cinder_utils.CinderBasic):
         self.cinder.list_volumes(detailed)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -80,15 +83,17 @@ class CreateAndListVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndGetVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume and get the volume.
 
         Measure the "cinder show" command performance.
 
-        :param size: volume size (integer, in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param image: image to be used to create volume
         :param kwargs: optional args to create a volume
         """
@@ -105,8 +110,14 @@ class CreateAndGetVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class ListVolumes(cinder_utils.CinderBasic):
 
-    def run(self, detailed=True, search_opts=None, marker=None,
-            limit=None, sort=None):
+    def run(
+        self,
+        detailed: bool = True,
+        search_opts: dict[str, t.Any] | None = None,
+        marker: str | None = None,
+        limit: int | None = None,
+        sort: str | list[str] | None = None,
+    ) -> None:
         """List all volumes.
 
         This simple scenario tests the cinder list command by listing
@@ -119,7 +130,8 @@ class ListVolumes(cinder_utils.CinderBasic):
                        list than that represented by this volume id.(For V2 or
                        higher)
         :param limit: Maximum number of volumes to return.
-        :param sort: Sort information
+        :param sort: Sort information, as "key[:dir]" entries: either a
+                     comma-separated string or a list of them
         """
 
         self.cinder.list_volumes(detailed, search_opts=search_opts,
@@ -131,7 +143,11 @@ class ListVolumes(cinder_utils.CinderBasic):
 @scenario.configure(name="CinderVolumes.list_types", platform="openstack")
 class ListTypes(cinder_utils.CinderBasic):
 
-    def run(self, search_opts=None, is_public=None):
+    def run(
+        self,
+        search_opts: dict[str, t.Any] | None = None,
+        is_public: bool | None = None,
+    ) -> None:
         """List all volume types.
 
         This simple scenario tests the cinder type-list command by listing
@@ -149,7 +165,11 @@ class ListTypes(cinder_utils.CinderBasic):
 @scenario.configure(name="CinderVolumes.list_transfers", platform="openstack")
 class ListTransfers(cinder_utils.CinderBasic):
 
-    def run(self, detailed=True, search_opts=None):
+    def run(
+        self,
+        detailed: bool = True,
+        search_opts: dict[str, t.Any] | None = None,
+    ) -> None:
         """List all transfers.
 
         This simple scenario tests the "cinder transfer-list" command by
@@ -163,7 +183,6 @@ class ListTransfers(cinder_utils.CinderBasic):
         self.cinder.list_transfers(detailed, search_opts=search_opts)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"],
                 subdict="create_volume_kwargs")
 @validation.add("restricted_parameters", param_names=["name", "display_name"],
@@ -176,8 +195,13 @@ class ListTransfers(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndUpdateVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, create_volume_kwargs=None,
-            update_volume_kwargs=None):
+    def run(
+        self,
+        size: int,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        update_volume_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a volume and update its name and description.
 
         :param size: volume size (integer, in GB)
@@ -201,7 +225,6 @@ class CreateAndUpdateVolume(cinder_utils.CinderBasic):
         self.cinder.update_volume(volume, **update_volume_kwargs)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -211,7 +234,14 @@ class CreateAndUpdateVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndDeleteVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, min_sleep=0, max_sleep=0, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        **kwargs: t.Any,
+    ) -> None:
         """Create and then delete a volume.
 
         Good for testing a maximal bandwidth of cloud. Optional 'min_sleep'
@@ -219,10 +249,7 @@ class CreateAndDeleteVolume(cinder_utils.CinderBasic):
         between volume creation and deletion (of random duration from
         [min_sleep, max_sleep]).
 
-        :param size: volume size (integer, in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param image: image to be used to create volume
         :param min_sleep: minimum sleep time between volume creation and
                           deletion (in seconds)
@@ -238,7 +265,6 @@ class CreateAndDeleteVolume(cinder_utils.CinderBasic):
         self.cinder.delete_volume(volume)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -248,16 +274,18 @@ class CreateAndDeleteVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume.
 
         Good test to check how influence amount of active volumes on
         performance of creating new.
 
-        :param size: volume size (integer, in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param image: image to be used to create volume
         :param kwargs: optional args to create a volume
         """
@@ -275,7 +303,13 @@ class CreateVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class ModifyVolumeMetadata(cinder_utils.CinderBasic):
 
-    def run(self, sets=10, set_size=3, deletes=5, delete_size=3):
+    def run(
+        self,
+        sets: t.Annotated[int, scenario.Field(ge=0)] = 10,
+        set_size: t.Annotated[int, scenario.Field(ge=0)] = 3,
+        deletes: t.Annotated[int, scenario.Field(ge=0)] = 5,
+        delete_size: t.Annotated[int, scenario.Field(ge=0)] = 3,
+    ) -> None:
         """Modify a volume's metadata.
 
         This requires a volume to be created with the volumes
@@ -312,20 +346,21 @@ class ModifyVolumeMetadata(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndExtendVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, new_size, min_sleep=0, max_sleep=0, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        new_size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        **kwargs: t.Any,
+    ) -> None:
         """Create and extend a volume and then delete it.
 
 
-        :param size: volume size (in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
-        :param new_size: volume new size (in GB) or
-                        dictionary, must contain two values:
-                             min - minimum size volumes will be created as;
-                             max - maximum size volumes will be created as.
-                        to extend.
-                        Notice: should be bigger volume size
+        :param size: volume size, in GB
+        :param new_size: size to extend the volume to, in GB.
+                         Notice: should be bigger volume size
         :param min_sleep: minimum sleep time between volume extension and
                           deletion (in seconds)
         :param max_sleep: maximum sleep time between volume extension and
@@ -347,17 +382,20 @@ class CreateAndExtendVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateFromVolumeAndDeleteVolume(cinder_utils.CinderBasic):
 
-    def run(self, size, min_sleep=0, max_sleep=0, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        **kwargs: t.Any,
+    ) -> None:
         """Create volume from volume and then delete it.
 
         Scenario for testing volume clone.Optional 'min_sleep' and 'max_sleep'
         parameters allow the scenario to simulate a pause between volume
         creation and deletion (of random duration from [min_sleep, max_sleep]).
 
-        :param size: volume size (in GB), or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB.
                      Should be equal or bigger source volume size
 
         :param min_sleep: minimum sleep time between volume creation and
@@ -382,7 +420,13 @@ class CreateFromVolumeAndDeleteVolume(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndDeleteSnapshot(cinder_utils.CinderBasic):
 
-    def run(self, force=False, min_sleep=0, max_sleep=0, **kwargs):
+    def run(
+        self,
+        force: bool = False,
+        min_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        max_sleep: t.Annotated[float, scenario.Field(ge=0)] = 0,
+        **kwargs: t.Any,
+    ) -> None:
         """Create and then delete a volume-snapshot.
 
         Optional 'min_sleep' and 'max_sleep' parameters allow the scenario
@@ -404,8 +448,6 @@ class CreateAndDeleteSnapshot(cinder_utils.CinderBasic):
         self.cinder.delete_snapshot(snapshot)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"],
                 subdict="create_volume_params")
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
@@ -422,17 +464,22 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
     @logging.log_deprecated_args(
         "Use 'create_vm_params' for additional instance parameters.",
         "0.2.0", ["kwargs"], once=True)
-    def run(self, size, image, flavor, create_volume_params=None,
-            force_delete=False, create_vm_params=None, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        create_volume_params: dict[str, t.Any] | None = None,
+        force_delete: bool = False,
+        create_vm_params: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a VM and attach a volume to it.
 
         Simple test to create a VM and attach a volume, then
         detach the volume and delete volume/VM.
 
-        :param size: volume size (integer, in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param image: Glance image name to use for the VM
         :param flavor: VM flavor name
         :param create_volume_params: optional arguments for volume creation
@@ -460,8 +507,6 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
         self._delete_server(server, force=force_delete)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("restricted_parameters", param_names=["name", "display_name"],
@@ -477,16 +522,22 @@ class CreateAndAttachVolume(cinder_utils.CinderBasic,
 class CreateSnapshotAndAttachVolume(cinder_utils.CinderBasic,
                                     nova_utils.NovaScenario):
 
-    def run(self, image, flavor, volume_type=None, size=None,
-            create_vm_params=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        volume_type: str | None = None,
+        size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec | None = None,
+        create_vm_params: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create vm, volume, snapshot and attach/detach volume.
 
         :param image: Glance image name to use for the VM
         :param flavor: VM flavor name
         :param volume_type: Name of volume type to use
-        :param size: Volume size - dictionary, contains two values:
-                        min - minimum size volumes will be created as;
-                        max - maximum size volumes will be created as.
+        :param size: volume size, in GB.
                      default values: {"min": 1, "max": 5}
         :param create_vm_params: optional arguments for VM creation
         :param kwargs: Optional parameters used during volume
@@ -510,8 +561,6 @@ class CreateSnapshotAndAttachVolume(cinder_utils.CinderBasic,
         self._delete_server(server)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA,
@@ -530,9 +579,17 @@ class CreateSnapshotAndAttachVolume(cinder_utils.CinderBasic,
 class CreateNestedSnapshotsAndAttachVolume(cinder_utils.CinderBasic,
                                            nova_utils.NovaScenario):
 
-    def run(self, image, flavor, size=None, nested_level=1,
-            create_volume_kwargs=None, create_snapshot_kwargs=None,
-            create_vm_params=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        size: t.Annotated[
+            int, scenario.Field(ge=1)] | block.VolumeSizeSpec | None = None,
+        nested_level: t.Annotated[int, scenario.Field(ge=1)] = 1,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        create_snapshot_kwargs: dict[str, t.Any] | None = None,
+        create_vm_params: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a volume from snapshot and attach/detach the volume
 
         This scenario create vm, volume, create it's snapshot, attach volume,
@@ -542,9 +599,7 @@ class CreateNestedSnapshotsAndAttachVolume(cinder_utils.CinderBasic,
 
         :param image: Glance image name to use for the VM
         :param flavor: VM flavor name
-        :param size: Volume size - dictionary, contains two values:
-                        min - minimum size volumes will be created as;
-                        max - maximum size volumes will be created as.
+        :param size: volume size, in GB
                      default values: {"min": 1, "max": 5}
         :param nested_level: amount of nested levels
         :param create_volume_kwargs: optional args to create a volume
@@ -558,7 +613,8 @@ class CreateNestedSnapshotsAndAttachVolume(cinder_utils.CinderBasic,
         #       volume with specified size should be created to avoid
         #       size mismatching between volume and snapshot due random
         #       size in _create_volume method.
-        size = random.randint(size["min"], size["max"])
+        if isinstance(size, dict):
+            size = random.randint(size["min"], size["max"])
 
         create_volume_kwargs = create_volume_kwargs or {}
         create_snapshot_kwargs = create_snapshot_kwargs or {}
@@ -598,7 +654,12 @@ class CreateNestedSnapshotsAndAttachVolume(cinder_utils.CinderBasic,
 class CreateAndListSnapshots(cinder_utils.CinderBasic,
                              nova_utils.NovaScenario):
 
-    def run(self, force=False, detailed=True, **kwargs):
+    def run(
+        self,
+        force: bool = False,
+        detailed: bool = True,
+        **kwargs: t.Any,
+    ) -> None:
         """Create and then list a volume-snapshot.
 
         :param force: when set to True, allows snapshot of a volume when
@@ -612,7 +673,6 @@ class CreateAndListSnapshots(cinder_utils.CinderBasic,
         self.cinder.list_snapshots(detailed)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("required_services", services=[consts.Service.CINDER,
                                                consts.Service.GLANCE])
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
@@ -623,14 +683,19 @@ class CreateAndListSnapshots(cinder_utils.CinderBasic,
 class CreateAndUploadVolumeToImage(cinder_utils.CinderBasic,
                                    images.GlanceBasic):
 
-    def run(self, size, image=None, force=False, container_format="bare",
-            disk_format="raw", do_delete=True, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        force: bool = False,
+        container_format: str = "bare",
+        disk_format: str = "raw",
+        do_delete: bool = True,
+        **kwargs: t.Any,
+    ) -> None:
         """Create and upload a volume to image.
 
-        :param size: volume size (integers, in GB), or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param image: image to be used to create volume.
         :param force: when set to True volume that is attached to an instance
                       could be uploaded to image
@@ -664,8 +729,13 @@ class CreateAndUploadVolumeToImage(cinder_utils.CinderBasic,
                     platform="openstack")
 class CreateVolumeBackup(cinder_utils.CinderBasic):
 
-    def run(self, size, do_delete=True, create_volume_kwargs=None,
-            create_backup_kwargs=None):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        do_delete: bool = True,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        create_backup_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a volume backup.
 
         :param size: volume size in GB
@@ -697,8 +767,13 @@ class CreateVolumeBackup(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndRestoreVolumeBackup(cinder_utils.CinderBasic):
 
-    def run(self, size, do_delete=True, create_volume_kwargs=None,
-            create_backup_kwargs=None):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        do_delete: bool = True,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        create_backup_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Restore volume backup.
 
         :param size: volume size in GB
@@ -731,8 +806,14 @@ class CreateAndRestoreVolumeBackup(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndListVolumeBackups(cinder_utils.CinderBasic):
 
-    def run(self, size, detailed=True, do_delete=True,
-            create_volume_kwargs=None, create_backup_kwargs=None):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        detailed: bool = True,
+        do_delete: bool = True,
+        create_volume_kwargs: dict[str, t.Any] | None = None,
+        create_backup_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create and then list a volume backup.
 
         :param size: volume size in GB
@@ -754,7 +835,6 @@ class CreateAndListVolumeBackups(cinder_utils.CinderBasic):
             self.cinder.delete_backup(backup)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -764,7 +844,13 @@ class CreateAndListVolumeBackups(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateVolumeAndClone(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, nested_level=1, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        nested_level: t.Annotated[int, scenario.Field(ge=1)] = 1,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume, then clone it to another volume.
 
         This creates a volume, then clone it to anothor volume,
@@ -776,10 +862,7 @@ class CreateVolumeAndClone(cinder_utils.CinderBasic):
            4. clone volume2 to volume3
            5. ...
 
-        :param size: volume size (integer, in GB) or
-                     dictionary, must contain two values:
-                         min - minimum size volumes will be created as;
-                         max - maximum size volumes will be created as.
+        :param size: volume size, in GB
         :param image: image to be used to create initial volume
         :param nested_level: amount of nested levels
         :param kwargs: optional args to create volumes
@@ -808,7 +891,12 @@ class CreateVolumeAndClone(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateVolumeFromSnapshot(cinder_utils.CinderBasic):
 
-    def run(self, do_delete=True, create_snapshot_kwargs=None, **kwargs):
+    def run(
+        self,
+        do_delete: bool = True,
+        create_snapshot_kwargs: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume-snapshot, then create a volume from this snapshot.
 
         :param do_delete: if True, a snapshot and a volume will
@@ -830,7 +918,6 @@ class CreateVolumeFromSnapshot(cinder_utils.CinderBasic):
             self.cinder.delete_snapshot(snapshot)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -841,7 +928,13 @@ class CreateVolumeFromSnapshot(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateVolumeAndUpdateReadonlyFlag(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, read_only=True, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        read_only: bool = True,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume and then update its readonly flag.
 
         :param size: volume size (integer, in GB)
@@ -856,7 +949,6 @@ class CreateVolumeAndUpdateReadonlyFlag(cinder_utils.CinderBasic):
         self.cinder.update_readonly_flag(volume.id, read_only=read_only)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("restricted_parameters", param_names=["name", "display_name"])
 @validation.add("image_exists", param_name="image", nullable=True)
 @validation.add("required_services", services=[consts.Service.CINDER])
@@ -866,7 +958,12 @@ class CreateVolumeAndUpdateReadonlyFlag(cinder_utils.CinderBasic):
                     platform="openstack")
 class CreateAndAcceptTransfer(cinder_utils.CinderBasic):
 
-    def run(self, size, image=None, **kwargs):
+    def run(
+        self,
+        size: t.Annotated[int, scenario.Field(ge=1)] | block.VolumeSizeSpec,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Create a volume transfer, then accept it
 
         Measure the "cinder transfer-create" and "cinder transfer-accept"

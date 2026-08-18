@@ -134,8 +134,11 @@ class ImageExistsValidator(validation.Validator):
         try:
             for user in context["users"]:
                 image_processor = openstack_types.GlanceImage(
-                    context={"admin": {"credential": user["credential"]}})
-                image_id = image_processor.pre_process(image_args, config={})
+                    context={"admin": {"credential": user["credential"]}},
+                    scenario_cls=plugin_cls)
+                image_id = image_processor.pre_process(
+                    resource_spec=image_args, config={"type": "glance_image"},
+                    output_type=str)
                 user["credential"].clients().glance().images.get(image_id)
         except (glance_exc.HTTPNotFound, exceptions.InvalidScenarioArgument):
             self.fail("Image '%s' not found" % image_args)
@@ -236,7 +239,7 @@ class FlavorExistsValidator(validation.Validator):
         flavor.id = "<context flavor: %s>" % flavor.name
         return flavor
 
-    def _get_validated_flavor(self, config, clients, param_name):
+    def _get_validated_flavor(self, config, clients, param_name, plugin_cls):
 
         from novaclient import exceptions as nova_exc
 
@@ -245,8 +248,11 @@ class FlavorExistsValidator(validation.Validator):
             self.fail("Parameter %s is not specified." % param_name)
         try:
             flavor_processor = openstack_types.Flavor(
-                context={"admin": {"credential": clients.credential}})
-            flavor_id = flavor_processor.pre_process(flavor_value, config={})
+                context={"admin": {"credential": clients.credential}},
+                scenario_cls=plugin_cls)
+            flavor_id = flavor_processor.pre_process(
+                resource_spec=flavor_value, config={"type": "nova_flavor"},
+                output_type=str)
             flavor = clients.nova().flavors.get(flavor=flavor_id)
             return flavor
         except (nova_exc.NotFound, exceptions.InvalidScenarioArgument):
@@ -263,7 +269,8 @@ class FlavorExistsValidator(validation.Validator):
         clients = context["users"][0]["credential"].clients()
         self._get_validated_flavor(config=config,
                                    clients=clients,
-                                   param_name=self.param_name)
+                                   param_name=self.param_name,
+                                   plugin_cls=plugin_cls)
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -290,7 +297,7 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
         self.fail_on_404_image = fail_on_404_image
         self.validate_disk = validate_disk
 
-    def _get_validated_image(self, config, clients, param_name):
+    def _get_validated_image(self, config, clients, param_name, plugin_cls):
 
         from glanceclient import exc as glance_exc
 
@@ -317,8 +324,11 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
                 return image
         try:
             image_processor = openstack_types.GlanceImage(
-                context={"admin": {"credential": clients.credential}})
-            image_id = image_processor.pre_process(image_args, config={})
+                context={"admin": {"credential": clients.credential}},
+                scenario_cls=plugin_cls)
+            image_id = image_processor.pre_process(
+                resource_spec=image_args, config={"type": "glance_image"},
+                output_type=str)
             image = clients.glance().images.get(image_id)
             if hasattr(image, "to_dict"):
                 # NOTE(stpierre): Glance v1 images are objects that can be
@@ -344,11 +354,11 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
 
             if not flavor:
                 flavor = self._get_validated_flavor(
-                    config, clients, self.param_name)
+                    config, clients, self.param_name, plugin_cls)
 
             try:
                 image = self._get_validated_image(config, clients,
-                                                  self.image_name)
+                                                  self.image_name, plugin_cls)
             except validation.ValidationError:
                 if not self.fail_on_404_image:
                     return

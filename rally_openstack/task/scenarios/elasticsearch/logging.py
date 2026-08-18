@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+import typing as t
 
 import requests
 
@@ -34,8 +35,6 @@ LOG = logging.getLogger(__name__)
 """Scenario for Elasticsearch logging system."""
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"cleanup@openstack": ["nova"]},
@@ -52,8 +51,15 @@ class ElasticsearchLogInstanceName(nova_utils.NovaScenario):
     """
 
     @atomic.action_timer("elasticsearch.check_server_log_indexed")
-    def _check_server_name(self, server_id, logging_vip, elasticsearch_port,
-                           sleep_time, retries_total, additional_query=None):
+    def _check_server_name(
+        self,
+        server_id: str,
+        logging_vip: str,
+        elasticsearch_port: int,
+        sleep_time: float,
+        retries_total: int,
+        additional_query: dict[str, t.Any] | None = None,
+    ) -> None:
         request_data = {
             "query": {
                 "bool": {
@@ -83,9 +89,19 @@ class ElasticsearchLogInstanceName(nova_utils.NovaScenario):
                 self.assertGreater(result["hits"]["total"], 0)
                 break
 
-    def run(self, image, flavor, logging_vip, elasticsearch_port, sleep_time=5,
-            retries_total=30, boot_server_kwargs=None, force_delete=False,
-            query_by_name=False, additional_query=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        logging_vip: str,
+        elasticsearch_port: int,
+        sleep_time: t.Annotated[float, scenario.Field(ge=0)] = 5,
+        retries_total: t.Annotated[int, scenario.Field(ge=1)] = 30,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        force_delete: bool = False,
+        query_by_name: bool = False,
+        additional_query: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create nova instance and check it indexed in elasticsearch.
 
         :param image: image for server

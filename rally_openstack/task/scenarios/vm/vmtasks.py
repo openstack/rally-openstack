@@ -17,6 +17,7 @@ import json
 import os
 import pkgutil
 import re
+import typing as t
 
 from rally import exceptions
 from rally.common import logging
@@ -119,8 +120,6 @@ class ValidCommandValidator(validators.FileExistsValidator):
                     param_name=self.param_name, required=self.required)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", fail_on_404_image=False)
 @validation.add("valid_command", param_name="command")
@@ -139,12 +138,22 @@ class ValidCommandValidator(validators.FileExistsValidator):
                     platform="openstack")
 class BootRuncommandDelete(vm_utils.VMScenario, cinder_utils.CinderBasic):
 
-    def run(self, flavor, username, password=None,
-            image=None,
-            command=None,
-            volume_args=None, floating_network=None, port=22,
-            use_floating_ip=True, force_delete=False, wait_for_ping=True,
-            max_log_length=None, **kwargs):
+    def run(
+        self,
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        username: str,
+        password: str | None = None,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        command: dict[str, t.Any] | None = None,
+        volume_args: dict[str, t.Any] | None = None,
+        floating_network: str | None = None,
+        port: int = 22,
+        use_floating_ip: bool = True,
+        force_delete: bool = False,
+        wait_for_ping: bool = True,
+        max_log_length: int | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server, run script specified in command and delete server.
 
         :param image: glance image name to use for the vm. Optional
@@ -477,8 +486,6 @@ EOF
 """
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("number", param_name="port", minval=1, maxval=65535,
@@ -496,11 +503,23 @@ class DDLoadTest(BootRuncommandDelete):
     @logging.log_deprecated_args(
         "Use 'interpreter' to specify the interpreter to execute script from.",
         "0.10.0", ["command"], once=True)
-    def run(self, flavor, username, password=None,
-            image=None, command=None, interpreter="/bin/sh",
-            volume_args=None, floating_network=None, port=22,
-            use_floating_ip=True, force_delete=False, wait_for_ping=True,
-            max_log_length=None, **kwargs):
+    def run(
+        self,
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        username: str,
+        password: str | None = None,
+        image: t.Annotated[str, types.Convert("glance_image")] | None = None,
+        command: dict[str, t.Any] | None = None,
+        interpreter: str = "/bin/sh",
+        volume_args: dict[str, t.Any] | None = None,
+        floating_network: str | None = None,
+        port: int = 22,
+        use_floating_ip: bool = True,
+        force_delete: bool = False,
+        wait_for_ping: bool = True,
+        max_log_length: int | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot a server from a custom image and performs dd load test.
 
         .. note:: dd load test is prepared script by Rally team. It checks
@@ -538,8 +557,6 @@ class DDLoadTest(BootRuncommandDelete):
             **kwargs)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image", fail_on_404_image=False)
 @validation.add("number", param_name="port", minval=1, maxval=65535,
@@ -560,10 +577,19 @@ class DDLoadTest(BootRuncommandDelete):
                     platform="openstack")
 class CheckDesignateDNSResolving(vm_utils.VMScenario):
 
-    def run(self, image, flavor, username, password=None,
-            floating_network=None, port=22,
-            use_floating_ip=True, force_delete=False, max_log_length=None,
-            **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        username: str,
+        password: str | None = None,
+        floating_network: str | None = None,
+        port: int = 22,
+        use_floating_ip: bool = True,
+        force_delete: bool = False,
+        max_log_length: int | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Try to resolve hostname from VM against existing designate DNS.
 
         - requires zone context with set_zone_in_network parameter

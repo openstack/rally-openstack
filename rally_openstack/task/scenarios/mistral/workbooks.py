@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.task import types
 from rally.task import validation
 
@@ -31,7 +33,7 @@ from rally_openstack.task.scenarios.mistral import utils
                     platform="openstack")
 class ListWorkbooks(utils.MistralScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Scenario test mistral workbook-list command.
 
         This simple scenario tests the Mistral workbook-list
@@ -40,7 +42,6 @@ class ListWorkbooks(utils.MistralScenario):
         self._list_workbooks()
 
 
-@types.convert(definition={"type": "file"})
 @validation.add("file_exists", param_name="definition")
 @validation.add("required_platform", platform="openstack", users=True)
 @validation.add("required_services",
@@ -50,7 +51,11 @@ class ListWorkbooks(utils.MistralScenario):
                     platform="openstack")
 class CreateWorkbook(utils.MistralScenario):
 
-    def run(self, definition, do_delete=False):
+    def run(
+        self,
+        definition: t.Annotated[str, types.Convert("file")],
+        do_delete: bool = False,
+    ) -> None:
         """Scenario tests workbook creation and deletion.
 
         This scenario is a very useful tool to measure the

@@ -12,13 +12,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
+import typing_extensions as te
+
 from rally.common import cfg
 from rally.common import logging
 from rally.task import service
+from rally.utils import typeutils
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
+
+
+class VolumeSizeSpec(te.TypedDict, closed=True):
+    """A range the size of a volume is picked from at random."""
+
+    min: t.Annotated[
+        int, typeutils.Field(ge=1, description="minimum size, in GB")]
+    max: t.Annotated[
+        int, typeutils.Field(ge=1, description="maximum size, in GB")]
 
 
 Volume = service.make_resource_cls(

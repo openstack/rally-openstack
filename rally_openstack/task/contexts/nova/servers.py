@@ -99,10 +99,16 @@ class ServerGenerator(context.OpenStackContext):
                 kwargs["nics"] = [{"net-id": nic}
                                   for nic in self.config["nics"]]
 
-        image_id = types.GlanceImage(self.context).pre_process(
-            resource_spec=image, config={})
-        flavor_id = types.Flavor(self.context).pre_process(
-            resource_spec=flavor, config={})
+        image_id = types.GlanceImage(
+            self.context, scenario_cls=nova_utils.NovaScenario
+        ).pre_process(
+            resource_spec=image, config={"type": "glance_image"},
+            output_type=str)
+        flavor_id = types.Flavor(
+            self.context, scenario_cls=nova_utils.NovaScenario
+        ).pre_process(
+            resource_spec=flavor, config={"type": "nova_flavor"},
+            output_type=str)
 
         for iter_, (user, tenant_id) in enumerate(self._iterate_per_tenants()):
             LOG.debug("Booting servers for user tenant %s" % user["tenant_id"])

@@ -11,6 +11,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import enum
+
 from rally import exceptions
 from rally.common import cfg
 from rally.task import service
@@ -20,6 +22,37 @@ CONF = cfg.CONF
 
 UnifiedImage = service.make_resource_cls(
     "Image", properties=["id", "name", "visibility", "status"])
+
+
+class ContainerFormat(str, enum.Enum):
+    """Container format of an image."""
+
+    AMI = "ami"
+    ARI = "ari"
+    AKI = "aki"
+    BARE = "bare"
+    OVF = "ovf"
+
+
+class DiskFormat(str, enum.Enum):
+    """Disk format of an image."""
+
+    AMI = "ami"
+    ARI = "ari"
+    AKI = "aki"
+    VHD = "vhd"
+    VMDK = "vmdk"
+    RAW = "raw"
+    QCOW2 = "qcow2"
+    VDI = "vdi"
+    ISO = "iso"
+
+
+class ImportMethod(str, enum.Enum):
+    """Way the image data reaches Glance on an interoperable import."""
+
+    GLANCE_DIRECT = "glance-direct"
+    WEB_DOWNLOAD = "web-download"
 
 
 class VisibilityException(exceptions.RallyException):

@@ -14,6 +14,7 @@
 #    under the License.
 
 import random
+import typing as t
 
 from rally.common import cfg
 from rally.common import logging
@@ -27,7 +28,12 @@ LOG = logging.getLogger(__name__)
 
 
 class CinderBasic(scenario.OpenStackScenario):
-    def __init__(self, context=None, admin_clients=None, clients=None):
+    def __init__(
+        self,
+        context: dict[str, t.Any] | None = None,
+        admin_clients: t.Any = None,
+        clients: t.Any = None,
+    ) -> None:
         super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_cinder = block.BlockStorage(
@@ -38,6 +44,6 @@ class CinderBasic(scenario.OpenStackScenario):
                 self._clients, name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions())
 
-    def get_random_server(self):
+    def get_random_server(self) -> t.Any:
         server_id = random.choice(self.context["tenant"]["servers"])
         return self.clients("nova").servers.get(server_id)

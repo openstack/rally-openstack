@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import enum
 import random
 
 from rally import exceptions
@@ -25,6 +26,16 @@ from rally_openstack.task.contexts.manila import consts
 
 
 CONF = cfg.CONF
+
+
+class ShareProto(str, enum.Enum):
+    """Protocol a share is exported with."""
+
+    NFS = "NFS"
+    CIFS = "CIFS"
+    GLUSTERFS = "GLUSTERFS"
+    HDFS = "HDFS"
+    CEPHFS = "CEPHFS"
 
 
 class ManilaScenario(scenario.OpenStackScenario):

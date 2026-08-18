@@ -10,6 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.common import logging
 from rally.task import types
 from rally.task import validation
@@ -22,8 +24,6 @@ from rally_openstack.task.scenarios.watcher import utils
 """Scenarios for Watcher servers."""
 
 
-@types.convert(strategy={"type": "watcher_strategy"},
-               goal={"type": "watcher_goal"})
 @validation.add("required_services", services=[consts.Service.WATCHER])
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["watcher"]},
@@ -34,7 +34,11 @@ class CreateAuditTemplateAndDelete(utils.WatcherScenario):
     @logging.log_deprecated_args("Extra field has been removed "
                                  "since it isn't used.", "0.8.0", ["extra"],
                                  once=True)
-    def run(self, goal, strategy):
+    def run(
+        self,
+        goal: t.Annotated[str, types.Convert("watcher_goal")],
+        strategy: t.Annotated[str, types.Convert("watcher_strategy")],
+    ) -> None:
         """Create audit template and delete it.
 
         :param goal: The goal audit template is based on

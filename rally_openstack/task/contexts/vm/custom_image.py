@@ -147,10 +147,16 @@ class BaseCustomImageGenerator(context.OpenStackContext,
 
         clients = osclients.Clients(user["credential"])
 
-        image_id = types.GlanceImage(self.context).pre_process(
-            resource_spec=self.config["image"], config={})
-        flavor_id = types.Flavor(self.context).pre_process(
-            resource_spec=self.config["flavor"], config={})
+        image_id = types.GlanceImage(
+            self.context, scenario_cls=vmtasks.BootRuncommandDelete
+        ).pre_process(
+            resource_spec=self.config["image"],
+            config={"type": "glance_image"}, output_type=str)
+        flavor_id = types.Flavor(
+            self.context, scenario_cls=vmtasks.BootRuncommandDelete
+        ).pre_process(
+            resource_spec=self.config["flavor"],
+            config={"type": "nova_flavor"}, output_type=str)
 
         vm_scenario = vmtasks.BootRuncommandDelete(self.context,
                                                    clients=clients)

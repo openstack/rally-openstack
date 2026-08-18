@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.common import logging
 from rally.task import types
 from rally.task import validation
@@ -30,7 +32,12 @@ LOG = logging.getLogger(__name__)
 
 
 class GlanceBasic(scenario.OpenStackScenario):
-    def __init__(self, context=None, admin_clients=None, clients=None):
+    def __init__(
+        self,
+        context: dict[str, t.Any] | None = None,
+        admin_clients: t.Any = None,
+        clients: t.Any = None,
+    ) -> None:
         super().__init__(context, admin_clients, clients)
         if hasattr(self, "_admin_clients"):
             self.admin_glance = image.Image(
@@ -42,13 +49,6 @@ class GlanceBasic(scenario.OpenStackScenario):
                 atomic_inst=self.atomic_actions())
 
 
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
-@types.convert(image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
 @validation.add("required_services", services=[consts.Service.GLANCE])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["glance"]},
@@ -56,8 +56,16 @@ class GlanceBasic(scenario.OpenStackScenario):
                     platform="openstack")
 class CreateAndListImage(GlanceBasic):
 
-    def run(self, container_format, image_location, disk_format,
-            visibility="private", min_disk=0, min_ram=0, properties=None):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        properties: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create an image and then list all images.
 
         Measure the "glance image-list" command performance.
@@ -68,11 +76,9 @@ class CreateAndListImage(GlanceBasic):
         performance of the "glance image-list" command depending on
         the number of images owned by users.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -92,13 +98,6 @@ class CreateAndListImage(GlanceBasic):
         self.assertIn(image.id, [i.id for i in image_list])
 
 
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
-@types.convert(image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
 @validation.add("required_services", services=[consts.Service.GLANCE])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["glance"]},
@@ -106,15 +105,21 @@ class CreateAndListImage(GlanceBasic):
                     platform="openstack")
 class CreateAndGetImage(GlanceBasic):
 
-    def run(self, container_format, image_location, disk_format,
-            visibility="private", min_disk=0, min_ram=0, properties=None):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        properties: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create and get detailed information of an image.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -140,7 +145,7 @@ class CreateAndGetImage(GlanceBasic):
                     platform="openstack")
 class ListImages(GlanceBasic):
 
-    def run(self):
+    def run(self) -> None:
         """List all images.
 
         This simple scenario tests the glance image-list command by listing
@@ -153,13 +158,6 @@ class ListImages(GlanceBasic):
         self.glance.list_images()
 
 
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
-@types.convert(image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
 @validation.add("required_services", services=[consts.Service.GLANCE])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["glance"]},
@@ -167,15 +165,21 @@ class ListImages(GlanceBasic):
                     platform="openstack")
 class CreateAndDeleteImage(GlanceBasic):
 
-    def run(self, container_format, image_location, disk_format,
-            visibility="private", min_disk=0, min_ram=0, properties=None):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        properties: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create and then delete an image.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -193,14 +197,6 @@ class CreateAndDeleteImage(GlanceBasic):
         self.glance.delete_image(image.id)
 
 
-@types.convert(flavor={"type": "nova_flavor"},
-               image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
 @validation.add("restricted_parameters", param_names=["image_name", "name"])
 @validation.add("flavor_exists", param_name="flavor")
 @validation.add("required_services", services=[consts.Service.GLANCE,
@@ -211,16 +207,24 @@ class CreateAndDeleteImage(GlanceBasic):
                     platform="openstack")
 class CreateImageAndBootInstances(GlanceBasic, nova_utils.NovaScenario):
 
-    def run(self, container_format, image_location, disk_format,
-            flavor, number_instances, visibility="private", min_disk=0,
-            min_ram=0, properties=None, boot_server_kwargs=None):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        number_instances: t.Annotated[int, scenario.Field(ge=1)],
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        properties: dict[str, t.Any] | None = None,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create an image and boot several instances from it.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -244,13 +248,6 @@ class CreateImageAndBootInstances(GlanceBasic, nova_utils.NovaScenario):
                            **(boot_server_kwargs or {}))
 
 
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
-@types.convert(image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
 @validation.add("required_services", services=[consts.Service.GLANCE])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["glance"]},
@@ -258,20 +255,27 @@ class CreateImageAndBootInstances(GlanceBasic, nova_utils.NovaScenario):
                     platform="openstack")
 class CreateAndUpdateImage(GlanceBasic):
 
-    def run(self, container_format, image_location, disk_format,
-            remove_props=None, visibility="private", create_min_disk=0,
-            create_min_ram=0, create_properties=None,
-            update_min_disk=0, update_min_ram=0):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        remove_props: list[str] | None = None,
+        visibility: str = "private",
+        create_min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        create_min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        create_properties: dict[str, t.Any] | None = None,
+        update_min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        update_min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+    ) -> None:
         """Create an image then update it.
 
         Measure the "glance image-create" and "glance image-update" commands
         performance.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param remove_props: List of property names to remove.
                              (It is only supported by Glance v2.)
         :param visibility: The access permission for the created image
@@ -304,15 +308,20 @@ class CreateAndUpdateImage(GlanceBasic):
                     name="GlanceImages.create_and_deactivate_image",
                     platform="openstack")
 class CreateAndDeactivateImage(GlanceBasic):
-    def run(self, container_format, image_location, disk_format,
-            visibility="private", min_disk=0, min_ram=0):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+    ) -> None:
         """Create an image, then deactivate it.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -331,13 +340,6 @@ class CreateAndDeactivateImage(GlanceBasic):
         service.deactivate_image(image.id)
 
 
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
-@types.convert(image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
 @validation.add("required_services", services=[consts.Service.GLANCE])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["glance"]},
@@ -345,15 +347,21 @@ class CreateAndDeactivateImage(GlanceBasic):
                     platform="openstack")
 class CreateAndDownloadImage(GlanceBasic):
 
-    def run(self, container_format, image_location, disk_format,
-            visibility="private", min_disk=0, min_ram=0, properties=None):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        properties: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create an image, then download data of the image.
 
-        :param container_format: container format of image. Acceptable
-                                 formats: ami, ari, aki, bare, and ovf
+        :param container_format: container format of image
         :param image_location: image file location
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -372,16 +380,6 @@ class CreateAndDownloadImage(GlanceBasic):
         self.glance.download_image(image.id)
 
 
-@validation.add("enum", param_name="import_method",
-                values=["glance-direct", "web-download"],
-                missed=True)
-@validation.add("enum", param_name="container_format",
-                values=["ami", "ari", "aki", "bare", "ovf"])
-@validation.add("enum", param_name="disk_format",
-                values=["ami", "ari", "aki", "vhd", "vmdk", "raw",
-                        "qcow2", "vdi", "iso"])
-@types.convert(image_location={"type": "path_or_url"},
-               kwargs={"type": "glance_image_args"})
 @validation.add("required_services", services=[consts.Service.GLANCE])
 @validation.add("required_platform", platform="openstack", users=True)
 @validation.add("required_api_versions", component="glance", versions=["2"])
@@ -390,9 +388,19 @@ class CreateAndDownloadImage(GlanceBasic):
                     platform="openstack")
 class ImportAndDeleteImage(GlanceBasic):
 
-    def run(self, container_format, image_location, disk_format,
-            visibility="private", min_disk=0, min_ram=0, properties=None,
-            stores=None, all_stores=True, import_method="glance-direct"):
+    def run(
+        self,
+        container_format: image.ContainerFormat,
+        image_location: t.Annotated[str, types.Convert("path_or_url")],
+        disk_format: image.DiskFormat,
+        visibility: str = "private",
+        min_disk: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        min_ram: t.Annotated[int, scenario.Field(ge=0)] = 0,
+        properties: dict[str, t.Any] | None = None,
+        stores: list[str] | None = None,
+        all_stores: bool = True,
+        import_method: image.ImportMethod = image.ImportMethod.GLANCE_DIRECT,
+    ) -> None:
         """Import image using specific method, then delete it.
 
         This scenario tests the Glance v2 interoperable image import
@@ -404,11 +412,9 @@ class ImportAndDeleteImage(GlanceBasic):
         - glance_v2.import_image: Import from staging/URL + wait for active
         - glance_v2.delete_image: Delete the image
 
-        :param container_format: Acceptable formats: ami, ari, aki, bare,
-                                 and ovf
+        :param container_format: container format of image
         :param image_location: image file location (path or URL)
-        :param disk_format: disk format of image. Acceptable formats:
-                            ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, and iso
+        :param disk_format: disk format of image
         :param visibility: The access permission for the created image
         :param min_disk: The min disk of created images
         :param min_ram: The min ram of created images
@@ -416,8 +422,7 @@ class ImportAndDeleteImage(GlanceBasic):
                            on the image
         :param stores: List of specific stores for multistore deployments
         :param all_stores: Import to all available stores
-        :param import_method: Import method to use (default: 'glance-direct')
-                             Options: glance-direct, web-download,
+        :param import_method: Import method to use
         """
         # Create image in queued state
         image = self.glance.create_image_for_import(

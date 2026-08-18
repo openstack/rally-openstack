@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.task import types
 from rally.task import validation
 
@@ -31,7 +33,7 @@ from rally_openstack.task.scenarios.nova import utils
                     platform="openstack")
 class CreateAndListKeypairs(utils.NovaScenario):
 
-    def run(self, **kwargs):
+    def run(self, **kwargs: t.Any) -> None:
         """Create a keypair with random name and list keypairs.
 
         This scenario creates a keypair and then lists all keypairs.
@@ -53,7 +55,7 @@ class CreateAndListKeypairs(utils.NovaScenario):
                     platform="openstack")
 class CreateAndDeleteKeypair(utils.NovaScenario):
 
-    def run(self, **kwargs):
+    def run(self, **kwargs: t.Any) -> None:
         """Create a keypair with random name and delete keypair.
 
         This scenario creates a keypair and then delete that keypair.
@@ -65,8 +67,6 @@ class CreateAndDeleteKeypair(utils.NovaScenario):
         self._delete_keypair(keypair)
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("image_valid_on_flavor", flavor_param="flavor",
                 image_param="image")
 @validation.add("required_services", services=[consts.Service.NOVA])
@@ -76,7 +76,13 @@ class CreateAndDeleteKeypair(utils.NovaScenario):
                     platform="openstack")
 class BootAndDeleteServerWithKeypair(utils.NovaScenario):
 
-    def run(self, image, flavor, boot_server_kwargs=None, **kwargs):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
+    ) -> None:
         """Boot and delete server with keypair.
 
         Plan of this scenario:
@@ -108,7 +114,7 @@ class BootAndDeleteServerWithKeypair(utils.NovaScenario):
                     platform="openstack")
 class CreateAndGetKeypair(utils.NovaScenario):
 
-    def run(self, **kwargs):
+    def run(self, **kwargs: t.Any) -> None:
         """Create a keypair and get the keypair details.
 
         :param kwargs: Optional additional arguments for keypair creation

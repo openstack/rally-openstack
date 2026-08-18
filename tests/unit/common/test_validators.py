@@ -171,9 +171,11 @@ class ImageExistsValidatorTestCase(test.TestCase):
 
         mock_glance_image.assert_called_once_with(
             context={"admin": {
-                "credential": self.context["users"][0]["credential"]}})
+                "credential": self.context["users"][0]["credential"]}},
+            scenario_cls=None)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            config["args"]["image"], config={})
+            resource_spec=config["args"]["image"],
+            config={"type": "glance_image"}, output_type=str)
         clients.glance().images.get.assert_called_with("image_id")
 
         exs = [exceptions.InvalidScenarioArgument(),
@@ -282,7 +284,7 @@ class FlavorExistsValidatorTestCase(test.TestCase):
         e = self.assertRaises(
             validators.validation.ValidationError,
             self.validator._get_validated_flavor, self.config,
-            mock.MagicMock(), "foo_flavor")
+            mock.MagicMock(), "foo_flavor", mock.Mock())
         self.assertEqual("Parameter foo_flavor is not specified.",
                          e.message)
 
@@ -292,27 +294,32 @@ class FlavorExistsValidatorTestCase(test.TestCase):
 
         clients = mock.Mock()
         clients.nova().flavors.get.return_value = "flavor"
+        plugin_cls = mock.Mock()
 
         result = self.validator._get_validated_flavor(self.config,
                                                       clients,
-                                                      "flavor")
+                                                      "flavor",
+                                                      plugin_cls)
         self.assertEqual("flavor", result)
 
         mock_flavor.assert_called_once_with(
-            context={"admin": {"credential": clients.credential}}
+            context={"admin": {"credential": clients.credential}},
+            scenario_cls=plugin_cls
         )
         mock_flavor_obj = mock_flavor.return_value
         mock_flavor_obj.pre_process.assert_called_once_with(
-            self.config["args"]["flavor"], config={})
+            resource_spec=self.config["args"]["flavor"],
+            config={"type": "nova_flavor"}, output_type=str)
         clients.nova().flavors.get.assert_called_once_with(flavor="flavor_id")
         mock_flavor_obj.pre_process.reset_mock()
 
         clients.side_effect = exceptions.InvalidScenarioArgument("")
         result = self.validator._get_validated_flavor(
-            self.config, clients, "flavor")
+            self.config, clients, "flavor", plugin_cls)
         self.assertEqual("flavor", result)
         mock_flavor_obj.pre_process.assert_called_once_with(
-            self.config["args"]["flavor"], config={})
+            resource_spec=self.config["args"]["flavor"],
+            config={"type": "nova_flavor"}, output_type=str)
         clients.nova().flavors.get.assert_called_with(flavor="flavor_id")
 
     @mock.patch("%s.openstack_types.Flavor" % PATH)
@@ -325,13 +332,14 @@ class FlavorExistsValidatorTestCase(test.TestCase):
         e = self.assertRaises(
             validators.validation.ValidationError,
             self.validator._get_validated_flavor,
-            self.config, clients, "flavor")
+            self.config, clients, "flavor", mock.Mock())
         self.assertEqual("Flavor '%s' not found" %
                          self.config["args"]["flavor"],
                          e.message)
         mock_flavor_obj = mock_flavor.return_value
         mock_flavor_obj.pre_process.assert_called_once_with(
-            self.config["args"]["flavor"], config={})
+            resource_spec=self.config["args"]["flavor"],
+            config={"type": "nova_flavor"}, output_type=str)
 
     @mock.patch("%s.types.obj_from_name" % PATH)
     @mock.patch("%s.flavors_ctx.FlavorConfig" % PATH)
@@ -365,7 +373,8 @@ class FlavorExistsValidatorTestCase(test.TestCase):
         self.validator._get_validated_flavor.assert_called_once_with(
             config=config,
             clients=ctx["users"][0]["credential"].clients(),
-            param_name=self.validator.param_name)
+            param_name=self.validator.param_name,
+            plugin_cls=None)
 
 
 @ddt.ddt
@@ -528,13 +537,14 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
             "min_ram": 0,
             "min_disk": 0
         }
+        plugin_cls = mock.Mock()
         # Get image name from context
         result = self.validator._get_validated_image({
             "args": {
                 "image": {"regex": r"^foo$"}},
             "contexts": {
                 "images": {"image_name": "foo"}}},
-            mock.Mock(), "image")
+            mock.Mock(), "image", plugin_cls)
         self.assertEqual(image, result)
 
         clients = mock.Mock()
@@ -544,22 +554,26 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
 
         result = self.validator._get_validated_image(self.config,
                                                      clients,
-                                                     "image")
+                                                     "image",
+                                                     plugin_cls)
         self.assertEqual(image, result)
         mock_glance_image.assert_called_once_with(
-            context={"admin": {"credential": clients.credential}})
+            context={"admin": {"credential": clients.credential}},
+            scenario_cls=plugin_cls)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            config["args"]["image"], config={})
+            resource_spec=config["args"]["image"],
+            config={"type": "glance_image"}, output_type=str)
         clients.glance().images.get.assert_called_with("image_id")
 
     @mock.patch("%s.openstack_types.GlanceImage" % PATH)
     def test__get_validated_image_incorrect_param(self, mock_glance_image):
         mock_glance_image.return_value.pre_process.return_value = "image_id"
+        plugin_cls = mock.Mock()
         # Wrong 'param_name'
         e = self.assertRaises(
             validators.validation.ValidationError,
             self.validator._get_validated_image, self.config,
-            mock.Mock(), "fake_param")
+            mock.Mock(), "fake_param", plugin_cls)
         self.assertEqual("Parameter fake_param is not specified.",
                          e.message)
 
@@ -574,13 +588,16 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
                                "fake_parameter_name": "foo_image"}
                            }}
                   }
-        result = self.validator._get_validated_image(config, clients, "image")
+        result = self.validator._get_validated_image(config, clients, "image",
+                                                     plugin_cls)
         self.assertEqual(image, result)
 
         mock_glance_image.assert_called_once_with(
-            context={"admin": {"credential": clients.credential}})
+            context={"admin": {"credential": clients.credential}},
+            scenario_cls=plugin_cls)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            config["args"]["image"], config={})
+            resource_spec=config["args"]["image"],
+            config={"type": "glance_image"}, output_type=str)
         clients.glance().images.get.assert_called_with("image_id")
 
     @mock.patch("%s.openstack_types.GlanceImage" % PATH)
@@ -588,28 +605,33 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
         mock_glance_image.return_value.pre_process.return_value = "image_id"
         clients = mock.Mock()
         clients.glance().images.get.side_effect = glance_exc.HTTPNotFound("")
+        plugin_cls = mock.Mock()
         e = self.assertRaises(
             validators.validation.ValidationError,
             self.validator._get_validated_image,
-            config, clients, "image")
+            config, clients, "image", plugin_cls)
         self.assertEqual("Image '%s' not found" % config["args"]["image"],
                          e.message)
 
         mock_glance_image.assert_called_once_with(
-            context={"admin": {"credential": clients.credential}})
+            context={"admin": {"credential": clients.credential}},
+            scenario_cls=plugin_cls)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            config["args"]["image"], config={})
+            resource_spec=config["args"]["image"],
+            config={"type": "glance_image"}, output_type=str)
         clients.glance().images.get.assert_called_with("image_id")
         mock_glance_image.return_value.pre_process.reset_mock()
 
         clients.side_effect = exceptions.InvalidScenarioArgument("")
         e = self.assertRaises(
             validators.validation.ValidationError,
-            self.validator._get_validated_image, config, clients, "image")
+            self.validator._get_validated_image, config, clients, "image",
+            plugin_cls)
         self.assertEqual("Image '%s' not found" % config["args"]["image"],
                          e.message)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            config["args"]["image"], config={})
+            resource_spec=config["args"]["image"],
+            config={"type": "glance_image"}, output_type=str)
         clients.glance().images.get.assert_called_with("image_id")
 
 

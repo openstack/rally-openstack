@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+import typing as t
 
 import yaml
 
@@ -34,7 +35,13 @@ from rally_openstack.task.scenarios.mistral import utils
                     platform="openstack")
 class ListExecutions(utils.MistralScenario):
 
-    def run(self, marker="", limit=None, sort_keys="", sort_dirs=""):
+    def run(
+        self,
+        marker: str = "",
+        limit: int | None = None,
+        sort_keys: str = "",
+        sort_dirs: str = "",
+    ) -> None:
         """Scenario test mistral execution-list command.
 
         This simple scenario tests the Mistral execution-list
@@ -51,9 +58,6 @@ class ListExecutions(utils.MistralScenario):
                               sort_keys=sort_keys, sort_dirs=sort_dirs)
 
 
-@types.convert(definition={"type": "file"})
-@types.convert(params={"type": "file"})
-@types.convert(wf_input={"type": "file"})
 @validation.add("file_exists", param_name="definition")
 @validation.add("required_platform", platform="openstack", users=True)
 @validation.add("required_services",
@@ -66,8 +70,14 @@ class ListExecutions(utils.MistralScenario):
                     platform="openstack")
 class CreateExecutionFromWorkbook(utils.MistralScenario):
 
-    def run(self, definition, workflow_name=None, wf_input=None, params=None,
-            do_delete=False):
+    def run(
+        self,
+        definition: t.Annotated[str, types.Convert("file")],
+        workflow_name: str | None = None,
+        wf_input: t.Annotated[str, types.Convert("file")] | None = None,
+        params: t.Annotated[str, types.Convert("file")] | None = None,
+        do_delete: bool = False,
+    ) -> None:
         """Scenario tests execution creation and deletion.
 
         This scenario is a very useful tool to measure the
@@ -95,12 +105,10 @@ class CreateExecutionFromWorkbook(utils.MistralScenario):
 
         workflow_identifier = ".".join([wb.name, workflow_name])
 
-        if not params:
-            params = {}
-        else:
-            params = json.loads(params)
+        exec_params = json.loads(params) if params else {}
 
-        ex = self._create_execution(workflow_identifier, wf_input, **params)
+        ex = self._create_execution(workflow_identifier, wf_input,
+                                    **exec_params)
 
         if do_delete:
             self._delete_workbook(wb.name)

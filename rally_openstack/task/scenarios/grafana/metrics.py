@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import typing as t
+
 from rally.common import cfg
 from rally.common import logging
 from rally.task import types
@@ -29,8 +31,6 @@ LOG = logging.getLogger(__name__)
 """Scenarios for Pushgateway and Grafana metrics."""
 
 
-@types.convert(image={"type": "glance_image"},
-               flavor={"type": "nova_flavor"})
 @validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"cleanup@openstack": ["nova"]},
@@ -53,8 +53,15 @@ class PushMetricsInstance(scenario.OpenStackScenario):
     data.
     """
 
-    def _metric_from_instance(self, seed, image, flavor, monitor_vip,
-                              pushgateway_port, job_name):
+    def _metric_from_instance(
+        self,
+        seed: str,
+        image: str,
+        flavor: str,
+        monitor_vip: str,
+        pushgateway_port: int,
+        job_name: str,
+    ) -> None:
         push_cmd = (
             "echo %(seed)s 12345 | curl --data-binary "
             "@- http://%(monitor_vip)s:%(pgtw_port)s/metrics/job"
@@ -78,9 +85,18 @@ class PushMetricsInstance(scenario.OpenStackScenario):
         LOG.info("Server %s with pushing metric script (metric exporter) is "
                  "active" % seed)
 
-    def run(self, image, flavor, monitor_vip, pushgateway_port,
-            grafana, datasource_id, job_name, sleep_time=5,
-            retries_total=30):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        flavor: t.Annotated[str, types.Convert("nova_flavor")],
+        monitor_vip: str,
+        pushgateway_port: int,
+        grafana: dict[str, t.Any],
+        datasource_id: int | str,
+        job_name: str,
+        sleep_time: t.Annotated[float, scenario.Field(ge=0)] = 5,
+        retries_total: t.Annotated[int, scenario.Field(ge=1)] = 30,
+    ) -> None:
         """Create nova instance with pushing metric script as userdata.
 
         Push metric to metrics storage using Pushgateway and check it in
@@ -118,8 +134,16 @@ class PushMetricsInstance(scenario.OpenStackScenario):
 class PushMetricLocal(scenario.OpenStackScenario):
     """Test monitoring system availability with local pushing random metric."""
 
-    def run(self, monitor_vip, pushgateway_port, grafana, datasource_id,
-            job_name, sleep_time=5, retries_total=30):
+    def run(
+        self,
+        monitor_vip: str,
+        pushgateway_port: int,
+        grafana: dict[str, t.Any],
+        datasource_id: int | str,
+        job_name: str,
+        sleep_time: t.Annotated[float, scenario.Field(ge=0)] = 5,
+        retries_total: t.Annotated[int, scenario.Field(ge=1)] = 30,
+    ) -> None:
         """Push random metric to Pushgateway locally and check it in Grafana.
 
         :param monitor_vip: monitoring system IP to push metric

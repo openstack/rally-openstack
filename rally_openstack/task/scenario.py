@@ -28,6 +28,9 @@ from rally_openstack.common import osclients
 
 configure = functools.partial(scenario.configure, platform="openstack")
 
+# alias to reduce imports
+Field = scenario.Field
+
 CONF = cfg.CONF
 
 

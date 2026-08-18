@@ -12,14 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import copy
 import operator
 import re
+import typing as t
 
 from rally import exceptions
 from rally.common import logging
 from rally.common.plugin import plugin
+from rally.task import scenario
 from rally.task import types
+from rally.utils import typeutils
 
 from rally_openstack.common import osclients
 from rally_openstack.common.services.image import image
@@ -32,14 +37,84 @@ LOG = logging.getLogger(__name__)
 configure = plugin.configure
 
 
+class IdOrNameSpec(t.TypedDict, total=False):
+    """Specification of a resource to search by its id or exact name."""
+
+    id: t.Annotated[
+        str, typeutils.Field(description="the id of an existing resource")]
+    name: t.Annotated[
+        str, typeutils.Field(description="the exact name of a resource")]
+
+
+class ResourceSpec(IdOrNameSpec, total=False):
+    """Specification of a resource to search by id, name or name regex."""
+
+    regex: t.Annotated[
+        str,
+        typeutils.Field(description="a regex to match a resource name with")]
+
+
+class InexactResourceSpec(ResourceSpec, total=False):
+    """Specification of a resource searched by :meth:`_find_resource`.
+
+    Unlike the rally-core lookup, an ambiguous name or regex is not an error
+    by default: the latest match wins unless ``accurate`` is set.
+    """
+
+    accurate: t.Annotated[
+        bool,
+        typeutils.Field(
+            description="fail instead of picking the latest match when the "
+                        "name or the regex matches several resources")]
+
+
+class GlanceImageSpec(InexactResourceSpec, total=False):
+    """Specification of a Glance image to search."""
+
+    list_kwargs: t.Annotated[
+        dict[str, t.Any],
+        typeutils.Field(
+            description="additional filters for the image listing call")]
+
+
+class GlanceImageArgsSpec(t.TypedDict, total=False):
+    """Arguments of an image creation call.
+
+    Only the keys that differ between Glance V1 and V2 are listed here, any
+    other key is passed through as is.
+    """
+
+    is_public: t.Annotated[
+        bool,
+        typeutils.Field(
+            description="the V1 way to make an image public. It is translated "
+                        "into the V2 'visibility' key")]
+    visibility: t.Annotated[
+        str,
+        typeutils.Field(
+            description="the access permission for the created image")]
+
+
 class OpenStackResourceType(types.ResourceType):
     """A base class for OpenStack ResourceTypes plugins with help-methods"""
 
-    def __init__(self, context=None, cache=None, scenario_cls=None):
+    def __init__(
+        self,
+        context: dict[str, t.Any],
+        cache: dict[str, t.Any] | None = None,
+        *,
+        scenario_cls: type[scenario.Scenario],
+    ) -> None:
+        """Initialize the pre-processor.
+
+        :param context: the workload context
+        :param cache: the cache shared by resource types of the workload
+        :param scenario_cls: the scenario plugin that owns the argument
+        """
         super().__init__(
             context=context, cache=cache, scenario_cls=scenario_cls)
 
-        self._clients = None
+        self._clients: osclients.Clients | None = None
         if self._context.get("admin"):
             self._clients = osclients.Clients(
                 self._context["admin"]["credential"])
@@ -47,7 +122,21 @@ class OpenStackResourceType(types.ResourceType):
             self._clients = osclients.Clients(
                 self._context["users"][0]["credential"])
 
-    def _find_resource(self, resource_spec, resources):
+    def _get_clients(self) -> osclients.Clients:
+        """Return the clients to discover the resource with.
+
+        :raises RallyException: if the context provides neither admin nor
+            user credentials
+        """
+        if self._clients is None:
+            raise exceptions.RallyException(
+                f"Resource type '{self.get_name()}' requires admin or user "
+                f"credentials to discover resources.")
+        return self._clients
+
+    def _find_resource(
+        self, resource_spec: InexactResourceSpec, resources: t.Sequence[t.Any]
+    ) -> t.Any:
         """Return the resource whose name matches the pattern.
 
         .. note:: This method is a modified version of
@@ -127,12 +216,19 @@ class OpenStackResourceType(types.ResourceType):
 class Flavor(OpenStackResourceType):
     """Find Nova's flavor ID by name or regexp."""
 
-    def pre_process(self, resource_spec, config):
+    def pre_process(
+        self,
+        *,
+        resource_spec: ResourceSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the id of the flavor described by the specification."""
         resource_id = resource_spec.get("id")
         if not resource_id:
-            novaclient = self._clients.nova()
+            novaclient = self._get_clients().nova()
             resource_id = types._id_from_name(
-                resource_config=resource_spec,
+                resource_config=dict(resource_spec),
                 resources=novaclient.flavors.list(),
                 typename="flavor")
         return resource_id
@@ -142,14 +238,21 @@ class Flavor(OpenStackResourceType):
 class GlanceImage(OpenStackResourceType):
     """Find Glance's image ID by name or regexp."""
 
-    def pre_process(self, resource_spec, config):
+    def pre_process(
+        self,
+        *,
+        resource_spec: GlanceImageSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the id of the image described by the specification."""
         resource_id = resource_spec.get("id")
         list_kwargs = resource_spec.get("list_kwargs", {})
 
         if not resource_id:
             cache_id = hash(frozenset(list_kwargs.items()))
             if cache_id not in self._cache:
-                glance = image.Image(self._clients)
+                glance = image.Image(self._get_clients())
                 self._cache[cache_id] = glance.list_images(**list_kwargs)
             images = self._cache[cache_id]
             resource = self._find_resource(resource_spec, images)
@@ -160,7 +263,15 @@ class GlanceImage(OpenStackResourceType):
 @plugin.configure(name="glance_image_args")
 class GlanceImageArguments(OpenStackResourceType):
     """Process Glance image create options to look similar in case of V1/V2."""
-    def pre_process(self, resource_spec, config):
+
+    def pre_process(
+        self,
+        *,
+        resource_spec: GlanceImageArgsSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> dict[str, t.Any]:
+        """Return the image creation arguments in their V2 form."""
         resource_spec = copy.deepcopy(resource_spec)
         if "is_public" in resource_spec:
             if "visibility" in resource_spec:
@@ -169,27 +280,34 @@ class GlanceImageArguments(OpenStackResourceType):
                 visibility = ("public" if resource_spec.pop("is_public")
                               else "private")
                 resource_spec["visibility"] = visibility
-        return resource_spec
+        return dict(resource_spec)
 
 
 @plugin.configure(name="ec2_image")
 class EC2Image(OpenStackResourceType):
     """Find EC2 image ID."""
 
-    def pre_process(self, resource_spec, config):
+    def pre_process(
+        self,
+        *,
+        resource_spec: ResourceSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the EC2 id of the image described by the specification."""
         if "name" not in resource_spec and "regex" not in resource_spec:
             # NOTE(wtakase): gets resource name from OpenStack id
-            glanceclient = self._clients.glance()
+            glanceclient = self._get_clients().glance()
             resource_name = types._name_from_id(
-                resource_config=resource_spec,
+                resource_config=dict(resource_spec),
                 resources=list(glanceclient.images.list()),
                 typename="image")
             resource_spec["name"] = resource_name
 
         # NOTE(wtakase): gets EC2 resource id from name or regex
-        ec2client = self._clients.ec2()
+        ec2client = self._get_clients().ec2()
         resource_ec2_id = types._id_from_name(
-            resource_config=resource_spec,
+            resource_config=dict(resource_spec),
             resources=list(ec2client.get_all_images()),
             typename="ec2_image")
         return resource_ec2_id
@@ -199,12 +317,19 @@ class EC2Image(OpenStackResourceType):
 class VolumeType(OpenStackResourceType):
     """Find Cinder volume type ID by name or regexp."""
 
-    def pre_process(self, resource_spec, config):
+    def pre_process(
+        self,
+        *,
+        resource_spec: ResourceSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the id of the volume type described by the spec."""
         resource_id = resource_spec.get("id")
         if not resource_id:
-            cinder = block.BlockStorage(self._clients)
+            cinder = block.BlockStorage(self._get_clients())
             resource_id = types._id_from_name(
-                resource_config=resource_spec,
+                resource_config=dict(resource_spec),
                 resources=cinder.list_types(),
                 typename="volume_type")
         return resource_id
@@ -213,31 +338,46 @@ class VolumeType(OpenStackResourceType):
 @plugin.configure(name="neutron_network")
 class NeutronNetwork(OpenStackResourceType):
     """Find Neutron network ID by it's name."""
-    def pre_process(self, resource_spec, config):
+
+    def pre_process(
+        self,
+        *,
+        resource_spec: IdOrNameSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the id of the network described by the specification."""
         resource_id = resource_spec.get("id")
         if resource_id:
             return resource_id
         else:
-            neutronclient = self._clients.neutron()
+            neutronclient = self._get_clients().neutron()
             for net in neutronclient.list_networks()["networks"]:
                 if net["name"] == resource_spec.get("name"):
                     return net["id"]
 
         raise exceptions.InvalidScenarioArgument(
-            "Neutron network with name '{name}' not found".format(
-                name=resource_spec.get("name")))
+            f"Neutron network with name '{resource_spec.get('name')}' "
+            f"not found")
 
 
 @plugin.configure(name="watcher_strategy")
 class WatcherStrategy(OpenStackResourceType):
     """Find Watcher strategy ID by it's name."""
 
-    def pre_process(self, resource_spec, config):
+    def pre_process(
+        self,
+        *,
+        resource_spec: IdOrNameSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the uuid of the strategy described by the spec."""
         resource_id = resource_spec.get("id")
         if not resource_id:
-            watcherclient = self._clients.watcher()
+            watcherclient = self._get_clients().watcher()
             resource_id = types._id_from_name(
-                resource_config=resource_spec,
+                resource_config=dict(resource_spec),
                 resources=[watcherclient.strategy.get(
                     resource_spec.get("name"))],
                 typename="strategy",
@@ -249,12 +389,19 @@ class WatcherStrategy(OpenStackResourceType):
 class WatcherGoal(OpenStackResourceType):
     """Find Watcher goal ID by it's name."""
 
-    def pre_process(self, resource_spec, config):
+    def pre_process(
+        self,
+        *,
+        resource_spec: IdOrNameSpec,
+        config: types.ConvertConfig,
+        output_type: t.Any,
+    ) -> str:
+        """Return the uuid of the goal described by the specification."""
         resource_id = resource_spec.get("id")
         if not resource_id:
-            watcherclient = self._clients.watcher()
+            watcherclient = self._get_clients().watcher()
             resource_id = types._id_from_name(
-                resource_config=resource_spec,
+                resource_config=dict(resource_spec),
                 resources=[watcherclient.goal.get(resource_spec.get("name"))],
                 typename="goal",
                 id_attr="uuid")

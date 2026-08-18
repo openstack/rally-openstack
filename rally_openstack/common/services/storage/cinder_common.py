@@ -88,7 +88,7 @@ class CinderMixin(atomic.ActionTimerMixin):
             )
 
     def extend_volume(
-        self, volume: t.Any, new_size: int | dict[str, int]
+        self, volume: t.Any, new_size: int | block.VolumeSizeSpec
     ) -> t.Any:
         """Extend the size of the specified volume."""
         if isinstance(new_size, dict):

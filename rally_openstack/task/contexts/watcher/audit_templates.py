@@ -90,10 +90,16 @@ class AuditTemplateGenerator(context.OpenStackContext):
             elif self.config["fill_strategy"] == "random":
                 audit_params = random.choice(self.config["params"])
 
-            goal_id = types.WatcherGoal(self.context).pre_process(
-                resource_spec=audit_params["goal"], config={})
-            strategy_id = types.WatcherStrategy(self.context).pre_process(
-                resource_spec=audit_params["strategy"], config={})
+            goal_id = types.WatcherGoal(
+                self.context, scenario_cls=watcher_utils.WatcherScenario
+            ).pre_process(
+                resource_spec=audit_params["goal"],
+                config={"type": "watcher_goal"}, output_type=str)
+            strategy_id = types.WatcherStrategy(
+                self.context, scenario_cls=watcher_utils.WatcherScenario
+            ).pre_process(
+                resource_spec=audit_params["strategy"],
+                config={"type": "watcher_strategy"}, output_type=str)
 
             audit_template = watcher_scenario._create_audit_template(
                 goal_id, strategy_id)

@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally import exceptions
 from rally.task import types
 from rally.task import validation
@@ -139,7 +141,6 @@ class CreateAndGetAggregateDetails(utils.NovaScenario):
         self._get_aggregate_details(aggregate)
 
 
-@types.convert(image={"type": "glance_image"})
 @validation.add("required_services", services=[consts.Service.NOVA])
 @validation.add("required_platform", platform="openstack",
                 admin=True, users=True)
@@ -151,8 +152,16 @@ class CreateAndGetAggregateDetails(utils.NovaScenario):
 class CreateAggregateAddHostAndBootServer(utils.NovaScenario):
     """Scenario to verify an aggregate."""
 
-    def run(self, image, metadata, availability_zone=None, ram=512, vcpus=1,
-            disk=1, boot_server_kwargs=None):
+    def run(
+        self,
+        image: t.Annotated[str, types.Convert("glance_image")],
+        metadata: dict[str, t.Any],
+        availability_zone: str | None = None,
+        ram: t.Annotated[int, scenario.Field(ge=1)] = 512,
+        vcpus: t.Annotated[int, scenario.Field(ge=1)] = 1,
+        disk: t.Annotated[int, scenario.Field(ge=0)] = 1,
+        boot_server_kwargs: dict[str, t.Any] | None = None,
+    ) -> None:
         """Scenario to create and verify an aggregate
 
         This scenario creates an aggregate, adds a compute host and metadata

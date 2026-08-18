@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally.task import atomic
 from rally.task import types
 from rally.task import validation
@@ -25,7 +27,6 @@ from rally_openstack.task.scenarios.heat import utils
 """Scenarios for Heat stacks."""
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -34,8 +35,14 @@ from rally_openstack.task.scenarios.heat import utils
                     platform="openstack")
 class CreateAndListStack(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create a stack and then list all stacks.
 
         Measure the "heat stack-create" and "heat stack-list" commands
@@ -59,7 +66,7 @@ class CreateAndListStack(utils.HeatScenario):
                     platform="openstack")
 class ListStacksAndResources(utils.HeatScenario):
 
-    def run(self):
+    def run(self) -> None:
         """List all resources from tenant stacks."""
         stacks = self._list_stacks()
         for stack in stacks:
@@ -67,7 +74,6 @@ class ListStacksAndResources(utils.HeatScenario):
                 self.clients("heat").resources.list(stack.id)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -76,8 +82,14 @@ class ListStacksAndResources(utils.HeatScenario):
                     platform="openstack")
 class CreateAndDeleteStack(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create and then delete a stack.
 
         Measure the "heat stack-create" and "heat stack-delete" commands
@@ -94,7 +106,6 @@ class CreateAndDeleteStack(utils.HeatScenario):
         self._delete_stack(stack)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -103,8 +114,14 @@ class CreateAndDeleteStack(utils.HeatScenario):
                     platform="openstack")
 class CreateCheckDeleteStack(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create, check and delete a stack.
 
         Measure the performance of the following commands:
@@ -124,10 +141,6 @@ class CreateCheckDeleteStack(utils.HeatScenario):
         self._delete_stack(stack)
 
 
-@types.convert(template_path={"type": "file"},
-               updated_template_path={"type": "file"},
-               files={"type": "file_dict"},
-               updated_files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -136,10 +149,19 @@ class CreateCheckDeleteStack(utils.HeatScenario):
                     platform="openstack")
 class CreateUpdateDeleteStack(utils.HeatScenario):
 
-    def run(self, template_path, updated_template_path,
-            parameters=None, updated_parameters=None,
-            files=None, updated_files=None,
-            environment=None, updated_environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        updated_template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        updated_parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        updated_files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+        updated_environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create, update and then delete a stack.
 
         Measure the "heat stack-create", "heat stack-update"
@@ -167,7 +189,6 @@ class CreateUpdateDeleteStack(utils.HeatScenario):
         self._delete_stack(stack)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -176,9 +197,16 @@ class CreateUpdateDeleteStack(utils.HeatScenario):
                     platform="openstack")
 class CreateStackAndScale(utils.HeatScenario):
 
-    def run(self, template_path, output_key, delta,
-            parameters=None, files=None,
-            environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        output_key: str,
+        delta: int,
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create an autoscaling stack and invoke a scaling policy.
 
         Measure the performance of autoscaling webhooks.
@@ -210,7 +238,6 @@ class CreateStackAndScale(utils.HeatScenario):
         self._scale_stack(stack, output_key, delta)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -219,8 +246,14 @@ class CreateStackAndScale(utils.HeatScenario):
                     platform="openstack")
 class CreateSuspendResumeDeleteStack(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create, suspend-resume and then delete a stack.
 
         Measure performance of the following commands:
@@ -247,7 +280,7 @@ class CreateSuspendResumeDeleteStack(utils.HeatScenario):
                     platform="openstack")
 class ListStacksAndEvents(utils.HeatScenario):
 
-    def run(self):
+    def run(self) -> None:
         """List events from tenant stacks."""
         stacks = self._list_stacks()
         for stack in stacks:
@@ -255,7 +288,6 @@ class ListStacksAndEvents(utils.HeatScenario):
                 self.clients("heat").events.list(stack.id)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("validate_heat_template", params="template_path")
 @validation.add("required_platform", platform="openstack", users=True)
@@ -264,8 +296,14 @@ class ListStacksAndEvents(utils.HeatScenario):
                     platform="openstack")
 class CreateSnapshotRestoreDeleteStack(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create, snapshot-restore and then delete a stack.
 
         Measure performance of the following commands:
@@ -287,7 +325,6 @@ class CreateSnapshotRestoreDeleteStack(utils.HeatScenario):
         self._delete_stack(stack)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["heat"]},
@@ -295,8 +332,15 @@ class CreateSnapshotRestoreDeleteStack(utils.HeatScenario):
                     platform="openstack")
 class CreateStackAndShowOutputViaAPI(utils.HeatScenario):
 
-    def run(self, template_path, output_key,
-            parameters=None, files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        output_key: str,
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create stack and show output by using old algorithm.
 
         Measure performance of the following commands:
@@ -315,7 +359,6 @@ class CreateStackAndShowOutputViaAPI(utils.HeatScenario):
         self._stack_show_output_via_API(stack, output_key)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["heat"]},
@@ -323,8 +366,15 @@ class CreateStackAndShowOutputViaAPI(utils.HeatScenario):
                     platform="openstack")
 class CreateStackAndShowOutput(utils.HeatScenario):
 
-    def run(self, template_path, output_key,
-            parameters=None, files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        output_key: str,
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create stack and show output by using new algorithm.
 
         Measure performance of the following commands:
@@ -343,7 +393,6 @@ class CreateStackAndShowOutput(utils.HeatScenario):
         self._stack_show_output(stack, output_key)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["heat"]},
@@ -351,8 +400,14 @@ class CreateStackAndShowOutput(utils.HeatScenario):
                     platform="openstack")
 class CreateStackAndListOutputViaAPI(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create stack and list outputs by using old algorithm.
 
         Measure performance of the following commands:
@@ -369,7 +424,6 @@ class CreateStackAndListOutputViaAPI(utils.HeatScenario):
         self._stack_list_output_via_API(stack)
 
 
-@types.convert(template_path={"type": "file"}, files={"type": "file_dict"})
 @validation.add("required_services", services=[consts.Service.HEAT])
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["heat"]},
@@ -377,8 +431,14 @@ class CreateStackAndListOutputViaAPI(utils.HeatScenario):
                     platform="openstack")
 class CreateStackAndListOutput(utils.HeatScenario):
 
-    def run(self, template_path, parameters=None,
-            files=None, environment=None):
+    def run(
+        self,
+        template_path: t.Annotated[str, types.Convert("file")],
+        parameters: dict[str, t.Any] | None = None,
+        files: t.Annotated[
+            dict[str, str], types.Convert("file_dict")] | None = None,
+        environment: dict[str, t.Any] | None = None,
+    ) -> None:
         """Create stack and list outputs by using new algorithm.
 
         Measure performance of the following commands:
