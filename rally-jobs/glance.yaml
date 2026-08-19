@@ -43,7 +43,7 @@ subtasks:
             concurrency: 5
         sla:
           failure_rate:
-            max: 100
+            max: 0
       - scenario:
           GlanceImages.list_images: {}
         contexts:
@@ -61,7 +61,7 @@ subtasks:
             concurrency: 5
         sla:
           failure_rate:
-            max: 100
+            max: 0
 
   - title: GlanceImages.create_and_list_image tests
     workloads:
@@ -84,7 +84,7 @@ subtasks:
             concurrency: 1
         sla:
           failure_rate:
-            max: 100
+            max: 0
       - description: Test raw image
         scenario:
           GlanceImages.create_and_list_image:
@@ -104,7 +104,7 @@ subtasks:
             concurrency: 1
         sla:
           failure_rate:
-            max: 100
+            max: 0
 
   - title: GlanceImages.create_and_get_image tests
     scenario:
@@ -125,7 +125,7 @@ subtasks:
         concurrency: 2
     sla:
       failure_rate:
-        max: 100
+        max: 0
 
   - title: GlanceImages.create_and_delete_image tests
     workloads:
@@ -145,7 +145,7 @@ subtasks:
             concurrency: 2
         sla:
           failure_rate:
-            max: 100
+            max: 0
       - description: Delete a raw image
         scenario:
           GlanceImages.create_and_delete_image:
@@ -162,7 +162,7 @@ subtasks:
             concurrency: 2
         sla:
           failure_rate:
-            max: 100
+            max: 0
 
   - title: GlanceImages.create_and_update_image tests
     workloads:
@@ -187,7 +187,7 @@ subtasks:
             concurrency: 2
         sla:
           failure_rate:
-            max: 100
+            max: 0
       - description: Create image with properties then remove them on update
         scenario:
           GlanceImages.create_and_update_image:
@@ -211,7 +211,7 @@ subtasks:
             concurrency: 2
         sla:
           failure_rate:
-            max: 100
+            max: 0
 
   - title: GlanceImages.create_and_deactivate_image tests
     scenario:
@@ -232,7 +232,7 @@ subtasks:
         concurrency: 2
     sla:
       failure_rate:
-        max: 100
+        max: 0
 
   - title: GlanceImages.create_and_download_image tests
     scenario:
@@ -253,7 +253,7 @@ subtasks:
         concurrency: 2
     sla:
       failure_rate:
-        max: 100
+        max: 0
 
   - title: GlanceImages.create_image_and_boot_instances tests
     scenario:
@@ -277,7 +277,7 @@ subtasks:
         concurrency: 1
     sla:
       failure_rate:
-        max: 100
+        max: 0
 
   - title: GlanceImages.import_and_delete_image tests
     workloads:
