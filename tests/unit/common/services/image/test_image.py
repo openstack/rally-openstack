@@ -196,10 +196,14 @@ class ImageTestCase(test.TestCase):
     def test_is_applicable(self):
         clients = mock.Mock()
 
-        clients.glance().version = "1.0"
+        clients.glance.version = "1"
         self.assertTrue(
             glance_v1.UnifiedGlanceV1Service.is_applicable(clients))
+        self.assertFalse(
+            glance_v2.UnifiedGlanceV2Service.is_applicable(clients))
 
-        clients.glance().version = "2.0"
+        clients.glance.version = "2"
         self.assertTrue(
             glance_v2.UnifiedGlanceV2Service.is_applicable(clients))
+        self.assertFalse(
+            glance_v1.UnifiedGlanceV1Service.is_applicable(clients))

@@ -15,6 +15,8 @@
 from rally.common import logging
 from rally.common import validation
 
+from rally_openstack.common import osclients
+from rally_openstack.common.clients import glance
 from rally_openstack.task import context
 from rally_openstack.task import types
 from rally_openstack.task.cleanup import manager as resource_manager
@@ -89,7 +91,7 @@ class ServerGenerator(context.OpenStackContext):
         image = self.config["image"]
         flavor = self.config["flavor"]
         auto_nic = self.config["auto_assign_nic"]
-        servers_per_tenant = self.config["servers_per_tenant"]
+        servers_per_project = self.config["servers_per_tenant"]
         kwargs = {}
         if self.config.get("nics"):
             if isinstance(self.config["nics"][0], dict):
@@ -99,11 +101,17 @@ class ServerGenerator(context.OpenStackContext):
                 kwargs["nics"] = [{"net-id": nic}
                                   for nic in self.config["nics"]]
 
-        image_id = types.GlanceImage(
-            self.context, scenario_cls=nova_utils.NovaScenario
-        ).pre_process(
-            resource_spec=image, config={"type": "glance_image"},
-            output_type=str)
+        # An image the admin can see is not necessarily an image the projects
+        # of the workload can boot from, so its id is reused only when it is
+        # visible to everyone.
+        shared_image_id = None
+        admin = self.context.get("admin")
+        if admin:
+            image_obj = osclients.Clients(
+                admin["credential"]).glance.find_image(image["name"])
+            if glance.Visibility(image_obj.visibility).is_everyone:
+                shared_image_id = image_obj.id
+
         flavor_id = types.Flavor(
             self.context, scenario_cls=nova_utils.NovaScenario
         ).pre_process(
@@ -119,15 +127,16 @@ class ServerGenerator(context.OpenStackContext):
                            "iteration": iter_}
             nova_scenario = nova_utils.NovaScenario(tmp_context)
 
-            LOG.debug("Calling _boot_servers with image_id=%(image_id)s "
-                      "flavor_id=%(flavor_id)s "
-                      "servers_per_tenant=%(servers_per_tenant)s"
-                      % {"image_id": image_id,
-                         "flavor_id": flavor_id,
-                         "servers_per_tenant": servers_per_tenant})
+            image_id = shared_image_id
+            if image_id is None:
+                image_id = nova_scenario._clients.glance.find_image(
+                    image["name"]).id
+
+            LOG.debug(f"Calling _boot_servers with {image_id=} "
+                      f"{flavor_id=} {servers_per_project=}")
 
             servers = nova_scenario._boot_servers(image_id, flavor_id,
-                                                  requests=servers_per_tenant,
+                                                  requests=servers_per_project,
                                                   auto_assign_nic=auto_nic,
                                                   **kwargs)
 

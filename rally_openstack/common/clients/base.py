@@ -44,10 +44,33 @@ CONF = cfg.CONF
 # a method called on every request warns once per process rather than per call.
 _reported_legacy_usage: set[tuple[str, str]] = set()
 
+# services whose raw python-*client hand-out has already been reported
+_reported_legacy_clients: set[str] = set()
+
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
-def deprecated_legacy(f: F) -> F:
+def warn_legacy_client(service: str) -> None:
+    """Warn, once per process, that a raw ``python-*client`` was handed out.
+
+    Called by a ported client when something asks it for the native client it
+    replaces, so a task that still does that says so once instead of on every
+    iteration.
+
+    :param service: the rally name of the service, e.g. ``glance``
+    """
+    if service in _reported_legacy_clients:
+        return
+    _reported_legacy_clients.add(service)
+    LOG.warning(
+        f"Accessing the raw python-{service}client via "
+        f"`clients.{service}(...)` is deprecated and will be removed. Use "
+        f"the rally-owned client (the `clients.{service}` attribute, or "
+        f"`clients.{service}(legacy=False)`) instead."
+    )
+
+
+def _deprecated_client_method(f: F) -> F:
     """Warn when a ported client reaches into the legacy compat layer."""
     @functools.wraps(f)
     def wrapper(self_or_cls: t.Any, *args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -250,7 +273,7 @@ def configure(
         cls = plugin.configure(name=name, platform="openstack")(cls)
         cls._meta_set("default_version", default_version)
         cls._meta_set("default_service_type", default_service_type)
-        cls._meta_set("supported_versions", supported_versions or [])
+        cls._meta_set("supported_versions", supported_versions or tuple())
         cls._meta_set("sdk_service_type", sdk_service_type)
         cls.spec = spec(cls)
         return cls
@@ -363,7 +386,7 @@ class LegacyClientCompat(BaseClient):
         )
 
     @property
-    @deprecated_legacy
+    @_deprecated_client_method
     def cache(self) -> dict[str, t.Any]:
         """The container's shared resource cache.
 
@@ -374,12 +397,12 @@ class LegacyClientCompat(BaseClient):
         """
         return self._cache
 
-    @deprecated_legacy
+    @_deprecated_client_method
     def choose_version(self, version: t.Any = None) -> str | None:
         """Deprecated. Use ``self.spec.choose_version`` instead."""
         return self.spec.choose_version(self.credential, version)
 
-    @deprecated_legacy
+    @_deprecated_client_method
     def choose_service_type(
         self, service_type: str | None = None
     ) -> str | None:
@@ -387,25 +410,25 @@ class LegacyClientCompat(BaseClient):
         return self.spec.choose_service_type(self.credential, service_type)
 
     @classmethod
-    @deprecated_legacy
+    @_deprecated_client_method
     def get_supported_versions(cls) -> list[str]:
         """Deprecated. Use ``cls.spec.supported_versions`` instead."""
         return cls.spec.supported_versions
 
     @classmethod
-    @deprecated_legacy
+    @_deprecated_client_method
     def validate_version(cls, version: str | int | float) -> None:
         """Deprecated. Use ``cls.spec.validate_version`` instead."""
         cls.spec.validate_version(version)
 
     @classmethod
-    @deprecated_legacy
+    @_deprecated_client_method
     def is_service_type_configurable(cls) -> None:
         """Deprecated. Use ``cls.spec.is_service_type_configurable``."""
         cls.spec.is_service_type_configurable()
 
     @property
-    @deprecated_legacy
+    @_deprecated_client_method
     def keystone(self) -> keystone.Keystone:
         keystone_cls = BaseClient.get("keystone")
         return t.cast("keystone.Keystone", keystone_cls(
@@ -417,7 +440,7 @@ class LegacyClientCompat(BaseClient):
             sleeper=self._sleeper,
         ))
 
-    @deprecated_legacy
+    @_deprecated_client_method
     def _get_endpoint(self, service_type: str | None = None) -> str:
         kw = {"service_type": self.spec.choose_service_type(
                   self.credential, service_type),
@@ -429,7 +452,7 @@ class LegacyClientCompat(BaseClient):
         assert api_url is not None
         return api_url
 
-    @deprecated_legacy
+    @_deprecated_client_method
     def _get_auth_info(
         self,
         user_key: str = "username",
@@ -468,7 +491,7 @@ class LegacyClientCompat(BaseClient):
     def create_client(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Create new instance of client."""
 
-    @deprecated_legacy
+    @_deprecated_client_method
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Return initialized client instance."""
         key = "{}{}{}".format(self.get_name(),

@@ -39,6 +39,9 @@ CONF = cfg.CONF
 class OpenStackScenario(scenario.Scenario):
     """Base class for all OpenStack scenarios."""
 
+    _clients: osclients.Clients
+    _admin_clients: osclients.Clients
+
     def __init__(self, context=None, admin_clients=None, clients=None):
         super().__init__(context)
         if context:

@@ -49,7 +49,8 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
             "task": {"uuid": "task_id"}
         })
         patch = mock.patch(
-            "rally_openstack.common.services.image.image.Image")
+            "rally_openstack.common.osclients.Clients.glance",
+            new_callable=mock.PropertyMock, create=True)
         self.addCleanup(patch.stop)
         self.mock_image = patch.start()
 
@@ -72,7 +73,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
                    tenants=1, users_per_tenant=1, images_per_tenant=1,
                    image_name=None, min_ram=None, min_disk=None,
                    visibility="public"):
-        image_service = self.mock_image.return_value
+        image_service = mock_clients.return_value.glance
 
         tenant_data = self._gen_tenants(tenants)
         users = []
@@ -123,20 +124,26 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
         images_ctx.setup()
         self.assertEqual(new_context, self.context)
 
-        wrapper_calls = []
-        wrapper_calls.extend([mock.call(mock_clients.return_value.glance,
-                                        images_ctx)] * tenants)
-        wrapper_calls.extend(
-            [mock.call().create_image(
-                container_format, image_url, disk_format,
-                name=mock.ANY, **expected_image_args)]
+        self.assertEqual(
+            [mock.call(mock.ANY,
+                       name_generator=images_ctx.generate_random_name)]
+            * tenants,
+            mock_clients.call_args_list)
+        glance = mock_clients.return_value.glance
+        glance.create_image.assert_has_calls(
+            [mock.call(image_name,
+                       location=image_url,
+                       container_format=container_format,
+                       disk_format=disk_format,
+                       visibility=visibility,
+                       min_disk=expected_image_args.get("min_disk", 0),
+                       min_ram=expected_image_args.get("min_ram", 0))]
             * tenants * images_per_tenant)
 
-        mock_clients.assert_has_calls([mock.call(mock.ANY)] * tenants)
-
-    @mock.patch("%s.image.Image" % CTX)
+    @mock.patch("%s.osclients.Clients" % CTX)
     @mock.patch("%s.LOG" % CTX)
-    def test_setup_with_deprecated_args(self, mock_log, mock_image):
+    def test_setup_with_deprecated_args(self, mock_log, mock_clients):
+        glance = mock_clients.return_value.glance
         image_type = "itype"
         image_container = "icontainer"
         is_public = True
@@ -157,10 +164,10 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
         images_ctx = images.ImageGenerator(self.context)
         images_ctx.setup()
 
-        mock_image.return_value.create_image.assert_called_once_with(
-            image_name=None,
+        glance.create_image.assert_called_once_with(
+            None,
+            location=None,
             container_format=image_container,
-            image_location=None,
             disk_format=image_type,
             visibility="public",
             min_disk=d_min_disk,
@@ -177,7 +184,7 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
 
         self.assertEqual(expected_warns, mock_log.warning.call_args_list)
 
-        mock_image.return_value.create_image.reset_mock()
+        glance.create_image.reset_mock()
         mock_log.warning.reset_mock()
 
         min_ram = mock.Mock()
@@ -198,10 +205,10 @@ class ImageGeneratorTestCase(test.ScenarioTestCase):
         images_ctx.setup()
 
         # check that deprecated arguments are not used
-        mock_image.return_value.create_image.assert_called_once_with(
-            image_name=None,
+        glance.create_image.assert_called_once_with(
+            None,
+            location=None,
             container_format=container_format,
-            image_location=None,
             disk_format=disk_format,
             visibility=visibility,
             min_disk=min_disk,

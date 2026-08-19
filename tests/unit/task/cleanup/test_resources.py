@@ -21,13 +21,12 @@ from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exc
 from watcherclient.common.apiclient import exceptions as watcher_exceptions
 
+from rally_openstack.common.clients import glance
 from rally_openstack.task.cleanup import resources
 from tests.unit import test
 
 
 BASE = "rally_openstack.task.cleanup.resources"
-GLANCE_V2_PATH = ("rally_openstack.common.services.image.glance_v2."
-                  "GlanceV2Service")
 
 
 class SynchronizedDeletionTestCase(test.TestCase):
@@ -707,81 +706,55 @@ class NeutronQuotaTestCase(test.TestCase):
 @ddt.ddt
 class GlanceImageTestCase(test.TestCase):
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__client_admin(self, mock_image):
-        admin = mock.Mock()
-        glance = resources.GlanceImage(admin=admin)
-        client = glance._client()
-
-        mock_image.assert_called_once_with(admin)
-        self.assertEqual(client, mock_image.return_value)
-
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__client_user(self, mock_image):
-        user = mock.Mock()
-        glance = resources.GlanceImage(user=user)
-        wrapper = glance._client()
-
-        mock_image.assert_called_once_with(user)
-        self.assertEqual(wrapper, mock_image.return_value)
-
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__client_admin_preferred(self, mock_image):
-        admin = mock.Mock()
-        user = mock.Mock()
-        glance = resources.GlanceImage(admin=admin, user=user)
-        client = glance._client()
-
-        mock_image.assert_called_once_with(admin)
-        self.assertEqual(client, mock_image.return_value)
-
     def test_list(self):
-        glance = resources.GlanceImage()
-        glance._client = mock.Mock()
-        list_images = glance._client.return_value.list_images
-        list_images.side_effect = (
-            ["active-image1", "active-image2"],
-            ["deactivated-image1"])
-        glance.tenant_uuid = mock.Mock()
+        for with_admin in (True, False):
+            with self.subTest(with_admin=with_admin):
+                admin = mock.Mock() if with_admin else None
+                user = mock.Mock()
+                client = (admin or user).glance
+                client.list_images.side_effect = (
+                    ["active-image1", "active-image2"],
+                    ["deactivated-image1"])
+                glance_image = resources.GlanceImage(
+                    admin=admin, user=user, tenant_uuid="tenant-id")
 
-        self.assertEqual(
-            glance.list(),
-            ["active-image1", "active-image2", "deactivated-image1"])
-        list_images.assert_has_calls([
-            mock.call(owner=glance.tenant_uuid),
-            mock.call(status="deactivated", owner=glance.tenant_uuid)])
+                self.assertEqual(
+                    ["active-image1", "active-image2", "deactivated-image1"],
+                    glance_image.list())
+                client.list_images.assert_has_calls([
+                    mock.call(owner="tenant-id"),
+                    mock.call(status=glance.ImageStatus.DEACTIVATED,
+                              owner="tenant-id")])
+                if with_admin:
+                    self.assertFalse(user.glance.list_images.called)
 
     def test_delete(self):
-        glance = resources.GlanceImage()
-        glance._client = mock.Mock()
-        glance._wrapper = mock.Mock()
-        glance.raw_resource = mock.Mock()
+        admin = mock.Mock()
+        glance_image = resources.GlanceImage(resource=mock.Mock(), admin=admin)
 
-        client = glance._client.return_value
+        glance_image.delete()
 
-        deleted_image = mock.Mock(status="DELETED")
-        client.get_image.side_effect = [glance.raw_resource, deleted_image]
-
-        glance.delete()
-        client.delete_image.assert_called_once_with(glance.raw_resource.id)
+        client = admin.glance
+        client.delete_image.assert_called_once_with(
+            glance_image.raw_resource.id)
+        client.wait_for_image_deleted.assert_called_once_with(
+            glance_image.raw_resource.id, timeout=mock.ANY,
+            check_interval=mock.ANY)
         self.assertFalse(client.reactivate_image.called)
 
-    @mock.patch("%s.reactivate_image" % GLANCE_V2_PATH)
-    def test_delete_deactivated_image(self, mock_reactivate_image):
-        glance = resources.GlanceImage()
-        glance._client = mock.Mock()
-        glance._wrapper = mock.Mock()
-        glance.raw_resource = mock.Mock(status="deactivated")
+    def test_delete_deactivated_image(self):
+        admin = mock.Mock()
+        glance_image = resources.GlanceImage(
+            resource=mock.Mock(status=glance.ImageStatus.DEACTIVATED),
+            admin=admin)
 
-        client = glance._client.return_value
+        glance_image.delete()
 
-        deleted_image = mock.Mock(status="DELETED")
-        client.get_image.side_effect = [glance.raw_resource, deleted_image]
-
-        glance.delete()
-
-        mock_reactivate_image.assert_called_once_with(glance.raw_resource.id)
-        client.delete_image.assert_called_once_with(glance.raw_resource.id)
+        client = admin.glance
+        client.reactivate_image.assert_called_once_with(
+            glance_image.raw_resource.id)
+        client.delete_image.assert_called_once_with(
+            glance_image.raw_resource.id)
 
 
 class CeilometerTestCase(test.TestCase):
@@ -1124,20 +1097,18 @@ class CinderImageVolumeCacheTestCase(test.TestCase):
             self.id = id
             self.name = name
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test_list(self, mock_image):
+    def test_list(self):
         admin = mock.Mock()
 
-        glance = mock_image.return_value
+        glance_client = admin.glance
         cinder = admin.cinder.return_value
 
         image_1 = self.Resource("foo", name="foo-name")
-        image_2 = self.Resource("bar", name="bar-name")
-        glance.list_images.return_value = [image_1, image_2]
+        glance_client.list_images.return_value = [image_1]
         volume_1 = self.Resource(name="v1")
         volume_2 = self.Resource(name="image-foo")
         volume_3 = self.Resource(name="foo")
-        volume_4 = self.Resource(name="bar")
+        volume_4 = self.Resource(name="image-gone")
         cinder.volumes.list.return_value = [volume_1, volume_2, volume_3,
                                             volume_4]
 
@@ -1146,10 +1117,21 @@ class CinderImageVolumeCacheTestCase(test.TestCase):
         self.assertEqual([{"volume": volume_2, "image": image_1}],
                          manager.list())
 
-        mock_image.assert_called_once_with(admin)
-        glance.list_images.assert_called_once_with()
+        glance_client.list_images.assert_called_once_with(
+            ids=["foo", "gone"])
         cinder.volumes.list.assert_called_once_with(
             search_opts={"all_tenants": 1})
+
+    def test_list_without_cached_volumes(self):
+        admin = mock.Mock()
+        admin.cinder.return_value.volumes.list.return_value = [
+            self.Resource(name="v1"), self.Resource(name=None)]
+        admin.glance.list_images.return_value = []
+
+        manager = resources.CinderImageVolumeCache(admin=admin)
+
+        self.assertEqual([], manager.list())
+        admin.glance.list_images.assert_called_once_with(ids=[])
 
     def test_id_and_name(self):
 

@@ -109,12 +109,27 @@ class FuncMockArgsDecoratorsChecker(ast.NodeVisitor):
     def _get_value(self, node):
         """Get mock.patch string argument regexp.
 
-        It is either a string (if we are lucky), string-format of
-        ("%s.something" % GVAL) or (GVAL + ".something")
+        It is either a string (if we are lucky), an f-string
+        (f"{GVAL}.something"), string-format of ("%s.something" % GVAL) or
+        (GVAL + ".something")
         """
         val = None
         if isinstance(node, ast.Constant):
             val = node.value
+        elif isinstance(node, ast.JoinedStr):
+            parts = []
+            for piece in node.values:
+                if isinstance(piece, ast.Constant):
+                    parts.append(piece.value)
+                elif (isinstance(piece, ast.FormattedValue)
+                        and isinstance(piece.value, ast.Name)):
+                    parts.append(self.globals_[piece.value.id])
+                else:
+                    # a conversion, a format spec or anything but a plain
+                    # global is out of scope
+                    parts = []
+                    break
+            val = "".join(parts) or None
         elif isinstance(node, ast.BinOp):
             if pairwise_isinstance(
                     (node.op, ast.Mod), (node.left, ast.Constant),
@@ -130,8 +145,8 @@ class FuncMockArgsDecoratorsChecker(ast.NodeVisitor):
         if val is None:
             raise ValueError(
                 "Unable to find value in %s, only the following are parsed: "
-                "GLOBAL, 'pkg.foobar', '%%s.foobar' %% GLOBAL or 'GLOBAL + "
-                "'.foobar'"
+                "GLOBAL, 'pkg.foobar', f'{GLOBAL}.foobar', "
+                "'%%s.foobar' %% GLOBAL or 'GLOBAL + '.foobar'"
                 % ast.dump(node))
 
         return val

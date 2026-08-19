@@ -17,6 +17,7 @@ from unittest import mock
 
 from rally.task import context
 
+from rally_openstack.common.clients import glance
 from rally_openstack.task.contexts.vm import custom_image
 from tests.unit import test
 
@@ -62,14 +63,13 @@ class BaseCustomImageContextVMTestCase(test.TestCase):
         })
 
     @mock.patch("%s.osclients.Clients" % BASE)
-    @mock.patch("%s.types.GlanceImage" % BASE)
     @mock.patch("%s.types.Flavor" % BASE)
     @mock.patch("%s.vmtasks.BootRuncommandDelete" % BASE)
     def test_create_one_image(
-            self, mock_boot_runcommand_delete, mock_flavor,
-            mock_glance_image, mock_clients):
+            self, mock_boot_runcommand_delete, mock_flavor, mock_clients):
         mock_flavor.return_value.pre_process.return_value = "flavor"
-        mock_glance_image.return_value.pre_process.return_value = "image"
+        glance = mock_clients.return_value.glance
+        glance.find_image.return_value = mock.Mock(id="image")
         ip = {"ip": "foo_ip", "id": "foo_id", "is_floating": True}
         fake_server = mock.Mock()
 
@@ -98,11 +98,7 @@ class BaseCustomImageContextVMTestCase(test.TestCase):
         mock_flavor.return_value.pre_process.assert_called_once_with(
             resource_spec={"name": "flavor"},
             config={"type": "nova_flavor"}, output_type=str)
-        mock_glance_image.assert_called_once_with(
-            self.context, scenario_cls=mock_boot_runcommand_delete)
-        mock_glance_image.return_value.pre_process.assert_called_once_with(
-            resource_spec={"name": "image"},
-            config={"type": "glance_image"}, output_type=str)
+        glance.find_image.assert_called_once_with("image")
         mock_boot_runcommand_delete.assert_called_once_with(
             self.context, clients=mock_clients.return_value)
 
@@ -122,8 +118,7 @@ class BaseCustomImageContextVMTestCase(test.TestCase):
         scenario._delete_server_with_fip.assert_called_once_with(
             fake_server, ip)
 
-    @mock.patch("%s.image.Image" % BASE)
-    def test_delete_one_image(self, mock_image):
+    def test_delete_one_image(self):
         generator_ctx = FakeImageGenerator(self.context)
 
         credential = mock.Mock()
@@ -133,10 +128,10 @@ class BaseCustomImageContextVMTestCase(test.TestCase):
 
         generator_ctx.delete_one_image(user, custom_image)
 
-        mock_image.return_value.delete_image.assert_called_once_with("image")
+        glance_client = credential.clients.return_value.glance
+        glance_client.delete_image.assert_called_once_with("image")
 
-    @mock.patch("%s.image.Image" % BASE)
-    def test_setup_admin(self, mock_image):
+    def test_setup_admin(self):
         self.context["tenants"]["tenant_id0"]["networks"] = [
             {"id": "network_id"}]
 
@@ -148,8 +143,10 @@ class BaseCustomImageContextVMTestCase(test.TestCase):
 
         generator_ctx.setup()
 
-        mock_image.return_value.set_visibility.assert_called_once_with(
-            image.id)
+        admin_credential = self.context["admin"]["credential"]
+        glance_client = admin_credential.clients.return_value.glance
+        glance_client.update_image.assert_called_once_with(
+            image.id, visibility=glance.Visibility.PUBLIC)
 
         generator_ctx.create_one_image.assert_called_once_with(
             self.context["users"][0], nics=[{"net-id": "network_id"}])

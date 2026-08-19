@@ -203,37 +203,32 @@ class CinderMixinTestCase(test.ScenarioTestCase):
         self.cinder.volumes.update_readonly_flag.assert_called_once_with(
             fake_volume, "fake_flag")
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test_upload_volume_to_image(self, mock_image):
+    def test_upload_volume_to_image(self):
         volume = mock.Mock()
         image = {"os-volume_upload_image": {"image_id": 1}}
         self.cinder.volumes.upload_to_image.return_value = (None, image)
-        glance = mock_image.return_value
+        glance = self.clients.glance
 
         self.service.generate_random_name = mock.Mock(
             return_value="test_vol")
-        self.service.upload_volume_to_image(volume, False,
-                                            "container", "disk")
+        result = self.service.upload_volume_to_image(volume, False,
+                                                     "container", "disk")
 
         self.cinder.volumes.upload_to_image.assert_called_once_with(
             volume, False, "test_vol", "container", "disk")
-        self.mock_wait_for_status.mock.assert_has_calls([
-            mock.call(
-                volume,
-                ready_statuses=["available"],
-                update_resource=self.service._update_resource,
-                timeout=CONF.openstack.cinder_volume_create_timeout,
-                check_interval=CONF.openstack.
-                cinder_volume_create_poll_interval),
-            mock.call(
-                glance.get_image.return_value,
-                ready_statuses=["active"],
-                update_resource=glance.get_image,
-                timeout=CONF.openstack.glance_image_create_timeout,
-                check_interval=CONF.openstack.
-                glance_image_create_poll_interval)
-        ])
-        glance.get_image.assert_called_once_with(1)
+        self.mock_wait_for_status.mock.assert_called_once_with(
+            volume,
+            ready_statuses=["available"],
+            update_resource=self.service._update_resource,
+            timeout=CONF.openstack.cinder_volume_create_timeout,
+            check_interval=CONF.openstack.
+            cinder_volume_create_poll_interval)
+        glance.wait_for_image.assert_called_once_with(
+            1,
+            ready_statuses=["active"],
+            timeout=CONF.openstack.glance_image_create_timeout,
+            check_interval=CONF.openstack.glance_image_create_poll_interval)
+        self.assertEqual(glance.wait_for_image.return_value, result)
 
     def test_create_qos(self):
         specs = {"consumer": "both",

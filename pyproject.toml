@@ -308,7 +308,7 @@ disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.cleanup.resources"
-disable_error_code = ["attr-defined", "no-untyped-def"]
+disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.context"

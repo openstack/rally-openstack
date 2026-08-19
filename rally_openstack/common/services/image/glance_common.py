@@ -12,64 +12,59 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from rally import exceptions
+from __future__ import annotations
+
+import typing as t
+
 from rally.task import atomic
 
 from rally_openstack.common.services.image import image as image_service
 
 
+if t.TYPE_CHECKING:
+    from rally_openstack.common.clients import glance
+
+
 class GlanceMixin(atomic.ActionTimerMixin):
 
-    def _get_client(self):
-        return self._clients.glance(self.version)
+    _ng_cache: glance.Glance | None = None
+
+    @property
+    def _ng(self) -> glance.Glance:
+        """openstacksdk-backed image client, pinned to this version."""
+        if self._ng_cache is None:
+            self._ng_cache = self._clients.glance(self.version, legacy=False)
+        return self._ng_cache
 
     def get_image(self, image):
         """Get specified image.
 
         :param image: ID or object with ID of image to obtain.
         """
-        from glanceclient import exc as glance_exc
-
-        image_id = getattr(image, "id", image)
-        try:
-            aname = "glance_v%s.get_image" % self.version
-            with atomic.ActionTimer(self, aname):
-                return self._get_client().images.get(image_id)
-        except glance_exc.HTTPNotFound:
-            raise exceptions.GetResourceNotFound(resource=image)
+        return self._ng.get_image(image)
 
     def delete_image(self, image_id):
         """Delete image."""
-        aname = "glance_v%s.delete_image" % self.version
-        with atomic.ActionTimer(self, aname):
-            self._get_client().images.delete(image_id)
+        self._ng.delete_image(image_id)
 
     def download_image(self, image_id, do_checksum=True):
         """Retrieve data of an image.
 
         :param image_id: ID of the image to download.
-        :param do_checksum: Enable/disable checksum validation.
-        :returns: An iterable body or None
+        :param do_checksum: Deprecated and ignored. The openstacksdk verifies
+            the hash whenever the image advertises one.
+        :returns: number of bytes downloaded
         """
-        aname = "glance_v%s.download_image" % self.version
-        with atomic.ActionTimer(self, aname):
-            return self._get_client().images.data(image_id,
-                                                  do_checksum=do_checksum)
+        return self._ng.download_image(image_id)
 
 
 class UnifiedGlanceMixin:
 
     @staticmethod
     def _unify_image(image):
-        if hasattr(image, "visibility"):
-            return image_service.UnifiedImage(id=image.id, name=image.name,
-                                              status=image.status,
-                                              visibility=image.visibility)
-        else:
-            return image_service.UnifiedImage(
-                id=image.id, name=image.name,
-                status=image.status,
-                visibility=("public" if image.is_public else "private"))
+        return image_service.UnifiedImage(id=image.id, name=image.name,
+                                          status=image.status,
+                                          visibility=image.visibility)
 
     def get_image(self, image):
         """Get specified image.
@@ -87,7 +82,8 @@ class UnifiedGlanceMixin:
         """Download data for an image.
 
         :param image_id: image id to look up
-        :param do_checksum: Enable/disable checksum validation
-        :rtype: iterable containing image data or None
+        :param do_checksum: Deprecated and ignored. The openstacksdk verifies
+            the hash whenever the image advertises one.
+        :returns: number of bytes downloaded
         """
         return self._impl.download_image(image_id, do_checksum=do_checksum)

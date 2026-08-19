@@ -17,14 +17,13 @@ from unittest import mock
 
 from rally import exceptions
 
+from rally_openstack.common.clients import glance
 from rally_openstack.task.scenarios.glance import images
 from tests.unit import fakes
 from tests.unit import test
 
 
 BASE = "rally_openstack.task.scenarios.glance.images"
-GLANCE_V2_PATH = ("rally_openstack.common.services.image.glance_v2."
-                  "GlanceV2Service")
 
 
 class GlanceBasicTestCase(test.ScenarioTestCase):
@@ -48,9 +47,34 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
     def setUp(self):
         super().setUp()
         patch = mock.patch(
-            "rally_openstack.common.services.image.image.Image")
+            "rally_openstack.common.osclients.Clients.glance",
+            new_callable=mock.PropertyMock, create=True
+        )
         self.addCleanup(patch.stop)
         self.mock_image = patch.start()
+
+    @mock.patch(f"{BASE}.image_service.Image")
+    @mock.patch(f"{BASE}.LOG.warning")
+    def test_glance_basic_is_deprecated(self, mock_log_warning, mock_image):
+        images.GlanceBasic._deprecation_logged = False
+        self.addCleanup(
+            setattr, images.GlanceBasic, "_deprecation_logged", False)
+
+        scenario_inst = images.GlanceBasic(self.context)
+
+        self.assertEqual(
+            [
+                mock.call(scenario_inst._admin_clients,
+                          name_generator=scenario_inst.generate_random_name,
+                          atomic_inst=scenario_inst.atomic_actions()),
+                mock.call(scenario_inst._clients,
+                          name_generator=scenario_inst.generate_random_name,
+                          atomic_inst=scenario_inst.atomic_actions())
+            ],
+            mock_image.call_args_list)
+
+        images.GlanceBasic(self.context)
+        self.assertEqual(1, mock_log_warning.call_count)
 
     def test_create_and_list_image(self):
         image_service = self.mock_image.return_value
@@ -61,8 +85,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
             fake_image,
             mock.Mock(id=2, name="img_3")]
         properties = {"fakeprop": "fake"}
-        call_args = {"container_format": "cf",
-                     "image_location": "url",
+        call_args = {"location": "url",
+                     "container_format": "cf",
                      "disk_format": "df",
                      "visibility": "vs",
                      "min_disk": 0,
@@ -71,7 +95,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         # Positive case
         images.CreateAndListImage(self.context).run(
             "cf", "url", "df", "vs", 0, 0, properties)
-        image_service.create_image.assert_called_once_with(**call_args)
+        image_service.create_image.assert_called_once_with(
+            **call_args)
 
         # Negative case: image isn't created
         image_service.create_image.return_value = None
@@ -101,8 +126,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         fake_image = fakes.FakeImage(id=1, name="imagexxx")
         image_service.create_image.return_value = fake_image
         properties = {"fakeprop": "fake"}
-        call_args = {"container_format": "cf",
-                     "image_location": "url",
+        call_args = {"location": "url",
+                     "container_format": "cf",
                      "disk_format": "df",
                      "visibility": "vs",
                      "min_disk": 0,
@@ -112,7 +137,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         images.CreateAndDeleteImage(self.context).run(
             "cf", "url", "df", "vs", 0, 0, properties)
 
-        image_service.create_image.assert_called_once_with(**call_args)
+        image_service.create_image.assert_called_once_with(
+            **call_args)
         image_service.delete_image.assert_called_once_with(fake_image.id)
 
     def test_create_and_get_image(self):
@@ -124,8 +150,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
                                           status="active")
         image_service.get_image.return_value = fake_image_info
         properties = {"fakeprop": "fake"}
-        call_args = {"container_format": "cf",
-                     "image_location": "url",
+        call_args = {"location": "url",
+                     "container_format": "cf",
                      "disk_format": "df",
                      "visibility": "vs",
                      "min_disk": 0,
@@ -135,7 +161,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         # Positive case
         images.CreateAndGetImage(self.context).run(
             "cf", "url", "df", "vs", 0, 0, properties)
-        image_service.create_image.assert_called_once_with(**call_args)
+        image_service.create_image.assert_called_once_with(
+            **call_args)
         image_service.get_image.assert_called_once_with(fake_image)
 
         # Negative case: image isn't created
@@ -164,8 +191,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         fake_image = fakes.FakeImage()
         image_service.create_image.return_value = fake_image
         properties = {"fakeprop": "fake"}
-        call_args = {"container_format": "cf",
-                     "image_location": "url",
+        call_args = {"location": "url",
+                     "container_format": "cf",
                      "disk_format": "df",
                      "visibility": "vs",
                      "min_disk": 0,
@@ -175,7 +202,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         images.CreateAndDownloadImage(self.context).run(
             "cf", "url", "df", "vs", 0, 0, properties=properties)
 
-        image_service.create_image.assert_called_once_with(**call_args)
+        image_service.create_image.assert_called_once_with(
+            **call_args)
         image_service.download_image.assert_called_once_with(fake_image.id)
 
     @mock.patch("%s.CreateImageAndBootInstances._boot_servers" % BASE)
@@ -188,8 +216,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         mock_boot_servers.return_value = fake_servers
         boot_server_kwargs = {"fakeserverarg": "f"}
         properties = {"fakeprop": "fake"}
-        call_args = {"container_format": "cf",
-                     "image_location": "url",
+        call_args = {"location": "url",
+                     "container_format": "cf",
                      "disk_format": "df",
                      "visibility": "vs",
                      "min_disk": 0,
@@ -200,7 +228,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
             "cf", "url", "df", "fid", 5, visibility="vs", min_disk=0,
             min_ram=0, properties=properties,
             boot_server_kwargs=boot_server_kwargs)
-        image_service.create_image.assert_called_once_with(**call_args)
+        image_service.create_image.assert_called_once_with(
+            **call_args)
         mock_boot_servers.assert_called_once_with("image-id-0", "fid",
                                                   5, **boot_server_kwargs)
 
@@ -210,8 +239,8 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         fake_image = fakes.FakeImage(id=1, name="imagexxx")
         image_service.create_image.return_value = fake_image
         properties = {"fakeprop": "fake"}
-        create_args = {"container_format": "cf",
-                       "image_location": "url",
+        create_args = {"location": "url",
+                       "container_format": "cf",
                        "disk_format": "df",
                        "visibility": "vs",
                        "min_disk": 0,
@@ -223,16 +252,15 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
 
         image_service.create_image.assert_called_once_with(**create_args)
         image_service.update_image.assert_called_once_with(
-            fake_image.id, min_disk=0, min_ram=0, remove_props=None)
+            fake_image.id, min_disk=0, min_ram=0, remove_properties=None)
 
-    @mock.patch("%s.create_image" % GLANCE_V2_PATH)
-    @mock.patch("%s.deactivate_image" % GLANCE_V2_PATH)
-    def test_create_and_deactivate_image(self, mock_deactivate_image,
-                                         mock_create_image):
+    def test_create_and_deactivate_image(self):
+        image_service = self.mock_image.return_value
+
         fake_image = fakes.FakeImage(id=1, name="img_name1")
-        mock_create_image.return_value = fake_image
-        call_args = {"container_format": "cf",
-                     "image_location": "url",
+        image_service.create_image.return_value = fake_image
+        call_args = {"location": "url",
+                     "container_format": "cf",
                      "disk_format": "df",
                      "visibility": "vs",
                      "min_disk": 0,
@@ -240,8 +268,9 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
 
         images.CreateAndDeactivateImage(self.context).run(
             "cf", "url", "df", "vs", 0, 0)
-        mock_create_image.assert_called_once_with(**call_args)
-        mock_deactivate_image.assert_called_once_with(fake_image.id)
+        image_service.create_image.assert_called_once_with(
+            **call_args)
+        image_service.deactivate_image.assert_called_once_with(fake_image.id)
 
     def test_import_and_delete_image(self):
         """Test import and delete using glance-direct method (default)."""
@@ -251,7 +280,7 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
                                             status="queued")
         fake_active_image = fakes.FakeImage(id=1, name="img1",
                                             status="active")
-        image_service.create_image_for_import.return_value = fake_queued_image
+        image_service.create_image_record.return_value = fake_queued_image
         image_service.import_image.return_value = fake_active_image
         properties = {"fakeprop": "fake"}
         create_args = {"container_format": "cf",
@@ -264,18 +293,15 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
         images.ImportAndDeleteImage(self.context).run(
             "cf", "url", "df", "vs", 0, 0, properties, None, True)
 
-        image_service.create_image_for_import.assert_called_once_with(
+        image_service.create_image_record.assert_called_once_with(
             **create_args)
-        image_service.stage_image_data.assert_called_once_with(
-            image_id=fake_queued_image.id, image_location="url")
         image_service.import_image.assert_called_once_with(
-            image_id=fake_queued_image.id,
-            import_method="glance-direct",
-            import_uri=None,
+            fake_queued_image,
+            data="url",
+            method=glance.ImportMethod.GLANCE_DIRECT,
             stores=None,
             all_stores=True)
-        image_service.delete_image.assert_called_once_with(
-            fake_active_image.id)
+        image_service.delete_image.assert_called_once_with(fake_active_image)
 
     def test_import_and_delete_image_web_download(self):
         """Test import and delete using web-download method."""
@@ -285,7 +311,7 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
                                             status="queued")
         fake_active_image = fakes.FakeImage(id=1, name="img1",
                                             status="active")
-        image_service.create_image_for_import.return_value = fake_queued_image
+        image_service.create_image_record.return_value = fake_queued_image
         image_service.import_image.return_value = fake_active_image
         properties = {"fakeprop": "fake"}
         create_args = {"container_format": "cf",
@@ -295,19 +321,16 @@ class GlanceBasicTestCase(test.ScenarioTestCase):
                        "min_ram": 0,
                        "properties": properties}
 
-        # Test web-download method
         images.ImportAndDeleteImage(self.context).run(
             "cf", "http://example.com/image.img", "df", "vs", 0, 0,
             properties, None, True, "web-download")
 
-        image_service.create_image_for_import.assert_called_once_with(
+        image_service.create_image_record.assert_called_once_with(
             **create_args)
-        image_service.stage_image_data.assert_not_called()
         image_service.import_image.assert_called_once_with(
-            image_id=fake_queued_image.id,
-            import_method="web-download",
-            import_uri="http://example.com/image.img",
+            fake_queued_image,
+            data="http://example.com/image.img",
+            method="web-download",
             stores=None,
             all_stores=True)
-        image_service.delete_image.assert_called_once_with(
-            fake_active_image.id)
+        image_service.delete_image.assert_called_once_with(fake_active_image)

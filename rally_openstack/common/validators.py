@@ -26,6 +26,7 @@ from rally.plugins.common import validators
 from rally.task import types
 
 from rally_openstack.common import consts
+from rally_openstack.common import osclients
 from rally_openstack.task import types as openstack_types
 from rally_openstack.task.contexts.keystone import roles
 from rally_openstack.task.contexts.nova import flavors as flavors_ctx
@@ -110,8 +111,6 @@ class ImageExistsValidator(validation.Validator):
     @with_roles_ctx()
     def validate(self, context, config, plugin_cls, plugin_cfg):
 
-        from glanceclient import exc as glance_exc
-
         image_args = config.get("args", {}).get(self.param_name)
 
         if not image_args and self.nullable:
@@ -121,11 +120,12 @@ class ImageExistsValidator(validation.Validator):
         image_ctx_name = image_context.get("image_name")
 
         if not image_args:
-            self.fail("Parameter %s is not specified." % self.param_name)
+            self.fail(f"Parameter {self.param_name} is not specified.")
 
         if "image_name" in image_context:
             # NOTE(rvasilets) check string is "exactly equal to" a regex
             # or image name from context equal to image name from args
+            match = False
             if "regex" in image_args:
                 match = re.match(image_args.get("regex"), image_ctx_name)
             if image_ctx_name == image_args.get("name") or (
@@ -133,14 +133,20 @@ class ImageExistsValidator(validation.Validator):
                 return
         try:
             for user in context["users"]:
+                if isinstance(image_args, dict) and "id" in image_args:
+                    # an explicit id is handed back untouched by the resource
+                    # type, so it takes a request of its own to check it
+                    user["credential"].clients().glance.get_image(
+                        image_args["id"])
+                    continue
                 image_processor = openstack_types.GlanceImage(
                     context={"admin": {"credential": user["credential"]}},
                     scenario_cls=plugin_cls)
-                image_id = image_processor.pre_process(
+                image_processor.pre_process(
                     resource_spec=image_args, config={"type": "glance_image"},
                     output_type=str)
-                user["credential"].clients().glance().images.get(image_id)
-        except (glance_exc.HTTPNotFound, exceptions.InvalidScenarioArgument):
+        except (exceptions.GetResourceNotFound,
+                exceptions.InvalidScenarioArgument):
             self.fail("Image '%s' not found" % image_args)
 
 
@@ -299,8 +305,6 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
 
     def _get_validated_image(self, config, clients, param_name, plugin_cls):
 
-        from glanceclient import exc as glance_exc
-
         image_context = config.get("contexts", {}).get("images", {})
         image_args = config.get("args", {}).get(param_name)
         image_ctx_name = image_context.get("image_name")
@@ -311,17 +315,18 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
         if "image_name" in image_context:
             # NOTE(rvasilets) check string is "exactly equal to" a regex
             # or image name from context equal to image name from args
+            match = False
             if "regex" in image_args:
                 match = re.match(image_args.get("regex"), image_ctx_name)
             if image_ctx_name == image_args.get("name") or ("regex"
                                                             in image_args
                                                             and match):
-                image = {
+                return {
+                    "id": image_ctx_name,
                     "size": image_context.get("min_disk", 0),
                     "min_ram": image_context.get("min_ram", 0),
                     "min_disk": image_context.get("min_disk", 0)
                 }
-                return image
         try:
             image_processor = openstack_types.GlanceImage(
                 context={"admin": {"credential": clients.credential}},
@@ -329,20 +334,15 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
             image_id = image_processor.pre_process(
                 resource_spec=image_args, config={"type": "glance_image"},
                 output_type=str)
-            image = clients.glance().images.get(image_id)
-            if hasattr(image, "to_dict"):
-                # NOTE(stpierre): Glance v1 images are objects that can be
-                # converted to dicts; Glance v2 images are already
-                # dict-like
-                image = image.to_dict()
-            if not image.get("size"):
-                image["size"] = 0
-            if not image.get("min_ram"):
-                image["min_ram"] = 0
-            if not image.get("min_disk"):
-                image["min_disk"] = 0
-            return image
-        except (glance_exc.HTTPNotFound, exceptions.InvalidScenarioArgument):
+            image = clients.glance.get_image(image_id)
+            return {
+                "id": image.id,
+                "size": image.size or 0,
+                "min_ram": image.min_ram or 0,
+                "min_disk": image.min_disk or 0,
+            }
+        except (exceptions.GetResourceNotFound,
+                exceptions.InvalidScenarioArgument):
             self.fail("Image '%s' not found" % image_args)
 
     @with_roles_ctx()
@@ -550,8 +550,8 @@ class RequiredAPIVersionsValidator(validation.Validator):
             else:
                 av_ctx = config.get("contexts", {}).get(
                     "api_versions@openstack", {})
-                default_version = getattr(clients,
-                                          self.component).choose_version()
+                spec = osclients.BaseClient.get(self.component).spec
+                default_version = spec.choose_version(clients.credential)
                 used_version = av_ctx.get(self.component, {}).get(
                     "version", default_version)
                 if not used_version:
@@ -635,7 +635,7 @@ class RequiredContextConfigValidator(validation.Validator):
     def __init__(self, context_name, context_config):
         """Validate that context is configured according to requirements.
 
-        :param context_name: string efining context name
+        :param context_name: string refining context name
         :param context_config: dictionary of required key/value pairs
         """
         super().__init__()

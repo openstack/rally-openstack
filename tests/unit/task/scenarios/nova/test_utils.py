@@ -260,31 +260,27 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.unshelve_server")
 
-    @mock.patch("rally_openstack.task.scenarios.nova.utils.image_service")
-    def test__create_image(self, mock_image_service):
-        glance = mock_image_service.Image.return_value
-        glance.get_image.return_value = self.image
-        nova_scenario = utils.NovaScenario(context=self.context)
+    def test__create_image(self):
+        clients = mock.Mock()
+        glance = clients.glance
+        nova_scenario = utils.NovaScenario(context=self.context,
+                                           clients=clients)
         return_image = nova_scenario._create_image(self.server)
-        self.mock_wait_for_status.mock.assert_has_calls([
-            mock.call(
-                self.image,
-                ready_statuses=["ACTIVE"],
-                update_resource=glance.get_image,
-                check_interval=CONF.openstack.
-                nova_server_image_create_poll_interval,
-                timeout=CONF.openstack.nova_server_image_create_timeout),
-            mock.call(
-                self.server,
-                ready_statuses=["None"],
-                status_attr="OS-EXT-STS:task_state",
-                update_resource=self.mock_get_from_manager.mock.return_value,
-                check_interval=CONF.openstack.
-                nova_server_image_create_poll_interval,
-                timeout=CONF.openstack.nova_server_image_create_timeout)
-        ])
-        self.assertEqual(self.mock_wait_for_status.mock.return_value,
-                         return_image)
+        glance.wait_for_image.assert_called_once_with(
+            self.clients("nova").servers.create_image.return_value,
+            ready_statuses=["active"],
+            check_interval=CONF.openstack.
+            nova_server_image_create_poll_interval,
+            timeout=CONF.openstack.nova_server_image_create_timeout)
+        self.mock_wait_for_status.mock.assert_called_once_with(
+            self.server,
+            ready_statuses=["None"],
+            status_attr="OS-EXT-STS:task_state",
+            update_resource=self.mock_get_from_manager.mock.return_value,
+            check_interval=CONF.openstack.
+            nova_server_image_create_poll_interval,
+            timeout=CONF.openstack.nova_server_image_create_timeout)
+        self.assertEqual(glance.wait_for_image.return_value, return_image)
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.snapshot_server")
 
@@ -448,18 +444,15 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
     def test__force_delete_servers(self):
         self._test_delete_servers(force=True)
 
-    @mock.patch("rally_openstack.task.scenarios.nova.utils.image_service")
-    def test__delete_image(self, mock_image_service):
-        glance = mock_image_service.Image.return_value
+    def test__delete_image(self):
+        clients = mock.Mock()
+        glance = clients.glance
         nova_scenario = utils.NovaScenario(context=self.context,
-                                           clients=mock.Mock())
+                                           clients=clients)
         nova_scenario._delete_image(self.image)
         glance.delete_image.assert_called_once_with(self.image.id)
-        self.mock_wait_for_status.mock.assert_called_once_with(
-            self.image,
-            ready_statuses=["deleted", "pending_delete"],
-            check_deletion=True,
-            update_resource=glance.get_image,
+        glance.wait_for_image_deleted.assert_called_once_with(
+            self.image.id,
             check_interval=CONF.openstack.
             nova_server_image_delete_poll_interval,
             timeout=CONF.openstack.nova_server_image_delete_timeout)

@@ -17,10 +17,8 @@ import typing as t
 
 from rally.common import cfg
 from rally.common import logging
-from rally.task import utils as task_utils
 
-from rally_openstack.common.services.image import glance_v2
-from rally_openstack.common.services.image import image
+from rally_openstack.common.clients import glance
 from rally_openstack.common.services.network import neutron
 from rally_openstack.task.cleanup import base
 from rally_openstack.task.scenarios.nova import utils as nova_utils
@@ -585,18 +583,22 @@ class CinderVolume(base.ResourceManager):
                admin_required=True, perform_for_admin_only=True)
 class CinderImageVolumeCache(base.ResourceManager):
 
-    def _glance(self):
-        return image.Image(self.admin)
-
     def _manager(self):
         return self.admin.cinder().volumes
 
+    # cinder names every cache volume after the image it holds
+    VOLUME_NAME_PREFIX = "image-"
+
     def list(self):
-        images = dict(("image-%s" % i.id, i)
-                      for i in self._glance().list_images())
+        volumes = [v for v in self._manager().list(
+            search_opts={"all_tenants": 1})
+            if v.name and v.name.startswith(self.VOLUME_NAME_PREFIX)]
+        images = {
+            f"{self.VOLUME_NAME_PREFIX}{i.id}": i
+            for i in self.admin.glance.list_images(
+                ids=[v.name[len(self.VOLUME_NAME_PREFIX):] for v in volumes])}
         return [{"volume": v, "image": images[v.name]}
-                for v in self._manager().list(search_opts={"all_tenants": 1})
-                if v.name in images]
+                for v in volumes if v.name in images]
 
     def name(self):
         return self.raw_resource["image"].name
@@ -645,25 +647,19 @@ class ManilaSecurityService(base.ResourceManager):
 @base.resource("glance", "images", order=500, tenant_resource=True)
 class GlanceImage(base.ResourceManager):
 
-    def _client(self):
-        return image.Image(self.admin or self.user)
-
     def list(self):
-        images = (self._client().list_images(owner=self.tenant_uuid)
-                  + self._client().list_images(status="deactivated",
-                                               owner=self.tenant_uuid))
-        return images
+        client = (self.admin or self.user).glance
+        return (client.list_images(owner=self.tenant_uuid)
+                + client.list_images(status=glance.ImageStatus.DEACTIVATED,
+                                     owner=self.tenant_uuid))
 
     def delete(self):
-        client = self._client()
-        if self.raw_resource.status == "deactivated":
-            glancev2 = glance_v2.GlanceV2Service(self.admin or self.user)
-            glancev2.reactivate_image(self.raw_resource.id)
+        client = (self.admin or self.user).glance
+        if self.raw_resource.status == glance.ImageStatus.DEACTIVATED:
+            client.reactivate_image(self.raw_resource.id)
         client.delete_image(self.raw_resource.id)
-        task_utils.wait_for_status(
-            self.raw_resource, ["deleted"],
-            check_deletion=True,
-            update_resource=self._client().get_image,
+        client.wait_for_image_deleted(
+            self.raw_resource.id,
             timeout=CONF.openstack.glance_image_delete_timeout,
             check_interval=CONF.openstack.glance_image_delete_poll_interval)
 

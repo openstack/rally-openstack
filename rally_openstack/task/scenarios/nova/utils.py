@@ -20,7 +20,6 @@ from rally.common import logging
 from rally.task import atomic
 from rally.task import utils
 
-from rally_openstack.common.services.image import image as image_service
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
 from rally_openstack.task.scenarios.neutron import utils as neutron_utils
@@ -587,19 +586,12 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
         """
         LOG.warning("Method '_delete_image' of NovaScenario class is "
                     "deprecated since Rally 0.10.0. Use GlanceUtils instead.")
-        glance = image_service.Image(self._clients,
-                                     atomic_inst=self.atomic_actions())
-        glance.delete_image(image.id)
-        check_interval = CONF.openstack.nova_server_image_delete_poll_interval
-        with atomic.ActionTimer(self, "glance.wait_for_delete"):
-            utils.wait_for_status(
-                image,
-                ready_statuses=["deleted", "pending_delete"],
-                check_deletion=True,
-                update_resource=glance.get_image,
-                timeout=CONF.openstack.nova_server_image_delete_timeout,
-                check_interval=check_interval
-            )
+        self._clients.glance.delete_image(image.id)
+        self._clients.glance.wait_for_image_deleted(
+            image.id,
+            timeout=CONF.openstack.nova_server_image_delete_timeout,
+            check_interval=(
+                CONF.openstack.nova_server_image_delete_poll_interval))
 
     @atomic.action_timer("nova.snapshot_server")
     def _create_image(self, server):
@@ -614,18 +606,12 @@ class NovaScenario(neutron_utils.NeutronBaseScenario,
         """
         image_uuid = self.clients("nova").servers.create_image(server,
                                                                server.name)
-        glance = image_service.Image(self._clients,
-                                     atomic_inst=self.atomic_actions())
-        image = glance.get_image(image_uuid)
         check_interval = CONF.openstack.nova_server_image_create_poll_interval
-        with atomic.ActionTimer(self, "glance.wait_for_image"):
-            image = utils.wait_for_status(
-                image,
-                ready_statuses=["ACTIVE"],
-                update_resource=glance.get_image,
-                timeout=CONF.openstack.nova_server_image_create_timeout,
-                check_interval=check_interval
-            )
+        image = self._clients.glance.wait_for_image(
+            image_uuid,
+            ready_statuses=["active"],
+            timeout=CONF.openstack.nova_server_image_create_timeout,
+            check_interval=check_interval)
         with atomic.ActionTimer(self, "nova.wait_for_server"):
             utils.wait_for_status(
                 server,

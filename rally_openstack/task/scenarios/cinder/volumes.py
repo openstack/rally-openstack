@@ -26,7 +26,6 @@ from rally_openstack.common import consts
 from rally_openstack.common.services.storage import block
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.cinder import utils as cinder_utils
-from rally_openstack.task.scenarios.glance import images
 from rally_openstack.task.scenarios.nova import utils as nova_utils
 
 
@@ -680,8 +679,7 @@ class CreateAndListSnapshots(cinder_utils.CinderBasic,
 @scenario.configure(context={"cleanup@openstack": ["cinder", "glance"]},
                     name="CinderVolumes.create_and_upload_volume_to_image",
                     platform="openstack")
-class CreateAndUploadVolumeToImage(cinder_utils.CinderBasic,
-                                   images.GlanceBasic):
+class CreateAndUploadVolumeToImage(cinder_utils.CinderBasic):
 
     def run(
         self,
@@ -714,7 +712,7 @@ class CreateAndUploadVolumeToImage(cinder_utils.CinderBasic,
 
         if do_delete:
             self.cinder.delete_volume(volume)
-            self.glance.delete_image(image.id)
+            self._clients.glance.delete_image(image.id)
 
 
 @validation.add("restricted_parameters", param_names=["name", "display_name"],

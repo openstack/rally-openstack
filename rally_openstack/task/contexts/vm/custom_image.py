@@ -21,7 +21,7 @@ from rally.common import utils
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.common.services.image import image
+from rally_openstack.common.clients import glance
 from rally_openstack.task import context
 from rally_openstack.task import types
 from rally_openstack.task.scenarios.vm import vmtasks
@@ -124,9 +124,10 @@ class BaseCustomImageGenerator(context.OpenStackContext,
                 nics = [{"net-id": tenant["networks"][0]["id"]}]
 
             custom_image = self.create_one_image(user, nics=nics)
-            glance_service = image.Image(
-                self.context["admin"]["credential"].clients())
-            glance_service.set_visibility(custom_image.id)
+            # FIXME(andreykurilin): share the image instead of making it public
+            admin_clients = self.context["admin"]["credential"].clients()
+            admin_clients.glance.update_image(
+                custom_image.id, visibility=glance.Visibility.PUBLIC)
 
             for tenant in self.context["tenants"].values():
                 tenant["custom_image"] = custom_image
@@ -147,11 +148,7 @@ class BaseCustomImageGenerator(context.OpenStackContext,
 
         clients = osclients.Clients(user["credential"])
 
-        image_id = types.GlanceImage(
-            self.context, scenario_cls=vmtasks.BootRuncommandDelete
-        ).pre_process(
-            resource_spec=self.config["image"],
-            config={"type": "glance_image"}, output_type=str)
+        image_id = clients.glance.find_image(self.config["image"]["name"]).id
         flavor_id = types.Flavor(
             self.context, scenario_cls=vmtasks.BootRuncommandDelete
         ).pre_process(
@@ -213,8 +210,7 @@ class BaseCustomImageGenerator(context.OpenStackContext,
         with logging.ExceptionLogger(
                 LOG, "Unable to delete image %s" % custom_image.id):
 
-            glance_service = image.Image(user["credential"].clients())
-            glance_service.delete_image(custom_image.id)
+            user["credential"].clients().glance.delete_image(custom_image.id)
 
     @logging.log_task_wrapper(LOG.info, "Custom image context: customizing")
     def customize_image(self, server, ip, user):

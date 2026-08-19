@@ -27,6 +27,11 @@ Added
   ``clients.keystone`` attribute and exposes version-agnostic methods that work
   across Keystone v2 and v3.
 
+* The Image (Glance) service is now implemented on top of the unified
+  ``openstacksdk`` instead of ``python-glanceclient``. It is reachable as the
+  ``clients.glance`` attribute and exposes version-agnostic methods that work
+  across Glance v1 and v2.
+
 * Authentication is now performed once, in the ``users`` context, and the
   resulting token is cached and reused across all iterations of a workload (for
   both the regular users and the admin) instead of re-authenticating every
@@ -62,9 +67,49 @@ Changed
 
 * The OpenStack client and service utilities have been restructured into a
   dedicated ``rally_openstack.common.clients`` package (``base``, ``keystone``,
-  ...), splitting the previously monolithic ``osclients`` module.
+  ``glance``, ...), splitting the previously monolithic ``osclients`` module.
   This is the foundation for gradually moving every service off its
   per-project ``python-*client`` onto ``openstacksdk``.
+
+* Glance atomic actions are renamed. The version is no longer a part of their
+  names, since it is recorded in the task's ``api_info`` anyway:
+
+  * ``glance_v{1,2}.create_image`` -> ``glance.create_image``
+  * ``glance_v2.create_image_for_import`` -> ``glance.create_image_record``
+  * ``glance_v2.upload_data`` -> ``glance.upload_image``
+  * ``glance_v2.stage_image_data`` -> ``glance.stage_image``
+  * ``glance_v2.stage_and_import_image`` -> ``glance.import_image``
+  * ``glance_v2.import_image`` -> ``glance.import_image``
+  * ``glance_v{1,2}.update_image`` -> ``glance.update_image``
+  * ``glance_v{1,2}.set_visibility`` -> ``glance.update_image``
+  * ``glance_v{1,2}.list_images`` -> ``glance.list_images``
+  * ``glance_v{1,2}.get_image`` -> ``glance.get_image``
+  * ``glance_v{1,2}.delete_image`` -> ``glance.delete_image``
+  * ``glance_v{1,2}.download_image`` -> ``glance.download_image``
+  * ``glance_v2.deactivate_image`` -> ``glance.deactivate_image``
+  * ``glance_v2.reactivate_image`` -> ``glance.reactivate_image``
+  * ``glance.wait_for_image`` -> ``glance.wait_for_image_active``
+  * ``glance.wait_for_delete`` -> ``glance.wait_for_image_deleted``
+
+  An SLA criterion that names an action which no longer exists silently
+  succeeds, so tasks are worth grepping for the old names.
+
+* ``GlanceImages.create_and_download_image`` now measures the real download.
+  It used to hand back an unconsumed iterator, so the action timed the request
+  setup only; expect its duration to grow from milliseconds to however long
+  the transfer actually takes.
+
+* Fetching image data from a URL now honours the platform's
+  ``https_cacert`` / ``https_insecure`` settings. It used to disable TLS
+  verification unconditionally, so a task pointing at a host with a
+  self-signed certificate now needs ``https_insecure: true``.
+
+* The ``glance_image`` resource type takes its listing filters(``status``,
+  ``visibility`` and ``owner``) as keys of its own. The free-form
+  ``list_kwargs`` object that used to carry them is deprecated; a task still
+  using it keeps working. An image named exactly is now asked of Glance by name
+  rather than found by enumerating every image the user can see. The matching
+  rules (``name``, ``regex``, ``accurate``) are unchanged.
 
 * ``OpenStackCredential`` is now a typed dataclass instead of a plain dict.
   Dict-style access (``credential["auth_url"]``) is kept for backward
@@ -117,6 +162,16 @@ Deprecated
   container holds live sessions and connections, so the two should not be
   reachable through each other. Build the container explicitly instead:
   ``osclients.Clients(credential)``.
+
+* The image service layer (``rally_openstack.common.services.image``) is
+  deprecated in favour of the ``clients.glance`` client, and so is reaching for
+  the raw ``python-glanceclient`` through ``clients.glance()``. Both keep
+  working and now delegate to the new client.
+
+* The ``GlanceBasic`` scenario base class is deprecated together with the
+  service layer it builds as ``self.glance`` / ``self.admin_glance``. It keeps
+  working; the in-tree Glance scenarios now derive from ``OpenStackScenario``
+  and use ``self._clients.glance`` directly.
 
 Fixed
 ~~~~~

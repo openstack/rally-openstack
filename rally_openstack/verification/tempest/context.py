@@ -15,19 +15,19 @@
 
 import configparser
 import os
+import pathlib
 import re
 
 import requests
 
 from rally import exceptions
 from rally.common import logging
-from rally.task import utils as task_utils
 from rally.verification import context
 from rally.verification import utils
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential
-from rally_openstack.common.services.image import image
+from rally_openstack.common.clients import glance
 from rally_openstack.common.services.network import neutron
 from rally_openstack.verification.tempest import config as conf
 
@@ -183,30 +183,32 @@ class TempestContext(context.VerifierContext):
                       f"in Tempest config file. {option} = {option_value}")
 
     def _discover_image(self):
-        LOG.debug("Trying to discover a public image with name matching "
-                  "regular expression '%s'. Note that case insensitive "
-                  "matching is performed."
-                  % conf.CONF.openstack.img_name_regex)
-        image_service = image.Image(self.clients)
-        images = image_service.list_images(status="active",
-                                           visibility="public")
+        LOG.debug(f"Trying to discover a public image with name matching "
+                  f"regular expression '{conf.CONF.openstack.img_name_regex}'."
+                  f" Note that case insensitive matching is performed.")
+        images = self.clients.glance.list_images(
+            status=glance.ImageStatus.ACTIVE,
+            visibility=glance.Visibility.PUBLIC
+        )
         for image_obj in images:
             if image_obj.name and re.match(conf.CONF.openstack.img_name_regex,
                                            image_obj.name, re.IGNORECASE):
-                LOG.debug("The following public image discovered: '%s'."
-                          % image_obj.name)
+                LOG.debug(
+                    f"The following public image discovered: "
+                    f"'{image_obj.name}'."
+                )
                 return image_obj
 
-        LOG.debug("There is no public image with name matching regular "
-                  "expression '%s'." % conf.CONF.openstack.img_name_regex)
+        LOG.debug(f"There is no public image with name matching regular "
+                  f"expression '{conf.CONF.openstack.img_name_regex}'.")
 
     def _download_image_from_source(self, target_path, image=None):
         if image:
-            LOG.debug("Downloading image '%s' from Glance to %s."
-                      % (image.name, target_path))
-            with open(target_path, "wb") as image_file:
-                for chunk in self.clients.glance().images.data(image.id):
-                    image_file.write(chunk)
+            LOG.debug(
+                f"Downloading image '{image.name}' from Glance to "
+                f"{target_path}."
+            )
+            self.clients.glance.download_image(image.id, output=target_path)
         else:
             LOG.debug("Downloading image from %s to %s."
                       % (conf.CONF.openstack.img_url, target_path))
@@ -256,18 +258,16 @@ class TempestContext(context.VerifierContext):
                           % (image_obj.name, image_obj.id))
                 return image_obj
 
-        params = {
-            "image_name": self.generate_random_name(),
-            "disk_format": conf.CONF.openstack.img_disk_format,
-            "container_format": conf.CONF.openstack.img_container_format,
-            "image_location": os.path.join(self.data_dir, self.image_name),
-            "visibility": "public"
-        }
-        LOG.debug("Creating image '%s'." % params["image_name"])
-        image_service = image.Image(self.clients)
-        image_obj = image_service.create_image(**params)
-        LOG.debug("Image '%s' (ID = %s) has been successfully created!"
-                  % (image_obj.name, image_obj.id))
+        image_name = self.generate_random_name()
+        LOG.debug(f"Creating image '{image_name}'.")
+        image_obj = self.clients.glance.create_image(
+            image_name,
+            location=pathlib.Path(self.data_dir, self.image_name),
+            disk_format=conf.CONF.openstack.img_disk_format,
+            container_format=conf.CONF.openstack.img_container_format,
+            visibility=glance.Visibility.PUBLIC)
+        LOG.debug(f"Image '{image_obj.name}' (ID = {image_obj.id}) has been "
+                  f"successfully created!")
         self._created_images.append(image_obj)
 
         return image_obj
@@ -342,18 +342,15 @@ class TempestContext(context.VerifierContext):
             LOG.debug("Role '%s' has been deleted." % role.name)
 
     def _cleanup_images(self):
-        image_service = image.Image(self.clients)
         for image_obj in self._created_images:
-            LOG.debug("Deleting image '%s'." % image_obj.name)
-            self.clients.glance().images.delete(image_obj.id)
-            task_utils.wait_for_status(
-                image_obj, ["deleted", "pending_delete"],
-                check_deletion=True,
-                update_resource=image_service.get_image,
+            LOG.debug(f"Deleting image '{image_obj.name}'.")
+            self.clients.glance.delete_image(image_obj.id)
+            self.clients.glance.wait_for_image_deleted(
+                image_obj.id,
                 timeout=conf.CONF.openstack.glance_image_delete_timeout,
                 check_interval=conf.CONF.openstack.
                 glance_image_delete_poll_interval)
-            LOG.debug("Image '%s' has been deleted." % image_obj.name)
+            LOG.debug(f"Image '{image_obj.name}' has been deleted.")
             self._remove_opt_value_from_config("compute", image_obj.id)
 
     def _cleanup_flavors(self):

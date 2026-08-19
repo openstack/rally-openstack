@@ -21,7 +21,6 @@ from rally.common import validation
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.common.services.image import image
 from rally_openstack.task import context
 from rally_openstack.task.cleanup import manager as resource_manager
 
@@ -160,22 +159,22 @@ class ImageGenerator(context.OpenStackContext):
                 if "min_disk" not in self.config:
                     min_disk = image_args["min_disk"]
 
-        # None image_name means that image.Image will generate a random name
+        # None image_name means that the client will generate a random name
         image_name = None
         if "image_name" in self.config and images_per_tenant == 1:
             image_name = self.config["image_name"]
 
         for user, tenant_id in self._iterate_per_tenants():
             current_images = []
-            clients = osclients.Clients(user["credential"])
-            image_service = image.Image(
-                clients, name_generator=self.generate_random_name)
+            glance = osclients.Clients(
+                user["credential"],
+                name_generator=self.generate_random_name).glance
 
             for i in range(images_per_tenant):
-                image_obj = image_service.create_image(
-                    image_name=image_name,
+                image_obj = glance.create_image(
+                    image_name,
+                    location=image_url,
                     container_format=container_format,
-                    image_location=image_url,
                     disk_format=disk_format,
                     visibility=visibility,
                     min_disk=min_disk,

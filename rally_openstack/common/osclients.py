@@ -26,6 +26,7 @@ from rally.common import logging
 from rally_openstack.common import consts
 from rally_openstack.common import credential as oscred
 from rally_openstack.common.clients import base
+from rally_openstack.common.clients import glance
 from rally_openstack.common.clients import keystone
 
 
@@ -35,6 +36,7 @@ if t.TYPE_CHECKING:
 
 # backward compatibility
 AuthenticationFailed = base.AuthenticationFailed
+Glance = glance.Glance
 Keystone = keystone.Keystone
 BaseClient = base.BaseClient
 OSClient = base.OSClient
@@ -116,25 +118,6 @@ class Octavia(base.OSClient):
             endpoint=self._get_endpoint(service_type),
             session=self.keystone.get_session()[0],
             **kw_args)
-        return client
-
-
-@base.configure("glance", default_version="2", default_service_type="image",
-                supported_versions=["1", "2"])
-class Glance(base.OSClient):
-    """Wrapper for GlanceClient which returns an authenticated native client.
-
-    """
-
-    def create_client(self, version=None, service_type=None):
-        """Return glance client."""
-        import glanceclient as glance
-
-        session = self.keystone.get_session()[0]
-        client = glance.Client(
-            version=self.choose_version(version),
-            endpoint_override=self._get_endpoint(service_type),
-            session=session)
         return client
 
 
@@ -453,10 +436,11 @@ class Clients:
         self._sleeper = sleeper
 
     if t.TYPE_CHECKING:
-        # keystone is the one ported client; declare its type so
-        # ``clients.keystone`` resolves to Keystone instead of the ``Any``
-        # that ``__getattr__`` returns for every other (legacy) service. At
-        # runtime ``__getattr__`` builds and memoizes it like the rest.
+        # Declare the ported clients so ``clients.<name>`` resolves to the
+        # real class instead of the ``Any`` that ``__getattr__`` returns for
+        # every other (legacy) service. At runtime ``__getattr__`` builds and
+        # memoizes them like the rest.
+        glance: Glance
         keystone: Keystone
 
     def __getattr__(self, name: str) -> t.Any:
