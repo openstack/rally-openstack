@@ -67,6 +67,12 @@
       grenade_devstack_localrc:
         shared:
           KEYSTONE_ADMIN_ENDPOINT: true
+          # Ceph 20.2.4 drops the legacy "aes" CephX cipher for "aes256k"
+          # (CVE-2025-30156), which the host client (librados2 19.2.3) cannot
+          # speak, so every rados connect fails. devstack-plugin-ceph master
+          # works around it, but the grenade base run uses stable/2026.1 where
+          # the workaround is not backported. Unpin once it is.
+          CONTAINER_IMAGE: quay.io/ceph/ceph:v20.2.3
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         devstack-plugin-ceph: https://opendev.org/openstack/devstack-plugin-ceph
