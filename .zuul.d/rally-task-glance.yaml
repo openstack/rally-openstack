@@ -22,7 +22,7 @@
         post-config:
           $GLANCE_API_CONF:
             DEFAULT:
-              enabled_import_methods: "[\"glance-direct\"]"
+              enabled_import_methods: "[\"glance-direct\", \"web-download\"]"
               enabled_backends: "robust:rbd"
               use_keystone_limits: False
               user_storage_quota: 0
