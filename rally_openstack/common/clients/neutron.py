@@ -38,6 +38,7 @@ if t.TYPE_CHECKING:
     from openstack.network.v2.network import Network
     from openstack.network.v2.port import Port
     from openstack.network.v2.tap_mirror import TapMirror
+    from openstack.network.v2.tap_service import TapService
 
 
 @base.configure(
@@ -213,3 +214,48 @@ class Neutron(base.LegacyClientCompat):
     @atomic.action_timer("neutron.delete_tap_mirror")
     def delete_tap_mirror(self, tap_mirror_id: str) -> None:
         self._network.delete_tap_mirror(tap_mirror_id)
+
+    @atomic.action_timer("neutron.create_tap_service")
+    def create_tap_service(
+        self,
+        port_id: str,
+        description: str | None = None,
+    ) -> TapService:
+        kwargs: dict[str, t.Any] = {
+            "name": self.generate_random_name(),
+            "port_id": port_id,
+        }
+        if description is not None:
+            kwargs["description"] = description
+        return self._network.create_tap_service(**kwargs)
+
+    @atomic.action_timer("neutron.list_tap_services")
+    def list_tap_services(self) -> list[TapService]:
+        return list(self._network.tap_services())
+
+    @atomic.action_timer("neutron.show_tap_service")
+    def get_tap_service(self, tap_service_id: str) -> TapService:
+        return self._network.get_tap_service(tap_service_id)
+
+    @atomic.action_timer("neutron.update_tap_service")
+    def update_tap_service(
+        self,
+        tap_service_id: str,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> TapService:
+        update_args: dict[str, t.Any] = {}
+        if name:
+            update_args["name"] = name
+        if description is not None:
+            update_args["description"] = description
+        if not update_args:
+            raise ValueError(
+                "update_tap_service requires at least name or description")
+        return self._network.update_tap_service(
+            tap_service_id, **update_args)
+
+    @atomic.action_timer("neutron.delete_tap_service")
+    def delete_tap_service(self, tap_service_id: str) -> None:
+        self._network.delete_tap_service(
+            tap_service_id, ignore_missing=False)

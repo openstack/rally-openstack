@@ -1,0 +1,30 @@
+- job:
+    name: rally-task-neutron-taas-classic
+    parent: rally-task-at-devstack
+    required-projects:
+      - name: openstack/tap-as-a-service
+    vars:
+      rally_task: rally-jobs/taas-classic.yaml
+      devstack_localrc:
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
+        Q_AGENT: openvswitch
+        TAAS_SERVICE_DRIVER: TAAS:taas:neutron_taas.services.taas.service_drivers.taas_rpc.TaasRpcDriver:default
+      devstack_plugins:
+        rally-openstack: https://opendev.org/openstack/rally-openstack
+        tap-as-a-service: https://opendev.org/openstack/tap-as-a-service
+      devstack_services:
+        taas: true
+        tap_mirror: false
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-svc: true
+        ovn-controller: false
+        ovn-northd: false
+        ovs-vswitchd: false
+        ovsdb-server: false
+        q-ovn-agent: false
+        horizon: false
+        tempest: false

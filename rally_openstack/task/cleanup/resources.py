@@ -448,6 +448,32 @@ class NeutronTapMirror(NeutronMixin):
         self._neutron_client().delete_tap_mirror(self.id())
 
 
+@base.resource("neutron", "tap_service", order=next(_neutron_order),
+               tenant_resource=True)
+class NeutronTapService(NeutronMixin):
+
+    def _neutron_client(self):
+        return (self._admin_required and self.admin or self.user).neutron
+
+    def id(self):
+        return self.raw_resource.id
+
+    def name(self):
+        return self.raw_resource.name
+
+    def list(self):
+        if not self._neutron.supports_extension("taas", silent=True):
+            return []
+        services = self._neutron_client().list_tap_services()
+        if self.tenant_uuid:
+            services = [service for service in services
+                        if service.project_id == self.tenant_uuid]
+        return services
+
+    def delete(self):
+        self._neutron_client().delete_tap_service(self.id())
+
+
 @base.resource("neutron", "floatingip", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronFloatingIP(NeutronMixin):

@@ -191,6 +191,27 @@
               - tests/ci/playbooks
         - rally-task-neutron:
             irrelevant-files: *trivial-files
+        - rally-task-neutron-taas-classic:
+            files: &neutron-taas-classic-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/base.yaml
+              - .zuul.d/rally-task-neutron-taas-classic.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/taas-classic.yaml
+              - rally_openstack/common/clients
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/validators.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/contexts/network
+              - rally_openstack/task/contexts/neutron/ports.py
+              - rally_openstack/task/scenarios/neutron/taas.py
+              - rally_openstack/task/scenarios/neutron/utils.py
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
         - rally-task-neutron-trunk:
             files: &neutron-trunk-files
               - .zuul.d/zuul.yaml
@@ -340,6 +361,8 @@
             files: *mistral-files
         - rally-task-neutron:
             irrelevant-files: *trivial-files
+        - rally-task-neutron-taas-classic:
+            files: *neutron-taas-classic-files
         - rally-task-neutron-trunk:
             files: *neutron-trunk-files
         - rally-task-neutron-with-extensions:

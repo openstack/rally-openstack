@@ -68,6 +68,18 @@ Added
   * ``NeutronTaaS.create_and_delete_tap_mirrors``
   * ``NeutronTaaS.create_and_update_tap_mirrors``
 
+* Neutron TaaS tap service scenarios:
+
+  * ``NeutronTaaS.create_and_list_tap_services``
+  * ``NeutronTaaS.create_and_delete_tap_services``
+  * ``NeutronTaaS.create_and_update_tap_services``
+
+* Tap service APIs use the openstacksdk-backed ``clients.neutron`` attribute.
+  Their scenarios reuse networks and ports prepared by contexts.
+
+* Dedicated voting CI job ``rally-task-neutron-taas-classic`` runs tap service
+  scenarios with the classic OVS driver in check and gate pipelines.
+
 * Network and port setup for Neutron TaaS scenarios uses the openstacksdk-backed
   ``clients.neutron`` attribute (``create_network``, ``create_port``, and related
   list/get/delete methods).
