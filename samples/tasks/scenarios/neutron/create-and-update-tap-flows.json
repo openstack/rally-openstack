@@ -1,0 +1,46 @@
+{
+    "version": 2,
+    "title": "Neutron Create And Update Tap Flows",
+    "description": "Benchmark Neutron TaaS tap flow create and update APIs",
+    "subtasks": [
+        {
+            "title": "Create and update tap flows",
+            "scenario": {
+                "NeutronTaaS.create_and_update_tap_flows": {
+                    "direction": "IN",
+                    "description": "created",
+                    "tap_flow_update_args": {
+                        "description": "updated"
+                    }
+                }
+            },
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
+                "users": {
+                    "tenants": 1,
+                    "users_per_tenant": 1
+                },
+                "network": {
+                    "networks_per_tenant": 1,
+                    "subnets_per_network": 1
+                },
+                "ports": {
+                    "ports_per_project": 3
+                },
+                "tap_services": {
+                    "services_per_project": 1
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
+        }
+    ]
+}

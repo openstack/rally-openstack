@@ -1,6 +1,6 @@
 ---
 version: 2
-title: Task for rally-task-neutron-taas-classic job (OVS tap service)
+title: Task for rally-task-neutron-taas-classic job (OVS tap services and flows)
 subtasks:
   - title: NeutronTaaS.create_and_list_tap_services tests
     scenario:
@@ -58,6 +58,81 @@ subtasks:
         subnets_per_network: 1
       ports:
         ports_per_project: 4
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronTaaS.create_and_list_tap_flows tests
+    scenario:
+      NeutronTaaS.create_and_list_tap_flows: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+        user_choice_method: round_robin
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 4
+      tap_services:
+        services_per_project: 2
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronTaaS.create_and_delete_tap_flows tests
+    scenario:
+      NeutronTaaS.create_and_delete_tap_flows: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+        user_choice_method: random
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 4
+      tap_services:
+        services_per_project: 2
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronTaaS.create_and_update_tap_flows tests
+    scenario:
+      NeutronTaaS.create_and_update_tap_flows: {}
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+        user_choice_method: round_robin
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 4
+      tap_services:
+        services_per_project: 2
       quotas:
         neutron:
           port: -1

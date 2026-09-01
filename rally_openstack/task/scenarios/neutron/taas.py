@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import typing as t
 
 import typing_extensions as te
@@ -22,6 +23,7 @@ from rally.task import validation
 from rally_openstack.common import consts
 from rally_openstack.common.clients.neutron import MirrorDirection
 from rally_openstack.common.clients.neutron import MirrorType
+from rally_openstack.common.clients.neutron import TapFlowDirection
 from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.neutron import utils
 
@@ -68,20 +70,32 @@ class TaaSScenario(utils.NeutronScenario):
             for direction in mirror_directions
         }
 
+    def _select_flow_endpoints(self) -> tuple[dict, dict]:
+        """Pick a tap service and a source port for a tap flow.
 
-class TapMirrorCreateArgs(te.TypedDict, total=False):
-    description: str
+        The tap_services context reserves the first ``len(services)`` ports of
+        the pool as service destinations, so source ports are chosen from the
+        remainder to keep each flow's source distinct from the destinations.
+        """
+        services = self.context["tenant"]["tap_services"]
+        ports = self.context["tenant"]["ports"]
+        source_count = len(ports) - len(services)
+        if not services or source_count < 1:
+            raise ValueError(
+                "Tap flows require prepared tap services and at least one "
+                "separate source port.")
+        if self.context.get("user_choice_method", "random") == "random":
+            service_index = random.randrange(len(services))
+            source_index = random.randrange(source_count)
+        else:
+            projects = len(self.context["tenants"])
+            iteration = (self.context["iteration"] - 1) // projects
+            service_index = iteration % len(services)
+            source_index = iteration % source_count
+        return services[service_index], ports[len(services) + source_index]
 
 
-class TapMirrorUpdateArgs(te.TypedDict, total=False):
-    description: str
-
-
-class TapServiceCreateArgs(te.TypedDict, total=False):
-    description: str
-
-
-class TapServiceUpdateArgs(te.TypedDict, total=False):
+class DescriptionArgs(te.TypedDict, total=False):
     description: str
 
 
@@ -106,7 +120,7 @@ class CreateAndListTapMirrors(TaaSScenario):
         remote_ip: str,
         mirror_type: MirrorType | str = MirrorType.GRE,
         mirror_directions: t.Sequence[MirrorDirection] = ("IN",),
-        tap_mirror_create_args: TapMirrorCreateArgs | None = None,
+        tap_mirror_create_args: DescriptionArgs | None = None,
     ) -> None:
         """Create and list Neutron TaaS tap mirrors.
 
@@ -153,7 +167,7 @@ class CreateAndDeleteTapMirrors(TaaSScenario):
         remote_ip: str,
         mirror_type: MirrorType | str = MirrorType.GRE,
         mirror_directions: t.Sequence[MirrorDirection] = ("IN",),
-        tap_mirror_create_args: TapMirrorCreateArgs | None = None,
+        tap_mirror_create_args: DescriptionArgs | None = None,
     ) -> None:
         """Create and delete Neutron TaaS tap mirrors.
 
@@ -200,8 +214,8 @@ class CreateAndUpdateTapMirrors(TaaSScenario):
         remote_ip: str,
         mirror_type: MirrorType | str = MirrorType.GRE,
         mirror_directions: t.Sequence[MirrorDirection] = ("IN",),
-        tap_mirror_create_args: TapMirrorCreateArgs | None = None,
-        tap_mirror_update_args: TapMirrorUpdateArgs | None = None,
+        tap_mirror_create_args: DescriptionArgs | None = None,
+        tap_mirror_update_args: DescriptionArgs | None = None,
     ) -> None:
         """Create and update Neutron TaaS tap mirrors.
 
@@ -251,7 +265,7 @@ class CreateAndListTapServices(TaaSScenario):
 
     def run(
         self,
-        tap_service_create_args: TapServiceCreateArgs | None = None,
+        tap_service_create_args: DescriptionArgs | None = None,
     ) -> None:
         """Create and list Neutron TaaS tap services.
 
@@ -286,7 +300,7 @@ class CreateAndDeleteTapServices(TaaSScenario):
 
     def run(
         self,
-        tap_service_create_args: TapServiceCreateArgs | None = None,
+        tap_service_create_args: DescriptionArgs | None = None,
     ) -> None:
         """Create and delete Neutron TaaS tap services.
 
@@ -321,8 +335,8 @@ class CreateAndUpdateTapServices(TaaSScenario):
 
     def run(
         self,
-        tap_service_create_args: TapServiceCreateArgs | None = None,
-        tap_service_update_args: TapServiceUpdateArgs | None = None,
+        tap_service_create_args: DescriptionArgs | None = None,
+        tap_service_update_args: DescriptionArgs | None = None,
     ) -> None:
         """Create and update Neutron TaaS tap services.
 
@@ -345,4 +359,134 @@ class CreateAndUpdateTapServices(TaaSScenario):
             tap_service.id,
             name=self.generate_random_name(),
             description=tap_service_update_args.get("description"),
+        )
+
+
+@validation.add("required_ports_for_tap_flows")
+@validation.add("required_contexts",
+                contexts=["network", "ports", "tap_services"])
+@validation.add("required_neutron_extensions", extensions=["taas"])
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"],
+             "network@openstack": {},
+             "ports@openstack": {},
+             "tap_services@openstack": {}},
+    name="NeutronTaaS.create_and_list_tap_flows",
+    platform="openstack")
+class CreateAndListTapFlows(TaaSScenario):
+
+    def run(
+        self,
+        direction: TapFlowDirection = "IN",
+        description: str | None = None,
+    ) -> None:
+        """Create and list Neutron TaaS tap flows.
+
+        Requires ``network``, ``ports`` and ``tap_services`` contexts with
+        ``ports_per_project >= services_per_project + ceil(concurrency /
+        projects)`` so each flow uses a source port distinct from the tap
+        service destination ports.
+
+        :param direction: traffic direction to mirror (IN, OUT, BOTH)
+        :param description: optional description on create
+        """
+        service, source_port = self._select_flow_endpoints()
+
+        self._clients.neutron.create_tap_flow(
+            tap_service_id=service["id"],
+            source_port=source_port["id"],
+            direction=direction,
+            description=description,
+        )
+        self._clients.neutron.list_tap_flows()
+
+
+@validation.add("required_ports_for_tap_flows")
+@validation.add("required_contexts",
+                contexts=["network", "ports", "tap_services"])
+@validation.add("required_neutron_extensions", extensions=["taas"])
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"],
+             "network@openstack": {},
+             "ports@openstack": {},
+             "tap_services@openstack": {}},
+    name="NeutronTaaS.create_and_delete_tap_flows",
+    platform="openstack")
+class CreateAndDeleteTapFlows(TaaSScenario):
+
+    def run(
+        self,
+        direction: TapFlowDirection = "IN",
+        description: str | None = None,
+    ) -> None:
+        """Create and delete Neutron TaaS tap flows.
+
+        Requires ``network``, ``ports`` and ``tap_services`` contexts with
+        ``ports_per_project >= services_per_project + ceil(concurrency /
+        projects)`` so each flow uses a source port distinct from the tap
+        service destination ports.
+
+        :param direction: traffic direction to mirror (IN, OUT, BOTH)
+        :param description: optional description on create
+        """
+        service, source_port = self._select_flow_endpoints()
+
+        tap_flow = self._clients.neutron.create_tap_flow(
+            tap_service_id=service["id"],
+            source_port=source_port["id"],
+            direction=direction,
+            description=description,
+        )
+        self._clients.neutron.delete_tap_flow(tap_flow.id)
+
+
+@validation.add("required_ports_for_tap_flows")
+@validation.add("required_contexts",
+                contexts=["network", "ports", "tap_services"])
+@validation.add("required_neutron_extensions", extensions=["taas"])
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"],
+             "network@openstack": {},
+             "ports@openstack": {},
+             "tap_services@openstack": {}},
+    name="NeutronTaaS.create_and_update_tap_flows",
+    platform="openstack")
+class CreateAndUpdateTapFlows(TaaSScenario):
+
+    def run(
+        self,
+        direction: TapFlowDirection = "IN",
+        description: str | None = None,
+        tap_flow_update_args: DescriptionArgs | None = None,
+    ) -> None:
+        """Create and update Neutron TaaS tap flows.
+
+        Requires ``network``, ``ports`` and ``tap_services`` contexts with
+        ``ports_per_project >= services_per_project + ceil(concurrency /
+        projects)`` so each flow uses a source port distinct from the tap
+        service destination ports.
+
+        :param direction: traffic direction to mirror (IN, OUT, BOTH)
+        :param description: optional description on create
+        :param tap_flow_update_args: optional description on update
+        """
+        tap_flow_update_args = tap_flow_update_args or {}
+        service, source_port = self._select_flow_endpoints()
+
+        tap_flow = self._clients.neutron.create_tap_flow(
+            tap_service_id=service["id"],
+            source_port=source_port["id"],
+            direction=direction,
+            description=description,
+        )
+        self._clients.neutron.update_tap_flow(
+            tap_flow.id,
+            name=self.generate_random_name(),
+            description=tap_flow_update_args.get("description"),
         )

@@ -20,6 +20,7 @@ from novaclient import exceptions as nova_exc
 from openstack.network.v2 import extension as sdk_extension
 from openstack.network.v2 import port as sdk_port
 from openstack.network.v2 import router as sdk_router
+from openstack.network.v2 import tap_flow
 from openstack.network.v2 import tap_service
 from watcherclient.common.apiclient import exceptions as watcher_exceptions
 
@@ -601,6 +602,63 @@ class NeutronTapServiceTestCase(test.TestCase):
 
         resource.user.neutron.delete_tap_service.assert_called_once_with(
             "service-id")
+
+
+class NeutronTapFlowTestCase(test.TestCase):
+
+    def get_tap_flow_resource(self, extensions=None):
+        user = mock.MagicMock()
+        resource = resources.NeutronTapFlow(user=user)
+        resource.tenant_uuid = "user_tenant"
+        _set_extensions(user, extensions or [])
+        return resource
+
+    def test_id_and_name(self):
+        resource = self.get_tap_flow_resource()
+        resource.raw_resource = mock.Mock(id="flow-id")
+        resource.raw_resource.name = "flow-name"
+
+        self.assertEqual("flow-id", resource.id())
+        self.assertEqual("flow-name", resource.name())
+
+    def test_list_tap_flow_available(self):
+        resource = self.get_tap_flow_resource(extensions=["taas"])
+        flows = [
+            tap_flow.TapFlow(id="flow-1", project_id="user_tenant"),
+            tap_flow.TapFlow(id="flow-2", project_id="other-project"),
+        ]
+        resource.user.neutron.list_tap_flows.return_value = flows
+
+        self.assertEqual("tap_flow", resource._resource)
+        self.assertEqual([flows[0]], resource.list())
+        resource.user.neutron.list_tap_flows.assert_called_once_with()
+
+    def test_list_tap_flow_unavailable(self):
+        resource = self.get_tap_flow_resource()
+
+        self.assertEqual([], resource.list())
+        resource.user.neutron.list_tap_flows.assert_not_called()
+
+    def test_list_tap_flow_as_admin(self):
+        resource = self.get_tap_flow_resource(extensions=["taas"])
+        resource._admin_required = True
+        resource.admin = mock.MagicMock()
+        _set_extensions(resource.admin, ["taas"])
+        flows = [tap_flow.TapFlow(id="flow-1", project_id="user_tenant")]
+        resource.admin.neutron.list_tap_flows.return_value = flows
+
+        self.assertEqual(flows, resource.list())
+        resource.admin.neutron.list_tap_flows.assert_called_once_with()
+        resource.user.neutron.list_tap_flows.assert_not_called()
+
+    def test_delete(self):
+        resource = self.get_tap_flow_resource()
+        resource.raw_resource = mock.Mock(id="flow-id")
+
+        resource.delete()
+
+        resource.user.neutron.delete_tap_flow.assert_called_once_with(
+            "flow-id")
 
 
 class NeutronFloatingIPTestCase(test.TestCase):

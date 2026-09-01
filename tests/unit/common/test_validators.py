@@ -1218,3 +1218,59 @@ class RequiredPortsPerProjectValidatorTestCase(test.TestCase):
         validator = validators.RequiredPortsPerProjectValidator()
         cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
         validator.validate({}, cfg, None, None)
+
+
+class RequiredPortsForTapFlowsValidatorTestCase(test.TestCase):
+
+    def test_empty_ports_config(self):
+        validator = validators.RequiredPortsForTapFlowsValidator()
+        cfg = {"contexts": {"ports": {}, "tap_services": {}}}
+
+        self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+
+    def test_valid_sizing(self):
+        validator = validators.RequiredPortsForTapFlowsValidator()
+        cfg = {
+            "contexts": {
+                "ports": {"ports_per_project": 4},
+                "tap_services": {"services_per_project": 2},
+                "users": {"tenants": 2},
+            },
+            "runner": {"constant": {"concurrency": 4}},
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_insufficient_ports(self):
+        validator = validators.RequiredPortsForTapFlowsValidator()
+        cfg = {
+            "contexts": {
+                "ports": {"ports_per_project": 2},
+                "tap_services": {"services_per_project": 1},
+                "users": {"tenants": 1},
+            },
+            "runner": {"constant": {"concurrency": 5}},
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("ports_per_project=2", e.message)
+        self.assertIn("at least 6", e.message)
+        self.assertIn("services_per_project=1", e.message)
+
+    def test_default_services_per_project(self):
+        validator = validators.RequiredPortsForTapFlowsValidator()
+        cfg = {
+            "contexts": {
+                "ports": {"ports_per_project": 3},
+                "users": {"tenants": 1},
+            },
+            "runner": {"constant": {"concurrency": 2}},
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_no_ports_context(self):
+        validator = validators.RequiredPortsForTapFlowsValidator()
+        cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
+        validator.validate({}, cfg, None, None)

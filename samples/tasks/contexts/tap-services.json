@@ -1,0 +1,34 @@
+{
+    "version": 2,
+    "title": "Task template with tap services context",
+    "description": "Prepare destination tap services on existing context ports.",
+    "subtasks": [
+        {
+            "title": "Prepare tap services",
+            "scenario": {
+                "Dummy.openstack": {
+                    "sleep": 0.1
+                }
+            },
+            "runner": {
+                "constant": {
+                    "times": 4,
+                    "concurrency": 2
+                }
+            },
+            "contexts": {
+                "users": {
+                    "tenants": 1,
+                    "users_per_tenant": 1
+                },
+                "network": {},
+                "ports": {
+                    "ports_per_project": 2
+                },
+                "tap_services": {
+                    "services_per_project": 2
+                }
+            }
+        }
+    ]
+}

@@ -743,3 +743,46 @@ class RequiredPortsPerProjectValidator(validation.Validator):
                 "ports_per_project. Got ports_per_project=%d but need "
                 "at least %d (concurrency=%d, projects=%d)."
                 % (ports_per_project, required, concurrency, projects))
+
+
+@validation.configure(name="required_ports_for_tap_flows",
+                      platform="openstack")
+class RequiredPortsForTapFlowsValidator(validation.Validator):
+    """Validate ports_per_project covers tap services plus flow sources.
+
+    The tap_services context reserves ``services_per_project`` ports per
+    project as tap service destinations. Each concurrent tap-flow iteration
+    additionally needs one source port distinct from those destinations, so
+    the ports pool must provide
+    ``services_per_project + ceil(concurrency / projects)`` ports.
+    """
+
+    def validate(self, context, config, plugin_cls, plugin_cfg):
+        contexts = config.get("contexts", {})
+        if "ports" not in contexts:
+            return
+        ports_ctx = contexts["ports"]
+        ports_per_project = ports_ctx.get("ports_per_project", 1)
+
+        services_ctx = config.get("contexts", {}).get("tap_services", {})
+        services_per_project = services_ctx.get("services_per_project", 1)
+
+        users_ctx = config.get("contexts", {}).get("users", {})
+        projects = users_ctx.get("tenants", 1)
+
+        runner_cfg = config.get("runner", {})
+        concurrency = 1
+        for cfg in runner_cfg.values():
+            if isinstance(cfg, dict):
+                concurrency = cfg.get("concurrency", 1)
+
+        required = (
+            services_per_project + (concurrency + projects - 1) // projects)
+        if ports_per_project < required:
+            self.fail(
+                "Tap-flow scenario requires ports_per_project >= "
+                "services_per_project + ceil(concurrency / projects). "
+                "Got ports_per_project=%d but need at least %d "
+                "(services_per_project=%d, concurrency=%d, projects=%d)."
+                % (ports_per_project, required, services_per_project,
+                   concurrency, projects))

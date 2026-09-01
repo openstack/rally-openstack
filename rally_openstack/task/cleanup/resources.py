@@ -447,6 +447,32 @@ class NeutronTapMirror(NeutronSDKMixin):
         self._neutron_client.delete_tap_mirror(self.id())
 
 
+@base.resource("neutron", "tap_flow", order=next(_neutron_order),
+               tenant_resource=True)
+class NeutronTapFlow(NeutronMixin):
+
+    def _neutron_client(self):
+        return (self._admin_required and self.admin or self.user).neutron
+
+    def id(self):
+        return self.raw_resource.id
+
+    def name(self):
+        return self.raw_resource.name
+
+    def list(self):
+        if not self._neutron.supports_extension("taas", silent=True):
+            return []
+        flows = self._neutron_client().list_tap_flows()
+        if self.tenant_uuid:
+            flows = [flow for flow in flows
+                     if flow.project_id == self.tenant_uuid]
+        return flows
+
+    def delete(self):
+        self._neutron_client().delete_tap_flow(self.id())
+
+
 @base.resource("neutron", "tap_service", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronTapService(NeutronSDKMixin):

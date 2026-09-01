@@ -203,6 +203,7 @@
               - rally_openstack/task/contexts/keystone
               - rally_openstack/task/contexts/network
               - rally_openstack/task/contexts/neutron/ports.py
+              - rally_openstack/task/contexts/neutron/tap_services.py
               - rally_openstack/task/scenarios/neutron/taas.py
               - rally_openstack/task/scenarios/neutron/utils.py
               - requirements.txt

@@ -14,6 +14,8 @@
 
 from unittest import mock
 
+import ddt
+
 from rally_openstack.common import credential as oscredential
 from rally_openstack.common.clients import neutron
 from tests.unit import test
@@ -772,3 +774,109 @@ class NeutronTrunkClientTestCase(NeutronTestMixin):
         self.neutron.delete_trunk("trunk-id")
 
         self.network.delete_trunk.assert_called_once_with("trunk-id")
+
+
+@ddt.ddt
+class NeutronTapFlowTestCase(NeutronTestMixin, test.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.neutron = self._make_neutron()
+
+    def test_create_tap_flow(self):
+        self.neutron._atomic_actions = []
+        flow = self.network.create_tap_flow.return_value
+
+        result = self.neutron.create_tap_flow("service-id", "port-id")
+
+        self.assertIs(flow, result)
+        self.network.create_tap_flow.assert_called_once_with(
+            name="random_name", tap_service_id="service-id",
+            source_port="port-id", direction="IN")
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.create_tap_flow")
+
+    def test_create_tap_flow_direction(self):
+        self.neutron.create_tap_flow(
+            "service-id", "port-id", direction="BOTH")
+
+        self.network.create_tap_flow.assert_called_once_with(
+            name="random_name", tap_service_id="service-id",
+            source_port="port-id", direction="BOTH")
+
+    def test_create_tap_flow_with_description(self):
+        self.neutron.create_tap_flow(
+            "service-id", "port-id", description="desc")
+
+        self.network.create_tap_flow.assert_called_once_with(
+            name="random_name", tap_service_id="service-id",
+            source_port="port-id", direction="IN", description="desc")
+
+    def test_create_tap_flow_rejects_custom_name(self):
+        self.assertRaises(
+            TypeError, self.neutron.create_tap_flow,
+            "service-id", "port-id", name="custom-name")
+
+        self.network.create_tap_flow.assert_not_called()
+
+    def test_list_tap_flows(self):
+        flows = [mock.Mock(id="flow-1"), mock.Mock(id="flow-2")]
+        self.network.tap_flows.return_value = iter(flows)
+
+        self.assertEqual(flows, self.neutron.list_tap_flows())
+        self.network.tap_flows.assert_called_once_with()
+
+    @ddt.data({"project_id": "proj-123"}, {"name": "flow-name"},
+              {"project_id": "proj-123", "name": "flow-name"})
+    def test_list_tap_flows_with_filter(self, filters):
+        flows = [mock.Mock(id="flow-1")]
+        self.network.tap_flows.return_value = iter(flows)
+
+        result = self.neutron.list_tap_flows(**filters)
+
+        self.assertEqual(flows, result)
+        self.network.tap_flows.assert_called_once_with(**filters)
+
+    def test_get_tap_flow(self):
+        flow = self.network.get_tap_flow.return_value
+
+        self.assertIs(flow, self.neutron.get_tap_flow("flow-id"))
+        self.network.get_tap_flow.assert_called_once_with("flow-id")
+
+    def test_update_tap_flow_with_name(self):
+        self.neutron.update_tap_flow("flow-id", name="new-name")
+
+        self.network.update_tap_flow.assert_called_once_with(
+            "flow-id", name="new-name")
+
+    def test_update_tap_flow_with_name_and_description(self):
+        self.neutron.update_tap_flow(
+            "flow-id", name="new-name", description="updated")
+
+        self.network.update_tap_flow.assert_called_once_with(
+            "flow-id", name="new-name", description="updated")
+
+    def test_update_tap_flow_clears_description(self):
+        self.neutron.update_tap_flow("flow-id", description="")
+
+        self.network.update_tap_flow.assert_called_once_with(
+            "flow-id", description="")
+
+    def test_update_tap_flow_requires_changes(self):
+        self.assertRaises(
+            ValueError, self.neutron.update_tap_flow, "flow-id")
+
+        self.network.update_tap_flow.assert_not_called()
+
+    def test_update_tap_flow_rejects_source_changes(self):
+        self.assertRaises(
+            TypeError, self.neutron.update_tap_flow,
+            "flow-id", source_port="another-port")
+
+        self.network.update_tap_flow.assert_not_called()
+
+    def test_delete_tap_flow(self):
+        self.neutron.delete_tap_flow("flow-id")
+
+        self.network.delete_tap_flow.assert_called_once_with(
+            "flow-id", ignore_missing=False)

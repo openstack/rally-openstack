@@ -82,7 +82,9 @@ if t.TYPE_CHECKING:
     from openstack.network.v2 import router as neutron_router
     from openstack.network.v2 import security_group as neutron_sg
     from openstack.network.v2 import subnet as neutron_subnet
+    from openstack.network.v2 import tap_flow as neutron_tap_flow
     from openstack.network.v2 import tap_mirror as neutron_tap_mirror
+    from openstack.network.v2 import tap_service as neutron_tap_service
     from openstack.network.v2 import trunk as neutron_trunk
     from openstack.object_store.v1 import container as swift_container
     from openstack.shared_file_system.v2 import share as manila_share
@@ -286,6 +288,20 @@ class Neutron(ResourceManager):
         if not self._has_extension("tap-mirror"):
             return iter([])
         return self.conn.network.tap_mirrors()
+
+    def list_tap_services(
+        self,
+    ) -> abc.Iterator["neutron_tap_service.TapService"]:
+        if not self._has_extension("taas"):
+            return iter([])
+        return self.conn.network.tap_services()
+
+    def list_tap_flows(
+        self,
+    ) -> abc.Iterator["neutron_tap_flow.TapFlow"]:
+        if not self._has_extension("taas"):
+            return iter([])
+        return self.conn.network.tap_flows()
 
 
 class Cinder(ResourceManager):

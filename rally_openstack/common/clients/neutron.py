@@ -31,6 +31,8 @@ class MirrorType(enum.StrEnum):
 
 MirrorDirection = t.Literal["IN", "OUT"]
 
+TapFlowDirection = t.Literal["IN", "OUT", "BOTH"]
+
 
 class FirewallAction(enum.StrEnum):
     """What a firewall rule does with the traffic it matches."""
@@ -79,6 +81,7 @@ if t.TYPE_CHECKING:
     from openstack.network.v2.network import Network
     from openstack.network.v2.port import Port
     from openstack.network.v2.security_group import SecurityGroup
+    from openstack.network.v2.tap_flow import TapFlow
     from openstack.network.v2.tap_mirror import TapMirror
     from openstack.network.v2.tap_service import TapService
     from openstack.network.v2.trunk import Trunk
@@ -581,3 +584,58 @@ class Neutron(base.LegacyClientCompat):
     @atomic.action_timer("neutron.delete_trunk")
     def delete_trunk(self, trunk_id: str) -> None:
         self._network.delete_trunk(trunk_id)
+
+    @atomic.action_timer("neutron.create_tap_flow")
+    def create_tap_flow(
+        self,
+        tap_service_id: str,
+        source_port: str,
+        direction: TapFlowDirection = "IN",
+        description: str | None = None,
+    ) -> TapFlow:
+        kwargs: dict[str, t.Any] = {
+            "name": self.generate_random_name(),
+            "tap_service_id": tap_service_id,
+            "source_port": source_port,
+            "direction": direction,
+        }
+        if description is not None:
+            kwargs["description"] = description
+        return self._network.create_tap_flow(**kwargs)
+
+    @atomic.action_timer("neutron.list_tap_flows")
+    def list_tap_flows(
+        self,
+        project_id: str | None = None,
+        name: str | None = None,
+    ) -> list[TapFlow]:
+        """List tap flows matching the supplied filters."""
+        return list(self._network.tap_flows(
+            **_clean_dict(project_id=project_id, name=name)))
+
+    @atomic.action_timer("neutron.show_tap_flow")
+    def get_tap_flow(self, tap_flow_id: str) -> TapFlow:
+        return self._network.get_tap_flow(tap_flow_id)
+
+    @atomic.action_timer("neutron.update_tap_flow")
+    def update_tap_flow(
+        self,
+        tap_flow_id: str,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> TapFlow:
+        update_args: dict[str, t.Any] = {}
+        if name:
+            update_args["name"] = name
+        if description is not None:
+            update_args["description"] = description
+        if not update_args:
+            raise ValueError(
+                "update_tap_flow requires at least name or description")
+        return self._network.update_tap_flow(
+            tap_flow_id, **update_args)
+
+    @atomic.action_timer("neutron.delete_tap_flow")
+    def delete_tap_flow(self, tap_flow_id: str) -> None:
+        self._network.delete_tap_flow(
+            tap_flow_id, ignore_missing=False)

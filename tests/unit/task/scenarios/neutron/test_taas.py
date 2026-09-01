@@ -99,9 +99,14 @@ class NeutronTaaSTestCase(test.TestCase):
                     {"id": "port-2"},
                     {"id": "port-3"},
                 ],
+                "tap_services": [
+                    {"id": "service-0", "port_id": "port-0"},
+                ],
             },
             "owner_id": "owner-uuid",
             "iteration": 1,
+            "user_choice_method": "round_robin",
+            "tenants": {"tenant-uuid": {}},
         }
 
     @ddt.data(
@@ -270,4 +275,149 @@ class NeutronTaaSTestCase(test.TestCase):
         self.assertNotIn("name", create_kwargs)
         update_kwargs = (
             scenario._clients.neutron.update_tap_service.call_args.kwargs)
+        self.assertEqual("random_name", update_kwargs["name"])
+
+    def test_create_and_list_tap_flows(self):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+
+        scenario.run(description="created")
+
+        scenario._clients.neutron.create_tap_flow.assert_called_once_with(
+            tap_service_id="service-0", source_port="port-1",
+            direction="IN", description="created")
+        scenario._clients.neutron.list_tap_flows.assert_called_once_with()
+        scenario._clients.neutron.delete_tap_flow.assert_not_called()
+
+    @ddt.data("IN", "OUT", "BOTH")
+    def test_create_and_list_tap_flows_direction(self, direction):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+
+        scenario.run(direction=direction)
+
+        create_kwargs = (
+            scenario._clients.neutron.create_tap_flow.call_args.kwargs)
+        self.assertEqual(direction, create_kwargs["direction"])
+
+    @ddt.data(None, "created", "")
+    def test_create_and_delete_tap_flows(self, description):
+        scenario = taas.CreateAndDeleteTapFlows()
+        self._setup_scenario(scenario)
+        client = scenario._clients.neutron
+        client.create_tap_flow.return_value = mock.Mock(id="flow-id")
+
+        scenario.run(description=description)
+
+        client.create_tap_flow.assert_called_once_with(
+            tap_service_id="service-0", source_port="port-1",
+            direction="IN", description=description)
+        client.delete_tap_flow.assert_called_once_with("flow-id")
+
+    @ddt.data(None, {"description": "updated"}, {"description": ""})
+    def test_create_and_update_tap_flows(self, update_args):
+        scenario = taas.CreateAndUpdateTapFlows()
+        self._setup_scenario(scenario)
+        client = scenario._clients.neutron
+        client.create_tap_flow.return_value = mock.Mock(id="flow-id")
+
+        scenario.run(description="created", tap_flow_update_args=update_args)
+
+        client.create_tap_flow.assert_called_once_with(
+            tap_service_id="service-0", source_port="port-1",
+            direction="IN", description="created")
+
+        client.update_tap_flow.assert_called_once_with(
+            "flow-id", name="random_name",
+            description=(update_args or {}).get("description"))
+
+    def test_tap_flow_source_port_distinct_from_destinations(self):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+        scenario.context["tenant"]["tap_services"] = [
+            {"id": "service-0", "port_id": "port-0"},
+            {"id": "service-1", "port_id": "port-1"},
+        ]
+        dest_ports = {"port-0", "port-1"}
+
+        for iteration in range(4):
+            scenario.context["iteration"] = iteration
+            scenario._clients.neutron.create_tap_flow.reset_mock()
+
+            scenario.run()
+
+            create_kwargs = (
+                scenario._clients.neutron.create_tap_flow.call_args.kwargs)
+            self.assertNotIn(create_kwargs["source_port"], dest_ports)
+
+    def test_tap_flow_endpoint_rotation(self):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+        scenario.context["tenant"]["tap_services"] = [
+            {"id": "service-0", "port_id": "port-0"},
+            {"id": "service-1", "port_id": "port-1"},
+        ]
+        scenario.context["iteration"] = 1
+
+        scenario.run()
+
+        create_kwargs = (
+            scenario._clients.neutron.create_tap_flow.call_args.kwargs)
+        self.assertEqual("service-0", create_kwargs["tap_service_id"])
+        self.assertEqual("port-2", create_kwargs["source_port"])
+
+    @ddt.data(1, 2)
+    def test_flow_rotation_with_multiple_projects(self, first_iteration):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+        scenario.context["user_choice_method"] = "round_robin"
+        scenario.context["tenants"] = {"project-a": {}, "project-b": {}}
+        scenario.context["tenant"]["tap_services"] = [
+            {"id": "service-0", "port_id": "port-0"},
+            {"id": "service-1", "port_id": "port-1"},
+        ]
+        selected = []
+        for iteration in range(first_iteration, first_iteration + 8, 2):
+            scenario.context["iteration"] = iteration
+            service, port = scenario._select_flow_endpoints()
+            selected.append((service["id"], port["id"]))
+
+        self.assertEqual(
+            [("service-0", "port-2"), ("service-1", "port-3")] * 2,
+            selected)
+
+    def test_flow_selection_with_random_projects(self):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+        scenario.context["user_choice_method"] = "random"
+        with mock.patch.object(taas.random, "randrange",
+                               side_effect=[0, 2]) as mock_randrange:
+            service, port = scenario._select_flow_endpoints()
+
+        self.assertEqual("service-0", service["id"])
+        self.assertEqual("port-3", port["id"])
+        self.assertEqual([mock.call(1), mock.call(3)],
+                         mock_randrange.call_args_list)
+
+    def test_flow_selection_without_source_ports(self):
+        scenario = taas.CreateAndListTapFlows()
+        self._setup_scenario(scenario)
+        scenario.context["tenant"]["ports"] = [{"id": "port-0"}]
+
+        self.assertRaises(ValueError, scenario._select_flow_endpoints)
+
+    def test_tap_flow_names_are_generated(self):
+        scenario = taas.CreateAndUpdateTapFlows()
+        self._setup_scenario(scenario)
+        scenario._clients.neutron.create_tap_flow.return_value = mock.Mock(
+            id="flow-id")
+
+        scenario.run(
+            tap_flow_update_args={"name": "custom-update"})
+
+        create_kwargs = (
+            scenario._clients.neutron.create_tap_flow.call_args.kwargs)
+        self.assertNotIn("name", create_kwargs)
+        update_kwargs = (
+            scenario._clients.neutron.update_tap_flow.call_args.kwargs)
         self.assertEqual("random_name", update_kwargs["name"])
