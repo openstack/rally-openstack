@@ -13,6 +13,7 @@
     vars:
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
+        ceilometer: https://opendev.org/openstack/ceilometer
         watcher: https://opendev.org/openstack/watcher
       devstack_services:
         watcher-api: true

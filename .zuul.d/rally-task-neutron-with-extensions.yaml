@@ -23,13 +23,6 @@
         #neutron-fwaas: true
         neutron-vpnaas: true
         # disable redundant services for the job
-        ceilometer-acentral: false
-        ceilometer-acompute: false
-        ceilometer-alarm-evaluator: false
-        ceilometer-alarm-notifier: false
-        ceilometer-anotification: false
-        ceilometer-api: false
-        ceilometer-collector: false
         horizon: false
         tempest: false
       rally_task: rally-jobs/neutron-with-extensions.yaml
