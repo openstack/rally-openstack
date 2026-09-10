@@ -21,7 +21,6 @@ import hashlib
 import io
 import pathlib
 import re
-import sys
 import time
 import typing as t
 
@@ -55,17 +54,7 @@ if t.TYPE_CHECKING:
 CONF = cfg.CONF
 
 
-if sys.version_info >= (3, 11):
-    StrEnum = enum.StrEnum
-else:
-    class StrEnum(str, enum.Enum):  # type: ignore[no-redef]
-        """Backport of :class:`enum.StrEnum` for Python 3.10."""
-
-        def __str__(self) -> str:
-            return str(self.value)
-
-
-class ImageStatus(StrEnum):
+class ImageStatus(enum.StrEnum):
     """Lifecycle state of an image."""
 
     QUEUED = "queued"
@@ -91,7 +80,7 @@ FAILURE_STATUSES = (
 )
 
 
-class ContainerFormat(StrEnum):
+class ContainerFormat(enum.StrEnum):
     """Container format of an image."""
 
     AMI = "ami"
@@ -101,7 +90,7 @@ class ContainerFormat(StrEnum):
     OVF = "ovf"
 
 
-class DiskFormat(StrEnum):
+class DiskFormat(enum.StrEnum):
     """Disk format of an image."""
 
     AMI = "ami"
@@ -115,14 +104,14 @@ class DiskFormat(StrEnum):
     ISO = "iso"
 
 
-class ImportMethod(StrEnum):
+class ImportMethod(enum.StrEnum):
     """Way the image data reaches Glance on an interoperable import."""
 
     GLANCE_DIRECT = "glance-direct"
     WEB_DOWNLOAD = "web-download"
 
 
-class Visibility(StrEnum):
+class Visibility(enum.StrEnum):
     """Who can see an image.
 
     Glance v1 knows only ``public`` and ``private``; ``shared`` and

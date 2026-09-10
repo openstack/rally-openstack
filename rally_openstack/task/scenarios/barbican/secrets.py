@@ -123,7 +123,7 @@ class BarbicanSecretsCreateSymmetricAndDelete(utils.BarbicanBase):
         payload = base64.b64encode(kdf.derive(payload))
         payload = encodeutils.safe_decode(payload)
         expire_time = (
-            dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+            dt.datetime.now(dt.UTC).replace(tzinfo=None)
             + dt.timedelta(days=5))
         secret = self.admin_barbican.create_secret(
             expiration=expire_time.isoformat(), algorithm=algorithm,
