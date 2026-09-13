@@ -74,7 +74,9 @@ Changed
   Rally 5.1.1 and annotate the specification they accept. As a result
   ``rally plugin show`` for resource types and scenarios documents every key
   of the specification, and a task is checked against it before the workload
-  starts.
+  starts. The parsing of the spec is done in a strict mode, i.e., typos are
+  rejected now as like mutually exclusive groups like
+  ``{"id": ...}``, ``{"name": ...}`` or ``{"regex": ...}``.
 
 * The ``size`` / ``volume_size`` arguments of the Cinder and Nova scenarios now
   document their range form: either an integer (GB) or an object with exactly

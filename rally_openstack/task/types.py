@@ -19,6 +19,8 @@ import operator
 import re
 import typing as t
 
+import typing_extensions as te
+
 from rally import exceptions
 from rally.common import logging
 from rally.common.plugin import plugin
@@ -37,44 +39,62 @@ LOG = logging.getLogger(__name__)
 configure = plugin.configure
 
 
-class IdOrNameSpec(t.TypedDict, total=False):
-    """Specification of a resource to search by its id or exact name."""
+class IDSpec(te.TypedDict, closed=True):
+    """Specification of a resource to search by its id."""
 
     id: t.Annotated[
         str, typeutils.Field(description="the id of an existing resource")]
+
+
+class NameSpec(te.TypedDict, closed=True):
+    """Specification of a resource to search by its exact name."""
+
     name: t.Annotated[
         str, typeutils.Field(description="the exact name of a resource")]
 
 
-class ResourceSpec(IdOrNameSpec, total=False):
-    """Specification of a resource to search by id, name or name regex."""
+class RegexSpec(te.TypedDict, closed=True):
+    """Specification of a resource to search by a regex of its name."""
 
     regex: t.Annotated[
         str,
         typeutils.Field(description="a regex to match a resource name with")]
 
 
-class InexactResourceSpec(ResourceSpec, total=False):
-    """Specification of a resource searched by :meth:`_find_resource`.
+class GlanceImageNameSpec(te.TypedDict, closed=True):
+    """Specification of a Glance image to search by its name."""
 
-    Unlike the rally-core lookup, an ambiguous name or regex is not an error
-    by default: the latest match wins unless ``accurate`` is set.
-    """
-
-    accurate: t.Annotated[
+    name: t.Annotated[
+        str,
+        typeutils.Field(
+            description="the exact name of an image. If nothing matches it "
+                        "exactly, it is retried as a regex")]
+    accurate: te.NotRequired[t.Annotated[
         bool,
         typeutils.Field(
             description="fail instead of picking the latest match when the "
-                        "name or the regex matches several resources")]
-
-
-class GlanceImageSpec(InexactResourceSpec, total=False):
-    """Specification of a Glance image to search."""
-
-    list_kwargs: t.Annotated[
+                        "name matches several images")]]
+    list_kwargs: te.NotRequired[t.Annotated[
         dict[str, t.Any],
         typeutils.Field(
-            description="additional filters for the image listing call")]
+            description="additional filters for the image listing call")]]
+
+
+class GlanceImageRegexSpec(te.TypedDict, closed=True):
+    """Specification of a Glance image to search by a regex of its name."""
+
+    regex: t.Annotated[
+        str,
+        typeutils.Field(description="a regex to match an image name with")]
+    accurate: te.NotRequired[t.Annotated[
+        bool,
+        typeutils.Field(
+            description="fail instead of picking the latest match when the "
+                        "regex matches several images")]]
+    list_kwargs: te.NotRequired[t.Annotated[
+        dict[str, t.Any],
+        typeutils.Field(
+            description="additional filters for the image listing call")]]
 
 
 class GlanceImageArgsSpec(t.TypedDict, total=False):
@@ -135,7 +155,9 @@ class OpenStackResourceType(types.ResourceType):
         return self._clients
 
     def _find_resource(
-        self, resource_spec: InexactResourceSpec, resources: t.Sequence[t.Any]
+        self,
+        resource_spec: t.Mapping[str, t.Any],
+        resources: t.Sequence[t.Any],
     ) -> t.Any:
         """Return the resource whose name matches the pattern.
 
@@ -219,19 +241,19 @@ class Flavor(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: ResourceSpec,
+        resource_spec: IDSpec | NameSpec | RegexSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the id of the flavor described by the specification."""
-        resource_id = resource_spec.get("id")
-        if not resource_id:
-            novaclient = self._get_clients().nova()
-            resource_id = types._id_from_name(
-                resource_config=dict(resource_spec),
-                resources=novaclient.flavors.list(),
-                typename="flavor")
-        return resource_id
+        if "id" in resource_spec:
+            return resource_spec["id"]
+
+        novaclient = self._get_clients().nova()
+        return types._id_from_name(
+            resource_config=dict(resource_spec),
+            resources=novaclient.flavors.list(),
+            typename="flavor")
 
 
 @plugin.configure(name="glance_image")
@@ -241,23 +263,22 @@ class GlanceImage(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: GlanceImageSpec,
+        resource_spec: IDSpec | GlanceImageNameSpec | GlanceImageRegexSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the id of the image described by the specification."""
-        resource_id = resource_spec.get("id")
-        list_kwargs = resource_spec.get("list_kwargs", {})
+        if "id" in resource_spec:
+            return resource_spec["id"]
 
-        if not resource_id:
-            cache_id = hash(frozenset(list_kwargs.items()))
-            if cache_id not in self._cache:
-                glance = image.Image(self._get_clients())
-                self._cache[cache_id] = glance.list_images(**list_kwargs)
-            images = self._cache[cache_id]
-            resource = self._find_resource(resource_spec, images)
-            return resource.id
-        return resource_id
+        list_kwargs = resource_spec.get("list_kwargs", {})
+        cache_id = hash(frozenset(list_kwargs.items()))
+        if cache_id not in self._cache:
+            glance = image.Image(self._get_clients())
+            self._cache[cache_id] = glance.list_images(**list_kwargs)
+        images = self._cache[cache_id]
+        resource = self._find_resource(resource_spec, images)
+        return resource.id
 
 
 @plugin.configure(name="glance_image_args")
@@ -290,24 +311,26 @@ class EC2Image(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: ResourceSpec,
+        resource_spec: IDSpec | NameSpec | RegexSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the EC2 id of the image described by the specification."""
-        if "name" not in resource_spec and "regex" not in resource_spec:
+        lookup: dict[str, t.Any] = dict(resource_spec)
+        if "id" in resource_spec:
             # NOTE(wtakase): gets resource name from OpenStack id
             glanceclient = self._get_clients().glance()
-            resource_name = types._name_from_id(
-                resource_config=dict(resource_spec),
-                resources=list(glanceclient.images.list()),
-                typename="image")
-            resource_spec["name"] = resource_name
+            lookup = {
+                "name": types._name_from_id(
+                    resource_config=lookup,
+                    resources=list(glanceclient.images.list()),
+                    typename="image")
+            }
 
         # NOTE(wtakase): gets EC2 resource id from name or regex
         ec2client = self._get_clients().ec2()
         resource_ec2_id = types._id_from_name(
-            resource_config=dict(resource_spec),
+            resource_config=lookup,
             resources=list(ec2client.get_all_images()),
             typename="ec2_image")
         return resource_ec2_id
@@ -320,19 +343,19 @@ class VolumeType(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: ResourceSpec,
+        resource_spec: IDSpec | NameSpec | RegexSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the id of the volume type described by the spec."""
-        resource_id = resource_spec.get("id")
-        if not resource_id:
-            cinder = block.BlockStorage(self._get_clients())
-            resource_id = types._id_from_name(
-                resource_config=dict(resource_spec),
-                resources=cinder.list_types(),
-                typename="volume_type")
-        return resource_id
+        if "id" in resource_spec:
+            return resource_spec["id"]
+
+        cinder = block.BlockStorage(self._get_clients())
+        return types._id_from_name(
+            resource_config=dict(resource_spec),
+            resources=cinder.list_types(),
+            typename="volume_type")
 
 
 @plugin.configure(name="neutron_network")
@@ -342,23 +365,22 @@ class NeutronNetwork(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: IdOrNameSpec,
+        resource_spec: IDSpec | NameSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the id of the network described by the specification."""
-        resource_id = resource_spec.get("id")
-        if resource_id:
-            return resource_id
-        else:
-            neutronclient = self._get_clients().neutron()
-            for net in neutronclient.list_networks()["networks"]:
-                if net["name"] == resource_spec.get("name"):
-                    return net["id"]
+        if "id" in resource_spec:
+            return resource_spec["id"]
+
+        name = resource_spec["name"]
+        neutronclient = self._get_clients().neutron()
+        for net in neutronclient.list_networks()["networks"]:
+            if net["name"] == name:
+                return net["id"]
 
         raise exceptions.InvalidScenarioArgument(
-            f"Neutron network with name '{resource_spec.get('name')}' "
-            f"not found")
+            f"Neutron network with name '{name}' not found")
 
 
 @plugin.configure(name="watcher_strategy")
@@ -368,21 +390,20 @@ class WatcherStrategy(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: IdOrNameSpec,
+        resource_spec: IDSpec | NameSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the uuid of the strategy described by the spec."""
-        resource_id = resource_spec.get("id")
-        if not resource_id:
-            watcherclient = self._get_clients().watcher()
-            resource_id = types._id_from_name(
-                resource_config=dict(resource_spec),
-                resources=[watcherclient.strategy.get(
-                    resource_spec.get("name"))],
-                typename="strategy",
-                id_attr="uuid")
-        return resource_id
+        if "id" in resource_spec:
+            return resource_spec["id"]
+
+        watcherclient = self._get_clients().watcher()
+        return types._id_from_name(
+            resource_config=dict(resource_spec),
+            resources=[watcherclient.strategy.get(resource_spec["name"])],
+            typename="strategy",
+            id_attr="uuid")
 
 
 @plugin.configure(name="watcher_goal")
@@ -392,17 +413,17 @@ class WatcherGoal(OpenStackResourceType):
     def pre_process(
         self,
         *,
-        resource_spec: IdOrNameSpec,
+        resource_spec: IDSpec | NameSpec,
         config: types.ConvertConfig,
         output_type: t.Any,
     ) -> str:
         """Return the uuid of the goal described by the specification."""
-        resource_id = resource_spec.get("id")
-        if not resource_id:
-            watcherclient = self._get_clients().watcher()
-            resource_id = types._id_from_name(
-                resource_config=dict(resource_spec),
-                resources=[watcherclient.goal.get(resource_spec.get("name"))],
-                typename="goal",
-                id_attr="uuid")
-        return resource_id
+        if "id" in resource_spec:
+            return resource_spec["id"]
+
+        watcherclient = self._get_clients().watcher()
+        return types._id_from_name(
+            resource_config=dict(resource_spec),
+            resources=[watcherclient.goal.get(resource_spec["name"])],
+            typename="goal",
+            id_attr="uuid")

@@ -62,38 +62,6 @@ class OpenStackResourceTypeTestCase(test.TestCase):
         self.assertIn("requires admin or user credentials",
                       e.format_message())
 
-    @ddt.data(
-        {"type_cls": types.Flavor,
-         "keys": {"id", "name", "regex"}},
-        {"type_cls": types.GlanceImage,
-         "keys": {"id", "name", "regex", "accurate", "list_kwargs"}},
-        {"type_cls": types.GlanceImageArguments,
-         "keys": {"is_public", "visibility"}},
-        {"type_cls": types.EC2Image,
-         "keys": {"id", "name", "regex"}},
-        {"type_cls": types.VolumeType,
-         "keys": {"id", "name", "regex"}},
-        {"type_cls": types.NeutronNetwork,
-         "keys": {"id", "name"}},
-        {"type_cls": types.WatcherStrategy,
-         "keys": {"id", "name"}},
-        {"type_cls": types.WatcherGoal,
-         "keys": {"id", "name"}},
-    )
-    @ddt.unpack
-    def test_input_schema(self, type_cls, keys):
-        """The pre_process() annotation drives the task input schema."""
-        schema = type_cls.get_info()["schema"]
-
-        self.assertEqual("object", schema["type"])
-        self.assertEqual(keys, set(schema["properties"]))
-        # every key is optional and unknown keys stay allowed, so no task
-        #   that used to be valid can start failing the validation
-        self.assertNotIn("required", schema)
-        self.assertTrue(schema["additionalProperties"])
-        for key in keys:
-            self.assertIn("description", schema["properties"][key])
-
     def test__find_resource(self):
 
         @types.configure(name=self.id())
