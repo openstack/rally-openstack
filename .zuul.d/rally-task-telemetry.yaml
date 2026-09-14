@@ -5,22 +5,11 @@
       - name: openstack/devstack
       - name: openstack/rally
       - name: openstack/rally-openstack
-      - name: openstack/heat
       - name: openstack/ceilometer
     vars:
       devstack_localrc:
-        CEILOMETER_BACKEND: gnocchi
-        # TODO(frickler): drop this once heat no longer needs it
-        KEYSTONE_ADMIN_ENDPOINT: true
+        CEILOMETER_BACKENDS: gnocchi
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         ceilometer: https://opendev.org/openstack/ceilometer
-      devstack_services:
-        ceilometer-acentral: true
-        ceilometer-acompute: true
-        ceilometer-alarm-evaluator: true
-        ceilometer-alarm-notifier: true
-        ceilometer-anotification: true
-        ceilometer-api: true
-        ceilometer-collector: true
       rally_task: rally-jobs/telemetry.yaml

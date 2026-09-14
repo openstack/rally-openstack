@@ -9,12 +9,6 @@
         Q_AGENT: openvswitch
       devstack_services:
         neutron-trunk: true
-        # Cinder services
-        c-api: true
-        c-bak: true
-        c-sch: true
-        c-vol: true
-        cinder: true
         # Swift services
         s-account: false
         s-container: false
