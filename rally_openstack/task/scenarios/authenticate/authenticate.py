@@ -45,11 +45,10 @@ class ValidateGlance(scenario.OpenStackScenario):
 
         :param repetitions: number of times to validate
         """
-        glance_client = self.clients("glance")
         image_name = "__intentionally_non_existent_image___"
         with atomic.ActionTimer(self, "authenticate.validate_glance"):
             for i in range(repetitions):
-                list(glance_client.images.list(name=image_name))
+                self._clients.glance.list_images(name=image_name)
 
 
 @validation.add("number", param_name="repetitions", minval=1)

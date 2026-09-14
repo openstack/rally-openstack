@@ -240,10 +240,11 @@ class CinderServersTestCase(test.ScenarioTestCase):
         scenario._delete_server.assert_called_once_with(
             fake_server, force=force_delete)
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test_create_and_upload_volume_to_image(self, mock_image):
+    @mock.patch("rally_openstack.common.osclients.Clients.glance",
+                new_callable=mock.PropertyMock, create=True)
+    def test_create_and_upload_volume_to_image(self, mock_clients_glance):
         mock_volume_service = self.mock_cinder.return_value
-        mock_image_service = mock_image.return_value
+        mock_image_service = mock_clients_glance.return_value
         scenario = volumes.CreateAndUploadVolumeToImage(self._get_context())
 
         scenario.run(2, image="img", container_format="fake",

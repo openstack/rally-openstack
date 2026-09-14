@@ -15,8 +15,6 @@
 from __future__ import annotations
 
 import copy
-import operator
-import re
 import typing as t
 
 import typing_extensions as te
@@ -29,7 +27,7 @@ from rally.task import types
 from rally.utils import typeutils
 
 from rally_openstack.common import osclients
-from rally_openstack.common.services.image import image
+from rally_openstack.common.clients import glance
 from rally_openstack.common.services.storage import block
 
 
@@ -61,7 +59,36 @@ class RegexSpec(te.TypedDict, closed=True):
         typeutils.Field(description="a regex to match a resource name with")]
 
 
-class GlanceImageNameSpec(te.TypedDict, closed=True):
+class _GlanceImageFiltersSpec(te.TypedDict):
+    """Filters shared by every Glance image lookup specification."""
+
+    accurate: te.NotRequired[t.Annotated[
+        bool,
+        typeutils.Field(
+            description="fail instead of picking the latest match when "
+                        "several images match")]]
+    status: te.NotRequired[t.Annotated[
+        glance.ImageStatus | None,
+        typeutils.Field(
+            description="only consider images in this status. Defaults to "
+                        "'active'; null considers any of them")]]
+    visibility: te.NotRequired[t.Annotated[
+        glance.Visibility,
+        typeutils.Field(
+            description="only consider images with this visibility")]]
+    owner: te.NotRequired[t.Annotated[
+        str,
+        typeutils.Field(
+            description="only consider images owned by this project id")]]
+    list_kwargs: te.NotRequired[t.Annotated[
+        dict[str, t.Any],
+        typeutils.Field(
+            description="DEPRECATED. The former home of 'status', "
+                        "'visibility' and 'owner'. Set them directly "
+                        "instead")]]
+
+
+class GlanceImageNameSpec(_GlanceImageFiltersSpec, closed=True):
     """Specification of a Glance image to search by its name."""
 
     name: t.Annotated[
@@ -69,32 +96,14 @@ class GlanceImageNameSpec(te.TypedDict, closed=True):
         typeutils.Field(
             description="the exact name of an image. If nothing matches it "
                         "exactly, it is retried as a regex")]
-    accurate: te.NotRequired[t.Annotated[
-        bool,
-        typeutils.Field(
-            description="fail instead of picking the latest match when the "
-                        "name matches several images")]]
-    list_kwargs: te.NotRequired[t.Annotated[
-        dict[str, t.Any],
-        typeutils.Field(
-            description="additional filters for the image listing call")]]
 
 
-class GlanceImageRegexSpec(te.TypedDict, closed=True):
+class GlanceImageRegexSpec(_GlanceImageFiltersSpec, closed=True):
     """Specification of a Glance image to search by a regex of its name."""
 
     regex: t.Annotated[
         str,
         typeutils.Field(description="a regex to match an image name with")]
-    accurate: te.NotRequired[t.Annotated[
-        bool,
-        typeutils.Field(
-            description="fail instead of picking the latest match when the "
-                        "regex matches several images")]]
-    list_kwargs: te.NotRequired[t.Annotated[
-        dict[str, t.Any],
-        typeutils.Field(
-            description="additional filters for the image listing call")]]
 
 
 class GlanceImageArgsSpec(t.TypedDict, total=False):
@@ -118,6 +127,8 @@ class GlanceImageArgsSpec(t.TypedDict, total=False):
 class OpenStackResourceType(types.ResourceType):
     """A base class for OpenStack ResourceTypes plugins with help-methods"""
 
+    _clients: osclients.Clients
+
     def __init__(
         self,
         context: dict[str, t.Any],
@@ -134,104 +145,12 @@ class OpenStackResourceType(types.ResourceType):
         super().__init__(
             context=context, cache=cache, scenario_cls=scenario_cls)
 
-        self._clients: osclients.Clients | None = None
         if self._context.get("admin"):
             self._clients = osclients.Clients(
                 self._context["admin"]["credential"])
         elif self._context.get("users"):
             self._clients = osclients.Clients(
                 self._context["users"][0]["credential"])
-
-    def _get_clients(self) -> osclients.Clients:
-        """Return the clients to discover the resource with.
-
-        :raises RallyException: if the context provides neither admin nor
-            user credentials
-        """
-        if self._clients is None:
-            raise exceptions.RallyException(
-                f"Resource type '{self.get_name()}' requires admin or user "
-                f"credentials to discover resources.")
-        return self._clients
-
-    def _find_resource(
-        self,
-        resource_spec: t.Mapping[str, t.Any],
-        resources: t.Sequence[t.Any],
-    ) -> t.Any:
-        """Return the resource whose name matches the pattern.
-
-        .. note:: This method is a modified version of
-            `rally.task.types.obj_from_name`. The difference is supporting the
-            case of returning the latest version of resource in case of
-            `accurate=False` option.
-
-        :param resource_spec: resource specification to find.
-            Expected keys:
-
-            * name - The exact name of resource to search. If no exact match
-              and value of *accurate* key is False (default behaviour), name
-              will be interpreted as a regexp
-            * regexp - a regexp of resource name to match. If several resources
-              match and value of *accurate* key is False (default behaviour),
-              the latest resource will be returned.
-        :param resources: iterable containing all resources
-        :raises InvalidScenarioArgument: if the pattern does
-            not match anything.
-
-        :returns: resource object mapped to `name` or `regex`
-        """
-        if "name" in resource_spec:
-            # In a case of pattern string exactly matches resource name
-            matching_exact = [resource for resource in resources
-                              if resource.name == resource_spec["name"]]
-            if len(matching_exact) == 1:
-                return matching_exact[0]
-            elif len(matching_exact) > 1:
-                raise exceptions.InvalidScenarioArgument(
-                    "%(typename)s with name '%(pattern)s' "
-                    "is ambiguous, possible matches "
-                    "by id: %(ids)s" % {
-                        "typename": self.get_name().title(),
-                        "pattern": resource_spec["name"],
-                        "ids": ", ".join(map(operator.attrgetter("id"),
-                                             matching_exact))})
-            if resource_spec.get("accurate", False):
-                raise exceptions.InvalidScenarioArgument(
-                    "%(typename)s with name '%(name)s' not found" % {
-                        "typename": self.get_name().title(),
-                        "name": resource_spec["name"]})
-            # Else look up as regex
-            patternstr = resource_spec["name"]
-        elif "regex" in resource_spec:
-            patternstr = resource_spec["regex"]
-        else:
-            raise exceptions.InvalidScenarioArgument(
-                "%(typename)s 'id', 'name', or 'regex' not found "
-                "in '%(resource_spec)s' " % {
-                    "typename": self.get_name().title(),
-                    "resource_spec": resource_spec})
-
-        pattern = re.compile(patternstr)
-        matching = [resource for resource in resources
-                    if re.search(pattern, resource.name or "")]
-        if not matching:
-            raise exceptions.InvalidScenarioArgument(
-                "%(typename)s with pattern '%(pattern)s' not found" % {
-                    "typename": self.get_name().title(),
-                    "pattern": pattern.pattern})
-        elif len(matching) > 1:
-            if not resource_spec.get("accurate", False):
-                return sorted(matching, key=lambda o: o.name or "")[-1]
-
-            raise exceptions.InvalidScenarioArgument(
-                "%(typename)s with name '%(pattern)s' is ambiguous, possible "
-                "matches by id: %(ids)s" % {
-                    "typename": self.get_name().title(),
-                    "pattern": pattern.pattern,
-                    "ids": ", ".join(map(operator.attrgetter("id"),
-                                         matching))})
-        return matching[0]
 
 
 @plugin.configure(name="nova_flavor")
@@ -249,7 +168,7 @@ class Flavor(OpenStackResourceType):
         if "id" in resource_spec:
             return resource_spec["id"]
 
-        novaclient = self._get_clients().nova()
+        novaclient = self._clients.nova()
         return types._id_from_name(
             resource_config=dict(resource_spec),
             resources=novaclient.flavors.list(),
@@ -271,14 +190,39 @@ class GlanceImage(OpenStackResourceType):
         if "id" in resource_spec:
             return resource_spec["id"]
 
-        list_kwargs = resource_spec.get("list_kwargs", {})
-        cache_id = hash(frozenset(list_kwargs.items()))
-        if cache_id not in self._cache:
-            glance = image.Image(self._get_clients())
-            self._cache[cache_id] = glance.list_images(**list_kwargs)
-        images = self._cache[cache_id]
-        resource = self._find_resource(resource_spec, images)
-        return resource.id
+        filters: dict[str, t.Any] = dict(resource_spec)
+        list_kwargs = filters.pop("list_kwargs", None)
+        if list_kwargs:
+            LOG.warning(
+                "The 'list_kwargs' key of the 'glance_image' resource type is "
+                "deprecated and will be removed. Set the filters it carries "
+                "('status', 'visibility', 'owner') directly in specific "
+                "arg level."
+            )
+            for key in ("status", "visibility", "owner"):
+                if key in list_kwargs:
+                    filters.setdefault(key, list_kwargs[key])
+
+            if "is_public" in list_kwargs and "visibility" not in filters:
+                filters.setdefault(
+                    "visibility",
+                    glance.Visibility.PUBLIC
+                    if list_kwargs["is_public"]
+                    else glance.Visibility.PRIVATE,
+                )
+
+        # the cache is shared with the other resource types of the workload
+        key = ("glance_image", tuple(sorted(filters.items())))
+        if key not in self._cache:
+            try:
+                image = self._clients.glance.find_image(**filters)
+            except exceptions.GetResourceFailure as e:
+                # what the client reports as a failed lookup is, from here, a
+                # scenario argument that does not describe an usable image
+                raise exceptions.InvalidScenarioArgument(
+                    e.format_message()) from e
+            self._cache[key] = image.id
+        return t.cast("str", self._cache[key])
 
 
 @plugin.configure(name="glance_image_args")
@@ -319,16 +263,16 @@ class EC2Image(OpenStackResourceType):
         lookup: dict[str, t.Any] = dict(resource_spec)
         if "id" in resource_spec:
             # NOTE(wtakase): gets resource name from OpenStack id
-            glanceclient = self._get_clients().glance()
             lookup = {
                 "name": types._name_from_id(
                     resource_config=lookup,
-                    resources=list(glanceclient.images.list()),
+                    resources=self._clients.glance.list_images(
+                        status=None),
                     typename="image")
             }
 
         # NOTE(wtakase): gets EC2 resource id from name or regex
-        ec2client = self._get_clients().ec2()
+        ec2client = self._clients.ec2()
         resource_ec2_id = types._id_from_name(
             resource_config=lookup,
             resources=list(ec2client.get_all_images()),
@@ -351,7 +295,7 @@ class VolumeType(OpenStackResourceType):
         if "id" in resource_spec:
             return resource_spec["id"]
 
-        cinder = block.BlockStorage(self._get_clients())
+        cinder = block.BlockStorage(self._clients)
         return types._id_from_name(
             resource_config=dict(resource_spec),
             resources=cinder.list_types(),
@@ -374,7 +318,7 @@ class NeutronNetwork(OpenStackResourceType):
             return resource_spec["id"]
 
         name = resource_spec["name"]
-        neutronclient = self._get_clients().neutron()
+        neutronclient = self._clients.neutron()
         for net in neutronclient.list_networks()["networks"]:
             if net["name"] == name:
                 return net["id"]
@@ -398,7 +342,7 @@ class WatcherStrategy(OpenStackResourceType):
         if "id" in resource_spec:
             return resource_spec["id"]
 
-        watcherclient = self._get_clients().watcher()
+        watcherclient = self._clients.watcher()
         return types._id_from_name(
             resource_config=dict(resource_spec),
             resources=[watcherclient.strategy.get(resource_spec["name"])],
@@ -421,7 +365,7 @@ class WatcherGoal(OpenStackResourceType):
         if "id" in resource_spec:
             return resource_spec["id"]
 
-        watcherclient = self._get_clients().watcher()
+        watcherclient = self._clients.watcher()
         return types._id_from_name(
             resource_config=dict(resource_spec),
             resources=[watcherclient.goal.get(resource_spec["name"])],

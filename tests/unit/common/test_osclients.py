@@ -616,7 +616,7 @@ class OSClientsTestCase(test.TestCase):
         self.assertEqual(fake_heat, self.clients.cache["heat"])
 
     @mock.patch("%s.Glance._get_endpoint" % PATH)
-    def test_glance(self, mock_glance__get_endpoint):
+    def test_glance_legacy(self, mock_glance__get_endpoint):
         fake_glance = fakes.FakeGlanceClient()
         mock_glance = mock.MagicMock()
         mock_glance__get_endpoint.return_value = "http://fake.to:2/fake"
@@ -625,7 +625,8 @@ class OSClientsTestCase(test.TestCase):
         with mock.patch.dict("sys.modules",
                              {"glanceclient": mock_glance,
                               "keystoneauth1": mock_keystoneauth1}):
-            self.assertNotIn("glance", self.clients.cache)
+            self.assertNotIn("glance_legacy_client_None",
+                             self.clients.cache)
             client = self.clients.glance()
             self.assertEqual(fake_glance, client)
             kw = {
@@ -633,7 +634,8 @@ class OSClientsTestCase(test.TestCase):
                 "session": mock_keystoneauth1.session.Session(),
                 "endpoint_override": mock_glance__get_endpoint.return_value}
             mock_glance.Client.assert_called_once_with(**kw)
-            self.assertEqual(fake_glance, self.clients.cache["glance"])
+            self.assertEqual(fake_glance,
+                             self.clients.cache["glance_legacy_client_None"])
 
     @mock.patch("%s.Cinder._get_endpoint" % PATH)
     def test_cinder(self, mock_cinder__get_endpoint):

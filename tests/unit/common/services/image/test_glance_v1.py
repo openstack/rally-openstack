@@ -15,8 +15,8 @@
 from unittest import mock
 
 import ddt
-import fixtures
 
+from rally_openstack.common.clients import glance
 from rally_openstack.common.services.image import glance_v1
 from rally_openstack.common.services.image import image
 from tests.unit import test
@@ -35,84 +35,63 @@ class GlanceV1ServiceTestCase(test.TestCase):
         self.name_generator = mock.MagicMock()
         self.service = glance_v1.GlanceV1Service(
             self.clients, name_generator=self.name_generator)
-        self.mock_wait_for_status = fixtures.MockPatch(
-            "rally.task.utils.wait_for_status")
-        self.useFixture(self.mock_wait_for_status)
 
-    def _get_temp_file_name(self):
-        # return a temp file that will be cleaned automatically
-        temp_dir = self.useFixture(fixtures.TempDir())
-        return temp_dir.join("temp-file-name")
+    def test_create_image(self):
+        for is_public, visibility in ((True, glance.Visibility.PUBLIC),
+                                      (False, glance.Visibility.PRIVATE)):
+            with self.subTest(is_public=is_public):
+                self.gc.create_image.reset_mock()
 
-    @ddt.data({"location": "image_location", "is_public": True, "temp": False},
-              {"location": "image_location", "is_public": False, "temp": True})
-    @ddt.unpack
-    def test_create_image(self, location, is_public, temp):
-        image_name = "image_name"
-        container_format = "container_format"
-        disk_format = "disk_format"
-        properties = {"fakeprop": "fake"}
+                image = self.service.create_image(
+                    image_name="image_name",
+                    container_format="container_format",
+                    image_location="image_location",
+                    disk_format="disk_format",
+                    is_public=is_public,
+                    properties={"fakeprop": "fake"})
 
-        # override the location with a private temp file
-        if temp:
-            location = self._get_temp_file_name()
-
-        image = self.service.create_image(
-            image_name=image_name,
-            container_format=container_format,
-            image_location=location,
-            disk_format=disk_format,
-            is_public=is_public,
-            properties=properties)
-
-        call_args = {"container_format": container_format,
-                     "disk_format": disk_format,
-                     "is_public": is_public,
-                     "name": image_name,
-                     "min_disk": 0,
-                     "min_ram": 0,
-                     "properties": properties,
-                     "copy_from": location}
-
-        self.gc.images.create.assert_called_once_with(**call_args)
-        self.assertEqual(image, self.mock_wait_for_status.mock.return_value)
+                self.gc.create_image.assert_called_once_with(
+                    "image_name",
+                    location="image_location",
+                    container_format="container_format",
+                    disk_format="disk_format",
+                    visibility=visibility,
+                    min_disk=0,
+                    min_ram=0,
+                    properties={"fakeprop": "fake"})
+                self.assertEqual(
+                    self.gc.create_image.return_value, image)
 
     @ddt.data({"image_name": None},
               {"image_name": "test_image_name"})
     @ddt.unpack
     def test_update_image(self, image_name):
         image_id = "image_id"
-        min_disk = 0
-        min_ram = 0
         expected_image_name = image_name or self.name_generator.return_value
 
         image = self.service.update_image(image_id=image_id,
                                           image_name=image_name,
-                                          min_disk=min_disk,
-                                          min_ram=min_ram)
-        self.assertEqual(self.gc.images.update.return_value, image)
-        self.gc.images.update.assert_called_once_with(image_id,
-                                                      name=expected_image_name,
-                                                      min_disk=min_disk,
-                                                      min_ram=min_ram)
+                                          min_disk=0,
+                                          min_ram=0)
+        self.assertEqual(self.gc.update_image.return_value, image)
+        self.gc.update_image.assert_called_once_with(
+            image_id, name=expected_image_name, min_disk=0, min_ram=0)
 
-    @ddt.data({"status": "activate", "is_public": True, "owner": "owner"},
-              {"status": "activate", "is_public": False, "owner": "owner"},
-              {"status": "activate", "is_public": None, "owner": "owner"})
-    @ddt.unpack
-    def test_list_images(self, status, is_public, owner):
-        self.service.list_images(is_public=is_public, status=status,
-                                 owner=owner)
-        self.gc.images.list.assert_called_once_with(status=status,
-                                                    owner=owner,
-                                                    is_public=is_public)
+    def test_list_images(self):
+        for is_public, visibility in ((True, glance.Visibility.PUBLIC),
+                                      (False, glance.Visibility.PRIVATE),
+                                      (None, None)):
+            with self.subTest(is_public=is_public):
+                self.gc.list_images.reset_mock()
+                self.service.list_images(is_public=is_public, status="active",
+                                         owner="owner")
+                self.gc.list_images.assert_called_once_with(
+                    status="active", visibility=visibility, owner="owner")
 
     def test_set_visibility(self):
-        image_id = "image_id"
-        is_public = True
-        self.service.set_visibility(image_id=image_id)
-        self.gc.images.update.assert_called_once_with(
-            image_id, is_public=is_public)
+        self.service.set_visibility(image_id="image_id")
+        self.gc.update_image.assert_called_once_with(
+            "image_id", visibility=glance.Visibility.PUBLIC)
 
 
 @ddt.ddt

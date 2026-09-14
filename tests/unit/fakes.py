@@ -964,6 +964,21 @@ class FakeGlanceClient:
         self.images = FakeImageManager()
         self.version = version
 
+    def __call__(self, version=None, *, legacy=True):
+        return self
+
+    def list_images(self, status="active", visibility=None, owner=None,
+                    name=None, ids=None):
+        images = self.images.list()
+        if name is not None:
+            images = [i for i in images if i.name == name]
+        if ids is not None:
+            images = [i for i in images if i.id in ids]
+        return images
+
+    def get_image(self, image):
+        return self.images.get(getattr(image, "id", image))
+
 
 class FakeCinderClient:
 
@@ -1502,9 +1517,10 @@ class FakeClients:
             self._nova = FakeNovaClient()
         return self._nova
 
-    def glance(self, version="1"):
+    @property
+    def glance(self):
         if not self._glance:
-            self._glance = FakeGlanceClient(version)
+            self._glance = FakeGlanceClient()
         return self._glance
 
     def cinder(self):

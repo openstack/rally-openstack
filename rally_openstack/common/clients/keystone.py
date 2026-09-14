@@ -75,9 +75,6 @@ class Keystone(base.LegacyClientCompat):
     action wrapping the version-specific ``keystone_v{2,3}.<op>`` one.
     """
 
-    # process-wide guard so the legacy-client deprecation is logged only once
-    _legacy_deprecation_logged = False
-
     @property
     def keystone(self) -> t.NoReturn:
         raise exceptions.RallyException(
@@ -212,15 +209,7 @@ class Keystone(base.LegacyClientCompat):
         then that will be used unless the version parameter is passed.
         """
 
-        if not Keystone._legacy_deprecation_logged:
-            LOG.warning(
-                "Accessing the raw python-keystoneclient via "
-                "`clients.keystone(...)` is deprecated and will be "
-                "removed. Use the rally-owned identity client (the "
-                "`clients.keystone` attribute, or "
-                "`clients.keystone(legacy=False)`) instead."
-            )
-            Keystone._legacy_deprecation_logged = True
+        base.warn_legacy_client("keystone")
 
         import keystoneclient
         from keystoneclient import client

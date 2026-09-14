@@ -11,48 +11,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import enum
-
 from rally import exceptions
 from rally.common import cfg
+from rally.common import logging
 from rally.task import service
 
+from rally_openstack.common.clients import glance
+
+
+LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 
 UnifiedImage = service.make_resource_cls(
     "Image", properties=["id", "name", "visibility", "status"])
 
-
-class ContainerFormat(str, enum.Enum):
-    """Container format of an image."""
-
-    AMI = "ami"
-    ARI = "ari"
-    AKI = "aki"
-    BARE = "bare"
-    OVF = "ovf"
-
-
-class DiskFormat(str, enum.Enum):
-    """Disk format of an image."""
-
-    AMI = "ami"
-    ARI = "ari"
-    AKI = "aki"
-    VHD = "vhd"
-    VMDK = "vmdk"
-    RAW = "raw"
-    QCOW2 = "qcow2"
-    VDI = "vdi"
-    ISO = "iso"
-
-
-class ImportMethod(str, enum.Enum):
-    """Way the image data reaches Glance on an interoperable import."""
-
-    GLANCE_DIRECT = "glance-direct"
-    WEB_DOWNLOAD = "web-download"
+# The image vocabulary now belongs to the rally-owned image client; these names
+# stay here so plugins that import them from this module keep working.
+ContainerFormat = glance.ContainerFormat
+DiskFormat = glance.DiskFormat
+ImportMethod = glance.ImportMethod
+Visibility = glance.Visibility
 
 
 class VisibilityException(exceptions.RallyException):
@@ -70,9 +49,30 @@ class RemovePropsException(exceptions.RallyException):
 
 
 class Image(service.UnifiedService):
+    """Deprecated image service wrapper.
+
+    Superseded by the rally-owned image client reachable as the
+    ``clients.glance`` attribute (openstacksdk-backed, version-agnostic).
+    Kept for backward compatibility with out-of-tree plugins.
+    """
+
+    # NOTE(andreykurilin): process-wide guard so the deprecation is logged
+    #   only once
+    _deprecation_logged = False
+
+    def __init__(self, *args, **kwargs):
+        if not Image._deprecation_logged:
+            LOG.warning(
+                "The image.Image service layer is deprecated and will be "
+                "removed. Use the rally-owned image client (the "
+                "`clients.glance` attribute) instead."
+            )
+            Image._deprecation_logged = True
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def is_applicable(cls, clients):
-        cloud_version = str(clients.glance().version).split(".")[0]
+        cloud_version = clients.glance.version
         return cloud_version == cls._meta_get("impl")._meta_get("version")
 
     @service.should_be_overridden

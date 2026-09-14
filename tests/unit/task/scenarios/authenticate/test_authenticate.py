@@ -29,19 +29,13 @@ class AuthenticateTestCase(test.ScenarioTestCase):
                                        "authenticate.keystone")
 
     def test_validate_glance(self):
-        scenario_inst = authenticate.ValidateGlance()
+        clients = mock.Mock()
+        scenario_inst = authenticate.ValidateGlance(clients=clients)
         scenario_inst.run(5)
 
-        # NOTE(stpierre): We can't use assert_has_calls() here because
-        # that includes calls on the return values of the mock object
-        # as well. Glance (and Heat, tested below) returns an iterator that
-        # the scenario wraps in list() in order to
-        # force glanceclient to actually make the API call, and this
-        # results in a bunch of call().__iter__() and call().__len__()
-        # calls that aren't matched if we use assert_has_calls().
-        self.assertCountEqual(
-            self.clients("glance").images.list.call_args_list,
-            [mock.call(name=mock.ANY)] * 5)
+        self.assertEqual(
+            [mock.call(name="__intentionally_non_existent_image___")] * 5,
+            clients.glance.list_images.call_args_list)
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
                                        "authenticate.validate_glance")
 

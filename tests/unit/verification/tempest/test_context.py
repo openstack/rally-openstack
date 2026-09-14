@@ -74,21 +74,15 @@ class TempestContextTestCase(test.TestCase):
         self.context.conf.add_section("orchestration")
         self.context.conf.add_section("scenario")
 
-    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open(), create=True)
-    def test__download_image_from_glance(self, mock_open):
+    def test__download_image_from_glance(self):
         self.mock_isfile.return_value = False
         img_path = os.path.join(self.context.data_dir, "foo")
         img = mock.MagicMock()
-        glanceclient = self.context.clients.glance()
-        glanceclient.images.data.return_value = "data"
 
         self.context._download_image_from_source(img_path, img)
-        mock_open.assert_called_once_with(img_path, "wb")
-        glanceclient.images.data.assert_called_once_with(img.id)
-        mock_open().write.assert_has_calls([mock.call("d"),
-                                            mock.call("a"),
-                                            mock.call("t"),
-                                            mock.call("a")])
+
+        self.context.clients.glance.download_image.assert_called_once_with(
+            img.id, output=img_path)
 
     @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     @mock.patch("requests.get", return_value=mock.MagicMock(status_code=200))
@@ -165,37 +159,29 @@ class TempestContextTestCase(test.TestCase):
         self.assertIn(role3, created_roles)
         self.assertIn(role4, created_roles)
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__discover_image(self, mock_image):
-        client = mock_image.return_value
-        client.list_images.return_value = [fakes.FakeImage(name="Foo"),
+    def test__discover_image(self):
+        glance = self.context.clients.glance
+        glance.list_images.return_value = [fakes.FakeImage(name="Foo"),
                                            fakes.FakeImage(name="CirrOS")]
 
         image = self.context._discover_image()
         self.assertEqual("CirrOS", image.name)
 
-    @mock.patch("%s.open" % PATH, side_effect=mock.mock_open(), create=True)
-    @mock.patch("rally_openstack.common.services.image.image.Image")
     @mock.patch("os.path.isfile", return_value=False)
-    def test__download_image(self, mock_isfile, mock_image, mock_open):
+    def test__download_image(self, mock_isfile):
         img_1 = mock.MagicMock()
         img_1.name = "Foo"
         img_2 = mock.MagicMock()
         img_2.name = "CirrOS"
-        glanceclient = self.context.clients.glance()
-        glanceclient.images.data.return_value = "data"
-        mock_image.return_value.list_images.return_value = [img_1, img_2]
+        glance = self.context.clients.glance
+        glance.list_images.return_value = [img_1, img_2]
 
         self.context._download_image()
         img_path = os.path.join(self.context.data_dir, self.context.image_name)
-        mock_image.return_value.list_images.assert_called_once_with(
+        glance.list_images.assert_called_once_with(
             status="active", visibility="public")
-        glanceclient.images.data.assert_called_once_with(img_2.id)
-        mock_open.assert_called_once_with(img_path, "wb")
-        mock_open().write.assert_has_calls([mock.call("d"),
-                                            mock.call("a"),
-                                            mock.call("t"),
-                                            mock.call("a")])
+        glance.download_image.assert_called_once_with(
+            img_2.id, output=img_path)
 
     # We can choose any option to test the '_configure_option' method. So let's
     # configure the 'flavor_ref' option.
@@ -212,9 +198,8 @@ class TempestContextTestCase(test.TestCase):
         result = self.context.conf.get("compute", "flavor_ref")
         self.assertEqual("id1", result)
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__discover_or_create_image_when_image_exists(self, mock_image):
-        client = mock_image.return_value
+    def test__discover_or_create_image_when_image_exists(self):
+        client = self.context.clients.glance
         client.list_images.return_value = [fakes.FakeImage(name="CirrOS")]
 
         image = self.context._discover_or_create_image()
@@ -222,20 +207,20 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual(0, client.create_image.call_count)
         self.assertEqual(0, len(self.context._created_images))
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__discover_or_create_image(self, mock_image):
-        client = mock_image.return_value
+    def test__discover_or_create_image(self):
+        client = self.context.clients.glance
+        client.list_images.return_value = []
 
         image = self.context._discover_or_create_image()
-        self.assertEqual(image, mock_image().create_image.return_value)
+        self.assertEqual(image, client.create_image.return_value)
         self.assertEqual(self.context._created_images[0],
                          client.create_image.return_value)
         params = {"container_format": CONF.openstack.img_container_format,
-                  "image_location": mock.ANY,
+                  "location": mock.ANY,
                   "disk_format": CONF.openstack.img_disk_format,
-                  "image_name": mock.ANY,
                   "visibility": "public"}
-        client.create_image.assert_called_once_with(**params)
+        client.create_image.assert_called_once_with(
+            mock.ANY, **params)
 
     def test__discover_or_create_flavor_when_flavor_exists(self):
         client = self.context.clients.nova()
@@ -308,24 +293,21 @@ class TempestContextTestCase(test.TestCase):
         client = self.context.clients.keystone
         self.assertEqual(2, client.delete_role.call_count)
 
-    @mock.patch("rally_openstack.common.services.image.image.Image")
-    def test__cleanup_images(self, mock_image):
+    def test__cleanup_images(self):
         self.context._created_images = [fakes.FakeImage(id="id1"),
                                         fakes.FakeImage(id="id2")]
 
         self.context.conf.set("compute", "image_ref", "id1")
         self.context.conf.set("compute", "image_ref_alt", "id2")
 
-        image_service = mock_image.return_value
-        image_service.get_image.side_effect = [
-            fakes.FakeImage(id="id1", status="DELETED"),
-            fakes.FakeImage(id="id2"),
-            fakes.FakeImage(id="id2", status="DELETED")]
-
         self.context._cleanup_images()
-        client = self.context.clients.glance()
-        client.images.delete.assert_has_calls([mock.call("id1"),
-                                               mock.call("id2")])
+
+        client = self.context.clients.glance
+        client.delete_image.assert_has_calls([mock.call("id1"),
+                                              mock.call("id2")])
+        client.wait_for_image_deleted.assert_has_calls([
+            mock.call("id1", timeout=mock.ANY, check_interval=mock.ANY),
+            mock.call("id2", timeout=mock.ANY, check_interval=mock.ANY)])
 
         self.assertEqual("", self.context.conf.get("compute", "image_ref"))
         self.assertEqual("", self.context.conf.get("compute", "image_ref_alt"))

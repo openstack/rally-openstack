@@ -214,16 +214,16 @@ class KeystoneSessionTestCase(KeystoneTestMixin, test.TestCase):
         self.assertEqual("internal", kwargs["interface"])
 
     def test_create_client_warns_once(self):
-        keystone.Keystone._legacy_deprecation_logged = False
-        self.addCleanup(setattr, keystone.Keystone,
-                        "_legacy_deprecation_logged", False)
+        keystone.base._reported_legacy_clients.discard("keystone")
+        self.addCleanup(
+            keystone.base._reported_legacy_clients.discard, "keystone")
         ksc = mock.MagicMock(__version__="2.0.0")
         ks = self._make_keystone(version="3")
         ks.get_session = mock.Mock(
             return_value=(mock.Mock(), mock.Mock(_user_domain_name=None)))
         ks._cache["keystone_auth_ref"] = mock.Mock()
         with mock.patch.dict("sys.modules", {"keystoneclient": ksc}):
-            with mock.patch.object(keystone, "LOG") as mock_log:
+            with mock.patch.object(keystone.base, "LOG") as mock_log:
                 ks.create_client(version="3")
                 ks.create_client(version="3")
         mock_log.warning.assert_called_once()

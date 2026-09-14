@@ -13,11 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
 from unittest import mock
 
 import ddt
-from glanceclient import exc as glance_exc
 from novaclient import exceptions as nova_exc
 
 from rally import exceptions
@@ -30,24 +28,29 @@ from tests.unit import test
 PATH = "rally_openstack.common.validators"
 
 
-context = {
-    "admin": mock.MagicMock(),
-    "users": [mock.MagicMock()],
-}
+def make_context():
+    """Build a workload context. Mocks must not be shared between tests."""
+    return {
+        "admin": mock.MagicMock(),
+        "users": [mock.MagicMock()],
+    }
 
-config = dict(args={"image": {"id": "fake_id",
-                              "min_ram": 10,
-                              "size": 1024 ** 3,
-                              "min_disk": 10.0 * (1024 ** 3),
-                              "image_name": "foo_image"},
-                    "flavor": {"id": "fake_flavor_id",
-                               "name": "test"},
-                    "foo_image": {"id": "fake_image_id"}
-                    },
-              context={"images": {"image_name": "foo_image"},
-                       "api_versions@openstack": mock.MagicMock(),
-                       "zones": {"set_zone_in_network": True}}
-              )
+
+def make_config():
+    """Build a workload configuration."""
+    return dict(args={"image": {"id": "fake_id",
+                                "min_ram": 10,
+                                "size": 1024 ** 3,
+                                "min_disk": 10.0 * (1024 ** 3),
+                                "image_name": "foo_image"},
+                      "flavor": {"id": "fake_flavor_id",
+                                 "name": "test"},
+                      "foo_image": {"id": "fake_image_id"}
+                      },
+                context={"images": {"image_name": "foo_image"},
+                         "api_versions@openstack": mock.MagicMock(),
+                         "zones": {"set_zone_in_network": True}}
+                )
 
 
 @mock.patch("rally_openstack.task.contexts.keystone.roles.RoleGenerator")
@@ -117,8 +120,8 @@ class ImageExistsValidatorTestCase(test.TestCase):
     def setUp(self):
         super().setUp()
         self.validator = validators.ImageExistsValidator("image", True)
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     @ddt.unpack
     @ddt.data(
@@ -154,7 +157,7 @@ class ImageExistsValidatorTestCase(test.TestCase):
 
         self.validator.validate(self.context, config, None, None)
 
-    @mock.patch("%s.openstack_types.GlanceImage" % PATH)
+    @mock.patch(f"{PATH}.openstack_types.GlanceImage")
     def test_validator_image_not_in_context(self, mock_glance_image):
         mock_glance_image.return_value.pre_process.return_value = "image_id"
         config = {
@@ -164,7 +167,6 @@ class ImageExistsValidatorTestCase(test.TestCase):
 
         clients = self.context[
             "users"][0]["credential"].clients.return_value
-        clients.glance().images.get = mock.Mock()
 
         result = self.validator.validate(self.context, config, None, None)
         self.assertIsNone(result)
@@ -176,18 +178,38 @@ class ImageExistsValidatorTestCase(test.TestCase):
         mock_glance_image.return_value.pre_process.assert_called_once_with(
             resource_spec=config["args"]["image"],
             config={"type": "glance_image"}, output_type=str)
-        clients.glance().images.get.assert_called_with("image_id")
+        self.assertFalse(clients.glance.get_image.called)
 
         exs = [exceptions.InvalidScenarioArgument(),
-               glance_exc.HTTPNotFound()]
+               exceptions.GetResourceNotFound(resource="image")]
         for ex in exs:
-            clients.glance().images.get.side_effect = ex
+            mock_glance_image.return_value.pre_process.side_effect = ex
 
             e = self.assertRaises(
                 validators.validation.ValidationError,
                 self.validator.validate, self.context, config, None, None)
 
             self.assertEqual("Image 'fake_image' not found", e.message)
+
+    @mock.patch(f"{PATH}.openstack_types.GlanceImage")
+    def test_validator_image_by_id(self, mock_glance_image):
+        config = {"args": {"image": {"id": "image_id"}}, "contexts": {}}
+
+        clients = self.context[
+            "users"][0]["credential"].clients.return_value
+
+        self.assertIsNone(
+            self.validator.validate(self.context, config, None, None))
+
+        clients.glance.get_image.assert_called_once_with("image_id")
+        self.assertFalse(mock_glance_image.called)
+
+        clients.glance.get_image.side_effect = (
+            exceptions.GetResourceNotFound(resource="image"))
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            self.validator.validate, self.context, config, None, None)
+        self.assertEqual("Image '{'id': 'image_id'}' not found", e.message)
 
 
 @ddt.ddt
@@ -196,8 +218,8 @@ class ExternalNetworkExistsValidatorTestCase(test.TestCase):
     def setUp(self):
         super().setUp()
         self.validator = validators.ExternalNetworkExistsValidator("net")
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     @ddt.unpack
     @ddt.data(
@@ -243,8 +265,8 @@ class RequiredNeutronExtensionsValidatorTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     def test_validator(self):
         validator = validators.RequiredNeutronExtensionsValidator(
@@ -277,8 +299,8 @@ class FlavorExistsValidatorTestCase(test.TestCase):
         super().setUp()
         self.validator = validators.FlavorExistsValidator(
             param_name="foo_flavor")
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     def test__get_validated_flavor_wrong_value_in_config(self):
         e = self.assertRaises(
@@ -384,8 +406,8 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
         super().setUp()
         self.validator = validators.ImageValidOnFlavorValidator("foo_flavor",
                                                                 "image")
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     @ddt.data(
         {"validate_disk": True, "flavor_disk": True},
@@ -529,110 +551,92 @@ class ImageValidOnFlavorValidatorTestCase(test.TestCase):
 
         self.assertEqual(expected_e, actual_e)
 
-    @mock.patch("%s.openstack_types.GlanceImage" % PATH)
+    @mock.patch(f"{PATH}.openstack_types.GlanceImage")
     def test__get_validated_image(self, mock_glance_image):
-        mock_glance_image.return_value.pre_process.return_value = "image_id"
-        image = {
-            "size": 0,
-            "min_ram": 0,
-            "min_disk": 0
-        }
-        plugin_cls = mock.Mock()
-        # Get image name from context
         result = self.validator._get_validated_image({
             "args": {
                 "image": {"regex": r"^foo$"}},
             "contexts": {
                 "images": {"image_name": "foo"}}},
-            mock.Mock(), "image", plugin_cls)
-        self.assertEqual(image, result)
+            mock.Mock(), "image", None)
+        self.assertEqual({"id": "foo", "size": 0, "min_ram": 0,
+                          "min_disk": 0}, result)
+        self.assertFalse(mock_glance_image.called)
 
         clients = mock.Mock()
-        clients.glance().images.get().to_dict.return_value = {
-            "image": "image_id"}
-        image["image"] = "image_id"
+        mock_glance_image.return_value.pre_process.return_value = "image_id"
+        clients.glance.get_image.return_value = mock.Mock(
+            id="image_id", size=1024, min_ram=256, min_disk=512)
 
-        result = self.validator._get_validated_image(self.config,
-                                                     clients,
-                                                     "image",
-                                                     plugin_cls)
-        self.assertEqual(image, result)
+        result = self.validator._get_validated_image(self.config, clients,
+                                                     "image", "plugin_cls")
+        self.assertEqual({"id": "image_id", "size": 1024, "min_ram": 256,
+                          "min_disk": 512}, result)
         mock_glance_image.assert_called_once_with(
             context={"admin": {"credential": clients.credential}},
-            scenario_cls=plugin_cls)
+            scenario_cls="plugin_cls")
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            resource_spec=config["args"]["image"],
+            resource_spec=self.config["args"]["image"],
             config={"type": "glance_image"}, output_type=str)
-        clients.glance().images.get.assert_called_with("image_id")
+        clients.glance.get_image.assert_called_once_with("image_id")
 
-    @mock.patch("%s.openstack_types.GlanceImage" % PATH)
+    @mock.patch(f"{PATH}.openstack_types.GlanceImage")
+    def test__get_validated_image_defaults_unset_sizes(self,
+                                                       mock_glance_image):
+        clients = mock.Mock()
+        clients.glance.get_image.return_value = mock.Mock(
+            id="image_id", size=None, min_ram=None, min_disk=None)
+        self.assertEqual(
+            {"id": "image_id", "size": 0, "min_ram": 0, "min_disk": 0},
+            self.validator._get_validated_image(self.config, clients,
+                                                "image", None))
+
+    @mock.patch(f"{PATH}.openstack_types.GlanceImage")
     def test__get_validated_image_incorrect_param(self, mock_glance_image):
-        mock_glance_image.return_value.pre_process.return_value = "image_id"
-        plugin_cls = mock.Mock()
         # Wrong 'param_name'
         e = self.assertRaises(
             validators.validation.ValidationError,
             self.validator._get_validated_image, self.config,
-            mock.Mock(), "fake_param", plugin_cls)
+            mock.Mock(), "fake_param", None)
         self.assertEqual("Parameter fake_param is not specified.",
                          e.message)
 
         # 'image_name' is not in 'image_context'
-        image = {"id": "image_id", "size": 1024,
-                 "min_ram": 256, "min_disk": 512}
-
         clients = mock.Mock()
-        clients.glance().images.get().to_dict.return_value = image
+        mock_glance_image.return_value.pre_process.return_value = "image_id"
+        clients.glance.get_image.return_value = mock.Mock(
+            id="image_id", size=1024, min_ram=256, min_disk=512)
         config = {"args": {"image": "foo_image",
                            "context": {"images": {
                                "fake_parameter_name": "foo_image"}
                            }}
                   }
         result = self.validator._get_validated_image(config, clients, "image",
-                                                     plugin_cls)
-        self.assertEqual(image, result)
-
-        mock_glance_image.assert_called_once_with(
-            context={"admin": {"credential": clients.credential}},
-            scenario_cls=plugin_cls)
+                                                     None)
+        self.assertEqual({"id": "image_id", "size": 1024, "min_ram": 256,
+                          "min_disk": 512}, result)
         mock_glance_image.return_value.pre_process.assert_called_once_with(
-            resource_spec=config["args"]["image"],
-            config={"type": "glance_image"}, output_type=str)
-        clients.glance().images.get.assert_called_with("image_id")
+            resource_spec="foo_image", config={"type": "glance_image"},
+            output_type=str)
 
-    @mock.patch("%s.openstack_types.GlanceImage" % PATH)
+    @mock.patch(f"{PATH}.openstack_types.GlanceImage")
     def test__get_validated_image_exceptions(self, mock_glance_image):
-        mock_glance_image.return_value.pre_process.return_value = "image_id"
-        clients = mock.Mock()
-        clients.glance().images.get.side_effect = glance_exc.HTTPNotFound("")
-        plugin_cls = mock.Mock()
-        e = self.assertRaises(
-            validators.validation.ValidationError,
-            self.validator._get_validated_image,
-            config, clients, "image", plugin_cls)
-        self.assertEqual("Image '%s' not found" % config["args"]["image"],
-                         e.message)
-
-        mock_glance_image.assert_called_once_with(
-            context={"admin": {"credential": clients.credential}},
-            scenario_cls=plugin_cls)
-        mock_glance_image.return_value.pre_process.assert_called_once_with(
-            resource_spec=config["args"]["image"],
-            config={"type": "glance_image"}, output_type=str)
-        clients.glance().images.get.assert_called_with("image_id")
-        mock_glance_image.return_value.pre_process.reset_mock()
-
-        clients.side_effect = exceptions.InvalidScenarioArgument("")
-        e = self.assertRaises(
-            validators.validation.ValidationError,
-            self.validator._get_validated_image, config, clients, "image",
-            plugin_cls)
-        self.assertEqual("Image '%s' not found" % config["args"]["image"],
-                         e.message)
-        mock_glance_image.return_value.pre_process.assert_called_once_with(
-            resource_spec=config["args"]["image"],
-            config={"type": "glance_image"}, output_type=str)
-        clients.glance().images.get.assert_called_with("image_id")
+        pre_process = mock_glance_image.return_value.pre_process
+        for ex in (exceptions.GetResourceNotFound(resource="image"),
+                   exceptions.InvalidScenarioArgument("")):
+            with self.subTest(type(ex).__name__):
+                pre_process.reset_mock()
+                pre_process.side_effect = ex
+                e = self.assertRaises(
+                    validators.validation.ValidationError,
+                    self.validator._get_validated_image, self.config,
+                    mock.Mock(), "image", None)
+                self.assertEqual(
+                    "Image '%s' not found" % self.config["args"]["image"],
+                    e.message)
+                pre_process.assert_called_once_with(
+                    resource_spec=self.config["args"]["image"],
+                    config={"type": "glance_image"}, output_type=str)
 
 
 class RequiredServicesValidatorTestCase(test.TestCase):
@@ -642,8 +646,8 @@ class RequiredServicesValidatorTestCase(test.TestCase):
         self.validator = validators.RequiredServicesValidator([
             consts.Service.KEYSTONE,
             consts.Service.NOVA])
-        self.config = config
-        self.context = context
+        self.config = make_config()
+        self.context = make_context()
 
     def test_validator(self):
 
@@ -704,8 +708,8 @@ class ValidateHeatTemplateValidatorTestCase(test.TestCase):
         super().setUp()
         self.validator = validators.ValidateHeatTemplateValidator(
             "template_path1", "template_path2")
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     @ddt.data(
         {"exception_msg": "Heat template validation failed on fake_path1. "
@@ -778,8 +782,8 @@ class RequiredCinderServicesValidatorTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.context = copy.deepcopy(context)
-        self.config = copy.deepcopy(config)
+        self.context = make_context()
+        self.config = make_config()
 
     def test_validate(self):
         validator = validators.RequiredCinderServicesValidator(
@@ -804,8 +808,8 @@ class RequiredAPIVersionsValidatorTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     def test_validate(self):
         validator = validators.RequiredAPIVersionsValidator("keystone",
@@ -862,13 +866,14 @@ class RequiredAPIVersionsValidatorTestCase(test.TestCase):
          "err_msg": "Task was designed to be used with nova V2, 3, "
                     "but V4 is selected."}
     )
-    def test_validate_nova(self, nova, versions, err_msg):
+    @mock.patch(f"{PATH}.osclients.BaseClient.get")
+    def test_validate_nova(self, mock_base_client_get, nova, versions,
+                           err_msg):
         validator = validators.RequiredAPIVersionsValidator("nova",
                                                             versions)
 
-        clients = self.context["users"][0]["credential"].clients()
-
-        clients.nova.choose_version.return_value = nova
+        spec = mock_base_client_get.return_value.spec
+        spec.choose_version.return_value = nova
         config = {"contexts": {"api_versions@openstack": {}}}
 
         if err_msg:
@@ -907,8 +912,8 @@ class VolumeTypeExistsValidatorTestCase(test.TestCase):
         super().setUp()
         self.validator = validators.VolumeTypeExistsValidator("volume_type",
                                                               True)
-        self.config = copy.deepcopy(config)
-        self.context = copy.deepcopy(context)
+        self.config = make_config()
+        self.context = make_context()
 
     def test_validator_without_ctx(self):
         validator = validators.VolumeTypeExistsValidator("fake_param",

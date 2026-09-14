@@ -21,7 +21,7 @@ from rally import exceptions
 from rally.task import atomic
 from rally.task import utils as bench_utils
 
-from rally_openstack.common.services.image import image
+from rally_openstack.common.clients import glance
 from rally_openstack.common.services.storage import block
 
 
@@ -198,19 +198,13 @@ class CinderMixin(atomic.ActionTimerMixin):
             volume = self._wait_available_volume(volume)
 
             image_id = img["os-volume_upload_image"]["image_id"]
-            glance = image.Image(self._clients)
-
-            image_inst = glance.get_image(image_id)
-            image_inst = bench_utils.wait_for_status(
-                image_inst,
-                ready_statuses=["active"],
-                update_resource=glance.get_image,
+            return self._clients.glance.wait_for_image(
+                image_id,
+                ready_statuses=[glance.ImageStatus.ACTIVE],
                 timeout=CONF.openstack.glance_image_create_timeout,
-                check_interval=(CONF.openstack
-                                .glance_image_create_poll_interval)
+                check_interval=(
+                    CONF.openstack.glance_image_create_poll_interval)
             )
-
-            return image_inst
 
     def create_qos(self, specs):
         """Create a qos specs.

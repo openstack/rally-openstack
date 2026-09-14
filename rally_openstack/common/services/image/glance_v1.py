@@ -12,14 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 from rally.common import cfg
-from rally.common import utils as rutils
-from rally.task import atomic
-from rally.task import utils
 
 from rally_openstack.common import service
+from rally_openstack.common.clients import glance
 from rally_openstack.common.services.image import glance_common
 from rally_openstack.common.services.image import image
 
@@ -30,7 +26,6 @@ CONF = cfg.CONF
 @service.service("glance", service_type="image", version="1")
 class GlanceV1Service(service.Service, glance_common.GlanceMixin):
 
-    @atomic.action_timer("glance_v1.create_image")
     def create_image(self, image_name=None, container_format=None,
                      image_location=None, disk_format=None,
                      is_public=True, min_disk=0, min_ram=0,
@@ -46,43 +41,18 @@ class GlanceV1Service(service.Service, glance_common.GlanceMixin):
         :param min_ram: The min ram of created images
         :param properties: Dict of image properties
         """
-        image_location = os.path.expanduser(image_location)
-        image_name = image_name or self.generate_random_name()
-        kwargs = {}
+        visibility = (glance.Visibility.PUBLIC if is_public
+                      else glance.Visibility.PRIVATE)
+        return self._ng.create_image(
+            image_name or self.generate_random_name(),
+            location=image_location,
+            container_format=container_format,
+            disk_format=disk_format,
+            visibility=visibility,
+            min_disk=min_disk,
+            min_ram=min_ram,
+            properties=properties)
 
-        try:
-            if os.path.isfile(image_location):
-                kwargs["data"] = open(image_location, "rb")
-            else:
-                kwargs["copy_from"] = image_location
-
-            image_obj = self._clients.glance("1").images.create(
-                name=image_name,
-                container_format=container_format,
-                disk_format=disk_format,
-                is_public=is_public,
-                min_disk=min_disk,
-                min_ram=min_ram,
-                properties=properties,
-                **kwargs)
-
-            rutils.interruptable_sleep(CONF.openstack.
-                                       glance_image_create_prepoll_delay)
-
-            image_obj = utils.wait_for_status(
-                image_obj, ["active"],
-                update_resource=self.get_image,
-                timeout=CONF.openstack.glance_image_create_timeout,
-                check_interval=CONF.openstack.glance_image_create_poll_interval
-            )
-
-        finally:
-            if "data" in kwargs:
-                kwargs["data"].close()
-
-        return image_obj
-
-    @atomic.action_timer("glance_v1.update_image")
     def update_image(self, image_id, image_name=None, min_disk=0,
                      min_ram=0):
         """Update image.
@@ -92,14 +62,12 @@ class GlanceV1Service(service.Service, glance_common.GlanceMixin):
         :param min_disk: The min disk of updated image
         :param min_ram: The min ram of updated image
         """
-        image_name = image_name or self.generate_random_name()
+        return self._ng.update_image(
+            image_id,
+            name=image_name or self.generate_random_name(),
+            min_disk=min_disk,
+            min_ram=min_ram)
 
-        return self._clients.glance("1").images.update(image_id,
-                                                       name=image_name,
-                                                       min_disk=min_disk,
-                                                       min_ram=min_ram)
-
-    @atomic.action_timer("glance_v1.list_images")
     def list_images(self, status="active", is_public=None, owner=None):
         """List images.
 
@@ -107,20 +75,23 @@ class GlanceV1Service(service.Service, glance_common.GlanceMixin):
         :param is_public: Filter in images for the specified public status
         :param owner: Filter in images for tenant ID
         """
-        # NOTE(boris-42): image.list() is lazy method which doesn't query API
-        #                 until it's used, do not remove list().
-        return list(self._clients.glance("1").images.list(status=status,
-                                                          owner=owner,
-                                                          is_public=is_public))
+        visibility = None
+        if is_public is not None:
+            visibility = (glance.Visibility.PUBLIC if is_public
+                          else glance.Visibility.PRIVATE)
+        return self._ng.list_images(
+            status=status, visibility=visibility, owner=owner)
 
-    @atomic.action_timer("glance_v1.set_visibility")
     def set_visibility(self, image_id, is_public=True):
         """Update visibility.
 
         :param image_id: ID of image to update
         :param is_public: Image is public or not
         """
-        self._clients.glance("1").images.update(image_id, is_public=is_public)
+        self._ng.update_image(
+            image_id,
+            visibility=(glance.Visibility.PUBLIC if is_public
+                        else glance.Visibility.PRIVATE))
 
 
 @service.compat_layer(GlanceV1Service)

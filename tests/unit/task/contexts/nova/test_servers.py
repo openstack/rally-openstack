@@ -58,9 +58,9 @@ class ServerGeneratorTestCase(test.ScenarioTestCase):
                     fakes.FakeServer(id="uuid"),
                     fakes.FakeServer(id="uuid")
                 ])
-    @mock.patch("%s.GlanceImage" % TYP)
+    @mock.patch("%s.servers.osclients.Clients" % CTX)
     @mock.patch("%s.Flavor" % TYP)
-    def test_setup(self, mock_flavor, mock_glance_image,
+    def test_setup(self, mock_flavor, mock_clients,
                    mock_nova_scenario__boot_servers):
 
         tenants_count = 2
@@ -106,10 +106,14 @@ class ServerGeneratorTestCase(test.ScenarioTestCase):
             for i in range(servers_per_tenant):
                 new_context["tenants"][id_]["servers"].append("uuid")
 
+        glance = mock_clients.return_value.glance
+        glance.find_image.return_value = mock.Mock(visibility="public")
+
         servers_ctx = servers.ServerGenerator(self.context)
         servers_ctx.setup()
         self.assertEqual(new_context, self.context)
-        image_id = mock_glance_image.return_value.pre_process.return_value
+        glance.find_image.assert_called_once_with("cirros-0.5.2-x86_64-uec")
+        image_id = glance.find_image.return_value.id
         flavor_id = mock_flavor.return_value.pre_process.return_value
         servers_ctx_config = self.context["config"]["servers"]
         expected_auto_nic = servers_ctx_config.get("auto_assign_nic", False)
@@ -121,6 +125,58 @@ class ServerGeneratorTestCase(test.ScenarioTestCase):
                                 requests=expected_requests)
                       for i in range(called_times)]
         mock_nova_scenario__boot_servers.assert_has_calls(mock_calls)
+
+    def _setup_ctx_for_image_lookup(self, tenants_count, with_admin):
+        tenants = self._gen_tenants(tenants_count)
+        users = [{"id": id_, "tenant_id": id_,
+                  "credential": mock.MagicMock()} for id_ in tenants]
+        self.context.update({
+            "config": {
+                "servers": {
+                    "servers_per_tenant": 1,
+                    "image": {"name": "cirros"},
+                    "flavor": {"name": "m1.tiny"},
+                },
+            },
+            "users": users,
+            "tenants": tenants
+        })
+        if with_admin:
+            self.context["admin"] = {"credential": mock.MagicMock()}
+        else:
+            self.context.pop("admin", None)
+        return tenants
+
+    @mock.patch(f"{SCN}.nova.utils.NovaScenario._boot_servers",
+                return_value=[fakes.FakeServer(id="uuid")])
+    @mock.patch(f"{CTX}.servers.osclients.Clients")
+    @mock.patch(f"{TYP}.Flavor")
+    def test_setup_resolves_a_private_image_per_tenant(
+        self, mock_flavor, mock_clients, mock_nova_scenario__boot_servers
+    ):
+        tenants = self._setup_ctx_for_image_lookup(2, with_admin=True)
+        glance = mock_clients.return_value.glance
+        glance.find_image.return_value = mock.Mock(visibility="private")
+
+        servers.ServerGenerator(self.context).setup()
+
+        self.assertEqual([mock.call("cirros")] * (len(tenants) + 1),
+                         glance.find_image.call_args_list)
+
+    @mock.patch(f"{SCN}.nova.utils.NovaScenario._boot_servers",
+                return_value=[fakes.FakeServer(id="uuid")])
+    @mock.patch(f"{CTX}.servers.osclients.Clients")
+    @mock.patch(f"{TYP}.Flavor")
+    def test_setup_without_admin_resolves_per_tenant(
+        self, mock_flavor, mock_clients, mock_nova_scenario__boot_servers
+    ):
+        tenants = self._setup_ctx_for_image_lookup(2, with_admin=False)
+        glance = mock_clients.return_value.glance
+
+        servers.ServerGenerator(self.context).setup()
+
+        self.assertEqual([mock.call("cirros")] * len(tenants),
+                         glance.find_image.call_args_list)
 
     @mock.patch("%s.servers.resource_manager.cleanup" % CTX)
     def test_cleanup(self, mock_cleanup):

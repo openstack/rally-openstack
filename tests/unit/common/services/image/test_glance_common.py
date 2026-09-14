@@ -15,10 +15,6 @@
 import uuid
 from unittest import mock
 
-from glanceclient import exc as glance_exc
-
-from rally import exceptions
-
 from rally_openstack.common import service
 from rally_openstack.common.services.image import glance_common
 from rally_openstack.common.services.image import image
@@ -41,33 +37,30 @@ class GlanceMixinTestCase(test.TestCase):
             clients=self.clients, name_generator=self.name_generator)
         self.service.version = self.version
 
-    def test__get_client(self):
-        self.assertEqual(self.glance,
-                         self.service._get_client())
+    def test__ng(self):
+        self.assertEqual(self.glance, self.service._ng)
+        self.clients.glance.assert_called_once_with(
+            self.version, legacy=False)
+        # the client is built once and memoized
+        self.assertEqual(self.glance, self.service._ng)
+        self.clients.glance.assert_called_once_with(
+            self.version, legacy=False)
 
     def test_get_image(self):
         image = "image_id"
-        self.assertEqual(self.glance.images.get.return_value,
+        self.assertEqual(self.glance.get_image.return_value,
                          self.service.get_image(image))
-        self.glance.images.get.assert_called_once_with(image)
-
-    def test_get_image_exception(self):
-        image_id = "image_id"
-        self.glance.images.get.side_effect = glance_exc.HTTPNotFound
-
-        self.assertRaises(exceptions.GetResourceNotFound,
-                          self.service.get_image, image_id)
+        self.glance.get_image.assert_called_once_with(image)
 
     def test_delete_image(self):
         image = "image_id"
         self.service.delete_image(image)
-        self.glance.images.delete.assert_called_once_with(image)
+        self.glance.delete_image.assert_called_once_with(image)
 
     def test_download_image(self):
         image_id = "image_id"
         self.service.download_image(image_id)
-        self.glance.images.data.assert_called_once_with(image_id,
-                                                        do_checksum=True)
+        self.glance.download_image.assert_called_once_with(image_id)
 
 
 class FullUnifiedGlance(glance_common.UnifiedGlanceMixin,
@@ -90,25 +83,19 @@ class UnifiedGlanceMixinTestCase(test.TestCase):
 
     def test__unify_image(self):
         class Image:
-            def __init__(self, visibility=None, is_public=None, status=None):
+            def __init__(self, visibility=None, status=None):
                 self.id = uuid.uuid4()
                 self.name = str(uuid.uuid4())
                 self.visibility = visibility
-                self.is_public = is_public
                 self.status = status
 
-        visibility = "private"
-        image_obj = Image(visibility=visibility)
+        image_obj = Image(visibility="private")
         unified_image = self.service._unify_image(image_obj)
         self.assertIsInstance(unified_image, image.UnifiedImage)
         self.assertEqual(image_obj.id, unified_image.id)
+        self.assertEqual(image_obj.name, unified_image.name)
+        self.assertEqual(image_obj.status, unified_image.status)
         self.assertEqual(image_obj.visibility, unified_image.visibility)
-
-        image_obj = Image(is_public="public")
-        del image_obj.visibility
-        unified_image = self.service._unify_image(image_obj)
-        self.assertEqual(image_obj.id, unified_image.id)
-        self.assertEqual(image_obj.is_public, unified_image.visibility)
 
     def test_get_image(self):
         image_id = "image_id"

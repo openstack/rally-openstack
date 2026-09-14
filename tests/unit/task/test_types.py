@@ -20,137 +20,10 @@ import ddt
 from rally import exceptions
 from rally.task import scenario
 
+from rally_openstack.common.clients import glance
 from rally_openstack.task import types
 from tests.unit import fakes
 from tests.unit import test
-
-
-@ddt.ddt
-class OpenStackResourceTypeTestCase(test.TestCase):
-
-    def _make_type(self, context):
-        @types.configure(name=self.id())
-        class FooType(types.OpenStackResourceType):
-            def pre_process(self, *, resource_spec, config,
-                            output_type=None):
-                pass
-
-        self.addCleanup(FooType.unregister)
-        return FooType(context, scenario_cls=scenario.Scenario)
-
-    @ddt.data(
-        {"context": {"admin": {"credential": "admin-cred"}},
-         "expected": "admin-cred"},
-        {"context": {"users": [{"credential": "user-cred"}]},
-         "expected": "user-cred"},
-        {"context": {"admin": {"credential": "admin-cred"},
-                     "users": [{"credential": "user-cred"}]},
-         "expected": "admin-cred"},
-    )
-    @ddt.unpack
-    @mock.patch("rally_openstack.task.types.osclients.Clients")
-    def test__get_clients(self, mock_clients, context, expected):
-        ftype = self._make_type(context)
-
-        self.assertEqual(mock_clients.return_value, ftype._get_clients())
-        mock_clients.assert_called_once_with(expected)
-
-    def test__get_clients_without_credentials(self):
-        ftype = self._make_type({})
-
-        e = self.assertRaises(exceptions.RallyException, ftype._get_clients)
-        self.assertIn("requires admin or user credentials",
-                      e.format_message())
-
-    def test__find_resource(self):
-
-        @types.configure(name=self.id())
-        class FooType(types.OpenStackResourceType):
-            def pre_process(self, *, resource_spec, config,
-                            output_type=None):
-                pass
-
-        ftype = FooType({}, scenario_cls=scenario.Scenario)
-
-        resources = dict(
-            (name, fakes.FakeResource(name=name))
-            for name in ["Fake1", "Fake2", "Fake3"])
-        # case #1: 100% name match
-        self.assertEqual(
-            resources["Fake2"],
-            ftype._find_resource({"name": "Fake2"}, resources.values()))
-
-        # case #2: pick the latest one
-        self.assertEqual(
-            resources["Fake3"],
-            ftype._find_resource({"name": "Fake"}, resources.values()))
-
-        # case #3: regex one match
-        self.assertEqual(
-            resources["Fake2"],
-            ftype._find_resource({"regex": ".ake2"}, resources.values()))
-
-        # case #4: regex, pick the latest one
-        self.assertEqual(
-            resources["Fake3"],
-            ftype._find_resource({"regex": "Fake"}, resources.values()))
-
-    def test__find_resource_negative(self):
-
-        @types.configure(name=self.id())
-        class FooType(types.OpenStackResourceType):
-            def pre_process(self, *, resource_spec, config,
-                            output_type=None):
-                pass
-
-        ftype = FooType({}, scenario_cls=scenario.Scenario)
-        # case #1: the wrong resource spec
-        e = self.assertRaises(exceptions.InvalidScenarioArgument,
-                              ftype._find_resource, {}, [])
-        self.assertIn("'id', 'name', or 'regex' not found",
-                      e.format_message())
-
-        # case #2: two matches for one name
-        resources = [fakes.FakeResource(name="Fake1"),
-                     fakes.FakeResource(name="Fake2"),
-                     fakes.FakeResource(name="Fake1")]
-        e = self.assertRaises(
-            exceptions.InvalidScenarioArgument,
-            ftype._find_resource, {"name": "Fake1"}, resources)
-        self.assertIn("with name 'Fake1' is ambiguous, possible matches",
-                      e.format_message())
-
-        # case #3: no matches at all
-        resources = [fakes.FakeResource(name="Fake1"),
-                     fakes.FakeResource(name="Fake2"),
-                     fakes.FakeResource(name="Fake3")]
-        e = self.assertRaises(
-            exceptions.InvalidScenarioArgument,
-            ftype._find_resource, {"name": "Foo"}, resources)
-        self.assertIn("with pattern 'Foo' not found",
-                      e.format_message())
-
-        # case #4: two matches for one name, but 'accurate' is True
-        resources = [fakes.FakeResource(name="Fake1"),
-                     fakes.FakeResource(name="Fake2"),
-                     fakes.FakeResource(name="Fake3")]
-        e = self.assertRaises(
-            exceptions.InvalidScenarioArgument,
-            ftype._find_resource, {"name": "Fake", "accurate": True},
-            resources)
-        self.assertIn("with name 'Fake' not found",
-                      e.format_message())
-
-        # case #5: two matches for one name, but 'accurate' is True
-        resources = [fakes.FakeResource(name="Fake1"),
-                     fakes.FakeResource(name="Fake2"),
-                     fakes.FakeResource(name="Fake3")]
-        e = self.assertRaises(
-            exceptions.InvalidScenarioArgument,
-            ftype._find_resource, {"regex": "Fake", "accurate": True},
-            resources)
-        self.assertIn("with name 'Fake' is ambiguous, possible matches",
-                      e.format_message())
 
 
 class FlavorTestCase(test.TestCase):
@@ -222,68 +95,85 @@ class GlanceImageTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.clients = fakes.FakeClients()
-        image1 = fakes.FakeResource(name="cirros-0.5.2-uec", id="100")
-        self.clients.glance().images._cache(image1)
-        image2 = fakes.FakeResource(name="cirros-0.5.2-uec-ramdisk", id="101")
-        self.clients.glance().images._cache(image2)
-        image3 = fakes.FakeResource(name="cirros-0.5.2-uec-ramdisk-copy",
-                                    id="102")
-        self.clients.glance().images._cache(image3)
-        image4 = fakes.FakeResource(name="cirros-0.5.2-uec-ramdisk-copy",
-                                    id="103")
-        self.clients.glance().images._cache(image4)
+        self.clients = mock.Mock()
+        self.glance = self.clients.glance
         self.type_cls = types.GlanceImage(
             context={"admin": {"credential": mock.Mock()}},
             scenario_cls=scenario.Scenario)
         self.type_cls._clients = self.clients
 
-    def test_preprocess_by_id(self):
-        resource_spec = {"id": "100"}
-        image_id = self.type_cls.pre_process(
+    def pre_process(self, resource_spec):
+        return self.type_cls.pre_process(
             resource_spec=resource_spec, config={}, output_type=str)
-        self.assertEqual("100", image_id)
+
+    def test_preprocess_by_id(self):
+        self.assertEqual("100", self.pre_process({"id": "100"}))
+        self.assertFalse(self.glance.find_image.called)
 
     def test_preprocess_by_name(self):
-        resource_spec = {"name": "^cirros-0.5.2-uec$"}
-        image_id = self.type_cls.pre_process(
-            resource_spec=resource_spec, config={}, output_type=str)
-        self.assertEqual("100", image_id)
+        self.glance.find_image.return_value = mock.Mock(id="100")
+        self.assertEqual("100", self.pre_process({"name": "cirros"}))
+        self.glance.find_image.assert_called_once_with(name="cirros")
 
-    def test_preprocess_by_name_no_match(self):
-        resource_spec = {"name": "cirros-0.5.2-uec-boot"}
-        self.assertRaises(exceptions.InvalidScenarioArgument,
-                          self.type_cls.pre_process,
-                          resource_spec=resource_spec, config={},
-                          output_type=str)
+    def test_preprocess_passes_every_filter_on(self):
+        self.glance.find_image.return_value = mock.Mock(id="100")
+        self.pre_process({"regex": "^cirros", "accurate": True,
+                          "status": "active", "visibility": "public",
+                          "owner": "tenant-id"})
+        self.glance.find_image.assert_called_once_with(
+            regex="^cirros", accurate=True, status="active",
+            visibility="public", owner="tenant-id")
 
-    def test_preprocess_by_name_match_multiple(self):
-        resource_spec = {"name": "cirros-0.5.2-uec-ramdisk-copy"}
-        self.assertRaises(exceptions.InvalidScenarioArgument,
-                          self.type_cls.pre_process,
-                          resource_spec=resource_spec, config={},
-                          output_type=str)
+    def test_preprocess_list_kwargs_drops_unknowns_and_maps_is_public(self):
+        self.glance.find_image.return_value = mock.Mock(id="100")
 
-    def test_preprocess_by_regex(self):
-        resource_spec = {"regex": "-uec$"}
-        image_id = self.type_cls.pre_process(
-            resource_spec=resource_spec, config={}, output_type=str)
-        self.assertEqual("100", image_id)
+        self.pre_process({"name": "cirros",
+                          "list_kwargs": {"is_public": True,
+                                          "owner": "tenant-id",
+                                          "multiple": True}})
+        self.glance.find_image.assert_called_once_with(
+            name="cirros", owner="tenant-id",
+            visibility=glance.Visibility.PUBLIC)
 
-    def test_preprocess_by_regex_match_multiple(self):
-        resource_spec = {"regex": "^cirros"}
-        image_id = self.type_cls.pre_process(resource_spec=resource_spec,
-                                             config={}, output_type=str)
-        # matching resources are sorted by the names. It is impossible to
-        #   predict which resource will be luckiest
-        self.assertIn(image_id, ["102", "103"])
+        self.glance.find_image.reset_mock()
+        self.pre_process({"name": "cirros", "visibility": "shared",
+                          "list_kwargs": {"is_public": True}})
+        self.glance.find_image.assert_called_once_with(
+            name="cirros", visibility="shared")
 
-    def test_preprocess_by_regex_no_match(self):
-        resource_spec = {"regex": "-boot$"}
-        self.assertRaises(exceptions.InvalidScenarioArgument,
-                          self.type_cls.pre_process,
-                          resource_spec=resource_spec, config={},
-                          output_type=str)
+    def test_preprocess_by_the_deprecated_list_kwargs(self):
+        self.glance.find_image.return_value = mock.Mock(id="100")
+        for spec, expected in (
+            ({"name": "cirros",
+              "list_kwargs": {"status": "active", "owner": "tenant-id"}},
+             {"name": "cirros", "status": "active", "owner": "tenant-id"}),
+            # a filter of its own wins over its list_kwargs twin
+            ({"name": "cirros", "owner": "mine",
+              "list_kwargs": {"owner": "theirs"}},
+             {"name": "cirros", "owner": "mine"}),
+        ):
+            with self.subTest(spec["list_kwargs"]):
+                self.glance.find_image.reset_mock()
+                self.pre_process(spec)
+                self.glance.find_image.assert_called_once_with(**expected)
+
+    def test_preprocess_not_found(self):
+        # the client speaks of resources, a resource type of task arguments
+        self.glance.find_image.side_effect = exceptions.GetResourceNotFound(
+            resource="image named 'cirros'")
+        e = self.assertRaises(exceptions.InvalidScenarioArgument,
+                              self.pre_process, {"name": "cirros"})
+        self.assertIn("image named 'cirros' is not found", e.format_message())
+
+    def test_preprocess_caches_the_lookup(self):
+        self.glance.find_image.return_value = mock.Mock(id="100")
+
+        self.assertEqual("100", self.pre_process({"name": "cirros"}))
+        self.assertEqual("100", self.pre_process({"name": "cirros"}))
+        self.glance.find_image.assert_called_once_with(name="cirros")
+
+        self.glance.find_image.return_value = mock.Mock(id="101")
+        self.assertEqual("101", self.pre_process({"name": "other"}))
 
 
 @ddt.ddt
