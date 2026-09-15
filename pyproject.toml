@@ -174,7 +174,6 @@ module = [
     "magnumclient.*",
     "manilaclient.*",
     "mistralclient.*",
-    "monascaclient.*",
     "novaclient.*",
     "neutronclient.*",
     "octaviaclient.*",
@@ -387,10 +386,6 @@ module = "rally_openstack.task.contexts.manila.manila_shares"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.monasca.metrics"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.network.allow_ssh"
 disable_error_code = ["no-untyped-def"]
 
@@ -592,14 +587,6 @@ disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.scenarios.mistral.utils"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.scenarios.monasca.metrics"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.scenarios.monasca.utils"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
