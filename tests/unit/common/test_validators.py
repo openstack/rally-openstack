@@ -1172,3 +1172,48 @@ class RequiredNetworksPerProjectValidatorTestCase(test.TestCase):
             validators.validation.ValidationError,
             validator.validate, {}, cfg, None, None)
         self.assertIn("at least 10", e.message)
+
+
+class RequiredPortsPerProjectValidatorTestCase(test.TestCase):
+
+    def test_valid_sizing(self):
+        validator = validators.RequiredPortsPerProjectValidator()
+        cfg = {
+            "contexts": {
+                "ports": {"ports_per_project": 5},
+                "users": {"tenants": 2},
+            },
+            "runner": {"constant": {"concurrency": 10}},
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_insufficient_ports(self):
+        validator = validators.RequiredPortsPerProjectValidator()
+        cfg = {
+            "contexts": {
+                "ports": {"ports_per_project": 2},
+                "users": {"tenants": 1},
+            },
+            "runner": {"constant": {"concurrency": 5}},
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("ports_per_project=2", e.message)
+        self.assertIn("at least 5", e.message)
+
+    def test_multi_project_sizing(self):
+        validator = validators.RequiredPortsPerProjectValidator()
+        cfg = {
+            "contexts": {
+                "ports": {"ports_per_project": 3},
+                "users": {"tenants": 4},
+            },
+            "runner": {"constant": {"concurrency": 10}},
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_no_ports_context(self):
+        validator = validators.RequiredPortsPerProjectValidator()
+        cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
+        validator.validate({}, cfg, None, None)

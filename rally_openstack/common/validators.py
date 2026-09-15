@@ -712,3 +712,36 @@ class RequiredNetworksPerProjectValidator(validation.Validator):
                 " but need at least %d (concurrency=%d, projects=%d)."
                 % (self.multiplier, networks_per_project, required,
                    concurrency, projects))
+
+
+@validation.configure(name="required_ports_per_project", platform="openstack")
+class RequiredPortsPerProjectValidator(validation.Validator):
+    """Validate that ports_per_project is sufficient for concurrency.
+
+    Each concurrent iteration uses a port from the pool, so the
+    ports context must provide enough ports per project to cover the
+    runner concurrency.
+    """
+
+    def validate(self, context, config, plugin_cls, plugin_cfg):
+        ports_ctx = config.get("contexts", {}).get("ports", {})
+        if not ports_ctx:
+            return
+        ports_per_project = ports_ctx.get("ports_per_project", 1)
+
+        users_ctx = config.get("contexts", {}).get("users", {})
+        projects = users_ctx.get("tenants", 1)
+
+        runner_cfg = config.get("runner", {})
+        concurrency = 1
+        for cfg in runner_cfg.values():
+            if isinstance(cfg, dict):
+                concurrency = cfg.get("concurrency", 1)
+
+        required = (concurrency + projects - 1) // projects
+        if ports_per_project < required:
+            self.fail(
+                "Scenario requires at least ceil(concurrency / projects) "
+                "ports_per_project. Got ports_per_project=%d but need "
+                "at least %d (concurrency=%d, projects=%d)."
+                % (ports_per_project, required, concurrency, projects))

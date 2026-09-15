@@ -65,6 +65,25 @@ Added
 * Dedicated non-voting CI job ``rally-task-fwaas`` that enables
   ``neutron-fwaas`` and runs the new FWaaS scenarios.
 
+* Neutron TaaS (Tap-as-a-Service) tap mirror scenarios:
+
+  * ``NeutronTaaS.create_and_list_tap_mirrors``
+  * ``NeutronTaaS.create_and_delete_tap_mirrors``
+  * ``NeutronTaaS.create_and_update_tap_mirrors``
+
+* Network and port setup for Neutron TaaS scenarios uses the openstacksdk-backed
+  ``clients.neutron`` attribute (``create_network``, ``create_port``, and related
+  list/get/delete methods).
+
+* Tap mirror APIs use the openstacksdk-backed ``clients.neutron`` attribute.
+  Legacy ``python-neutronclient`` remains available via ``clients.neutron()``
+  for other Neutron workloads. Scenarios accept ``mirror_directions`` (e.g.
+  ``IN``) and Rally auto-allocates tunnel IDs for safe concurrent runs.
+
+* Dedicated non-voting CI job ``rally-task-neutron-taas`` that enables
+  ``tap-as-a-service`` and runs the new TaaS scenarios (including an
+  ERSPANv1 delete subtask).
+
 Changed
 ~~~~~~~
 

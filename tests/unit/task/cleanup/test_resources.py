@@ -509,6 +509,54 @@ class NeutronFirewallGroupTestCase(test.TestCase):
             "group-id")
 
 
+class NeutronTapMirrorTestCase(test.TestCase):
+
+    def get_tap_mirror_resource(self, extensions=None):
+        if extensions is None:
+            extensions = []
+        user = mock.MagicMock()
+        neut = resources.NeutronTapMirror(user=user)
+        neut.tenant_uuid = "user_tenant"
+        user.neutron.return_value.list_extensions.return_value = {
+            "extensions": [{"alias": ext} for ext in extensions]
+        }
+        return neut
+
+    def test_id_and_name(self):
+        neut = self.get_tap_mirror_resource()
+        neut.raw_resource = mock.Mock()
+        neut.raw_resource.id = "mirror-id"
+        neut.raw_resource.name = "mirror-name"
+
+        self.assertEqual("mirror-id", neut.id())
+        self.assertEqual("mirror-name", neut.name())
+
+    def test_list_tap_mirror_available(self):
+        neut = self.get_tap_mirror_resource(extensions=["tap-mirror"])
+        mirror1 = mock.Mock(project_id="user_tenant", id="mirror-1")
+        mirror3 = mock.Mock(project_id="user_tenant", id="mirror-3")
+        neut.user.neutron.list_tap_mirrors.return_value = [
+            mirror1, mirror3]
+
+        self.assertEqual("tap_mirror", neut._resource)
+        self.assertEqual([mirror1, mirror3], neut.list())
+        neut.user.neutron.list_tap_mirrors.assert_called_once_with(
+            project_id="user_tenant")
+
+    def test_list_tap_mirror_unavailable(self):
+        neut = self.get_tap_mirror_resource()
+
+        self.assertEqual([], neut.list())
+        self.assertFalse(neut.user.neutron.list_tap_mirrors.called)
+
+    def test_delete(self):
+        neut = self.get_tap_mirror_resource(extensions=["tap-mirror"])
+        neut.raw_resource = mock.Mock(id="mirror-id", name="mirror-name")
+        neut.delete()
+        neut.user.neutron.delete_tap_mirror.assert_called_once_with(
+            "mirror-id")
+
+
 class NeutronFloatingIPTestCase(test.TestCase):
 
     def test_name(self):

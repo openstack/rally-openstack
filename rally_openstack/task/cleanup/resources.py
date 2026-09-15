@@ -425,6 +425,29 @@ class NeutronFirewallRule(NeutronMixin):
         self._manager().delete_fwaas_firewall_rule(self.id())
 
 
+@base.resource("neutron", "tap_mirror", order=next(_neutron_order),
+               tenant_resource=True)
+class NeutronTapMirror(NeutronMixin):
+
+    def _neutron_client(self):
+        return (self._admin_required and self.admin or self.user).neutron
+
+    def id(self):
+        return self.raw_resource.id
+
+    def name(self):
+        return self.raw_resource.name
+
+    def list(self):
+        if not self._neutron.supports_extension("tap-mirror", silent=True):
+            return []
+        return self._neutron_client().list_tap_mirrors(
+            project_id=self.tenant_uuid)
+
+    def delete(self):
+        self._neutron_client().delete_tap_mirror(self.id())
+
+
 @base.resource("neutron", "floatingip", order=next(_neutron_order),
                tenant_resource=True)
 class NeutronFloatingIP(NeutronMixin):

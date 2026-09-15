@@ -1,0 +1,38 @@
+---
+version: 2
+title: "Task template with ports context"
+description: "Pre-create Neutron ports on networks from the network context for scenarios that need a port pool."
+subtasks:
+  - title: "Default ports context"
+    description: "Requires network context; one port per tenant by default"
+    scenario:
+      Dummy.openstack:
+        sleep: 0.1
+    runner:
+      constant:
+        times: 4
+        concurrency: 2
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+      network: {}
+      ports: {}
+  - title: "Sized ports context"
+    description: "ports_per_project should be at least ceil(concurrency / projects)"
+    scenario:
+      Dummy.openstack:
+        sleep: 0.1
+    runner:
+      constant:
+        times: 4
+        concurrency: 2
+    contexts:
+      users:
+        tenants: 1
+        users_per_tenant: 2
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 2

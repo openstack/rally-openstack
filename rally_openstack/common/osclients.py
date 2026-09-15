@@ -28,6 +28,7 @@ from rally_openstack.common import credential as oscred
 from rally_openstack.common.clients import base
 from rally_openstack.common.clients import glance
 from rally_openstack.common.clients import keystone
+from rally_openstack.common.clients import neutron as neutron_client
 
 
 if t.TYPE_CHECKING:
@@ -38,6 +39,7 @@ if t.TYPE_CHECKING:
 AuthenticationFailed = base.AuthenticationFailed
 Glance = glance.Glance
 Keystone = keystone.Keystone
+Neutron = neutron_client.Neutron
 BaseClient = base.BaseClient
 OSClient = base.OSClient
 configure = base.configure
@@ -72,30 +74,6 @@ class Nova(base.OSClient):
             session=self.keystone.get_session()[0],
             version=self.choose_version(version),
             endpoint_override=self._get_endpoint(service_type))
-        return client
-
-
-@base.configure("neutron", default_version="2.0",
-                default_service_type="network",
-                supported_versions=["2.0"])
-class Neutron(base.OSClient):
-    """Wrapper for NeutronClient which returns an authenticated native client.
-
-    """
-
-    def create_client(self, version=None, service_type=None):
-        """Return neutron client."""
-        from neutronclient.neutron import client as neutron
-
-        kw_args = {}
-        if self.credential.endpoint_type:
-            kw_args["endpoint_type"] = self.credential.endpoint_type
-
-        client = neutron.Client(
-            self.choose_version(version),
-            session=self.keystone.get_session()[0],
-            endpoint_override=self._get_endpoint(service_type),
-            **kw_args)
         return client
 
 
@@ -442,6 +420,7 @@ class Clients:
         # memoizes them like the rest.
         glance: Glance
         keystone: Keystone
+        neutron: Neutron
 
     def __getattr__(self, name: str) -> t.Any:
         """Return the client for a service name.
