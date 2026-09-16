@@ -10,11 +10,14 @@
         - rally-tox-py313
         - rally-dsvm-tox-functional:
             irrelevant-files: &trivial-files
-              - CHANGELOG.rst
-              - CONTRIBUTING.rst
-              - DOCKER_README.md
-              - README.rst
+              - ^\.coveragerc$
+              - ^\.gitignore$
+              - ^\.gitreview$
+              - ^.*\.rst$
+              - ^DOCKER_README\.md$
+              - ^LICENSE$
               - tests/unit/.*
+              - ^types-requirements\.txt$
         - rally-openstack-docker-build
         #- rally-task-basic-with-existing-users
         - rally-task-simple-job
