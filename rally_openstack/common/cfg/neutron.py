@@ -27,6 +27,7 @@ OPTS = {"openstack": [
                  help="Neutron create loadbalancer poll interval"),
     cfg.BoolOpt("pre_newton_neutron",
                 default=False,
+                deprecated_for_removal=True,
                 help="Whether Neutron API is older then OpenStack Newton or "
                      "not. Based on the option, some external fields for "
                      "identifying resources can be applied."),

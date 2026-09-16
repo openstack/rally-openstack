@@ -173,6 +173,8 @@ Deprecated
   working; the in-tree Glance scenarios now derive from ``OpenStackScenario``
   and use ``self._clients.glance`` directly.
 
+* openstack.pre_newton_neutron config option is deprecated.
+
 Fixed
 ~~~~~
 
