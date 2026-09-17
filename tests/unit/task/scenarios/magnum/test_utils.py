@@ -15,6 +15,7 @@
 import os
 from unittest import mock
 
+import fixtures
 from kubernetes import client as kubernetes_client
 from kubernetes.client.rest import ApiException
 
@@ -90,6 +91,9 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
             self.scenario.atomic_actions(), "magnum.list_clusters")
 
     def test_create_cluster(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{MAGNUM_UTILS}.common_utils.interruptable_sleep",
+            test.create_sleeper()))
         self.scenario.generate_random_name = mock.Mock(
             return_value="generated_name")
         self.clients("magnum").clusters.create.return_value = self.cluster
@@ -238,6 +242,11 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
     @mock.patch(MAGNUM_UTILS + ".MagnumScenario._get_k8s_api_client")
     def test_create_v1pod(self, mock__get_k8s_api_client,
                           mock_random_choice):
+        self.useFixture(fixtures.MockPatch(
+            f"{MAGNUM_UTILS}.time.sleep", test.create_sleeper()))
+        self.useFixture(fixtures.MockPatch(
+            f"{MAGNUM_UTILS}.common_utils.interruptable_sleep",
+            test.create_sleeper(max_calls=2)))
         k8s_api = mock__get_k8s_api_client.return_value
         manifest = (
             {"apiVersion": "v1", "kind": "Pod",
@@ -285,6 +294,9 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
     @mock.patch(MAGNUM_UTILS + ".MagnumScenario._get_k8s_api_client")
     def test_create_v1pod_timeout(self, mock__get_k8s_api_client,
                                   mock_random_choice, mock_time):
+        self.useFixture(fixtures.MockPatch(
+            f"{MAGNUM_UTILS}.common_utils.interruptable_sleep",
+            test.create_sleeper(max_calls=3)))
         k8s_api = mock__get_k8s_api_client.return_value
         manifest = (
             {"apiVersion": "v1", "kind": "Pod",
@@ -319,6 +331,9 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
     @mock.patch(MAGNUM_UTILS + ".MagnumScenario._get_k8s_api_client")
     def test_create_v1rc(self, mock__get_k8s_api_client,
                          mock_random_choice):
+        self.useFixture(fixtures.MockPatch(
+            f"{MAGNUM_UTILS}.common_utils.interruptable_sleep",
+            test.create_sleeper()))
         k8s_api = mock__get_k8s_api_client.return_value
         manifest = (
             {"apiVersion": "v1",
@@ -366,6 +381,9 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
     @mock.patch(MAGNUM_UTILS + ".MagnumScenario._get_k8s_api_client")
     def test_create_v1rc_timeout(self, mock__get_k8s_api_client,
                                  mock_random_choice, mock_time):
+        self.useFixture(fixtures.MockPatch(
+            f"{MAGNUM_UTILS}.common_utils.interruptable_sleep",
+            test.create_sleeper(max_calls=3)))
         k8s_api = mock__get_k8s_api_client.return_value
         manifest = (
             {"apiVersion": "v1",

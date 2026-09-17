@@ -157,6 +157,7 @@ class CinderServersTestCase(test.ScenarioTestCase):
     def test_create_from_image_and_delete_volume(self):
         mock_service = self.mock_cinder.return_value
         scenario = volumes.CreateAndDeleteVolume(self._get_context())
+        scenario.sleep_between = test.create_sleeper()
         scenario.run(1, image="fake_image")
         mock_service.create_volume.assert_called_once_with(
             1, imageRef="fake_image")
@@ -182,6 +183,7 @@ class CinderServersTestCase(test.ScenarioTestCase):
         mock_service = self.mock_cinder.return_value
         vol_size = 1
         scenario = volumes.CreateFromVolumeAndDeleteVolume(self._get_context())
+        scenario.sleep_between = test.create_sleeper()
         scenario.run(vol_size)
         mock_service.create_volume.assert_called_once_with(
             1, source_volid="uuid")

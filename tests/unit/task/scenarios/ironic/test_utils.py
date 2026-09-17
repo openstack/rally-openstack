@@ -29,6 +29,7 @@ class IronicScenarioTestCase(test.ScenarioTestCase):
         self.admin_clients("ironic").node.create.return_value = "fake_node"
         scenario = utils.IronicScenario(self.context)
         scenario.generate_random_name = mock.Mock()
+        scenario.sleep_between = test.create_sleeper()
 
         scenario._create_node(driver="fake", properties="fake_prop",
                               fake_param="foo")

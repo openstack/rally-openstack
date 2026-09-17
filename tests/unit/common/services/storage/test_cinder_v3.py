@@ -15,6 +15,7 @@
 from unittest import mock
 
 import ddt
+import fixtures
 
 from rally.common import cfg
 
@@ -41,6 +42,9 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
         return self.service._atomic_actions
 
     def test_create_volume(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v3.rutils.interruptable_sleep",
+            test.create_sleeper()))
         self.service.generate_random_name = mock.MagicMock(
             return_value="volume")
         self.service._wait_available_volume = mock.MagicMock()
@@ -69,6 +73,9 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
 
     @mock.patch("%s.cinder_v3.random" % BASE_PATH)
     def test_create_volume_with_size_range(self, mock_random):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v3.rutils.interruptable_sleep",
+            test.create_sleeper()))
         mock_random.randint.return_value = 3
         self.service._wait_available_volume = mock.MagicMock()
         self.service._wait_available_volume.return_value = fakes.FakeVolume()
@@ -141,6 +148,9 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
                                        "cinder_v3.list_types")
 
     def test_create_snapshot(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v3.rutils.interruptable_sleep",
+            test.create_sleeper()))
         self.service._wait_available_volume = mock.MagicMock()
         self.service._wait_available_volume.return_value = fakes.FakeVolume()
         self.service.generate_random_name = mock.MagicMock(
@@ -159,6 +169,9 @@ class CinderV3ServiceTestCase(test.ScenarioTestCase):
                                        "cinder_v3.create_snapshot")
 
     def test_create_snapshot_with_name(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v3.rutils.interruptable_sleep",
+            test.create_sleeper()))
         self.service._wait_available_volume = mock.MagicMock()
         self.service._wait_available_volume.return_value = fakes.FakeVolume()
 

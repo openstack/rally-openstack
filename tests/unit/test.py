@@ -172,8 +172,14 @@ class ScenarioTestCase(TestCase):
             self.useFixture(self.mock_wait_for_delete)
             self.useFixture(self.mock_wait_for_status)
 
-        self.mock_sleep = fixtures.MockPatch("time.sleep")
-        self.useFixture(self.mock_sleep)
+        # NOTE(andreykurilin): Uncontrolled mocking for time.sleep may result
+        #   in infinite loop, so it is better to raise any exception here
+        #   to force the target test to declare expected scenario.
+        p = mock.patch(
+            "time.sleep", side_effect=Exception("mock time.sleep()!")
+        )
+        p.start()
+        self.addCleanup(p.stop)
 
         self._clients = {}
         self._client_mocks = self.get_client_mocks()
@@ -246,3 +252,21 @@ def get_test_context(**kwargs):
     kwargs["task"] = {"uuid": str(uuid.uuid4())}
     kwargs["owner_id"] = str(uuid.uuid4())
     return kwargs
+
+
+def create_sleeper(max_calls: int = 1) -> mock.Mock:
+    """Return a fake sleep that does nothing for up to max_calls calls.
+
+    Any further call raises, so a polling loop that never reaches its exit
+    condition fails the test instead of spinning forever.
+    """
+    sleeper = mock.Mock()
+
+    def sleep(*args: object, **kwargs: object) -> None:
+        if sleeper.call_count > max_calls:
+            raise AssertionError(
+                f"sleep was called more than expected {max_calls} time(s)"
+            )
+
+    sleeper.side_effect = sleep
+    return sleeper

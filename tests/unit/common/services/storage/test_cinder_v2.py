@@ -14,6 +14,8 @@
 
 from unittest import mock
 
+import fixtures
+
 from rally.common import cfg
 
 from rally_openstack.common.services.storage import cinder_v2
@@ -38,6 +40,9 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
         return self.service._atomic_actions
 
     def test_create_volume(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v2.rutils.interruptable_sleep",
+            test.create_sleeper()))
         self.service.generate_random_name = mock.MagicMock(
             return_value="volume")
         self.service._wait_available_volume = mock.MagicMock()
@@ -65,6 +70,9 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
 
     @mock.patch("%s.cinder_v2.random" % BASE_PATH)
     def test_create_volume_with_size_range(self, mock_random):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v2.rutils.interruptable_sleep",
+            test.create_sleeper()))
         mock_random.randint.return_value = 3
         self.service._wait_available_volume = mock.MagicMock()
         self.service._wait_available_volume.return_value = fakes.FakeVolume()
@@ -136,6 +144,9 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
                                        "cinder_v2.list_types")
 
     def test_create_snapshot(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v2.rutils.interruptable_sleep",
+            test.create_sleeper()))
         self.service._wait_available_volume = mock.MagicMock()
         self.service._wait_available_volume.return_value = fakes.FakeVolume()
         self.service.generate_random_name = mock.MagicMock(
@@ -154,6 +165,9 @@ class CinderV2ServiceTestCase(test.ScenarioTestCase):
                                        "cinder_v2.create_snapshot")
 
     def test_create_snapshot_with_name(self):
+        self.useFixture(fixtures.MockPatch(
+            f"{BASE_PATH}.cinder_v2.rutils.interruptable_sleep",
+            test.create_sleeper()))
         self.service._wait_available_volume = mock.MagicMock()
         self.service._wait_available_volume.return_value = fakes.FakeVolume()
 

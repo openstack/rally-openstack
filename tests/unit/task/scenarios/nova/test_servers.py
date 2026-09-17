@@ -134,6 +134,7 @@ class NovaServersTestCase(test.ScenarioTestCase):
         flavor = fakes.FakeFlavor()
 
         scenario = servers.BootLockUnlockAndDelete(self.context)
+        scenario.sleep_between = test.create_sleeper()
         scenario._boot_server = mock.Mock(return_value=server)
         scenario._lock_server = mock.Mock(side_effect=lambda s: s.lock())
         scenario._unlock_server = mock.Mock(side_effect=lambda s: s.unlock())

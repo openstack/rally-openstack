@@ -48,6 +48,7 @@ class ManilaScenarioTestCase(test.ScenarioTestCase):
         fake_random_name = "fake_random_name_value"
         self.scenario.generate_random_name = mock.Mock(
             return_value=fake_random_name)
+        self.scenario.sleep_between = test.create_sleeper()
 
         self.scenario._create_share("nfs")
 

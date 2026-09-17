@@ -51,6 +51,7 @@ class HeatScenarioTestCase(test.ScenarioTestCase):
             "stack": {"id": "test_id"}
         }
         self.clients("heat").stacks.get.return_value = self.stack
+        self.scenario.sleep_between = test.create_sleeper()
         return_stack = self.scenario._create_stack(self.default_template,
                                                    self.dummy_parameters,
                                                    self.dummy_files,
@@ -76,6 +77,7 @@ class HeatScenarioTestCase(test.ScenarioTestCase):
     def test_update_stack(self):
         self.clients("heat").stacks.update.return_value = None
         scenario = utils.HeatScenario(self.context)
+        scenario.sleep_between = test.create_sleeper()
         scenario._update_stack(self.stack, self.default_template,
                                self.dummy_parameters, self.dummy_files,
                                self.dummy_environment)
@@ -326,6 +328,7 @@ class HeatScenarioNegativeTestCase(test.ScenarioTestCase):
         stack.manager.get.return_value = resource
         self.clients("heat").stacks.get.return_value = stack
         scenario = utils.HeatScenario(context=self.context)
+        scenario.sleep_between = test.create_sleeper()
         ex = self.assertRaises(exceptions.GetResourceErrorStatus,
                                scenario._create_stack, "stack_name")
         self.assertIn("has CREATE_FAILED status", str(ex))
@@ -337,6 +340,7 @@ class HeatScenarioNegativeTestCase(test.ScenarioTestCase):
         stack.manager.get.return_value = resource
         self.clients("heat").stacks.get.return_value = stack
         scenario = utils.HeatScenario(context=self.context)
+        scenario.sleep_between = test.create_sleeper()
         ex = self.assertRaises(exceptions.GetResourceErrorStatus,
                                scenario._update_stack, stack,
                                "heat_template_version: 2013-05-23")

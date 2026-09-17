@@ -114,6 +114,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         context.setdefault("config", {})
 
         nova_scenario = utils.NovaScenario(context=context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario.generate_random_name = mock.Mock()
         nova_scenario._pick_random_nic = mock.Mock(
             return_value=[{"net-id": "foo"}])
@@ -168,6 +169,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__suspend_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._suspend_server(self.server)
         self.server.suspend.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -182,6 +184,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__resume_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._resume_server(self.server)
         self.server.resume.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -196,6 +199,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__pause_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._pause_server(self.server)
         self.server.pause.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -210,6 +214,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__unpause_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._unpause_server(self.server)
         self.server.unpause.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -224,6 +229,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__shelve_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._shelve_server(self.server)
         self.server.shelve.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_has_calls([
@@ -248,6 +254,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__unshelve_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._unshelve_server(self.server)
         self.server.unshelve.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -316,6 +323,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__reboot_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._reboot_server(self.server)
         self.server.reboot.assert_called_once_with(reboot_type="HARD")
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -330,6 +338,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__soft_reboot_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._soft_reboot_server(self.server)
         self.server.reboot.assert_called_once_with(reboot_type="SOFT")
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -344,6 +353,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__rebuild_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._rebuild_server(self.server, "img", fakearg="fakearg")
         self.server.rebuild.assert_called_once_with("img", fakearg="fakearg")
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -386,6 +396,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__rescue_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._rescue_server(self.server)
         self.server.rescue.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -400,6 +411,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
 
     def test__unrescue_server(self):
         nova_scenario = utils.NovaScenario(context=self.context)
+        nova_scenario.sleep_between = test.create_sleeper()
         nova_scenario._unrescue_server(self.server)
         self.server.unrescue.assert_called_once_with()
         self.mock_wait_for_status.mock.assert_called_once_with(
@@ -474,6 +486,7 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         servers = [mock.Mock() for i in range(instances_amount)]
         self.clients("nova").servers.list.return_value = servers
         scenario = utils.NovaScenario(context=self.context)
+        scenario.sleep_between = test.create_sleeper()
         scenario.generate_random_name = mock.Mock()
         scenario._pick_random_nic = mock.Mock(
             return_value=[{"net-id": "foo"}])
