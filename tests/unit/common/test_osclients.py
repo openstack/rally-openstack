@@ -1100,6 +1100,33 @@ class ClientsContainerTestCase(test.TestCase):
             identity_endpoint_override="http://auth_url/v2.0")
         self.assertEqual(connection.return_value, conn)
 
+    def test_conn_passes_endpoint_type_as_interface(self):
+        credential = oscredential.OpenStackCredential(
+            "http://auth_url/v2.0", "user", "pass", "tenant",
+            endpoint_type="internal")
+        clients = osclients.Clients(credential)
+        keystone = mock.Mock()
+        keystone.get_session.return_value = ("fake-session", "plugin")
+        keystone.identity_endpoint_override = "http://auth_url/v2.0"
+        clients.cache["client:keystone"] = keystone
+
+        fake_openstack = mock.Mock()
+        with mock.patch.dict(
+                "sys.modules",
+                {"openstack": fake_openstack,
+                 "openstack.connection": fake_openstack.connection}):
+            conn = clients._conn
+            self.assertIs(conn, clients._conn)
+
+        connection = fake_openstack.connection.Connection
+        connection.assert_called_once_with(
+            session="fake-session",
+            region_name=credential.region_name,
+            identity_endpoint_override="http://auth_url/v2.0",
+            interface="internal")
+        self.assertIn("sdk_connection_interface=internal", clients.cache)
+        self.assertEqual(connection.return_value, conn)
+
     def test_refresh_token_no_seeded_auth(self):
         clients = osclients.Clients(self.credential)
         keystone = mock.Mock()

@@ -543,6 +543,8 @@ class Clients:
     def _sdk_service_config(self) -> dict[str, str]:
         """Build openstacksdk per-service config."""
         config: dict[str, str] = {}
+        if self.credential.endpoint_type:
+            config["interface"] = str(self.credential.endpoint_type)
         for client_name in self.credential.api_info:
             try:
                 spec = base.BaseClient.get(client_name).spec
