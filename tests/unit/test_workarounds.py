@@ -30,19 +30,20 @@ class WorkaroundTestCase(test.TestCase):
     WORKAROUNDS = []
 
     def get_min_required_version(self):
+        from packaging import requirements
+
         dist = importlib.metadata.distribution("rally-openstack")
 
         for p in dist.requires or []:
-            if not p.startswith("rally>"):
+            req = requirements.Requirement(p)
+            if req.name != "rally":
                 continue
-            version_str = p.split(">", 1)[1]
-            ge = version_str.startswith("=")
-            if ge:
-                version_str = version_str[1:]
-            version = [int(i) for i in version_str.split(".")]
-            if ge:
-                version[-1] += 1
-            return version
+            for spec in req.specifier:
+                if spec.operator in (">=", ">"):
+                    version = [int(i) for i in spec.version.split(".")]
+                    if spec.operator == ">":
+                        version[-1] += 1
+                    return version
 
         self.fail("Failed to get a minimum required version of Rally "
                   "framework.")
