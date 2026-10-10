@@ -20,7 +20,7 @@ from rally_openstack.task import scenario
 from rally_openstack.task.scenarios.neutron import utils
 
 
-class BgpvpnType(str, enum.Enum):
+class BgpvpnType(enum.StrEnum):
     """Type of VPN and the technology behind it."""
 
     L2 = "l2"

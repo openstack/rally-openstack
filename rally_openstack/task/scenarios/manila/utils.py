@@ -28,7 +28,7 @@ from rally_openstack.task.contexts.manila import consts
 CONF = cfg.CONF
 
 
-class ShareProto(str, enum.Enum):
+class ShareProto(enum.StrEnum):
     """Protocol a share is exported with."""
 
     NFS = "NFS"
