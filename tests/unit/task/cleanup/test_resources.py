@@ -13,12 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
 from unittest import mock
 
 import ddt
-from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exc
+from openstack.network.v2 import extension as sdk_extension
+from openstack.network.v2 import port as sdk_port
+from openstack.network.v2 import router as sdk_router
 from openstack.network.v2 import tap_service
 from watcherclient.common.apiclient import exceptions as watcher_exceptions
 
@@ -28,6 +29,17 @@ from tests.unit import test
 
 
 BASE = "rally_openstack.task.cleanup.resources"
+
+
+def _dict(resource):
+    return resource.to_dict(
+        computed=False, original_names=True, headers=False, ignore_none=True)
+
+
+def _set_extensions(user, extensions):
+    """Stub the openstacksdk network proxy extensions() for supports_ext."""
+    user._conn.network.extensions.return_value = iter(
+        [sdk_extension.Extension(**{"alias": ext}) for ext in extensions])
 
 
 class SynchronizedDeletionTestCase(test.TestCase):
@@ -206,9 +218,7 @@ class NeutronLbaasV1MixinTestCase(test.TestCase):
         neut._service = "neutron"
         neut._resource = "some_resource"
         neut._manager = mock.Mock()
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        _set_extensions(user, extensions)
         return neut
 
     def test_list_lbaas_available(self):
@@ -242,9 +252,7 @@ class NeutronLbaasV2MixinTestCase(test.TestCase):
         neut._service = "neutron"
         neut._resource = "some_resource"
         neut._manager = mock.Mock()
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        _set_extensions(user, extensions)
         return neut
 
     def test_list_lbaasv2_available(self):
@@ -314,10 +322,7 @@ class NeutronBgpvpnTestCase(test.TestCase):
         admin = mock.Mock()
         neut = resources.NeutronBgpvpn(admin=admin)
         neut._manager = mock.Mock()
-        nc = admin.neutron.return_value
-        nc.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        _set_extensions(admin, extensions)
         return neut
 
     def test_list_user(self):
@@ -348,9 +353,7 @@ class NeutronFirewallRuleTestCase(test.TestCase):
         neut = resources.NeutronFirewallRule(user=user)
         neut.tenant_uuid = "user_tenant"
         neut._manager = mock.Mock()
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        _set_extensions(user, extensions)
         return neut
 
     def test_list_fwaas_available(self):
@@ -394,9 +397,7 @@ class NeutronFirewallPolicyTestCase(test.TestCase):
         neut = resources.NeutronFirewallPolicy(user=user)
         neut.tenant_uuid = "user_tenant"
         neut._manager = mock.Mock()
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        _set_extensions(user, extensions)
         return neut
 
     def test_list_fwaas_available(self):
@@ -441,9 +442,7 @@ class NeutronFirewallGroupTestCase(test.TestCase):
         neut = resources.NeutronFirewallGroup(user=user)
         neut.tenant_uuid = "user_tenant"
         neut._manager = mock.Mock()
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        _set_extensions(user, extensions)
         return neut
 
     def test_list_fwaas_available(self):
@@ -518,9 +517,10 @@ class NeutronTapMirrorTestCase(test.TestCase):
         user = mock.MagicMock()
         neut = resources.NeutronTapMirror(user=user)
         neut.tenant_uuid = "user_tenant"
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions]
-        }
+        # NeutronService.supports_extension now reads the openstacksdk network
+        # proxy (user._conn.network.extensions()) rather than the legacy
+        # neutronclient list_extensions() response.
+        _set_extensions(user, extensions)
         return neut
 
     def test_id_and_name(self):
@@ -564,9 +564,7 @@ class NeutronTapServiceTestCase(test.TestCase):
         user = mock.MagicMock()
         resource = resources.NeutronTapService(user=user)
         resource.tenant_uuid = "user_tenant"
-        user.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": ext} for ext in extensions or []]
-        }
+        _set_extensions(user, extensions or [])
         return resource
 
     def test_id_and_name(self):
@@ -619,9 +617,7 @@ class NeutronTapServiceTestCase(test.TestCase):
         resource = self.get_tap_service_resource(extensions=["taas"])
         resource._admin_required = True
         resource.admin = mock.MagicMock()
-        resource.admin.neutron.return_value.list_extensions.return_value = {
-            "extensions": [{"alias": "taas"}]
-        }
+        _set_extensions(resource.admin, ["taas"])
         services = [
             tap_service.TapService(id="service-1", project_id="user_tenant"),
             tap_service.TapService(id="service-2", project_id="other-project"),
@@ -650,27 +646,33 @@ class NeutronFloatingIPTestCase(test.TestCase):
         self.assertEqual(fips.name(), "OoO")
 
     def test_list(self):
-        fips = {"floatingips": [{"tenant_id": "foo", "id": "foo"}]}
+        from openstack.network.v2 import floating_ip as sdk_fip
 
+        fip_objs = [sdk_fip.FloatingIP(id="foo", tenant_id="foo")]
         user = mock.MagicMock()
-        user.neutron.return_value.list_floatingips.return_value = fips
+        user._conn.network.ips.return_value = iter(fip_objs)
 
-        self.assertEqual(fips["floatingips"], list(
-            resources.NeutronFloatingIP(user=user, tenant_uuid="foo").list()))
-        user.neutron.return_value.list_floatingips.assert_called_once_with(
-            tenant_id="foo")
+        result = list(
+            resources.NeutronFloatingIP(user=user, tenant_uuid="foo").list())
+        self.assertEqual(
+            [fip_objs[0].to_dict(computed=False, original_names=True,
+                                 headers=False, ignore_none=True)],
+            result)
+        # list_floatingips translates tenant_id to project_id for the sdk
+        user._conn.network.ips.assert_called_once_with(project_id="foo")
 
 
 class NeutronTrunkTestcase(test.TestCase):
 
     def test_list(self):
+        from openstack.network.v2 import trunk as sdk_trunk
+
+        trunk_objs = [sdk_trunk.Trunk(id="trunk-1", name="t1")]
         user = mock.MagicMock()
+        user.neutron.list_trunks.return_value = trunk_objs
         trunk = resources.NeutronTrunk(user=user)
-        user.neutron().list_trunks.return_value = {
-            "trunks": ["trunk"]}
-        self.assertEqual(["trunk"], trunk.list())
-        user.neutron().list_trunks.assert_called_once_with(
-            tenant_id=None)
+        self.assertEqual(trunk_objs, trunk.list())
+        user.neutron.list_trunks.assert_called_once_with(project_id=None)
 
     def test_list_with_not_found(self):
 
@@ -678,12 +680,20 @@ class NeutronTrunkTestcase(test.TestCase):
             status_code = 404
 
         user = mock.MagicMock()
+        user.neutron.list_trunks.side_effect = NotFound()
         trunk = resources.NeutronTrunk(user=user)
-        user.neutron().list_trunks.side_effect = NotFound()
 
         self.assertEqual([], trunk.list())
-        user.neutron().list_trunks.assert_called_once_with(
-            tenant_id=None)
+        user.neutron.list_trunks.assert_called_once_with(project_id=None)
+
+    def test_delete(self):
+        from openstack.network.v2 import trunk as sdk_trunk
+
+        user = mock.MagicMock()
+        trunk = resources.NeutronTrunk(
+            resource=sdk_trunk.Trunk(id="trunk-1"), user=user)
+        trunk.delete()
+        user.neutron.delete_trunk.assert_called_once_with("trunk-1")
 
 
 class NeutronPortTestCase(test.TestCase):
@@ -694,17 +704,22 @@ class NeutronPortTestCase(test.TestCase):
 
         resources.NeutronPort(resource=raw_res, user=user).delete()
 
-        user.neutron().delete_port.assert_called_once_with(raw_res["id"])
+        # delete_port now drives the openstacksdk network proxy.
+        user._conn.network.delete_port.assert_called_once_with(
+            raw_res["id"], ignore_missing=False)
 
     def test_delete_port_raise_exception(self):
+        from openstack import exceptions as sdk_exceptions
+
         raw_res = {"device_owner": "abbabaab", "id": "some_id"}
         user = mock.MagicMock()
-        user.neutron().delete_port.side_effect = (
-            neutron_exceptions.PortNotFoundClient)
+        user._conn.network.delete_port.side_effect = (
+            sdk_exceptions.NotFoundException)
 
         resources.NeutronPort(resource=raw_res, user=user).delete()
 
-        user.neutron().delete_port.assert_called_once_with(raw_res["id"])
+        user._conn.network.delete_port.assert_called_once_with(
+            raw_res["id"], ignore_missing=False)
 
     def test_delete_port_device_owner(self):
         raw_res = {
@@ -716,8 +731,11 @@ class NeutronPortTestCase(test.TestCase):
 
         resources.NeutronPort(resource=raw_res, user=user).delete()
 
-        user.neutron().remove_interface_router.assert_called_once_with(
-            raw_res["device_id"], {"port_id": raw_res["id"]})
+        # router interface removal is delegated to the sdk proxy with the
+        # port_id keyword.
+        user._conn.network.remove_interface_from_router.\
+            assert_called_once_with(
+                raw_res["device_id"], port_id=raw_res["id"])
 
     def test_name(self):
         raw_res = {
@@ -789,30 +807,32 @@ class NeutronPortTestCase(test.TestCase):
             {"id": "router-5", "name": "Router-5", "tenant_id": tenant_uuid},
         ]
 
+        port_objs = [sdk_port.Port(**p) for p in ports]
+        router_objs = [sdk_router.Router(**r) for r in routers]
+
         expected_ports = []
         for port in ports:
             if port["tenant_id"] == tenant_uuid:
-                expected_ports.append(copy.deepcopy(port))
+                expected_port = _dict(sdk_port.Port(**port))
                 if ("device_id" in port
                         and port["device_id"].startswith("router")):
-                    expected_ports[-1]["parent_name"] = [
+                    expected_port["parent_name"] = [
                         r for r in routers
                         if r["id"] == port["device_id"]][0]["name"]
+                expected_ports.append(expected_port)
 
-        class FakeNeutronClient:
+        neutron_proxy = mock.Mock()
+        neutron_proxy.ports.return_value = iter(port_objs)
+        neutron_proxy.routers.return_value = iter(router_objs)
 
-            list_ports = mock.Mock()
-            list_routers = mock.Mock()
-
-        neutron = FakeNeutronClient
-        neutron.list_ports.return_value = {"ports": ports}
-        neutron.list_routers.return_value = {"routers": routers}
-
-        user = mock.Mock(neutron=neutron)
+        user = mock.Mock()
+        user._conn.network = neutron_proxy
         self.assertEqual(expected_ports, resources.NeutronPort(
             user=user, tenant_uuid=tenant_uuid).list())
-        neutron.list_ports.assert_called_once_with(tenant_id=tenant_uuid)
-        neutron.list_routers.assert_called_once_with(tenant_id=tenant_uuid)
+        # list_* translates the legacy tenant_id filter to project_id before
+        # calling the openstacksdk proxy.
+        neutron_proxy.ports.assert_called_once_with(project_id=tenant_uuid)
+        neutron_proxy.routers.assert_called_once_with(project_id=tenant_uuid)
 
 
 @ddt.ddt
@@ -823,23 +843,28 @@ class NeutronSecurityGroupTestCase(test.TestCase):
         {"admin": None, "admin_required": False})
     @ddt.unpack
     def test_list(self, admin, admin_required):
-        sg_list = [{"tenant_id": "user_tenant", "name": "default"},
-                   {"tenant_id": "user_tenant", "name": "foo_sg"}]
+        from openstack.network.v2 import security_group as sdk_sg
+
+        sg_objs = [
+            sdk_sg.SecurityGroup(tenant_id="user_tenant", name="default"),
+            sdk_sg.SecurityGroup(tenant_id="user_tenant", name="foo_sg"),
+        ]
 
         neut = resources.NeutronSecurityGroup()
         neut.user = mock.MagicMock()
         neut._resource = "security_group"
         neut.tenant_uuid = "user_tenant"
 
-        neut.user.neutron().list_security_groups.return_value = {
-            "security_groups": sg_list
-        }
+        neut.user._conn.network.security_groups.return_value = iter(sg_objs)
 
-        expected_result = [sg_list[1]]
+        expected_result = [
+            sg_objs[1].to_dict(computed=False, original_names=True,
+                               headers=False, ignore_none=True)]
         self.assertEqual(expected_result, list(neut.list()))
 
-        neut.user.neutron().list_security_groups.assert_called_once_with(
-            tenant_id=neut.tenant_uuid)
+        # list_security_groups translates tenant_id to project_id
+        neut.user._conn.network.security_groups.assert_called_once_with(
+            project_id=neut.tenant_uuid)
 
     def test_list_with_not_found(self):
 
@@ -851,13 +876,13 @@ class NeutronSecurityGroupTestCase(test.TestCase):
         neut._resource = "security_group"
         neut.tenant_uuid = "user_tenant"
 
-        neut.user.neutron().list_security_groups.side_effect = NotFound()
+        neut.user._conn.network.security_groups.side_effect = NotFound()
 
         expected_result = []
         self.assertEqual(expected_result, list(neut.list()))
 
-        neut.user.neutron().list_security_groups.assert_called_once_with(
-            tenant_id=neut.tenant_uuid)
+        neut.user._conn.network.security_groups.assert_called_once_with(
+            project_id=neut.tenant_uuid)
 
 
 class NeutronQuotaTestCase(test.TestCase):
@@ -865,7 +890,7 @@ class NeutronQuotaTestCase(test.TestCase):
     def test_delete(self):
         admin = mock.MagicMock()
         resources.NeutronQuota(admin=admin, tenant_uuid="fake").delete()
-        admin.neutron.return_value.delete_quota.assert_called_once_with("fake")
+        admin._conn.network.delete_quota.assert_called_once_with("fake")
 
 
 @ddt.ddt

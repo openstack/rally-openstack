@@ -14,6 +14,8 @@
 
 import itertools
 
+from openstack import exceptions as sdk_exceptions
+
 from rally import exceptions
 from rally.common import cfg
 from rally.common import logging
@@ -69,6 +71,21 @@ def _clean_dict(**kwargs):
     return dict((k, v) for k, v in kwargs.items() if v != _NONE)
 
 
+def _normalize_filters(filters):
+    """Normalize list filters for openstacksdk.
+
+    python-neutronclient forwarded every filter to the API as-is, so callers
+    could pass ``tenant_id``. openstacksdk only forwards the query parameters
+    it knows about and uses ``project_id`` instead. Translate ``tenant_id`` to
+    ``project_id`` so the historic filter keeps working. If both are given the
+    explicit ``project_id`` wins.
+    """
+    if "tenant_id" in filters:
+        tenant_id = filters.pop("tenant_id")
+        filters.setdefault("project_id", tenant_id)
+    return filters
+
+
 @service.service(service_name="neutron", service_type="network", version="2.0")
 class NeutronService(service.Service):
     """A helper class for Neutron API"""
@@ -81,7 +98,7 @@ class NeutronService(service.Service):
     @property
     def client(self):
         if self._client is None:
-            self._client = self._clients.neutron()
+            self._client = self._clients._conn.network
         return self._client
 
     def create_network_topology(
@@ -255,8 +272,9 @@ class NeutronService(service.Service):
                 "router:external": router_external
             }
         )
-        resp = self.client.create_network({"network": body})
-        return resp["network"]
+        resp = self.client.create_network(**body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.show_network")
     def get_network(self, network_id, fields=_NONE):
@@ -269,8 +287,10 @@ class NeutronService(service.Service):
             parameter, the API returns only the requested set of attributes.
         """
         body = _clean_dict(fields=fields)
-        resp = self.client.show_network(network_id, **body)
-        return resp["network"]
+        resp = self.client.get_network(network_id, **body)
+        return resp.to_dict(
+            computed=False, original_names=True,
+            headers=False, ignore_none=True)
 
     def find_network(self, network_id_or_name, external=_NONE):
         """Find network by identifier (id or name)
@@ -279,10 +299,18 @@ class NeutronService(service.Service):
         :param external: check target network is external or not
         """
         network = None
-        for net in self.list_networks():
-            if network_id_or_name in (net["name"], net["id"]):
-                network = net
-                break
+        # Try to treat the identifier as an ID first (single measured call).
+        try:
+            network = self.get_network(network_id_or_name)
+        except sdk_exceptions.SDKException:
+            # Not an ID (or not found by ID): fall back to a measured
+            # name-based lookup via list_networks.
+            network = None
+        if network is None:
+            for net in self.list_networks():
+                if network_id_or_name in (net["name"], net["id"]):
+                    network = net
+                    break
         if network is None:
             raise exceptions.GetResourceFailure(
                 resource="network",
@@ -371,8 +399,9 @@ class NeutronService(service.Service):
         )
         if not body:
             raise TypeError("No updates for a network.")
-        resp = self.client.update_network(network_id, {"network": body})
-        return resp["network"]
+        resp = self.client.update_network(network_id, **body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.delete_network")
     def delete_network(self, network_id):
@@ -380,7 +409,7 @@ class NeutronService(service.Service):
 
         :param network_id: Network ID
         """
-        self.client.delete_network(network_id)
+        self.client.delete_network(network_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.list_networks")
     def list_networks(self, name=_NONE, router_external=_NONE, status=_NONE,
@@ -398,7 +427,9 @@ class NeutronService(service.Service):
         """
         kwargs["router:external"] = router_external
         filters = _clean_dict(name=name, status=status, **kwargs)
-        return self.client.list_networks(**filters)["networks"]
+        resp = self.client.networks(**_normalize_filters(filters))
+        return [net.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True) for net in resp]
 
     IPv4_DEFAULT_DNS_NAMESERVERS = ["8.8.8.8", "8.8.4.4"]
     IPv6_DEFAULT_DNS_NAMESERVERS = ["dead:beaf::1", "dead:beaf::2"]
@@ -497,7 +528,9 @@ class NeutronService(service.Service):
             dns_publish_fixed_ip=dns_publish_fixed_ip
         )
 
-        subnet = self.client.create_subnet({"subnet": body})["subnet"]
+        subnet = self.client.create_subnet(**body)
+        subnet = subnet.to_dict(computed=False, original_names=True,
+                                headers=False, ignore_none=True)
         if router_id:
             self.add_interface_to_router(router_id=router_id,
                                          subnet_id=subnet["id"])
@@ -509,7 +542,10 @@ class NeutronService(service.Service):
 
         :param subnet_id: Subnet ID
         """
-        return self.client.show_subnet(subnet_id)["subnet"]
+        return self.client.get_subnet(subnet_id).to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True
+        )
 
     @atomic.action_timer("neutron.update_subnet")
     def update_subnet(self, subnet_id, name=_NONE, enable_dhcp=_NONE,
@@ -562,8 +598,11 @@ class NeutronService(service.Service):
         if not body:
             raise TypeError("No updates for a subnet.")
 
-        resp = self.client.update_subnet(subnet_id, {"subnet": body})["subnet"]
-        return resp
+        resp = self.client.update_subnet(subnet_id, **body)
+        return resp.to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True
+        )
 
     @atomic.action_timer("neutron.delete_subnet")
     def delete_subnet(self, subnet_id):
@@ -571,7 +610,7 @@ class NeutronService(service.Service):
 
         :param subnet_id: Subnet ID
         """
-        self.client.delete_subnet(subnet_id)
+        self.client.delete_subnet(subnet_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.list_subnets")
     def list_subnets(self, network_id=_NONE, **filters):
@@ -583,7 +622,9 @@ class NeutronService(service.Service):
         """
         if network_id:
             filters["network_id"] = network_id
-        return self.client.list_subnets(**filters)["subnets"]
+        resp = self.client.subnets(**_normalize_filters(filters))
+        return [sn.to_dict(computed=False, original_names=True,
+                           headers=False, ignore_none=True) for sn in resp]
 
     @atomic.action_timer("neutron.create_router")
     def create_router(self, project_id=_NONE, admin_state_up=_NONE,
@@ -648,8 +689,9 @@ class NeutronService(service.Service):
             admin_state_up=admin_state_up
         )
 
-        resp = self.client.create_router({"router": body})
-        return resp["router"]
+        resp = self.client.create_router(**body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.show_router")
     def get_router(self, router_id, fields=_NONE):
@@ -662,7 +704,9 @@ class NeutronService(service.Service):
             parameter, the API returns only the requested set of attributes.
         """
         body = _clean_dict(fields=fields)
-        return self.client.show_router(router_id, **body)["router"]
+        return self.client.get_router(router_id, **body).to_dict(
+            computed=False, original_names=True,
+            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.add_interface_router")
     def add_interface_to_router(self, router_id, subnet_id=_NONE,
@@ -679,7 +723,7 @@ class NeutronService(service.Service):
             raise TypeError("One of subnet_id or port_id must be specified "
                             "while adding interface to router.")
         body = _clean_dict(subnet_id=subnet_id, port_id=port_id)
-        return self.client.add_interface_router(router_id, body)
+        return self.client.add_interface_to_router(router_id, **body)
 
     @atomic.action_timer("neutron.remove_interface_router")
     def remove_interface_from_router(self, router_id, subnet_id=_NONE,
@@ -692,7 +736,7 @@ class NeutronService(service.Service):
         :param port_id: The ID of the port. One of subnet_id or port_id must
             be specified.
         """
-        from neutronclient.common import exceptions as neutron_exceptions
+        from openstack import exceptions as sdk_exceptions
 
         if (subnet_id and port_id) or (not subnet_id and not port_id):
             raise TypeError("One of subnet_id or port_id must be specified "
@@ -701,9 +745,9 @@ class NeutronService(service.Service):
         body = _clean_dict(subnet_id=subnet_id, port_id=port_id)
 
         try:
-            self.client.remove_interface_router(router_id, body)
-        except (neutron_exceptions.BadRequest,
-                neutron_exceptions.NotFound):
+            self.client.remove_interface_from_router(router_id, **body)
+        except (sdk_exceptions.BadRequestException,
+                sdk_exceptions.NotFoundException):
             # Some neutron plugins don't use router as
             # the device ID. Also, some plugin doesn't allow
             # to update the ha router interface as there is
@@ -727,7 +771,7 @@ class NeutronService(service.Service):
                 gw_info["enable_snat"] = enable_snat
         if external_fixed_ips is not None:
             gw_info["external_fixed_ips"] = external_fixed_ips
-        self.client.add_gateway_router(router_id, gw_info)
+        self.client.update_router(router_id, external_gateway_info=gw_info)
 
     @atomic.action_timer("neutron.remove_gateway_router")
     def remove_gateway_from_router(self, router_id):
@@ -735,7 +779,7 @@ class NeutronService(service.Service):
 
         :param router_id: Router ID
         """
-        self.client.remove_gateway_router(router_id)
+        self.client.update_router(router_id, external_gateway_info=None)
 
     @atomic.action_timer("neutron.update_router")
     def update_router(self, router_id, name=_NONE, admin_state_up=_NONE,
@@ -768,7 +812,9 @@ class NeutronService(service.Service):
         if not body:
             raise TypeError("No updates for a router.")
 
-        return self.client.update_router(router_id, {"router": body})["router"]
+        return self.client.update_router(router_id, **body).to_dict(
+            computed=False, original_names=True,
+            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.delete_router")
     def delete_router(self, router_id):
@@ -776,12 +822,12 @@ class NeutronService(service.Service):
 
         :param router_id: Router ID
         """
-        self.client.delete_router(router_id)
+        self.client.delete_router(router_id, ignore_missing=False)
 
     @staticmethod
     def _filter_routers(routers, subnet_ids):
         for router in routers:
-            gtw_info = router["external_gateway_info"]
+            gtw_info = router.get("external_gateway_info")
             if gtw_info is None:
                 continue
             if any(fixed_ip["subnet_id"] in subnet_ids
@@ -796,7 +842,10 @@ class NeutronService(service.Service):
             string or and an array with strings.
         :param kwargs: additional router list filters
         """
-        routers = self.client.list_routers(**kwargs)["routers"]
+        resp = self.client.routers(**_normalize_filters(kwargs))
+        routers = [router.to_dict(computed=False, original_names=True,
+                                  headers=False,
+                                  ignore_none=True) for router in resp]
         if subnet_ids != _NONE:
             routers = list(self._filter_routers(routers,
                                                 subnet_ids=subnet_ids))
@@ -816,7 +865,9 @@ class NeutronService(service.Service):
             network_id=network_id,
             **kwargs
         )
-        return self.client.create_port({"port": body})["port"]
+        return self.client.create_port(**body).to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
 
     @atomic.action_timer("neutron.show_port")
     def get_port(self, port_id, fields=_NONE):
@@ -829,7 +880,9 @@ class NeutronService(service.Service):
             parameter, the API returns only the requested set of attributes.
         """
         body = _clean_dict(fields=fields)
-        return self.client.show_port(port_id, **body)["port"]
+        return self.client.get_port(port_id, **body).to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
 
     @atomic.action_timer("neutron.update_port")
     def update_port(self, port_id, **kwargs):
@@ -843,7 +896,9 @@ class NeutronService(service.Service):
         body = _clean_dict(**kwargs)
         if not body:
             raise TypeError("No updates for a port.")
-        return self.client.update_port(port_id, {"port": body})["port"]
+        return self.client.update_port(port_id, **body).to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
 
     ROUTER_INTERFACE_OWNERS = ("network:router_interface",
                                "network:router_interface_distributed",
@@ -859,7 +914,7 @@ class NeutronService(service.Service):
         :returns bool: False if neutron returns NotFound error on port delete
         """
 
-        from neutronclient.common import exceptions as neutron_exceptions
+        from openstack import exceptions as sdk_exceptions
 
         if not isinstance(port, dict):
             port = {"id": port, "device_owner": False}
@@ -874,8 +929,8 @@ class NeutronService(service.Service):
                 router_id=port["device_id"], port_id=port["id"])
         else:
             try:
-                self.client.delete_port(port["id"])
-            except neutron_exceptions.PortNotFoundClient:
+                self.client.delete_port(port["id"], ignore_missing=False)
+            except sdk_exceptions.NotFoundException:
                 # port is auto-removed
                 return False
         return True
@@ -905,7 +960,9 @@ class NeutronService(service.Service):
             status=status,
             **kwargs
         )
-        return self.client.list_ports(**filters)["ports"]
+        resp = self.client.ports(**_normalize_filters(filters))
+        return [port.to_dict(computed=False, original_names=True,
+                             headers=False, ignore_none=True) for port in resp]
 
     @atomic.action_timer("neutron.create_floating_ip")
     def create_floatingip(self, floating_network=None, project_id=_NONE,
@@ -935,7 +992,7 @@ class NeutronService(service.Service):
         :param dns_name: A valid DNS name.
         """
 
-        from neutronclient.common import exceptions as neutron_exceptions
+        from openstack import exceptions as sdk_exceptions
 
         if isinstance(floating_network, dict):
             net_id = floating_network["id"]
@@ -968,9 +1025,10 @@ class NeutronService(service.Service):
         )
 
         try:
-            resp = self.client.create_floatingip({"floatingip": body})
-            return resp["floatingip"]
-        except neutron_exceptions.BadRequest as e:
+            resp = self.client.create_ip(**body)
+            return resp.to_dict(computed=False, original_names=True,
+                                headers=False, ignore_none=True)
+        except sdk_exceptions.BadRequestException as e:
             error = "%s" % e
             if "Unrecognized attribute" in error and "'description'" in error:
                 LOG.info("It looks like you have Neutron API of pre-Newton "
@@ -990,8 +1048,9 @@ class NeutronService(service.Service):
             parameter, the API returns only the requested set of attributes.
         """
         body = _clean_dict(fields=fields)
-        resp = self.client.show_floatingip(floatingip_id, **body)
-        return resp["floatingip"]
+        resp = self.client.get_ip(floatingip_id, **body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.update_floating_ip")
     def update_floatingip(self, floating_ip_id, fixed_ip_address=_NONE,
@@ -1020,8 +1079,9 @@ class NeutronService(service.Service):
         if not body:
             raise TypeError("No updates for a floating ip.")
 
-        return self.client.update_floatingip(
-            floating_ip_id, {"floatingip": body})["floatingip"]
+        return self.client.update_ip(floating_ip_id, **body).to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
 
     @atomic.action_timer("neutron.delete_floating_ip")
     def delete_floatingip(self, floatingip_id):
@@ -1029,7 +1089,7 @@ class NeutronService(service.Service):
 
         :param floatingip_id: floating IP id
         """
-        self.client.delete_floatingip(floatingip_id)
+        self.client.delete_ip(floatingip_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.associate_floating_ip")
     def associate_floatingip(self, port_id=None, device_id=None,
@@ -1136,8 +1196,9 @@ class NeutronService(service.Service):
             fixed_ip_address=fixed_ip_address,
             **kwargs
         )
-        resp = self.client.list_floatingips(**filters)
-        return resp["floatingips"]
+        resp = self.client.ips(**_normalize_filters(filters))
+        return [ip.to_dict(computed=False, original_names=True,
+                           headers=False, ignore_none=True) for ip in resp]
 
     @atomic.action_timer("neutron.create_security_group")
     def create_security_group(self, name=None, project_id=_NONE,
@@ -1157,8 +1218,9 @@ class NeutronService(service.Service):
             description=description,
             stateful=stateful
         )
-        resp = self.client.create_security_group({"security_group": body})
-        return resp["security_group"]
+        resp = self.client.create_security_group(**body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.show_security_group")
     def get_security_group(self, security_group_id, fields=_NONE):
@@ -1171,8 +1233,9 @@ class NeutronService(service.Service):
             parameter, the API returns only the requested set of attributes.
         """
         body = _clean_dict(fields=fields)
-        resp = self.client.show_security_group(security_group_id, **body)
-        return resp["security_group"]
+        resp = self.client.get_security_group(security_group_id, **body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.update_security_group")
     def update_security_group(self, security_group_id, name=_NONE,
@@ -1195,8 +1258,9 @@ class NeutronService(service.Service):
             raise TypeError("No updates for a security group.")
 
         resp = self.client.update_security_group(security_group_id,
-                                                 {"security_group": body})
-        return resp["security_group"]
+                                                 **body)
+        return resp.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True)
 
     @atomic.action_timer("neutron.delete_security_group")
     def delete_security_group(self, security_group_id):
@@ -1204,7 +1268,8 @@ class NeutronService(service.Service):
 
         :param security_group_id: Security group ID
         """
-        return self.client.delete_security_group(security_group_id)
+        return self.client.delete_security_group(security_group_id,
+                                                 ignore_missing=False)
 
     @atomic.action_timer("neutron.list_security_groups")
     def list_security_groups(self, name=_NONE, **kwargs):
@@ -1216,8 +1281,9 @@ class NeutronService(service.Service):
         """
         if name:
             kwargs["name"] = name
-        resp = self.client.list_security_groups(**kwargs)
-        return resp["security_groups"]
+        resp = self.client.security_groups(**_normalize_filters(kwargs))
+        return [sg.to_dict(computed=False, original_names=True,
+                           headers=False, ignore_none=True) for sg in resp]
 
     @atomic.action_timer("neutron.create_security_group_rule")
     def create_security_group_rule(self,
@@ -1273,8 +1339,9 @@ class NeutronService(service.Service):
             remote_ip_prefix=remote_ip_prefix,
             description=description
         )
-        return self.client.create_security_group_rule(
-            {"security_group_rule": body})["security_group_rule"]
+        return self.client.create_security_group_rule(**body).to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
 
     @atomic.action_timer("neutron.show_security_group_rule")
     def get_security_group_rule(self, security_group_rule_id, verbose=_NONE,
@@ -1288,10 +1355,15 @@ class NeutronService(service.Service):
             attributes allowed by the policy settings. By using fields
             parameter, the API returns only the requested set of attributes.
         """
-        body = _clean_dict(verbose=verbose, fields=fields)
-        resp = self.client.show_security_group_rule(
+        # openstacksdk's show call does not support the ``verbose`` query
+        # parameter that python-neutronclient accepted, so it is intentionally
+        # ignored here while kept in the signature for backward compatibility.
+        body = _clean_dict(fields=fields)
+        resp = self.client.get_security_group_rule(
             security_group_rule_id, **body)
-        return resp["security_group_rule"]
+        return resp.to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
 
     @atomic.action_timer("neutron.delete_security_group_rule")
     def delete_security_group_rule(self, security_group_rule_id):
@@ -1300,7 +1372,7 @@ class NeutronService(service.Service):
         :param security_group_rule_id: Security group rule ID
         """
         self.client.delete_security_group_rule(
-            security_group_rule_id)
+            security_group_rule_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.list_security_group_rules")
     def list_security_group_rules(
@@ -1337,8 +1409,10 @@ class NeutronService(service.Service):
             description=description,
             **kwargs
         )
-        resp = self.client.list_security_group_rules(**filters)
-        return resp["security_group_rules"]
+        resp = self.client.security_group_rules(
+            **_normalize_filters(filters))
+        return [sgr.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True) for sgr in resp]
 
     @atomic.action_timer("neutron.list_agents")
     def list_agents(self, **kwargs):
@@ -1347,12 +1421,17 @@ class NeutronService(service.Service):
         :param kwargs: filters
         :returns: user agents list
         """
-        return self.client.list_agents(**kwargs)["agents"]
+        resp = self.client.agents(**_normalize_filters(kwargs))
+        return [agent.to_dict(computed=False, original_names=True,
+                              headers=False,
+                              ignore_none=True) for agent in resp]
 
     @atomic.action_timer("neutron.list_extension")
     def list_extensions(self):
         """List neutron extensions."""
-        return self.client.list_extensions()["extensions"]
+        resp = self.client.extensions()
+        return [ext.to_dict(computed=False, original_names=True,
+                            headers=False, ignore_none=True) for ext in resp]
 
     @property
     def cached_supported_extensions(self):

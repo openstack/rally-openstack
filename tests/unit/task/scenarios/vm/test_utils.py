@@ -209,27 +209,28 @@ class VMScenarioTestCase(test.ScenarioTestCase):
 
     def test__attach_floating_ip(self):
         scenario, server = self.get_scenario()
-        nc = scenario._clients.neutron.return_value
+        nc = scenario._clients._conn.network
 
         fip = {"id": "foo_id", "floating_ip_address": "foo_ip"}
-        nc.create_floatingip.return_value = {"floatingip": fip}
+        resource = mock.Mock()
+        resource.to_dict.return_value = fip
+        nc.create_ip.return_value = resource
 
         floating_network = {"id": "floating-network-id",
                             "name": "floating-network"}
         scenario._attach_floating_ip(
             server, floating_network=floating_network)
 
-        nc.create_floatingip.assert_called_once_with({
-            "floatingip": {"description": mock.ANY,
-                           "floating_network_id": floating_network["id"]}
-        })
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY,
+            floating_network_id=floating_network["id"])
 
         scenario._associate_floating_ip.assert_called_once_with(
             server, fip, fixed_address=fip["floating_ip_address"])
 
     def test__delete_floating_ip(self):
         scenario, server = self.get_scenario()
-        nc = scenario._clients.neutron.return_value
+        nc = scenario._clients._conn.network
 
         _check_addr = mock.Mock(return_value=True)
         scenario.check_ip_address = mock.Mock(return_value=_check_addr)
@@ -243,7 +244,7 @@ class VMScenarioTestCase(test.ScenarioTestCase):
         _check_addr.assert_called_once_with(server)
         scenario._dissociate_floating_ip.assert_called_once_with(
             server, fip)
-        nc.delete_floatingip.assert_called_once_with("foo_id")
+        nc.delete_ip.assert_called_once_with("foo_id", ignore_missing=False)
 
 
 class HostTestCase(test.TestCase):

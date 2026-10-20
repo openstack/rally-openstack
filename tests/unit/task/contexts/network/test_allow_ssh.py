@@ -16,6 +16,10 @@
 import copy
 from unittest import mock
 
+from openstack.network.v2 import extension as sdk_extension
+from openstack.network.v2 import security_group as sdk_sg
+from openstack.network.v2 import security_group_rule as sdk_sgr
+
 from rally_openstack.task.contexts.network import allow_ssh
 from tests.unit import test
 
@@ -50,17 +54,16 @@ class AllowSSHContextTestCase(test.TestCase):
     def test_setup(self):
         for i, user in enumerate(self.ctx["users"]):
             clients = user["credential"].clients.return_value
-            nc = clients.neutron.return_value
-            nc.list_extensions.return_value = {
-                "extensions": [{"alias": "security-group"}]
-            }
-            nc.create_security_group.return_value = {
-                "security_group": {
-                    "name": "xxx",
-                    "id": f"security-group-{i}",
-                    "security_group_rules": []
-                }
-            }
+            nc = clients._conn.network
+            nc.extensions.return_value = iter(
+                [sdk_extension.Extension(**{"alias": "security-group"})])
+            nc.create_security_group.return_value = sdk_sg.SecurityGroup(**{
+                "name": "xxx",
+                "id": f"security-group-{i}",
+                "security_group_rules": []
+            })
+            nc.create_security_group_rule.side_effect = (
+                lambda **kw: sdk_sgr.SecurityGroupRule(**kw))
 
         allow_ssh.AllowSSH(self.ctx).setup()
 
@@ -70,30 +73,24 @@ class AllowSSHContextTestCase(test.TestCase):
         processed_tenants = {}
         for i, user in enumerate(self.ctx["users"]):
             clients = user["credential"].clients.return_value
-            nc = clients.neutron.return_value
+            nc = clients._conn.network
             if i == 0:
-                nc.list_extensions.assert_called_once_with()
+                nc.extensions.assert_called_once_with()
             else:
-                self.assertFalse(nc.list_extensions.called)
+                self.assertFalse(nc.extensions.called)
 
             if user["tenant_id"] in processed_tenants:
                 self.assertFalse(nc.create_security_group.called)
                 self.assertFalse(nc.create_security_group_rule.called)
             else:
-                nc.create_security_group.assert_called_once_with({
-                    "security_group": {
-                        "name": mock.ANY,
-                        "description": mock.ANY
-                    }
-                })
-                secgroup = nc.create_security_group.return_value
-                secgroup = secgroup["security_group"]
+                nc.create_security_group.assert_called_once_with(
+                    name=mock.ANY, description=mock.ANY)
+                secgroup = nc.create_security_group.return_value.to_dict(
+                    computed=False, original_names=True, headers=False)
 
                 rules = copy.deepcopy(allow_ssh._RULES_TO_ADD)
-                for rule in rules:
-                    rule["security_group_id"] = secgroup["id"]
                 self.assertEqual(
-                    [mock.call({"security_group_rule": rule})
+                    [mock.call(security_group_id=secgroup["id"], **rule)
                      for rule in rules],
                     nc.create_security_group_rule.call_args_list
                 )
@@ -105,15 +102,15 @@ class AllowSSHContextTestCase(test.TestCase):
 
     def test_setup_no_security_group_extension(self):
         clients = self.ctx["users"][0]["credential"].clients.return_value
-        nc = clients.neutron.return_value
-        nc.list_extensions.return_value = {"extensions": []}
+        nc = clients._conn.network
+        nc.extensions.return_value = iter([])
 
         allow_ssh.AllowSSH(self.ctx).setup()
 
         # admin user should not be used
         self.assertFalse(self.ctx["admin"]["credential"].clients.called)
 
-        nc.list_extensions.assert_called_once_with()
+        nc.extensions.assert_called_once_with()
         for i, user in enumerate(self.ctx["users"]):
             if i == 0:
                 continue

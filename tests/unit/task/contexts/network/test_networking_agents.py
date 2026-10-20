@@ -44,11 +44,24 @@ class NetworkingAgentsTestCase(test.TestCase):
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_setup(self, mock_clients):
+        from openstack.network.v2 import agent as sdk_agent
+
+        agent_objs = [sdk_agent.Agent(id="agent-1", binary="ovs"),
+                      sdk_agent.Agent(id="agent-2", binary="dhcp")]
+        nc = mock_clients.return_value._conn.network
+        nc.agents.return_value = iter(agent_objs)
+
         context = networking_agents.NetworkingAgents(self.context)
         context.setup()
-        mock_clients.assert_has_calls([
-            mock.call().neutron().list_agents(),
-        ])
+
+        # admin credential is used to reach the sdk network proxy
+        mock_clients.assert_called_once_with(
+            self.context["admin"]["credential"])
+        nc.agents.assert_called_once_with()
+        expected = [a.to_dict(computed=False, original_names=True,
+                              headers=False, ignore_none=True)
+                    for a in agent_objs]
+        self.assertEqual(expected, self.context["networking_agents"])
 
     def test_cleanup(self):
         # NOTE(stpierre): Test that cleanup is not abstract

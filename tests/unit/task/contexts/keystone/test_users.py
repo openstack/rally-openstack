@@ -15,6 +15,9 @@
 
 from unittest import mock
 
+from openstack.network.v2 import extension as sdk_extension
+from openstack.network.v2 import security_group as sdk_sg
+
 from rally import exceptions
 
 from rally_openstack.common import consts
@@ -283,23 +286,25 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         self.osclients.Clients.return_value = mock.Mock()
         self.osclients.Clients.return_value.services.return_value = {
             "network": "neutron"}
-        neutron = self.osclients.Clients.return_value.neutron.return_value
-        neutron.list_extensions.return_value = {
-            "extensions": [{"alias": "security-group"}]}
+        neutron = self.osclients.Clients.return_value._conn.network
 
-        neutron.list_security_groups.return_value = {
-            "security_groups": [
-                {"id": "id-1", "name": "default", "tenant_id": "tenant-1"},
-                {"id": "id-2", "name": "default", "tenant_id": "tenant-2"},
-                {"id": "id-3", "name": "default", "tenant_id": "tenant-3"}
-            ]
-        }
+        neutron.extensions.return_value = [
+            sdk_extension.Extension(**{"alias": "security-group"})]
+        neutron.security_groups.return_value = [
+            sdk_sg.SecurityGroup(
+                **{"id": "id-1", "name": "default", "tenant_id": "tenant-1"}),
+            sdk_sg.SecurityGroup(
+                **{"id": "id-2", "name": "default", "tenant_id": "tenant-2"}),
+            sdk_sg.SecurityGroup(
+                **{"id": "id-3", "name": "default", "tenant_id": "tenant-3"})
+        ]
 
         users.UserGenerator(self.context)._remove_default_security_group()
 
-        neutron.list_security_groups.assert_called_once_with(name="default")
+        neutron.security_groups.assert_called_once_with(name="default")
         self.assertEqual(
-            [mock.call("id-1"), mock.call("id-2")],
+            [mock.call("id-1", ignore_missing=False),
+             mock.call("id-2", ignore_missing=False)],
             neutron.delete_security_group.call_args_list
         )
 
@@ -314,20 +319,12 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         self.osclients.Clients.return_value = mock.Mock()
         self.osclients.Clients.return_value.services.return_value = {
             "network": "neutron"}
-        neutron = self.osclients.Clients.return_value.neutron.return_value
-        neutron.list_extensions.return_value = {"extensions": []}
-
-        neutron.list_security_groups.return_value = {
-            "security_groups": [
-                {"id": "id-1", "name": "default", "tenant_id": "tenant-1"},
-                {"id": "id-2", "name": "default", "tenant_id": "tenant-2"},
-                {"id": "id-3", "name": "default", "tenant_id": "tenant-3"}
-            ]
-        }
+        neutron = self.osclients.Clients.return_value._conn.network
+        neutron.extensions.return_value = []
 
         users.UserGenerator(self.context)._remove_default_security_group()
 
-        self.assertFalse(neutron.list_security_groups.called)
+        self.assertFalse(neutron.security_groups.called)
         self.assertFalse(neutron.delete_security_group.called)
 
     def test__remove_default_security_group_no_neutron(self):
@@ -344,7 +341,8 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         users.UserGenerator(self.context)._remove_default_security_group()
 
         self.assertFalse(
-            self.osclients.Clients.return_value.neutron.called)
+            self.osclients.Clients.return_value._conn.network
+            .security_groups.called)
 
     def test__create_tenants(self):
         self.context["config"]["users"]["tenants"] = 1

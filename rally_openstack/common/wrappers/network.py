@@ -15,7 +15,7 @@
 
 import abc
 
-from neutronclient.common import exceptions as neutron_exceptions
+from openstack import exceptions as sdk_exceptions
 
 from rally import exceptions
 from rally.common import cfg
@@ -120,13 +120,19 @@ class NeutronWrapper(NetworkWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        outer = self
+
         class _SingleClientWrapper:
             def neutron(_self):  # noqa: N805
-                return self.client
+                return outer.client
 
             @property
             def credential(_self):  # noqa: N805
-                return self.clients.credential
+                return outer.clients.credential
+
+            @property
+            def _conn(_self):  # noqa: N805
+                return outer.clients._conn
 
         self.neutron = neutron.NeutronService(
             clients=_SingleClientWrapper(),
@@ -155,7 +161,7 @@ class NeutronWrapper(NetworkWrapper):
                 networks = self.neutron.list_networks(name=name)
                 if networks:
                     net = networks[0]
-        except neutron_exceptions.NeutronClientException:
+        except sdk_exceptions.SDKException:
             pass
 
         if net:

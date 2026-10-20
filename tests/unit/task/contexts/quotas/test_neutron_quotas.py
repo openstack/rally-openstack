@@ -14,6 +14,8 @@
 
 from unittest import mock
 
+from openstack.network.v2 import quota as sdk_quota
+
 from rally_openstack.task.contexts.quotas import neutron_quotas
 from tests.unit import test
 
@@ -39,23 +41,24 @@ class NeutronQuotasTestCase(test.TestCase):
         neutron_quo = neutron_quotas.NeutronQuotas(clients)
         tenant_id = mock.MagicMock()
         neutron_quo.update(tenant_id, **self.quotas)
-        body = {"quota": self.quotas}
-        clients.neutron().update_quota.assert_called_once_with(tenant_id,
-                                                               body=body)
+        clients._conn.network.update_quota.assert_called_once_with(
+            tenant_id, **self.quotas)
 
     def test_delete(self):
         clients = mock.MagicMock()
         neutron_quo = neutron_quotas.NeutronQuotas(clients)
         tenant_id = mock.MagicMock()
         neutron_quo.delete(tenant_id)
-        clients.neutron().delete_quota.assert_called_once_with(tenant_id)
+        clients._conn.network.delete_quota.assert_called_once_with(tenant_id)
 
     def test_get(self):
         tenant_id = "tenant_id"
         clients = mock.MagicMock()
-        clients.neutron.return_value.show_quota.return_value = {
-            "quota": self.quotas}
+        # The sdk Quota resource also carries tenant_id/id, which get() must
+        # strip so the result can be fed back into update().
+        quota_obj = sdk_quota.Quota(tenant_id=tenant_id, **self.quotas)
+        clients._conn.network.get_quota.return_value = quota_obj
         neutron_quo = neutron_quotas.NeutronQuotas(clients)
 
         self.assertEqual(self.quotas, neutron_quo.get(tenant_id))
-        clients.neutron().show_quota.assert_called_once_with(tenant_id)
+        clients._conn.network.get_quota.assert_called_once_with(tenant_id)

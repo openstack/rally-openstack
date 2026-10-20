@@ -17,6 +17,8 @@ from unittest import mock
 
 import ddt
 from novaclient import exceptions as nova_exc
+from openstack.network.v2 import floating_ip as sdk_fip
+from openstack.network.v2 import port as sdk_port
 
 from rally import exceptions as rally_exceptions
 from rally.common import cfg
@@ -556,32 +558,35 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         clients = mock.MagicMock()
         nova_scenario = utils.NovaScenario(context=self.context,
                                            clients=clients)
-        neutronclient = clients.neutron.return_value
-        neutronclient.list_ports.return_value = {"ports": [{"id": "p1"},
-                                                           {"id": "p2"}]}
+        # NeutronService now drives openstacksdk via clients._conn.network.
+        nc = clients._conn.network
+        nc.ports.return_value = iter(
+            [sdk_port.Port(**{"id": "p1"}), sdk_port.Port(**{"id": "p2"})])
 
         fip_ip = "172.168.0.1"
         fip_id = "some"
+        updated = {"id": fip_id, "floating_ip_address": fip_ip,
+                   "port_id": "p1"}
+        nc.update_ip.return_value = sdk_fip.FloatingIP(**updated)
+
         # case #1- an object from neutronclient
         floating_ip = {"floating_ip_address": fip_ip, "id": fip_id}
 
         nova_scenario._associate_floating_ip(self.server, floating_ip)
 
-        neutronclient.update_floatingip.assert_called_once_with(
-            fip_id, {"floatingip": {"port_id": "p1"}}
-        )
+        nc.update_ip.assert_called_once_with(fip_id, port_id="p1")
         # case #2 - an object from network wrapper
-        neutronclient.update_floatingip.reset_mock()
+        nc.update_ip.reset_mock()
+        nc.ports.return_value = iter(
+            [sdk_port.Port(**{"id": "p1"}), sdk_port.Port(**{"id": "p2"})])
         floating_ip = {"ip": fip_ip, "id": fip_id}
 
         nova_scenario._associate_floating_ip(self.server, floating_ip)
 
-        neutronclient.update_floatingip.assert_called_once_with(
-            fip_id, {"floatingip": {"port_id": "p1"}}
-        )
+        nc.update_ip.assert_called_once_with(fip_id, port_id="p1")
 
-        # these should not be called in both cases
-        self.assertFalse(neutronclient.list_floatingips.called)
+        # floatingip_id is known in both cases, so no floating-ip lookup
+        self.assertFalse(nc.ips.called)
         # it is an old behavior. let's check that it was not called
         self.assertFalse(self.server.add_floating_ip.called)
 
@@ -592,25 +597,25 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         clients = mock.MagicMock()
         nova_scenario = utils.NovaScenario(context=self.context,
                                            clients=clients)
-        neutronclient = clients.neutron.return_value
-        neutronclient.list_ports.return_value = {"ports": [{"id": "p1"},
-                                                           {"id": "p2"}]}
+        nc = clients._conn.network
+        nc.ports.return_value = iter(
+            [sdk_port.Port(**{"id": "p1"}), sdk_port.Port(**{"id": "p2"})])
 
         fip_id = "fip1"
         fip_ip = "172.168.0.1"
-        neutronclient.list_floatingips.return_value = {
-            "floatingips": [
-                {"id": fip_id, "floating_ip_address": fip_ip},
-                {"id": "fip2", "floating_ip_address": "127.0.0.1"}]}
+        nc.ips.return_value = iter([
+            sdk_fip.FloatingIP(
+                **{"id": fip_id, "floating_ip_address": fip_ip}),
+            sdk_fip.FloatingIP(
+                **{"id": "fip2", "floating_ip_address": "127.0.0.1"})])
+        nc.update_ip.return_value = sdk_fip.FloatingIP(
+            **{"id": fip_id, "floating_ip_address": fip_ip, "port_id": "p1"})
 
         nova_scenario._associate_floating_ip(self.server, fip_ip)
 
-        neutronclient.update_floatingip.assert_called_once_with(
-            fip_id, {"floatingip": {"port_id": "p1"}}
-        )
+        nc.update_ip.assert_called_once_with(fip_id, port_id="p1")
 
-        neutronclient.list_floatingips.assert_called_once_with(
-            floating_ip_address=fip_ip)
+        nc.ips.assert_called_once_with(floating_ip_address=fip_ip)
 
         # it is an old behavior. let's check that it was not called
         self.assertFalse(self.server.add_floating_ip.called)
@@ -622,30 +627,30 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         clients = mock.MagicMock()
         nova_scenario = utils.NovaScenario(context=self.context,
                                            clients=clients)
-        neutronclient = clients.neutron.return_value
+        nc = clients._conn.network
 
         fip_ip = "172.168.0.1"
         fip_id = "some"
+        updated = {"id": fip_id, "floating_ip_address": fip_ip,
+                   "port_id": None}
+        nc.update_ip.return_value = sdk_fip.FloatingIP(**updated)
+
         # case #1- an object from neutronclient
         floating_ip = {"floating_ip_address": fip_ip, "id": fip_id}
 
         nova_scenario._dissociate_floating_ip(self.server, floating_ip)
 
-        neutronclient.update_floatingip.assert_called_once_with(
-            fip_id, {"floatingip": {"port_id": None}}
-        )
+        nc.update_ip.assert_called_once_with(fip_id, port_id=None)
         # case #2 - an object from network wrapper
-        neutronclient.update_floatingip.reset_mock()
+        nc.update_ip.reset_mock()
         floating_ip = {"ip": fip_ip, "id": fip_id}
 
         nova_scenario._dissociate_floating_ip(self.server, floating_ip)
 
-        neutronclient.update_floatingip.assert_called_once_with(
-            fip_id, {"floatingip": {"port_id": None}}
-        )
+        nc.update_ip.assert_called_once_with(fip_id, port_id=None)
 
-        # these should not be called in both cases
-        self.assertFalse(neutronclient.list_floatingips.called)
+        # floatingip_id is known in both cases, so no floating-ip lookup
+        self.assertFalse(nc.ips.called)
         # it is an old behavior. let's check that it was not called
         self.assertFalse(self.server.add_floating_ip.called)
 
@@ -656,23 +661,23 @@ class NovaScenarioTestCase(test.ScenarioTestCase):
         clients = mock.MagicMock()
         nova_scenario = utils.NovaScenario(context=self.context,
                                            clients=clients)
-        neutronclient = clients.neutron.return_value
+        nc = clients._conn.network
 
         fip_id = "fip1"
         fip_ip = "172.168.0.1"
-        neutronclient.list_floatingips.return_value = {
-            "floatingips": [
-                {"id": fip_id, "floating_ip_address": fip_ip},
-                {"id": "fip2", "floating_ip_address": "127.0.0.1"}]}
+        nc.ips.return_value = iter([
+            sdk_fip.FloatingIP(
+                **{"id": fip_id, "floating_ip_address": fip_ip}),
+            sdk_fip.FloatingIP(
+                **{"id": "fip2", "floating_ip_address": "127.0.0.1"})])
+        nc.update_ip.return_value = sdk_fip.FloatingIP(
+            **{"id": fip_id, "floating_ip_address": fip_ip, "port_id": None})
 
         nova_scenario._dissociate_floating_ip(self.server, fip_ip)
 
-        neutronclient.update_floatingip.assert_called_once_with(
-            fip_id, {"floatingip": {"port_id": None}}
-        )
+        nc.update_ip.assert_called_once_with(fip_id, port_id=None)
 
-        neutronclient.list_floatingips.assert_called_once_with(
-            floating_ip_address=fip_ip)
+        nc.ips.assert_called_once_with(floating_ip_address=fip_ip)
 
         self._test_atomic_action_timer(nova_scenario.atomic_actions(),
                                        "nova.dissociate_floating_ip")

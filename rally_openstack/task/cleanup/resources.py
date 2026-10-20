@@ -194,9 +194,9 @@ class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
 
     def delete(self):
         key = "delete_%s" % self._resource
-        delete_method = getattr(
-            self._neutron, key, getattr(self._manager(), key)
-        )
+        delete_method = getattr(self._neutron, key, None)
+        if delete_method is None:
+            delete_method = getattr(self._manager(), key)
         delete_method(self.id())
 
     @property
@@ -207,10 +207,20 @@ class NeutronMixin(SynchronizedDeletion, base.ResourceManager):
             return self._resource + "s"
 
     def list(self):
-        list_method = getattr(self._manager(), "list_%s" % self._plural_key)
-        result = list_method(tenant_id=self.tenant_uuid)[self._plural_key]
+        # Prefer the openstacksdk-backed NeutronService, falling back to the
+        # legacy client only for resources it does not cover yet.
+        sdk_list = getattr(self._neutron, "list_%s" % self._plural_key, None)
+        if sdk_list is not None:
+            result = sdk_list(tenant_id=self.tenant_uuid)
+        else:
+            list_method = getattr(
+                self._manager(), "list_%s" % self._plural_key)
+            result = list_method(
+                tenant_id=self.tenant_uuid)[self._plural_key]
         if self.tenant_uuid:
-            result = [r for r in result if r["tenant_id"] == self.tenant_uuid]
+            result = [r for r in result
+                      if r.get("tenant_id", r.get("project_id"))
+                      == self.tenant_uuid]
 
         return result
 
@@ -495,13 +505,26 @@ class NeutronFloatingIP(NeutronMixin):
 class NeutronTrunk(NeutronMixin):
     # Trunks must be deleted before the parent/subports are deleted
 
+    def _neutron_client(self):
+        return (self._admin_required and self.admin or self.user).neutron
+
+    def id(self):
+        return self.raw_resource.id
+
+    def name(self):
+        return self.raw_resource.name
+
     def list(self):
         try:
-            return super().list()
+            return self._neutron_client().list_trunks(
+                project_id=self.tenant_uuid)
         except Exception as e:
             if getattr(e, "status_code", 400) == 404:
                 return []
             raise
+
+    def delete(self):
+        self._neutron_client().delete_trunk(self.id())
 
 
 @base.resource("neutron", "port", order=next(_neutron_order),
@@ -527,8 +550,10 @@ class NeutronPort(NeutronMixin):
         if resource not in self._cache:
             getter = getattr(self._neutron, "list_%s" % resource)
             resources = getter(tenant_id=self.tenant_uuid)
-            self._cache[resource] = [r for r in resources
-                                     if r["tenant_id"] == self.tenant_uuid]
+            self._cache[resource] = [
+                r for r in resources
+                if r.get("tenant_id", r.get("project_id"))
+                == self.tenant_uuid]
         return self._cache[resource]
 
     def list(self):
@@ -601,7 +626,7 @@ class NeutronSecurityGroup(NeutronMixin):
 class NeutronQuota(QuotaMixin):
 
     def delete(self):
-        self.admin.neutron().delete_quota(self.tenant_uuid)
+        self.admin._conn.network.delete_quota(self.tenant_uuid)
 
 
 # CINDER

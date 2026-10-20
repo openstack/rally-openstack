@@ -17,6 +17,10 @@ from unittest import mock
 
 import ddt
 import netaddr
+from openstack.network.v2 import network as sdk_net
+from openstack.network.v2 import port as sdk_port
+from openstack.network.v2 import router as sdk_router
+from openstack.network.v2 import subnet as sdk_subnet
 
 from rally_openstack.task.contexts.network import networks as network_context
 from tests.unit import test
@@ -66,55 +70,55 @@ class NetworkTestCase(test.TestCase):
                                dns_nameservers=None,
                                external=True)
         user = ctx["users"][0]
-        nc = user["credential"].clients.return_value.neutron.return_value
+        nc = user["credential"].clients.return_value._conn.network
         network = {"id": "net-id", "name": "s-1"}
         subnets = [
             {"id": "subnet1-id", "name": "subnet1-name"},
             {"id": "subnet2-id", "name": "subnet2-name"}
         ]
         router = {"id": "router"}
-        nc.create_network.return_value = {"network": network.copy()}
-        nc.create_router.return_value = {"router": router.copy()}
-        nc.create_subnet.side_effect = [{"subnet": s} for s in subnets]
-        nc.list_ports.return_value = {"ports": [
-            {"id": "router-port-id",
-             "device_owner": "network:router_interface"}
-        ]}
+        net_obj = sdk_net.Network(**network)
+        nc.create_network.return_value = net_obj
+        nc.create_router.return_value = sdk_router.Router(**router)
+        nc.create_subnet.side_effect = [
+            sdk_subnet.Subnet(**s) for s in subnets]
+        nc.ports.return_value = [
+            sdk_port.Port(**{"id": "router-port-id",
+                             "device_owner": "network:router_interface"})
+        ]
 
         network_context.Network(ctx).setup()
 
         ctx_data = ctx["tenants"][ctx["users"][0]["tenant_id"]]
+        expected_network = net_obj.to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
+        expected_network["router_id"] = router["id"]
+        expected_network["router_port_id"] = "router-port-id"
+        expected_network["subnets"] = [s["id"] for s in subnets]
         self.assertEqual(
-            [{
-                "id": network["id"],
-                "name": network["name"],
-                "router_id": router["id"],
-                "router_port_id": "router-port-id",
-                "subnets": [s["id"] for s in subnets]
-            }],
+            [expected_network],
             ctx_data["networks"]
         )
 
-        nc.create_network.assert_called_once_with(
-            {"network": {"name": mock.ANY}})
-        nc.create_router.assert_called_once_with(
-            {"router": {"name": mock.ANY}})
+        nc.create_network.assert_called_once_with(name=mock.ANY)
+        nc.create_router.assert_called_once_with(name=mock.ANY)
         self.assertEqual(
             [
-                mock.call({"subnet": {
-                    "name": mock.ANY, "network_id": network["id"],
-                    "dns_nameservers": mock.ANY,
-                    "ip_version": 4,
-                    "cidr": mock.ANY}})
+                mock.call(
+                    name=mock.ANY, network_id=network["id"],
+                    dns_nameservers=mock.ANY,
+                    ip_version=4,
+                    cidr=mock.ANY)
                 for i in range(2)],
             nc.create_subnet.call_args_list
         )
         self.assertEqual(
             [
-                mock.call(router["id"], {"subnet_id": subnets[0]["id"]}),
-                mock.call(router["id"], {"subnet_id": subnets[1]["id"]})
+                mock.call(router["id"], subnet_id=subnets[0]["id"]),
+                mock.call(router["id"], subnet_id=subnets[1]["id"])
             ],
-            nc.add_interface_router.call_args_list
+            nc.add_interface_to_router.call_args_list
         )
 
     def test_setup_without_router(self):
@@ -125,48 +129,49 @@ class NetworkTestCase(test.TestCase):
                                router=None,
                                dns_nameservers=dns_nameservers)
         user = ctx["users"][0]
-        nc = user["credential"].clients.return_value.neutron.return_value
+        nc = user["credential"].clients.return_value._conn.network
         network = {"id": "net-id", "name": "s-1"}
         subnets = [
             {"id": "subnet1-id", "name": "subnet1-name"},
             {"id": "subnet2-id", "name": "subnet2-name"}
         ]
         router = {"id": "router"}
-        nc.create_network.return_value = {"network": network.copy()}
-        nc.create_router.return_value = {"router": router.copy()}
-        nc.create_subnet.side_effect = [{"subnet": s} for s in subnets]
+        net_obj = sdk_net.Network(**network)
+        nc.create_network.return_value = net_obj
+        nc.create_router.return_value = sdk_router.Router(**router)
+        nc.create_subnet.side_effect = [
+            sdk_subnet.Subnet(**s) for s in subnets]
 
         network_context.Network(ctx).setup()
 
         ctx_data = ctx["tenants"][ctx["users"][0]["tenant_id"]]
+        expected_network = net_obj.to_dict(
+            computed=False, original_names=True, headers=False,
+            ignore_none=True)
+        expected_network["router_id"] = None
+        expected_network["router_port_id"] = None
+        expected_network["subnets"] = [s["id"] for s in subnets]
         self.assertEqual(
-            [{
-                "id": network["id"],
-                "name": network["name"],
-                "router_id": None,
-                "router_port_id": None,
-                "subnets": [s["id"] for s in subnets]
-            }],
+            [expected_network],
             ctx_data["networks"]
         )
 
-        nc.create_network.assert_called_once_with(
-            {"network": {"name": mock.ANY}})
+        nc.create_network.assert_called_once_with(name=mock.ANY)
         self.assertEqual(
             [
-                mock.call({"subnet": {
-                    "name": mock.ANY, "network_id": network["id"],
+                mock.call(
+                    name=mock.ANY, network_id=network["id"],
                     # rally.task.context.Context converts list to unchangeable
                     #   collection - tuple
-                    "dns_nameservers": tuple(dns_nameservers),
-                    "ip_version": 4,
-                    "cidr": mock.ANY}})
+                    dns_nameservers=tuple(dns_nameservers),
+                    ip_version=4,
+                    cidr=mock.ANY)
                 for i in range(2)],
             nc.create_subnet.call_args_list
         )
 
         self.assertFalse(nc.create_router.called)
-        self.assertFalse(nc.add_interface_router.called)
+        self.assertFalse(nc.add_interface_to_router.called)
 
     @mock.patch("%s.resource_manager.cleanup" % PATH)
     def test_cleanup(self, mock_cleanup):

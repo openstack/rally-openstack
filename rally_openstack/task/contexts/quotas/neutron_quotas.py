@@ -12,11 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 
 class NeutronQuotas:
     """Management of Neutron quotas."""
 
-    QUOTAS_SCHEMA = {
+    QUOTAS_SCHEMA: dict[str, t.Any] = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
@@ -82,13 +84,21 @@ class NeutronQuotas:
     def __init__(self, clients):
         self.clients = clients
 
+    @property
+    def _network(self):
+        """Return the openstacksdk network proxy."""
+        return self.clients._conn.network
+
     def update(self, tenant_id, **kwargs):
-        body = {"quota": kwargs}
-        self.clients.neutron().update_quota(tenant_id, body=body)
+        self._network.update_quota(tenant_id, **kwargs)
 
     def delete(self, tenant_id):
         # Reset quotas to defaults and tag database objects as deleted
-        self.clients.neutron().delete_quota(tenant_id)
+        self._network.delete_quota(tenant_id)
 
     def get(self, tenant_id):
-        return self.clients.neutron().show_quota(tenant_id)["quota"]
+        quota = self._network.get_quota(tenant_id).to_dict(
+            computed=False, original_names=True,
+            headers=False, ignore_none=True)
+        return {key: quota[key] for key in self.QUOTAS_SCHEMA["properties"]
+                if key in quota}

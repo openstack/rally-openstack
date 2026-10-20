@@ -35,8 +35,11 @@ class NetworkingAgents(context.OpenStackContext):
     }
 
     def setup(self):
-        nc = osclients.Clients(self.context["admin"]["credential"]).neutron()
-        agents = nc.list_agents()["agents"]
+        nc = osclients.Clients(
+            self.context["admin"]["credential"])._conn.network
+        agents = [agent.to_dict(computed=False, original_names=True,
+                                headers=False, ignore_none=True)
+                  for agent in nc.agents()]
         # NOTE(bence romsics): If you ever add input parameters to this context
         # beware that here we use the same key in self.context as is used for
         # parameter passing, so we'll overwrite it.

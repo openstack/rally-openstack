@@ -39,6 +39,7 @@ if t.TYPE_CHECKING:
     from openstack.network.v2.port import Port
     from openstack.network.v2.tap_mirror import TapMirror
     from openstack.network.v2.tap_service import TapService
+    from openstack.network.v2.trunk import Trunk
 
 
 @base.configure(
@@ -259,3 +260,11 @@ class Neutron(base.LegacyClientCompat):
     def delete_tap_service(self, tap_service_id: str) -> None:
         self._network.delete_tap_service(
             tap_service_id, ignore_missing=False)
+
+    @atomic.action_timer("neutron.list_trunks")
+    def list_trunks(self, **filters: t.Any) -> list[Trunk]:
+        return list(self._network.trunks(**filters))
+
+    @atomic.action_timer("neutron.delete_trunk")
+    def delete_trunk(self, trunk_id: str) -> None:
+        self._network.delete_trunk(trunk_id)

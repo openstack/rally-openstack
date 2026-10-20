@@ -18,6 +18,9 @@ from unittest import mock
 
 import ddt
 import requests
+from openstack.network.v2 import network as sdk_net
+from openstack.network.v2 import router as sdk_router
+from openstack.network.v2 import subnet as sdk_subnet
 
 from rally import exceptions
 from rally.common import cfg
@@ -241,16 +244,18 @@ class TempestContextTestCase(test.TestCase):
         self.assertEqual("id1", self.context._created_flavors[0].id)
 
     def test__create_network_resources(self):
-        client = self.context.clients.neutron()
+        client = self.context.clients._conn.network
         fake_network = {
             "id": "nid1",
             "name": "network",
             "status": "status"}
 
-        client.create_network.side_effect = [{"network": fake_network}]
-        client.create_router.side_effect = [{"router": {"id": "rid1"}}]
-        client.create_subnet.side_effect = [{"subnet": {"id": "subid1"}}]
-        client.list_networks.return_value = {"networks": []}
+        client.create_network.side_effect = [sdk_net.Network(**fake_network)]
+        client.create_router.side_effect = [
+            sdk_router.Router(**{"id": "rid1"})]
+        client.create_subnet.side_effect = [
+            sdk_subnet.Subnet(**{"id": "subid1"})]
+        client.networks.return_value = iter([])
 
         net_topo = self.context._create_network_resources()
 
@@ -263,7 +268,7 @@ class TempestContextTestCase(test.TestCase):
             self, mock_supports_extension):
         mock_supports_extension.return_value = True
 
-        client = self.context.clients.neutron()
+        client = self.context.clients._conn.network
         conf = self.context.conf
 
         conf.add_section("network")
@@ -274,15 +279,16 @@ class TempestContextTestCase(test.TestCase):
             "name": "network",
             "status": "status"}
 
-        client.create_network.side_effect = [{"network": fake_network}]
-        client.create_router.side_effect = [{"router": {"id": "rid1"}}]
-        client.create_subnet.side_effect = [{"subnet": {"id": "subid1"}}]
-        client.list_networks.return_value = {"networks": []}
+        client.create_network.side_effect = [sdk_net.Network(**fake_network)]
+        client.create_router.side_effect = [
+            sdk_router.Router(**{"id": "rid1"})]
+        client.create_subnet.side_effect = [
+            sdk_subnet.Subnet(**{"id": "subid1"})]
+        client.networks.return_value = iter([])
 
         self.context._create_network_resources()
-        _name, pos, _kwargs = client.create_router.mock_calls[0]
-        router = pos[0]["router"]
-        external_gateway_info = router["external_gateway_info"]
+        _name, _pos, kwargs = client.create_router.mock_calls[0]
+        external_gateway_info = kwargs["external_gateway_info"]
         self.assertEqual("my-uuid", external_gateway_info["network_id"])
         self.assertTrue(external_gateway_info["enable_snat"])
 

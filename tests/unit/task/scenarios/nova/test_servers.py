@@ -16,12 +16,19 @@
 from unittest import mock
 
 import ddt
+from openstack.network.v2 import floating_ip as sdk_fip
+from openstack.network.v2 import network as sdk_net
 
 from rally import exceptions as rally_exceptions
 
 from rally_openstack.task.scenarios.nova import servers
 from tests.unit import fakes
 from tests.unit import test
+
+
+def _dict(resource):
+    return resource.to_dict(
+        computed=False, original_names=True, headers=False, ignore_none=True)
 
 
 NOVA_SERVERS_MODULE = "rally_openstack.task.scenarios.nova.servers"
@@ -963,10 +970,14 @@ class NovaServersTestCase(test.ScenarioTestCase):
 
     def test_boot_and_associate_floating_ip(self):
         clients = mock.MagicMock(credential=mock.MagicMock(api_info={}))
-        neutronclient = clients.neutron.return_value
-        floatingip = "floatingip"
-        neutronclient.create_floatingip.return_value = {
-            "floatingip": floatingip}
+        nc = clients._conn.network
+        fip_obj = sdk_fip.FloatingIP(
+            **{"id": "fip-id", "floating_ip_address": "172.16.0.5"})
+        floatingip = _dict(fip_obj)
+        nc.create_ip.return_value = fip_obj
+        # external network discovery for the default (no floating_network) case
+        nc.networks.return_value = iter(
+            [sdk_net.Network(**{"id": "ext-id", "router:external": True})])
 
         scenario = servers.BootAndAssociateFloatingIp(self.context,
                                                       clients=clients)
@@ -980,67 +991,74 @@ class NovaServersTestCase(test.ScenarioTestCase):
 
         scenario._boot_server.assert_called_once_with(image, flavor,
                                                       fakearg="fakearg")
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": mock.ANY}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="ext-id")
         scenario._associate_floating_ip.assert_called_once_with(
             server, floatingip)
 
-        # check ext_network
-        neutronclient.list_networks.return_value = {
-            "networks": [
-                {"id": "id1", "name": "net1", "router:external": True},
-                {"id": "id2", "name": "net2", "router:external": True},
-                {"id": "id3", "name": "net3", "router:external": True},
-            ]
+        # check ext_network: floating_network is resolved via find_network
+        networks = {
+            "net1": {"id": "id1", "name": "net1", "router:external": True},
+            "net2": {"id": "id2", "name": "net2", "router:external": True},
+            "net3": {"id": "id3", "name": "net3", "router:external": True},
         }
-        neutronclient.create_floatingip.reset_mock()
+
+        from openstack import exceptions as sdk_exceptions
+
+        def fake_get_network(network_id, **kwargs):
+            for net in networks.values():
+                if network_id == net["id"]:
+                    return sdk_net.Network(**net)
+            raise sdk_exceptions.ResourceNotFound()
+
+        def fake_networks(**filters):
+            return iter([sdk_net.Network(**net)
+                         for net in networks.values()])
+
+        # floating_network is resolved via find_network: get_network (by id)
+        # misses for names, so list_networks resolves them.
+        nc.get_network = mock.Mock(side_effect=fake_get_network)
+        nc.networks = mock.Mock(side_effect=fake_networks)
+        nc.create_ip.reset_mock()
 
         # case 1: new argument is used
         scenario.run(image, flavor, floating_network="net3")
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id3"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id3")
         # case 2: new argument is transmitted with an old one
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor, floating_network="net3",
                      create_floating_ip_args={"ext_network": "net2"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id3"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id3")
         # case 3: new argument is transmitted with an semi-old one
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor, floating_network="net3",
                      create_floating_ip_args={"floating_network": "net1"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id3"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id3")
         # case 4: only old argument is transmitted
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor,
                      create_floating_ip_args={"ext_network": "net2"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id2"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id2")
         # case 5: only semi-old argument is transmitted
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor,
                      create_floating_ip_args={"floating_network": "net1"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id1"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id1")
 
     def test_boot_server_associate_and_dissociate_floating_ip(self):
         clients = mock.MagicMock(credential=mock.MagicMock(api_info={}))
-        neutronclient = clients.neutron.return_value
-        floatingip = "floatingip"
-        neutronclient.create_floatingip.return_value = {
-            "floatingip": floatingip}
+        nc = clients._conn.network
+        fip_obj = sdk_fip.FloatingIP(
+            **{"id": "fip-id", "floating_ip_address": "172.16.0.5"})
+        floatingip = _dict(fip_obj)
+        nc.create_ip.return_value = fip_obj
+        nc.networks.return_value = iter(
+            [sdk_net.Network(**{"id": "ext-id", "router:external": True})])
 
         scenario = servers.BootServerAssociateAndDissociateFloatingIP(
             self.context, clients=clients)
@@ -1055,62 +1073,66 @@ class NovaServersTestCase(test.ScenarioTestCase):
 
         scenario._boot_server.assert_called_once_with(image, flavor,
                                                       fakearg="fakearg")
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": mock.ANY}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="ext-id")
         scenario._associate_floating_ip.assert_called_once_with(
             server, floatingip)
         scenario._dissociate_floating_ip.assert_called_once_with(
             server, floatingip)
 
-        # check ext_network
-        neutronclient.list_networks.return_value = {
-            "networks": [
-                {"id": "id1", "name": "net1", "router:external": True},
-                {"id": "id2", "name": "net2", "router:external": True},
-                {"id": "id3", "name": "net3", "router:external": True},
-            ]
+        # check ext_network: floating_network is resolved via find_network
+        networks = {
+            "net1": {"id": "id1", "name": "net1", "router:external": True},
+            "net2": {"id": "id2", "name": "net2", "router:external": True},
+            "net3": {"id": "id3", "name": "net3", "router:external": True},
         }
-        neutronclient.create_floatingip.reset_mock()
+
+        from openstack import exceptions as sdk_exceptions
+
+        def fake_get_network(network_id, **kwargs):
+            for net in networks.values():
+                if network_id == net["id"]:
+                    return sdk_net.Network(**net)
+            raise sdk_exceptions.ResourceNotFound()
+
+        def fake_networks(**filters):
+            return iter([sdk_net.Network(**net)
+                         for net in networks.values()])
+
+        # floating_network is resolved via find_network: get_network (by id)
+        # misses for names, so list_networks resolves them.
+        nc.get_network = mock.Mock(side_effect=fake_get_network)
+        nc.networks = mock.Mock(side_effect=fake_networks)
+        nc.create_ip.reset_mock()
 
         # case 1: new argument is used
         scenario.run(image, flavor, floating_network="net3")
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id3"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id3")
         # case 2: new argument is transmitted with an old one
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor, floating_network="net3",
                      create_floating_ip_args={"ext_network": "net2"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id3"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id3")
         # case 3: new argument is transmitted with an semi-old one
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor, floating_network="net3",
                      create_floating_ip_args={"floating_network": "net1"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id3"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id3")
         # case 4: only old argument is transmitted
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor,
                      create_floating_ip_args={"ext_network": "net2"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id2"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id2")
         # case 5: only semi-old argument is transmitted
-        neutronclient.create_floatingip.reset_mock()
+        nc.create_ip.reset_mock()
         scenario.run(image, flavor,
                      create_floating_ip_args={"floating_network": "net1"})
-        neutronclient.create_floatingip.assert_called_once_with(
-            {"floatingip": {"description": mock.ANY,
-                            "floating_network_id": "id1"}}
-        )
+        nc.create_ip.assert_called_once_with(
+            description=mock.ANY, floating_network_id="id1")
 
     def test_boot_and_update_server(self):
         scenario = servers.BootAndUpdateServer(self.context)

@@ -421,3 +421,33 @@ class NeutronTapServiceTestCase(NeutronTestMixin, test.TestCase):
 
         self.network.delete_tap_service.assert_called_once_with(
             "service-id", ignore_missing=False)
+
+
+class NeutronTrunkClientTestCase(NeutronTestMixin, test.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.neutron = self._make_neutron()
+
+    def test_list_trunks(self):
+        trunks = [mock.MagicMock(), mock.MagicMock()]
+        self.network.trunks.return_value = iter(trunks)
+
+        result = self.neutron.list_trunks()
+
+        self.assertEqual(trunks, result)
+        self.network.trunks.assert_called_once_with()
+
+    def test_list_trunks_with_filter(self):
+        trunks = [mock.MagicMock()]
+        self.network.trunks.return_value = iter(trunks)
+
+        result = self.neutron.list_trunks(project_id="proj-123")
+
+        self.assertEqual(trunks, result)
+        self.network.trunks.assert_called_once_with(project_id="proj-123")
+
+    def test_delete_trunk(self):
+        self.neutron.delete_trunk("trunk-id")
+
+        self.network.delete_trunk.assert_called_once_with("trunk-id")
