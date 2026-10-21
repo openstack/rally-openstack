@@ -1062,3 +1062,113 @@ class RequiredContextConfigValidatorTestCase(test.TestCase):
         self.assertEqual(
             "The 'zones' context expects '{'set_zone_in_network': True}'",
             e.message)
+
+    def test_validator_exact_false(self):
+        validator = validators.RequiredContextConfigValidator(
+            context_name="network",
+            context_config={"router": {"external": True}},
+            exact=False)
+        cfg = {
+            "contexts": {
+                "network": {
+                    "networks_per_tenant": 2,
+                    "router": {"external": True, "enable_snat": True}
+                }
+            },
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_validator_exact_false_missing_key(self):
+        validator = validators.RequiredContextConfigValidator(
+            context_name="network",
+            context_config={"router": {"external": True}},
+            exact=False)
+        cfg = {
+            "contexts": {
+                "network": {
+                    "networks_per_tenant": 2,
+                    "router": {"enable_snat": True}
+                }
+            },
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("network", e.message)
+
+    def test_validator_exact_false_wrong_value(self):
+        validator = validators.RequiredContextConfigValidator(
+            context_name="network",
+            context_config={"router": {"external": True}},
+            exact=False)
+        cfg = {
+            "contexts": {
+                "network": {
+                    "router": {"external": False}
+                }
+            },
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("network", e.message)
+
+
+class RequiredNetworksPerProjectValidatorTestCase(test.TestCase):
+
+    def test_valid_sizing(self):
+        validator = validators.RequiredNetworksPerProjectValidator()
+        cfg = {
+            "contexts": {
+                "network": {"networks_per_tenant": 5},
+                "users": {"tenants": 2},
+            },
+            "runner": {"constant": {"concurrency": 10}},
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_insufficient_networks(self):
+        validator = validators.RequiredNetworksPerProjectValidator()
+        cfg = {
+            "contexts": {
+                "network": {"networks_per_tenant": 2},
+                "users": {"tenants": 1},
+            },
+            "runner": {"constant": {"concurrency": 5}},
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("networks_per_tenant=2", e.message)
+        self.assertIn("at least 5", e.message)
+
+    def test_multi_project_sizing(self):
+        validator = validators.RequiredNetworksPerProjectValidator()
+        cfg = {
+            "contexts": {
+                "network": {"networks_per_tenant": 3},
+                "users": {"tenants": 4},
+            },
+            "runner": {"constant": {"concurrency": 10}},
+        }
+        validator.validate({}, cfg, None, None)
+
+    def test_no_network_context(self):
+        validator = validators.RequiredNetworksPerProjectValidator()
+        cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
+        validator.validate({}, cfg, None, None)
+
+    def test_multiplier(self):
+        validator = validators.RequiredNetworksPerProjectValidator(
+            multiplier=2)
+        cfg = {
+            "contexts": {
+                "network": {"networks_per_tenant": 5},
+                "users": {"tenants": 1},
+            },
+            "runner": {"constant": {"concurrency": 5}},
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("at least 10", e.message)

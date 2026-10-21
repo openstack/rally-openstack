@@ -146,6 +146,16 @@ class Network(context.OpenStackContext):
                     router_id = None
                 net_infra["network"]["router_id"] = router_id
 
+                if router_id:
+                    ports = client.list_ports(
+                        device_id=router_id,
+                        network_id=net_infra["network"]["id"],
+                        device_owner="network:router_interface")
+                    router_port_id = ports[0]["id"] if ports else None
+                else:
+                    router_port_id = None
+                net_infra["network"]["router_port_id"] = router_port_id
+
                 self.context["tenants"][tenant_id]["networks"].append(
                     net_infra["network"]
                 )

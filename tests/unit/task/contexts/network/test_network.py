@@ -76,6 +76,10 @@ class NetworkTestCase(test.TestCase):
         nc.create_network.return_value = {"network": network.copy()}
         nc.create_router.return_value = {"router": router.copy()}
         nc.create_subnet.side_effect = [{"subnet": s} for s in subnets]
+        nc.list_ports.return_value = {"ports": [
+            {"id": "router-port-id",
+             "device_owner": "network:router_interface"}
+        ]}
 
         network_context.Network(ctx).setup()
 
@@ -85,6 +89,7 @@ class NetworkTestCase(test.TestCase):
                 "id": network["id"],
                 "name": network["name"],
                 "router_id": router["id"],
+                "router_port_id": "router-port-id",
                 "subnets": [s["id"] for s in subnets]
             }],
             ctx_data["networks"]
@@ -139,6 +144,7 @@ class NetworkTestCase(test.TestCase):
                 "id": network["id"],
                 "name": network["name"],
                 "router_id": None,
+                "router_port_id": None,
                 "subnets": [s["id"] for s in subnets]
             }],
             ctx_data["networks"]

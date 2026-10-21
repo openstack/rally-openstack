@@ -1663,6 +1663,95 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.delete_firewall_group")
 
+    def test__get_router_interface_port(self):
+        port = {"id": "port-2", "network_id": "network-id",
+                "device_owner": "network:router_interface"}
+        self.scenario.neutron.list_ports = mock.Mock(return_value=[port])
+
+        result = self.scenario._get_router_interface_port(
+            "router-id", "network-id")
+
+        self.assertEqual({"port": port}, result)
+        self.scenario.neutron.list_ports.assert_called_once_with(
+            device_id="router-id",
+            network_id="network-id",
+            device_owner="network:router_interface")
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.get_router_interface_port")
+
+    def test__get_router_interface_port_not_found(self):
+        self.scenario.neutron.list_ports = mock.Mock(return_value=[])
+
+        self.assertRaises(
+            RuntimeError,
+            self.scenario._get_router_interface_port,
+            "router-id", "network-id")
+
+    def test__associate_firewall_group_port(self):
+        firewall_group = {"firewall_group": {"id": "group-id", "ports": []}}
+        port = {"port": {"id": "port-id"}}
+        expected = {"firewall_group": {"id": "group-id", "ports": ["port-id"]}}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_group.return_value = expected
+
+        result = self.scenario._associate_firewall_group_port(
+            firewall_group, port)
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_group.assert_called_once_with(
+            "group-id", {"firewall_group": {"ports": ["port-id"]}})
+        self._test_atomic_action_timer(self.scenario.atomic_actions(),
+                                       "neutron.associate_firewall_group_port")
+
+    def test__associate_firewall_group_port_append(self):
+        firewall_group = {"firewall_group": {
+            "id": "group-id", "ports": ["existing-port"]}}
+        port = {"port": {"id": "new-port"}}
+        expected = {"firewall_group": {
+            "id": "group-id", "ports": ["existing-port", "new-port"]}}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_group.return_value = expected
+
+        result = self.scenario._associate_firewall_group_port(
+            firewall_group, port, append=True)
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_group.assert_called_once_with(
+            "group-id",
+            {"firewall_group": {"ports": ["existing-port", "new-port"]}})
+
+    def test__disassociate_firewall_group_port(self):
+        firewall_group = {"firewall_group": {
+            "id": "group-id", "ports": ["port-1", "port-2"]}}
+        port = {"port": {"id": "port-1"}}
+        expected = {"firewall_group": {"id": "group-id", "ports": ["port-2"]}}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_group.return_value = expected
+
+        result = self.scenario._disassociate_firewall_group_port(
+            firewall_group, port)
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_group.assert_called_once_with(
+            "group-id", {"firewall_group": {"ports": ["port-2"]}})
+        self._test_atomic_action_timer(
+            self.scenario.atomic_actions(),
+            "neutron.disassociate_firewall_group_port")
+
+    def test__disassociate_firewall_group_port_all(self):
+        firewall_group = {"firewall_group": {
+            "id": "group-id", "ports": ["port-1", "port-2"]}}
+        expected = {"firewall_group": {"id": "group-id", "ports": []}}
+        nc = self.clients("neutron")
+        nc.update_fwaas_firewall_group.return_value = expected
+
+        result = self.scenario._disassociate_firewall_group_port(
+            firewall_group)
+
+        self.assertEqual(expected, result)
+        nc.update_fwaas_firewall_group.assert_called_once_with(
+            "group-id", {"firewall_group": {"ports": []}})
+
 
 class NeutronScenarioFunctionalTestCase(test.ScenarioTestCase):
 

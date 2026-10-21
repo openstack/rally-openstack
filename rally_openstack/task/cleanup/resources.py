@@ -371,6 +371,17 @@ class NeutronFirewallGroup(NeutronMixin):
         return result
 
     def delete(self):
+        # Skip default firewall group - OpenStack does not allow deleting it
+        if self.raw_resource.get("name") == "default":
+            return
+        # Disassociate all ports before deleting - FWaaS v2 requires this
+        if self.raw_resource.get("ports"):
+            try:
+                self._manager().update_fwaas_firewall_group(
+                    self.id(), {"firewall_group": {"ports": []}})
+            except Exception:
+                # If disassociate fails (e.g., PENDING state), still try delete
+                pass
         self._manager().delete_fwaas_firewall_group(self.id())
 
 

@@ -28,7 +28,10 @@ class NeutronQuotasTestCase(test.TestCase):
             "router": 20,
             "floatingip": 100,
             "security_group": 100,
-            "security_group_rule": 100
+            "security_group_rule": 100,
+            "firewall_policy": 100,
+            "firewall_group": 100,
+            "firewall_rule": 100,
         }
 
     def test_update(self):
