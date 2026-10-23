@@ -12,6 +12,7 @@
 
 import random
 
+from rally.common.plugin import plugin
 from rally.task import validation
 
 from rally_openstack.common import consts
@@ -22,6 +23,12 @@ from rally_openstack.task.scenarios.neutron import utils
 """Scenarios for Neutron Loadbalancer v1."""
 
 
+_DEPRECATION_REASON = (
+    "Neutron LBaaS v1 API was removed from Neutron. Use Octavia related "
+    "scenarios instead (i.e. Octavia.create_and_list_pools).")
+
+
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("restricted_parameters", param_names="subnet_id",
                 subdict="pool_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -35,7 +42,7 @@ from rally_openstack.task.scenarios.neutron import utils
 class CreateAndListPools(utils.NeutronScenario):
 
     def run(self, pool_create_args=None):
-        """Create a pool(v1) and then list pools(v1).
+        """[DEPRECATED] Create a pool(v1) and then list pools(v1).
 
         Measure the "neutron lb-pool-list" command performance.
         The scenario creates a pool for every subnet and then lists pools.
@@ -48,6 +55,7 @@ class CreateAndListPools(utils.NeutronScenario):
         self._list_v1_pools()
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("restricted_parameters", param_names="subnet_id",
                 subdict="pool_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -61,7 +69,7 @@ class CreateAndListPools(utils.NeutronScenario):
 class CreateAndDeletePools(utils.NeutronScenario):
 
     def run(self, pool_create_args=None):
-        """Create pools(v1) and delete pools(v1).
+        """[DEPRECATED] Create pools(v1) and delete pools(v1).
 
         Measure the "neutron lb-pool-create" and "neutron lb-pool-delete"
         command performance. The scenario creates a pool for every subnet
@@ -76,6 +84,7 @@ class CreateAndDeletePools(utils.NeutronScenario):
             self._delete_v1_pool(pool["pool"])
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("restricted_parameters", param_names="subnet_id",
                 subdict="pool_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -89,7 +98,7 @@ class CreateAndDeletePools(utils.NeutronScenario):
 class CreateAndUpdatePools(utils.NeutronScenario):
 
     def run(self, pool_update_args=None, pool_create_args=None):
-        """Create pools(v1) and update pools(v1).
+        """[DEPRECATED] Create pools(v1) and update pools(v1).
 
         Measure the "neutron lb-pool-create" and "neutron lb-pool-update"
         command performance. The scenario creates a pool for every subnet
@@ -106,6 +115,7 @@ class CreateAndUpdatePools(utils.NeutronScenario):
             self._update_v1_pool(pool, **pool_update_args)
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("restricted_parameters", param_names=["pool_id", "subnet_id"],
                 subdict="vip_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -119,7 +129,7 @@ class CreateAndUpdatePools(utils.NeutronScenario):
 class CreateAndListVips(utils.NeutronScenario):
 
     def run(self, pool_create_args=None, vip_create_args=None):
-        """Create a vip(v1) and then list vips(v1).
+        """[DEPRECATED] Create a vip(v1) and then list vips(v1).
 
         Measure the "neutron lb-vip-create" and "neutron lb-vip-list" command
         performance. The scenario creates a vip for every pool created and
@@ -137,6 +147,7 @@ class CreateAndListVips(utils.NeutronScenario):
         self._list_v1_vips()
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("restricted_parameters", param_names=["pool_id", "subnet_id"],
                 subdict="vip_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -150,7 +161,7 @@ class CreateAndListVips(utils.NeutronScenario):
 class CreateAndDeleteVips(utils.NeutronScenario):
 
     def run(self, pool_create_args=None, vip_create_args=None):
-        """Create a vip(v1) and then delete vips(v1).
+        """[DEPRECATED] Create a vip(v1) and then delete vips(v1).
 
         Measure the "neutron lb-vip-create" and "neutron lb-vip-delete"
         command performance. The scenario creates a vip for pool and
@@ -170,6 +181,7 @@ class CreateAndDeleteVips(utils.NeutronScenario):
             self._delete_v1_vip(vip["vip"])
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("restricted_parameters", param_names=["pool_id", "subnet_id"],
                 subdict="vip_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -184,7 +196,7 @@ class CreateAndUpdateVips(utils.NeutronScenario):
 
     def run(self, pool_create_args=None,
             vip_update_args=None, vip_create_args=None):
-        """Create vips(v1) and update vips(v1).
+        """[DEPRECATED] Create vips(v1) and update vips(v1).
 
         Measure the "neutron lb-vip-create" and "neutron lb-vip-update"
         command performance. The scenario creates a pool for every subnet
@@ -206,6 +218,7 @@ class CreateAndUpdateVips(utils.NeutronScenario):
             self._update_v1_vip(vip, **vip_update_args)
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
@@ -217,7 +230,7 @@ class CreateAndUpdateVips(utils.NeutronScenario):
 class CreateAndListHealthmonitors(utils.NeutronScenario):
 
     def run(self, healthmonitor_create_args=None):
-        """Create healthmonitors(v1) and list healthmonitors(v1).
+        """[DEPRECATED] Create healthmonitors(v1) and list healthmonitors(v1).
 
         Measure the "neutron lb-healthmonitor-list" command performance. This
         scenario creates healthmonitors and lists them.
@@ -230,6 +243,7 @@ class CreateAndListHealthmonitors(utils.NeutronScenario):
         self._list_v1_healthmonitors()
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
@@ -241,7 +255,7 @@ class CreateAndListHealthmonitors(utils.NeutronScenario):
 class CreateAndDeleteHealthmonitors(utils.NeutronScenario):
 
     def run(self, healthmonitor_create_args=None):
-        """Create a healthmonitor(v1) and delete healthmonitors(v1).
+        """[DEPRECATED] Create and delete healthmonitors(v1).
 
         Measure the "neutron lb-healthmonitor-create" and "neutron
         lb-healthmonitor-delete" command performance. The scenario creates
@@ -256,6 +270,7 @@ class CreateAndDeleteHealthmonitors(utils.NeutronScenario):
         self._delete_v1_healthmonitor(healthmonitor["health_monitor"])
 
 
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
@@ -268,7 +283,7 @@ class CreateAndUpdateHealthmonitors(utils.NeutronScenario):
 
     def run(self, healthmonitor_create_args=None,
             healthmonitor_update_args=None):
-        """Create a healthmonitor(v1) and update healthmonitors(v1).
+        """[DEPRECATED] Create and update healthmonitors(v1).
 
         Measure the "neutron lb-healthmonitor-create" and "neutron
         lb-healthmonitor-update" command performance. The scenario creates

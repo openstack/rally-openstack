@@ -199,6 +199,10 @@ Deprecated
 
 * openstack.pre_newton_neutron config option is deprecated.
 
+* Neutron LBaaS v1 plugins (all ``NeutronLoadbalancerV1.*`` scenarios and the
+  ``lbaas`` context) are deprecated. The LBaaS v1 API was removed from
+  Neutron; use the ``Octavia.*`` scenarios instead.
+
 Fixed
 ~~~~~
 

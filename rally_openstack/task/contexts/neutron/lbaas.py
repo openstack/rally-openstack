@@ -12,6 +12,7 @@
 
 from rally.common import logging
 from rally.common import validation
+from rally.common.plugin import plugin
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
@@ -22,11 +23,14 @@ from rally_openstack.task import context
 LOG = logging.getLogger(__name__)
 
 
+@plugin.deprecated(
+    "Neutron LBaaS v1 API was removed from Neutron. Use Octavia related "
+    "scenarios instead.", rally_version="4.3.0")
 @validation.add("required_platform", platform="openstack", admin=True,
                 users=True)
 @context.configure(name="lbaas", platform="openstack", order=360)
 class Lbaas(context.OpenStackContext):
-    """Creates a lb-pool for every subnet created in network context."""
+    """[DEPRECATED] Creates a lb-pool for every subnet in network context."""
     CONFIG_SCHEMA = {
         "type": "object",
         "$schema": consts.JSON_SCHEMA,
