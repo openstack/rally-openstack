@@ -369,10 +369,10 @@ class Keystone(base.LegacyClientCompat):
     def delete_project(self, project_id: str) -> None:
         if self.version == "2":
             with self._atomic_action("keystone_v2.delete_tenant"):
-                self._v2.delete_tenant(project_id)
+                self._v2.delete_tenant(project_id, ignore_missing=False)
         else:
             with self._atomic_action("keystone_v3.delete_project"):
-                self._v3.delete_project(project_id)
+                self._v3.delete_project(project_id, ignore_missing=False)
 
     @atomic.action_timer("keystone.list_projects")
     def list_projects(self) -> list[Project]:
@@ -444,7 +444,8 @@ class Keystone(base.LegacyClientCompat):
                     # password is changed through a dedicated endpoint.
                     self._identity.put(
                         f"/users/{user_id}/OS-KSADM/password",
-                        json={"user": {"password": password}}
+                        json={"user": {"password": password}},
+                        raise_exc=True
                     )
             return
         if password is not None:
@@ -455,7 +456,7 @@ class Keystone(base.LegacyClientCompat):
     @atomic.action_timer("keystone.delete_user")
     def delete_user(self, user_id: str) -> None:
         with self._atomic_action(f"keystone_v{self.version}.delete_user"):
-            self._identity.delete_user(user_id)
+            self._identity.delete_user(user_id, ignore_missing=False)
 
     @atomic.action_timer("keystone.list_users")
     def list_users(self) -> list[User]:
@@ -489,12 +490,16 @@ class Keystone(base.LegacyClientCompat):
             with self._atomic_action("keystone_v2.add_role"):
                 self._identity.put(
                     f"/tenants/{project_id}/"
-                    f"users/{user_id}/roles/OS-KSADM/{role_id}"
+                    f"users/{user_id}/roles/OS-KSADM/{role_id}",
+                    raise_exc=True
                 )
             return
+        # assign_project_role_to_user discards the bool the resource returns
+        # (False on any non-204), so issue the request directly to see errors.
         with self._atomic_action("keystone_v3.add_role"):
-            self._v3.assign_project_role_to_user(
-                project_id, user_id, role_id)
+            self._identity.put(
+                f"/projects/{project_id}/users/{user_id}/roles/{role_id}",
+                raise_exc=True)
 
     @atomic.action_timer("keystone.revoke_role")
     def revoke_role(self, role_id: str, user_id: str, project_id: str) -> None:
@@ -502,12 +507,16 @@ class Keystone(base.LegacyClientCompat):
             with self._atomic_action("keystone_v2.revoke_role"):
                 self._identity.delete(
                     f"/tenants/{project_id}/"
-                    f"users/{user_id}/roles/OS-KSADM/{role_id}"
+                    f"users/{user_id}/roles/OS-KSADM/{role_id}",
+                    raise_exc=True
                 )
             return
+        # See add_role: the proxy's unassign_project_role_from_user hides
+        # failures as well.
         with self._atomic_action("keystone_v3.revoke_role"):
-            self._v3.unassign_project_role_from_user(
-                project_id, user_id, role_id)
+            self._identity.delete(
+                f"/projects/{project_id}/users/{user_id}/roles/{role_id}",
+                raise_exc=True)
 
     @atomic.action_timer("keystone.list_roles")
     def list_roles(
@@ -569,7 +578,7 @@ class Keystone(base.LegacyClientCompat):
             path = (f"/tenants/{project_id}/users/{user_id}/roles"
                     if project_id else f"/users/{user_id}/roles")
             with self._atomic_action("keystone_v2.list_role_assignments"):
-                resp = self._identity.get(path)
+                resp = self._identity.get(path, raise_exc=True)
                 # v2 answers with bare role dicts; wrap them in the resource
                 # the v3 branch returns so both versions look the same. The
                 # scope is not echoed by the API, so it is carried over from
@@ -586,7 +595,7 @@ class Keystone(base.LegacyClientCompat):
     @atomic.action_timer("keystone.delete_role")
     def delete_role(self, role_id: str) -> None:
         with self._atomic_action(f"keystone_v{self.version}.delete_role"):
-            self._identity.delete_role(role_id)
+            self._identity.delete_role(role_id, ignore_missing=False)
 
     @atomic.action_timer("keystone.get_role")
     def get_role(self, role_id: str) -> Role:
@@ -613,7 +622,8 @@ class Keystone(base.LegacyClientCompat):
                         "description": description
                     }
                 }
-                resp = self._identity.post("/OS-KSADM/services", json=body)
+                resp = self._identity.post(
+                    "/OS-KSADM/services", json=body, raise_exc=True)
                 return service.Service(**resp.json()["OS-KSADM:service"])
         with self._atomic_action("keystone_v3.create_service"):
             return self._v3.create_service(
@@ -627,10 +637,11 @@ class Keystone(base.LegacyClientCompat):
     def delete_service(self, service_id: str) -> None:
         if self.version == "2":
             with self._atomic_action("keystone_v2.delete_service"):
-                self._identity.delete(f"/OS-KSADM/services/{service_id}")
+                self._identity.delete(
+                    f"/OS-KSADM/services/{service_id}", raise_exc=True)
             return
         with self._atomic_action("keystone_v3.delete_service"):
-            self._v3.delete_service(service_id)
+            self._v3.delete_service(service_id, ignore_missing=False)
 
     @atomic.action_timer("keystone.list_services")
     def list_services(
@@ -640,7 +651,7 @@ class Keystone(base.LegacyClientCompat):
             from openstack.identity.v3 import service
 
             with self._atomic_action("keystone_v2.list_services"):
-                resp = self._identity.get("/OS-KSADM/services")
+                resp = self._identity.get("/OS-KSADM/services", raise_exc=True)
                 services: list[service.Service] = [
                     service.Service(**s)
                     for s in resp.json()["OS-KSADM:services"]]
@@ -659,7 +670,7 @@ class Keystone(base.LegacyClientCompat):
 
             with self._atomic_action("keystone_v2.get_services"):
                 resp = self._identity.get(
-                    f"/OS-KSADM/services/{service_id}")
+                    f"/OS-KSADM/services/{service_id}", raise_exc=True)
                 return service.Service(**resp.json()["OS-KSADM:service"])
         with self._atomic_action("keystone_v3.get_services"):
             return self._v3.get_service(service_id)
@@ -708,7 +719,8 @@ class Keystone(base.LegacyClientCompat):
             user_id = self.auth_ref.user_id
             with self._atomic_action("keystone_v2.get_credential"):
                 resp = self._identity.get(
-                    f"/users/{user_id}/credentials/OS-EC2/{credential_id}")
+                    f"/users/{user_id}/credentials/OS-EC2/{credential_id}",
+                    raise_exc=True)
                 return self._ec2_to_credential(resp.json()["credential"])
         with self._atomic_action("keystone_v3.get_credential"):
             return self._v3.get_credential(credential_id)
@@ -724,7 +736,7 @@ class Keystone(base.LegacyClientCompat):
             user_id = user_id or self.auth_ref.user_id
             with self._atomic_action("keystone_v2.list_credentials"):
                 resp = self._identity.get(
-                    f"/users/{user_id}/credentials/OS-EC2")
+                    f"/users/{user_id}/credentials/OS-EC2", raise_exc=True)
                 return [self._ec2_to_credential(c)
                         for c in resp.json()["credentials"]]
         query: dict[str, t.Any] = {}
@@ -741,10 +753,11 @@ class Keystone(base.LegacyClientCompat):
             user_id = self.auth_ref.user_id
             with self._atomic_action("keystone_v2.delete_credential"):
                 self._identity.delete(
-                    f"/users/{user_id}/credentials/OS-EC2/{credential_id}")
+                    f"/users/{user_id}/credentials/OS-EC2/{credential_id}",
+                    raise_exc=True)
             return
         with self._atomic_action("keystone_v3.delete_credential"):
-            self._v3.delete_credential(credential_id)
+            self._v3.delete_credential(credential_id, ignore_missing=False)
 
     def _create_ec2_credential_v2(
         self, user_id: str | None, project_id: str | None
@@ -752,7 +765,7 @@ class Keystone(base.LegacyClientCompat):
         with self._atomic_action("keystone_v2.create_credential"):
             resp = self._identity.post(
                 f"/users/{user_id}/credentials/OS-EC2",
-                json={"tenant_id": project_id})
+                json={"tenant_id": project_id}, raise_exc=True)
             return self._ec2_to_credential(resp.json()["credential"])
 
     @staticmethod
@@ -802,7 +815,7 @@ class Keystone(base.LegacyClientCompat):
     def validate_token(self, token: str) -> None:
         if self.version == "2":
             with self._atomic_action("keystone_v2.validate_token"):
-                self._identity.get(f"/tokens/{token}")
+                self._identity.get(f"/tokens/{token}", raise_exc=True)
             return
         with self._atomic_action("keystone_v3.validate_token"):
             self._v3.validate_token(token)
