@@ -91,6 +91,10 @@ EOF
 # install_rally() - Collect source and prepare
 function install_rally() {
     setup_package $RALLY_DIR -e
+    # Rally dependencies can pull certifi into the venv after stack.sh has
+    # already pointed the CA bundle to the system one, which hides the
+    # devstack CA from every service sharing the venv.
+    fix_system_ca_bundle_path
 }
 
 # configure_rally() - Set config files, create data dirs, etc

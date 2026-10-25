@@ -57,7 +57,6 @@
             voting: false
         #- rally-task-heat:
         #    voting: false
-        #- rally-task-ironic
         - rally-task-glance:
             irrelevant-files: *trivial-files
             files:
@@ -71,6 +70,18 @@
         - rally-task-glance-upgrade:
             irrelevant-files: *trivial-files
             voting: true
+        - rally-task-ironic:
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-ironic.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/ironic.yaml
+              - rally_openstack/common/cfg/ironic.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/scenarios/ironic
+              - tests/ci/playbooks
         - rally-task-keystone-swift:
             irrelevant-files: *trivial-files
         #- rally-task-magnum:
@@ -90,6 +101,8 @@
             irrelevant-files: *trivial-files
             voting: false
         - rally-task-mistral:
+            irrelevant-files: *trivial-files
+        - rally-task-neutron:
             irrelevant-files: *trivial-files
         - rally-task-neutron-taas:
             irrelevant-files: *trivial-files
@@ -155,9 +168,20 @@
         - rally-task-cinder:
             irrelevant-files: *trivial-files
         #- rally-task-heat
-        #- rally-task-ironic
         - rally-task-glance:
             irrelevant-files: *trivial-files
+        - rally-task-ironic:
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-ironic.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/ironic.yaml
+              - rally_openstack/common/cfg/ironic.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/scenarios/ironic
+              - tests/ci/playbooks
         - rally-task-keystone-swift:
             irrelevant-files: *trivial-files
         - rally-task-mistral:
