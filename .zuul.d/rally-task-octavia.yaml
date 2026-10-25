@@ -3,28 +3,36 @@
     description: A Rally job for checking Octavia Plugin
     parent: rally-task-at-devstack
     required-projects:
-      - name: openstack/diskimage-builder
+      - name: openstack/devstack
+      - name: openstack/rally
+      - name: openstack/rally-openstack
       - name: openstack/octavia
       - name: openstack/octavia-lib
       - name: openstack/python-octaviaclient
-      - name: openstack/barbican
-      - name: openstack/python-barbicanclient
     vars:
+      devstack_localrc:
+        DISABLE_AMP_IMAGE_BUILD: true
+      devstack_local_conf:
+        post-config:
+          $OCTAVIA_CONF:
+            controller_worker:
+              amphora_driver: amphora_noop_driver
+              compute_driver: compute_noop_driver
+              network_driver: network_noop_driver
+              image_driver: image_noop_driver
+            certificates:
+              cert_manager: noop_cert_manager
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         octavia: https://opendev.org/openstack/octavia
         neutron: https://opendev.org/openstack/neutron
-        barbican: https://opendev.org/openstack/barbican
       devstack_services:
-        nova: true
-        glance: true
-        placement: true
         octavia: true
-        barvican: true
         o-api: true
         o-cw: true
-        o-hk: true
         o-hm: true
-        o-da: true
-
+        o-hk: true
+        # disable redundant services for the job
+        horizon: false
+        tempest: false
       rally_task: rally-jobs/octavia.yaml

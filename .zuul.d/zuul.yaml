@@ -132,8 +132,19 @@
             voting: false
         - rally-task-nova:
             irrelevant-files: *trivial-files
-        #- rally-task-octavia:
-        #    voting: false
+        - rally-task-octavia:
+            files: &octavia-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-octavia.yaml
+              - ^DOCKER_README\.md$
+              - rally-jobs/octavia.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/loadbalancer
+              - rally_openstack/common/services/network
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/contexts/network
+              - rally_openstack/task/scenarios/octavia
+              - tests/ci/playbooks
         - rally-task-telemetry:
             irrelevant-files: *trivial-files
             voting: false
@@ -201,6 +212,8 @@
               - tests/ci/playbooks
         - rally-task-nova:
             irrelevant-files: *trivial-files
+        - rally-task-octavia:
+            files: *octavia-files
         - rally-verify-tempest
     post:
       jobs:
