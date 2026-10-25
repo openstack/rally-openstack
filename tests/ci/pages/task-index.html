@@ -100,9 +100,8 @@
     <h2>Steps to repeat locally</h2>
     <ol>
       <li>Fetch rally task from <a href="results/task.yaml">here</a></li>
-      <li>Fetch rally plugins from <a href="results/plugins.tar.gz">here</a></li>
       <li>Install OpenStack and Rally using <a href="https://github.com/openstack/rally-openstack/tree/master/devstack">this instruction</a></li>
-      <li>Unzip plugins and put to <code>.rally/plugins/</code> directory</li>
+      <li>Check out the tested change of the project that runs this job and copy its <code>rally-jobs/plugins</code> directory (if any) to <code>.rally/plugins/</code> directory</li>
       <li>Run rally task: <code>$ rally task start task.yaml</code></li>
     </ol>
 

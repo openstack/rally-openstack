@@ -3,3 +3,6 @@
     parent: rally-task-at-devstack
     vars:
       rally_task: rally-jobs/nova.yaml
+      # cleanup lists only public flavors, so private ones created by
+      # NovaFlavors.create_and_list_flavor_access are left behind
+      rally_ignore_leaked_resources: true

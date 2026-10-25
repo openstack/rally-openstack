@@ -115,7 +115,7 @@ typing_extensions = "te"
 # does `importlib` (`from importlib.metadata import version`).
 banned-from = [
     "abc", "argparse", "ast", "asyncio", "base64", "bisect", "builtins",
-    "calendar", "cmath", "codecs", "collections", "configparser",
+    "calendar", "cmath", "codecs", "configparser",
     "contextlib", "copy", "csv", "ctypes", "dataclasses", "datetime",
     "decimal", "difflib", "dis", "email", "enum", "errno", "functools", "gc",
     "getpass", "gettext", "glob", "gzip", "hashlib", "heapq", "hmac", "html",
@@ -129,11 +129,6 @@ banned-from = [
     "warnings", "weakref", "xml", "zipfile", "zlib",
 ]
 
-[tool.ruff.lint.per-file-ignores]
-# ansible role dirs are hyphenated by convention -> not valid module names;
-# an inline noqa is impossible (the package __init__.py files are empty).
-"tests/ci/playbooks/**" = ["N999"]
-
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "logging".msg = "Use `rally.common.logging` instead of the stdlib logging."
 "oslo_log".msg = "Use `rally.common.logging` instead of oslo_log."
@@ -143,6 +138,7 @@ banned-from = [
 files = [
     "rally_openstack",
     "tests/ci/make_env_spec_with_existing_users.py",
+    "tests/ci/osresources.py",
 ]
 python_version = "3.11"
 disallow_untyped_defs = true
@@ -160,7 +156,10 @@ module = "tests.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "tests.ci.make_env_spec_with_existing_users"
+module = [
+    "tests.ci.make_env_spec_with_existing_users",
+    "tests.ci.osresources",
+]
 ignore_errors = false
 
 [[tool.mypy.overrides]]

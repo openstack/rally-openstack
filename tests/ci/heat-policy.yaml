@@ -1,0 +1,3 @@
+# Let admin list stacks of all projects, so tests/ci/osresources.py can find
+# stacks that rally leaves behind.
+"stacks:global_index": "role:admin"

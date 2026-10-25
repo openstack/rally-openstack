@@ -39,3 +39,17 @@
               - name: "JSON report"
                 url: "{{ json_report }}"
       when: json_report in results_dir_stat.stdout
+
+    - name: Check the existence of per-test rally logs
+      stat:
+        path: "{{ rally_results_dir }}/reports"
+      register: per_test_logs_stat
+
+    - name: Return artifact to Zuul - per-test rally logs
+      zuul_return:
+        data:
+          zuul:
+            artifacts:
+              - name: "Per-test rally logs"
+                url: "reports/"
+      when: per_test_logs_stat.stat.isdir | default(false)

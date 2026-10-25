@@ -13,7 +13,6 @@
               - ^\.gitignore$
               - ^\.gitreview$
               - ^.*\.rst$
-              - ^DOCKER_README\.md$
               - ^LICENSE$
               - tests/unit/.*
               - ^types-requirements\.txt$
@@ -21,40 +20,60 @@
         - rally-task-basic-with-existing-users
         - rally-task-simple-job
         - rally-task-barbican:
-            irrelevant-files: *trivial-files
             files:
               - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-barbican.yaml
+              - DOCKER_README.md
+              - devstack
               - rally-jobs/barbican.yaml
               - rally_openstack/common/osclients.py
               - rally_openstack/common/services/key_manager
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/scenarios/barbican
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
             voting: false
         - rally-task-cinder:
             irrelevant-files: *trivial-files
         - rally-task-designate:
-            irrelevant-files: *trivial-files
-            files:
+            files: &designate-files
               - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-designate.yaml
+              - DOCKER_README.md
+              - devstack
               - rally-jobs/designate.yaml
               - rally_openstack/common/osclients.py
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
               - rally_openstack/task/contexts/designate
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/scenarios/designate
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-glance:
-            irrelevant-files: *trivial-files
-            files:
+            files: &glance-files
+              - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-glance.yaml
+              - DOCKER_README.md
+              - devstack
               - rally-jobs/glance.yaml
+              - rally_openstack/common/cfg/glance.py
               - rally_openstack/common/osclients.py
-              - rally_openstack/task/cleanup/resources.py
-              - rally_openstack/task/scenarios/glance
+              - rally_openstack/common/services/image
+              - rally_openstack/task/cleanup
               - rally_openstack/task/contexts/glance
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/scenarios/glance
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-glance-upgrade:
-            irrelevant-files: *trivial-files
+            files: *glance-files
             voting: true
         - rally-task-heat:
             files: &heat-files
@@ -64,14 +83,20 @@
               - devstack
               - rally-jobs/heat.yaml
               - rally-jobs/extra/.*\.yaml\.template$
+              - rally_openstack/common/cfg/heat.py
               - rally_openstack/common/osclients.py
               - rally_openstack/common/services/heat
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
               - rally_openstack/task/contexts/heat
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/scenarios/heat
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/heat-policy.yaml
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-ironic:
-            files:
+            files: &ironic-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-ironic.yaml
               - DOCKER_README.md
@@ -79,56 +104,149 @@
               - rally-jobs/ironic.yaml
               - rally_openstack/common/cfg/ironic.py
               - rally_openstack/common/osclients.py
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/scenarios/ironic
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-keystone-swift:
-            irrelevant-files: *trivial-files
-        #- rally-task-magnum:
-        #    voting: false
-        #    files:
-        #      - .zuul.d/zuul.yaml
-        #      - rally-jobs/magnum.yaml
-        #      - rally_openstack/common/osclients.py
-        #      - rally_openstack/task/cleanup/resources.py
-        #      - rally_openstack/task/contexts/magnum
-        #      - rally_openstack/task/scenarios/magnum
-        #      - tests/ci/playbooks
+            files: &keystone-swift-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-keystone-swift.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/keystone-swift.yaml
+              - rally_openstack/common/cfg/keystone_roles.py
+              - rally_openstack/common/cfg/keystone_users.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/identity
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/contexts/quotas
+              - rally_openstack/task/contexts/swift
+              - rally_openstack/task/scenarios/authenticate
+              - rally_openstack/task/scenarios/keystone
+              - rally_openstack/task/scenarios/swift
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
+        - rally-task-magnum:
+            files: &magnum-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-magnum.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/magnum.yaml
+              - rally_openstack/common/cfg/magnum.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/contexts/magnum
+              - rally_openstack/task/scenarios/magnum
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
         - rally-task-manila-no-ss:
-            irrelevant-files: *trivial-files
+            files: &manila-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-manila.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/manila.yaml
+              - rally-jobs/manila-no-ss.yaml
+              - rally_openstack/common/cfg/manila.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/contexts/manila
+              - rally_openstack/task/contexts/quotas
+              - rally_openstack/task/scenarios/manila
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
             voting: false
         - rally-task-manila-ss:
-            irrelevant-files: *trivial-files
+            files: *manila-files
             voting: false
         - rally-task-mistral:
-            irrelevant-files: *trivial-files
+            files: &mistral-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-mistral.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/mistral.yaml
+              - rally_openstack/common/cfg/mistral.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/scenarios/mistral
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
         - rally-task-neutron:
             irrelevant-files: *trivial-files
         - rally-task-neutron-taas:
-            irrelevant-files: *trivial-files
-            files:
+            files: &neutron-taas-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-neutron-taas.yaml
+              - DOCKER_README.md
+              - devstack
               - rally-jobs/taas.yaml
               - rally_openstack/common/osclients.py
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/scenarios/neutron/taas.py
               - rally_openstack/task/scenarios/neutron/utils.py
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-neutron-trunk:
-            irrelevant-files: *trivial-files
-            files:
+            files: &neutron-trunk-files
               - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-neutron-trunk.yaml
+              - DOCKER_README.md
+              - devstack
               - rally-jobs/neutron-trunk.yaml
               - rally_openstack/common/osclients.py
               - rally_openstack/common/services/network
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/contexts/network
-              - rally_openstack/task/scenarios/neutron/trunk.py
               - rally_openstack/task/scenarios/neutron/network.py
+              - rally_openstack/task/scenarios/neutron/trunk.py
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-neutron-with-extensions:
-            irrelevant-files: *trivial-files
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-neutron-with-extensions.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/neutron-with-extensions.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/network
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/glance
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/contexts/network
+              - rally_openstack/task/contexts/nova
+              - rally_openstack/task/scenarios/neutron/bgpvpn.py
+              - rally_openstack/task/scenarios/neutron/fwaas.py
+              - rally_openstack/task/scenarios/neutron/utils.py
+              - rally_openstack/task/scenarios/nova/utils.py
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
             voting: false
         - rally-task-nova:
             irrelevant-files: *trivial-files
@@ -136,23 +254,71 @@
             files: &octavia-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-octavia.yaml
-              - ^DOCKER_README\.md$
+              - DOCKER_README.md
+              - devstack
               - rally-jobs/octavia.yaml
+              - rally_openstack/common/cfg/octavia.py
               - rally_openstack/common/osclients.py
               - rally_openstack/common/services/loadbalancer
               - rally_openstack/common/services/network
-              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
               - rally_openstack/task/contexts/network
               - rally_openstack/task/scenarios/octavia
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-telemetry:
-            irrelevant-files: *trivial-files
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-telemetry.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/telemetry.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/gnocchi
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/scenarios/gnocchi
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
             voting: false
         - rally-task-watcher:
-            irrelevant-files: *trivial-files
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-watcher.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/watcher.yaml
+              - rally_openstack/common/cfg/watcher.py
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/contexts/watcher
+              - rally_openstack/task/scenarios/watcher
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
             voting: false
         - rally-task-zaqar:
-            irrelevant-files: *trivial-files
+            files:
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-zaqar.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/zaqar.yaml
+              - rally_openstack/common/osclients.py
+              - rally_openstack/task/cleanup
+              - rally_openstack/task/contexts/keystone
+              - rally_openstack/task/scenarios/zaqar
+              - requirements.txt
+              - upper-constraints.txt
+              - tests/ci/osresources.py
+              - tests/ci/playbooks
             voting: false
         - rally-verify-tempest
     gate:
@@ -167,50 +333,30 @@
         - rally-openstack-docker-build
         - rally-task-basic-with-existing-users
         - rally-task-simple-job
-        #- rally-task-barbican:
-        #    files:
-        #      - .zuul.d/zuul.yaml
-        #      - rally-jobs/barbican.yaml
-        #      - rally_openstack/common/osclients.py
-        #      - rally_openstack/common/services/key_manager
-        #      - rally_openstack/task/cleanup/resources.py
-        #      - rally_openstack/task/scenarios/barbican
-        #      - tests/ci/playbooks
         - rally-task-cinder:
             irrelevant-files: *trivial-files
+        - rally-task-designate:
+            files: *designate-files
         - rally-task-glance:
-            irrelevant-files: *trivial-files
+            files: *glance-files
+        - rally-task-glance-upgrade:
+            files: *glance-files
         - rally-task-heat:
             files: *heat-files
         - rally-task-ironic:
-            files:
-              - .zuul.d/zuul.yaml
-              - .zuul.d/rally-task-ironic.yaml
-              - DOCKER_README.md
-              - devstack
-              - rally-jobs/ironic.yaml
-              - rally_openstack/common/cfg/ironic.py
-              - rally_openstack/common/osclients.py
-              - rally_openstack/task/cleanup/resources.py
-              - rally_openstack/task/scenarios/ironic
-              - tests/ci/playbooks
+            files: *ironic-files
         - rally-task-keystone-swift:
-            irrelevant-files: *trivial-files
+            files: *keystone-swift-files
+        - rally-task-magnum:
+            files: *magnum-files
         - rally-task-mistral:
-            irrelevant-files: *trivial-files
+            files: *mistral-files
         - rally-task-neutron:
             irrelevant-files: *trivial-files
+        - rally-task-neutron-taas:
+            files: *neutron-taas-files
         - rally-task-neutron-trunk:
-            irrelevant-files: *trivial-files
-            files:
-              - rally-jobs/neutron-trunk.yaml
-              - rally_openstack/common/osclients.py
-              - rally_openstack/common/services/network
-              - rally_openstack/task/cleanup/resources.py
-              - rally_openstack/task/contexts/network
-              - rally_openstack/task/scenarios/neutron/trunk.py
-              - rally_openstack/task/scenarios/neutron/network.py
-              - tests/ci/playbooks
+            files: *neutron-trunk-files
         - rally-task-nova:
             irrelevant-files: *trivial-files
         - rally-task-octavia:

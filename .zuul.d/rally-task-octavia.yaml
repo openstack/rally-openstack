@@ -36,3 +36,5 @@
         horizon: false
         tempest: false
       rally_task: rally-jobs/octavia.yaml
+      # Octavia.create_and_update_pools leaves load balancers and pools behind
+      rally_ignore_leaked_resources: true

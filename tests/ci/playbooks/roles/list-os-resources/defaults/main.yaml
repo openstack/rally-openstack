@@ -1,3 +1,10 @@
 compare: false
-resources_at_start_dest: '{{ rally_results_dir }}/resources_at_start.txt'
+resources_at_start_dest: '{{ rally_results_dir }}/resources_at_start.json'
+resources_diff_dest: '{{ rally_results_dir }}/resources_diff.json'
 cleanup_error_msg: "OSResources check found resources which appeared after Rally Task execution. Check cleanup logs for errors."
+# Report leaked resources without failing the job.
+rally_ignore_leaked_resources: false
+# The checkout that owns tests/ci helper scripts.
+rally_openstack_src_dir: "{{ ansible_user_dir }}/{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
+# DevStack installs rally into this venv, so the helpers run with its python.
+rally_python: /opt/stack/data/venv/bin/python3

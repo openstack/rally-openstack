@@ -6,16 +6,13 @@
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/magnum
+      - name: openstack/magnum-capi-helm
       - name: openstack/python-magnumclient
-      - name: openstack/heat
     vars:
-      devstack_localrc:
-        # TODO(frickler): drop this once heat no longer needs it
-        KEYSTONE_ADMIN_ENDPOINT: true
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         magnum: https://opendev.org/openstack/magnum
-        heat: https://opendev.org/openstack/heat
+        magnum-capi-helm: https://opendev.org/openstack/magnum-capi-helm
       devstack_services:
         magnum: true
         # disable redundant services for the job

@@ -22,3 +22,6 @@
         horizon: false
         tempest: false
       rally_task: rally-jobs/neutron-with-extensions.yaml
+      # cleanup does not delete the default firewall group, policies and rules
+      # that FWaaS creates for every project
+      rally_ignore_leaked_resources: true

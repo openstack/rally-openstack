@@ -103,6 +103,55 @@ class RallyJobsTestCase(test.TestCase):
 
     JOB_FILES_PARAMS = {"files", "irrelevant-files"}
 
+    def test_gate_jobs_are_in_check(self):
+        check_jobs = {self._parse_job(job)[0]
+                      for job in self.project_cfg["check"]["jobs"]}
+        gate_jobs = [self._parse_job(job)[0]
+                     for job in self.project_cfg["gate"]["jobs"]]
+        missing = [job for job in gate_jobs if job not in check_jobs]
+        if missing:
+            self.fail(
+                f"Jobs from gate pipeline should be listed in check pipeline "
+                f"as well: {', '.join(missing)}.")
+
+    def test_voting_check_jobs_are_in_gate(self):
+        gate_jobs = {self._parse_job(job)[0]
+                     for job in self.project_cfg["gate"]["jobs"]}
+        missing = []
+        for job in self.project_cfg["check"]["jobs"]:
+            job_name, job_cfg = self._parse_job(job)
+            if (job_cfg or {}).get("voting", True) and (
+                    job_name not in gate_jobs):
+                missing.append(job_name)
+        if missing:
+            self.fail(
+                f"Voting jobs from check pipeline should be listed in gate "
+                f"pipeline as well: {', '.join(missing)}.")
+
+    REQUIRED_FILES = ("DOCKER_README.md", "requirements.txt",
+                      "upper-constraints.txt")
+
+    def test_job_files_params(self):
+        errors = []
+        for pipeline in ("check", "gate"):
+            for job in self.project_cfg[pipeline]["jobs"]:
+                job_name, job_cfg = self._parse_job(job)
+                if job_cfg is None:
+                    continue
+                prefix = f"[{pipeline} pipeline] '{job_name}' job"
+                if self.JOB_FILES_PARAMS.issubset(job_cfg):
+                    errors.append(
+                        f"{prefix} uses both 'files' and 'irrelevant-files'.")
+                if "files" in job_cfg:
+                    missing = [f for f in self.REQUIRED_FILES
+                               if f not in job_cfg["files"]]
+                    if missing:
+                        errors.append(
+                            f"{prefix} misses {', '.join(missing)} at "
+                            f"'files'.")
+        if errors:
+            self.fail("\n".join(errors))
+
     def test_job_configs(self):
 
         file_matchers = {}

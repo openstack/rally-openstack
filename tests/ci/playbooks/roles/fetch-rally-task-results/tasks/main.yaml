@@ -20,14 +20,6 @@
     path: '{{ rally_results_dir }}'
   register: results_dir_stat
 
-- name: Gzip custom plugins
-  become: true
-  become_user: stack
-  shell: "tar -czf {{ rally_results_dir }}/plugins.tar.gz ./plugins"
-  args:
-    chdir: '{{ rally_home_dir }}'
-  when: results_dir_stat.stat.exists
-
 - name: Copy Rally results
   become: true
   synchronize:
@@ -57,10 +49,43 @@
       - --exclude=*
       - --prune-empty-dirs
 
-- name: Return artifact to Zuul
+- name: List Rally results
+  become: true
+  find:
+    paths: '{{ rally_results_dir }}'
+  register: rally_results_files
+  when: results_dir_stat.stat.exists
+
+- name: Return artifacts to Zuul
+  vars:
+    rally_index_artifact:
+      - name: "Rally CI report"
+        url: "index.html"
+    rally_report_artifacts:
+      - name: "HTML report"
+        url: "results/report.html"
+      - name: "Trends report"
+        url: "results/trends.html"
+      - name: "Success criteria (SLA)"
+        url: "results/sla.txt"
+      - name: "Text report"
+        url: "results/detailed.txt"
+      - name: "Text report (with iterations data)"
+        url: "results/detailed_with_iterations.txt"
+      - name: "JSON report"
+        url: "results/report.json"
+      - name: "JUnit XML report"
+        url: "results/junit.xml"
+      - name: "Task file"
+        url: "results/task.yaml"
+    rally_existing_results: >-
+      {{ rally_results_files.files | default([])
+         | map(attribute='path') | map('basename')
+         | map('regex_replace', '^', 'results/') | list }}
   zuul_return:
     data:
       zuul:
-        artifacts:
-          - name: "Rally CI report"
-            url: "index.html"
+        artifacts: >-
+          {{ rally_index_artifact
+             + (rally_report_artifacts
+                | selectattr('url', 'in', rally_existing_results) | list) }}
