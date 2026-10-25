@@ -142,6 +142,7 @@ banned-from = [
 [tool.mypy]
 files = [
     "rally_openstack",
+    "tests/ci/make_env_spec_with_existing_users.py",
 ]
 python_version = "3.11"
 disallow_untyped_defs = true
@@ -157,6 +158,10 @@ no_warn_no_return = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tests.ci.make_env_spec_with_existing_users"
+ignore_errors = false
 
 [[tool.mypy.overrides]]
 module = [

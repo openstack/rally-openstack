@@ -12,11 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""Create keystone users and store a Rally env spec that uses them."""
+
+import argparse
 import copy
 import json
+import typing as t
 import uuid
-
-from ansible.module_utils.basic import AnsibleModule
 
 from rally import api
 from rally import plugins
@@ -26,7 +28,9 @@ from rally_openstack.common import consts
 from rally_openstack.common import credential
 
 
-def fetch_parent_env_and_admin_creds(env_name):
+def fetch_parent_env_and_admin_creds(
+    env_name: str,
+) -> tuple[dict[str, t.Any], credential.OpenStackCredential]:
     """Fetch parent environment spec and openstack admin creds from it."""
 
     env_data = env_mgr.EnvManager.get(env_name).data
@@ -39,7 +43,11 @@ def fetch_parent_env_and_admin_creds(env_name):
     return env_data["spec"], admin_creds
 
 
-def create_projects_and_users(admin_creds, projects_count, users_per_project):
+def create_projects_and_users(
+    admin_creds: credential.OpenStackCredential,
+    projects_count: int,
+    users_per_project: int,
+) -> list[dict[str, str]]:
     """Create new projects and users via 'users@openstack' context.
 
     :param admin_creds: admin credentials to use for creating new entities
@@ -51,7 +59,7 @@ def create_projects_and_users(admin_creds, projects_count, users_per_project):
     # it should be imported after calling rally.api.API that setups oslo_config
     from rally_openstack.task.contexts.keystone import users as users_ctx
 
-    ctx = {
+    ctx: dict[str, t.Any] = {
         "env": {
             "platforms": {
                 "openstack": {
@@ -90,7 +98,11 @@ def create_projects_and_users(admin_creds, projects_count, users_per_project):
     return users
 
 
-def store_a_new_spec(original_spec, users, path_for_new_spec):
+def store_a_new_spec(
+    original_spec: dict[str, t.Any],
+    users: list[dict[str, str]],
+    path_for_new_spec: str,
+) -> None:
     new_spec = copy.deepcopy(original_spec)
     del new_spec["existing@openstack"]["admin"]
     new_spec["existing@openstack"]["users"] = users
@@ -99,45 +111,29 @@ def store_a_new_spec(original_spec, users, path_for_new_spec):
 
 
 @plugins.ensure_plugins_are_loaded
-def ansible_main():
-    module = AnsibleModule(argument_spec=dict(
-        projects_count=dict(
-            type="int",
-            default=1,
-            required=False
-        ),
-        users_per_project=dict(
-            type="int",
-            default=1,
-            required=False
-        ),
-        parent_env_name=dict(
-            type="str",
-            required=True
-        ),
-        path_for_new_spec=dict(
-            type="str",
-            required=True
-        )
-    ))
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--projects-count", type=int, default=1)
+    parser.add_argument("--users-per-project", type=int, default=1)
+    parser.add_argument("--parent-env-name", required=True)
+    parser.add_argument("--path-for-new-spec", required=True)
+    args = parser.parse_args()
 
     # init Rally API as it makes all work for logging and config initialization
     api.API()
 
     original_spec, admin_creds = fetch_parent_env_and_admin_creds(
-        module.params["parent_env_name"]
+        args.parent_env_name
     )
 
     users = create_projects_and_users(
         admin_creds,
-        projects_count=module.params["projects_count"],
-        users_per_project=module.params["users_per_project"]
+        projects_count=args.projects_count,
+        users_per_project=args.users_per_project
     )
 
-    store_a_new_spec(original_spec, users, module.params["path_for_new_spec"])
-
-    module.exit_json(changed=True)
+    store_a_new_spec(original_spec, users, args.path_for_new_spec)
 
 
 if __name__ == "__main__":
-    ansible_main()
+    main()

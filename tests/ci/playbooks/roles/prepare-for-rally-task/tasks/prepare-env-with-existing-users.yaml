@@ -1,11 +1,13 @@
 - name: Create keystone projects & users for a new rally environment
   become: true
   become_user: stack
-  make_env_spec_with_existing_users:
-    projects_count: "{{ projects_count }}"
-    users_per_project: "{{ users_per_project }}"
-    parent_env_name: "devstack"
-    path_for_new_spec: "{{ existing_users_env_spec }}"
+  command: >-
+    {{ rally_python }}
+    {{ rally_openstack_src_dir }}/tests/ci/make_env_spec_with_existing_users.py
+    --projects-count {{ projects_count }}
+    --users-per-project {{ users_per_project }}
+    --parent-env-name devstack
+    --path-for-new-spec {{ existing_users_env_spec }}
 
 - name: Create a new Rally environment
   become: true

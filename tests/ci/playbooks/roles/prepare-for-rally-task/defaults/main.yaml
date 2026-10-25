@@ -1,5 +1,9 @@
 # The checkout that owns rally_task, rally_task_args_file and rally-jobs/.
 rally_task_src_dir: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}'
+# The checkout that owns tests/ci helper scripts.
+rally_openstack_src_dir: "{{ ansible_user_dir }}/{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
+# DevStack installs rally into this venv, so the helpers run with its python.
+rally_python: /opt/stack/data/venv/bin/python3
 rally_dummy_qcow2_image: ""
 rally_dummy_raw_image: ""
 rally_use_existing_users: false
