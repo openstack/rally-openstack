@@ -116,6 +116,12 @@ class RallyJobsTestCase(test.TestCase):
             (10, 1, "GlanceImages.import_and_delete_image"),
             (10, 2, "GlanceImages.import_and_delete_image"),
         },
+        # keystone rejects the pre-signed alarm_url used for scaling, see
+        #   https://storyboard.openstack.org/#!/story/2011912
+        "heat.yaml": {
+            (7, 1, "HeatStacks.create_stack_and_scale"),
+            (7, 2, "HeatStacks.create_stack_and_scale"),
+        },
     }
 
     @staticmethod

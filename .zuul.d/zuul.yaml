@@ -55,8 +55,6 @@
               - rally_openstack/task/scenarios/neutron/utils.py
               - tests/ci/playbooks
             voting: false
-        #- rally-task-heat:
-        #    voting: false
         - rally-task-glance:
             irrelevant-files: *trivial-files
             files:
@@ -70,6 +68,20 @@
         - rally-task-glance-upgrade:
             irrelevant-files: *trivial-files
             voting: true
+        - rally-task-heat:
+            files: &heat-files
+              - .zuul.d/zuul.yaml
+              - .zuul.d/rally-task-heat.yaml
+              - DOCKER_README.md
+              - devstack
+              - rally-jobs/heat.yaml
+              - rally-jobs/extra/.*\.yaml\.template$
+              - rally_openstack/common/osclients.py
+              - rally_openstack/common/services/heat
+              - rally_openstack/task/cleanup/resources.py
+              - rally_openstack/task/contexts/heat
+              - rally_openstack/task/scenarios/heat
+              - tests/ci/playbooks
         - rally-task-ironic:
             files:
               - .zuul.d/zuul.yaml
@@ -178,9 +190,10 @@
         #      - tests/ci/playbooks
         - rally-task-cinder:
             irrelevant-files: *trivial-files
-        #- rally-task-heat
         - rally-task-glance:
             irrelevant-files: *trivial-files
+        - rally-task-heat:
+            files: *heat-files
         - rally-task-ironic:
             files:
               - .zuul.d/zuul.yaml

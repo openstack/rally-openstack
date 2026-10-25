@@ -194,6 +194,9 @@
           tenants: 2
           users_per_tenant: 3
     -
+      # The pre-signed alarm_url is rejected by keystone, so every iteration
+      # is expected to fail until the following issue is fixed:
+      #   https://storyboard.openstack.org/#!/story/2011912
       title: HeatStacks.create_stack_and_scale tests
       workloads:
         -
@@ -212,6 +215,10 @@
             users:
               tenants: 2
               users_per_tenant: 1
+          sla:
+            failure_rate:
+              min: 100
+              max: 100
         -
           scenario:
             HeatStacks.create_stack_and_scale:
@@ -228,6 +235,10 @@
             users:
               tenants: 2
               users_per_tenant: 1
+          sla:
+            failure_rate:
+              min: 100
+              max: 100
     -
       title: HeatStacks.create_stack_and_list_output tests
       scenario:
