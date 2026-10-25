@@ -414,7 +414,7 @@ class KeystoneProjectMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.ks.delete_project("pid")
         target = (self.proxy.delete_tenant if version == "2"
                   else self.proxy.delete_project)
-        target.assert_called_once_with("pid")
+        target.assert_called_once_with("pid", ignore_missing=False)
 
     def test_list_projects_v2(self):
         self.ks = self._make_keystone(version="2")
@@ -479,7 +479,7 @@ class KeystoneUserMethodsTestCase(KeystoneTestMixin, test.TestCase):
             "uid", name="n", is_enabled=False)
         self.proxy.put.assert_called_once_with(
             "/users/uid/OS-KSADM/password",
-            json={"user": {"password": "p"}})
+            json={"user": {"password": "p"}}, raise_exc=True)
 
     def test_update_user_v2_no_password(self):
         self.ks = self._make_keystone(version="2")
@@ -492,13 +492,14 @@ class KeystoneUserMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.assertFalse(self.proxy.update_user.called)
         self.proxy.put.assert_called_once_with(
             "/users/uid/OS-KSADM/password",
-            json={"user": {"password": "p"}})
+            json={"user": {"password": "p"}}, raise_exc=True)
 
     @ddt.data("2", "3")
     def test_delete_user(self, version):
         self.ks = self._make_keystone(version=version)
         self.ks.delete_user("uid")
-        self.proxy.delete_user.assert_called_once_with("uid")
+        self.proxy.delete_user.assert_called_once_with(
+            "uid", ignore_missing=False)
 
     @ddt.data("2", "3")
     def test_list_users(self, version):
@@ -543,25 +544,27 @@ class KeystoneRoleMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.ks = self._make_keystone(version="2")
         self.ks.add_role("rid", "uid", "pid")
         self.proxy.put.assert_called_once_with(
-            "/tenants/pid/users/uid/roles/OS-KSADM/rid")
+            "/tenants/pid/users/uid/roles/OS-KSADM/rid", raise_exc=True)
 
     def test_add_role_v3(self):
         self.ks = self._make_keystone(version="3")
         self.ks.add_role("rid", "uid", "pid")
-        self.proxy.assign_project_role_to_user.assert_called_once_with(
-            "pid", "uid", "rid")
+        self.proxy.put.assert_called_once_with(
+            "/projects/pid/users/uid/roles/rid", raise_exc=True)
+        self.assertFalse(self.proxy.assign_project_role_to_user.called)
 
     def test_revoke_role_v2(self):
         self.ks = self._make_keystone(version="2")
         self.ks.revoke_role("rid", "uid", "pid")
         self.proxy.delete.assert_called_once_with(
-            "/tenants/pid/users/uid/roles/OS-KSADM/rid")
+            "/tenants/pid/users/uid/roles/OS-KSADM/rid", raise_exc=True)
 
     def test_revoke_role_v3(self):
         self.ks = self._make_keystone(version="3")
         self.ks.revoke_role("rid", "uid", "pid")
-        self.proxy.unassign_project_role_from_user.assert_called_once_with(
-            "pid", "uid", "rid")
+        self.proxy.delete.assert_called_once_with(
+            "/projects/pid/users/uid/roles/rid", raise_exc=True)
+        self.assertFalse(self.proxy.unassign_project_role_from_user.called)
 
     def test_list_roles_v2(self):
         self.ks = self._make_keystone(version="2")
@@ -582,7 +585,7 @@ class KeystoneRoleMethodsTestCase(KeystoneTestMixin, test.TestCase):
             "roles": [{"id": "r1", "name": "admin"}]}
         result = self.ks.list_role_assignments("uid", project_id="pid")
         self.proxy.get.assert_called_once_with(
-            "/tenants/pid/users/uid/roles")
+            "/tenants/pid/users/uid/roles", raise_exc=True)
         # v2 payloads are adapted to the resource the v3 branch returns
         self.assertIsInstance(
             result[0],
@@ -597,7 +600,8 @@ class KeystoneRoleMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.proxy.get.return_value.json.return_value = {
             "roles": [{"id": "r1"}]}
         self.ks.list_role_assignments("uid")
-        self.proxy.get.assert_called_once_with("/users/uid/roles")
+        self.proxy.get.assert_called_once_with(
+            "/users/uid/roles", raise_exc=True)
 
     def test_list_role_assignments_v3(self):
         self.ks = self._make_keystone(version="3")
@@ -657,7 +661,8 @@ class KeystoneRoleMethodsTestCase(KeystoneTestMixin, test.TestCase):
     def test_delete_role(self, version):
         self.ks = self._make_keystone(version=version)
         self.ks.delete_role("rid")
-        self.proxy.delete_role.assert_called_once_with("rid")
+        self.proxy.delete_role.assert_called_once_with(
+            "rid", ignore_missing=False)
 
     @ddt.data("2", "3")
     def test_get_role(self, version):
@@ -679,7 +684,8 @@ class KeystoneServiceMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.proxy.post.assert_called_once_with(
             "/OS-KSADM/services",
             json={"OS-KSADM:service": {"name": "n", "type": "t",
-                                       "description": "d"}})
+                                       "description": "d"}},
+            raise_exc=True)
 
     def test_create_service_v3(self):
         self.ks = self._make_keystone(version="3")
@@ -699,12 +705,14 @@ class KeystoneServiceMethodsTestCase(KeystoneTestMixin, test.TestCase):
     def test_delete_service_v2(self):
         self.ks = self._make_keystone(version="2")
         self.ks.delete_service("sid")
-        self.proxy.delete.assert_called_once_with("/OS-KSADM/services/sid")
+        self.proxy.delete.assert_called_once_with(
+            "/OS-KSADM/services/sid", raise_exc=True)
 
     def test_delete_service_v3(self):
         self.ks = self._make_keystone(version="3")
         self.ks.delete_service("sid")
-        self.proxy.delete_service.assert_called_once_with("sid")
+        self.proxy.delete_service.assert_called_once_with(
+            "sid", ignore_missing=False)
 
     def test_list_services_v2(self):
         self.ks = self._make_keystone(version="2")
@@ -712,6 +720,8 @@ class KeystoneServiceMethodsTestCase(KeystoneTestMixin, test.TestCase):
             "OS-KSADM:services": [{"id": "s1"}]}
         result = self.ks.list_services()
         self.assertEqual("s1", result[0].id)
+        self.proxy.get.assert_called_once_with(
+            "/OS-KSADM/services", raise_exc=True)
 
     def test_list_services_v3(self):
         self.ks = self._make_keystone(version="3")
@@ -723,6 +733,8 @@ class KeystoneServiceMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.proxy.get.return_value.json.return_value = {
             "OS-KSADM:service": {"id": "sid"}}
         self.assertEqual("sid", self.ks.get_service("sid").id)
+        self.proxy.get.assert_called_once_with(
+            "/OS-KSADM/services/sid", raise_exc=True)
 
     def test_get_service_v3(self):
         self.ks = self._make_keystone(version="3")
@@ -752,7 +764,7 @@ class KeystoneServiceMethodsTestCase(KeystoneTestMixin, test.TestCase):
     def test_validate_token_v2(self):
         self.ks = self._make_keystone(version="2")
         self.ks.validate_token("tok")
-        self.proxy.get.assert_called_once_with("/tokens/tok")
+        self.proxy.get.assert_called_once_with("/tokens/tok", raise_exc=True)
 
     def test_validate_token_v3(self):
         self.ks = self._make_keystone(version="3")
@@ -800,7 +812,8 @@ class KeystoneCredentialMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.assertEqual("CRED", self.ks.create_credential(
             "ec2", user_id="uid", project_id="pid"))
         self.proxy.post.assert_called_once_with(
-            "/users/uid/credentials/OS-EC2", json={"tenant_id": "pid"})
+            "/users/uid/credentials/OS-EC2", json={"tenant_id": "pid"},
+            raise_exc=True)
         self.ks._ec2_to_credential.assert_called_once_with(raw)
 
     def test_create_credential_v2_non_ec2_raises(self):
@@ -822,7 +835,7 @@ class KeystoneCredentialMethodsTestCase(KeystoneTestMixin, test.TestCase):
             "credential": {"access": "acc"}}
         self.assertEqual("CRED", self.ks.get_credential("acc"))
         self.proxy.get.assert_called_once_with(
-            "/users/uid/credentials/OS-EC2/acc")
+            "/users/uid/credentials/OS-EC2/acc", raise_exc=True)
 
     def test_list_credentials_v3(self):
         self.ks = self._make_keystone(version="3")
@@ -847,7 +860,7 @@ class KeystoneCredentialMethodsTestCase(KeystoneTestMixin, test.TestCase):
             "credentials": [{"access": "acc"}]}
         self.assertEqual(["acc"], self.ks.list_credentials())
         self.proxy.get.assert_called_once_with(
-            "/users/uid/credentials/OS-EC2")
+            "/users/uid/credentials/OS-EC2", raise_exc=True)
 
     def test_list_credentials_v2_non_ec2_raises(self):
         self.ks = self._make_keystone(version="2")
@@ -857,14 +870,15 @@ class KeystoneCredentialMethodsTestCase(KeystoneTestMixin, test.TestCase):
     def test_delete_credential_v3(self):
         self.ks = self._make_keystone(version="3")
         self.ks.delete_credential("cid")
-        self.proxy.delete_credential.assert_called_once_with("cid")
+        self.proxy.delete_credential.assert_called_once_with(
+            "cid", ignore_missing=False)
 
     def test_delete_credential_v2(self):
         self.ks = self._make_keystone(version="2")
         self.ks._cache["keystone_auth_ref"] = mock.Mock(user_id="uid")
         self.ks.delete_credential("acc")
         self.proxy.delete.assert_called_once_with(
-            "/users/uid/credentials/OS-EC2/acc")
+            "/users/uid/credentials/OS-EC2/acc", raise_exc=True)
 
 
 class KeystoneFetchTokenTestCase(KeystoneTestMixin, test.TestCase):
