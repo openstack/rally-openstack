@@ -62,9 +62,6 @@ Added
   * ``NeutronFWaaS.associate_disassociate_firewall_group_router_ports``
   * ``NeutronFWaaS.update_policy_on_active_firewall_group``
 
-* Dedicated non-voting CI job ``rally-task-fwaas`` that enables
-  ``neutron-fwaas`` and runs the new FWaaS scenarios.
-
 * Neutron TaaS (Tap-as-a-Service) tap mirror scenarios:
 
   * ``NeutronTaaS.create_and_list_tap_mirrors``
@@ -86,6 +83,10 @@ Added
 
 Changed
 ~~~~~~~
+
+* FWaaS scenarios now run in ``rally-task-neutron-with-extensions`` alongside
+  the existing extension scenarios, replacing the standalone
+  ``rally-task-fwaas`` job.
 
 * Bump minimal required version to Rally 5.1.1. Switch docker image to use it.
 

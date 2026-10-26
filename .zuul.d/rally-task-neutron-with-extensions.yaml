@@ -6,21 +6,17 @@
       - name: openstack/rally
       - name: openstack/rally-openstack
       - name: openstack/networking-bgpvpn
-      # NOTE(andreykurilin): this neutron plugin uses an old naming of
-      #   devstack neutron services. The wrong check triggers call of
-      #   an old (legacy) neutron devstack plugin and turns off all neutron
-      #   services except q-svc
-      #- name: openstack/neutron-fwaas
+      - name: openstack/neutron-fwaas
       - name: openstack/neutron-vpnaas
     vars:
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         networking-bgpvpn: https://opendev.org/openstack/networking-bgpvpn
-        #neutron-fwaas: https://opendev.org/openstack/neutron-fwaas
+        neutron-fwaas: https://opendev.org/openstack/neutron-fwaas
         neutron-vpnaas: https://opendev.org/openstack/neutron-vpnaas
       devstack_services:
         networking-bgpvpn: true
-        #neutron-fwaas: true
+        q-fwaas-v2: true
         neutron-vpnaas: true
         # disable redundant services for the job
         horizon: false
