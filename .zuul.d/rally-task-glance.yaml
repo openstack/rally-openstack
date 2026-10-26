@@ -3,10 +3,6 @@
     parent: rally-task-at-devstack
     vars:
       rally_task: rally-jobs/glance.yaml
-      # GlanceImages.import_and_delete_image with web-download leaves a queued
-      # image behind: glance rejects the local path, rally ignores the error
-      # response, and cleanup lists only active and deactivated images
-      rally_ignore_leaked_resources: true
 
 - job:
     name: rally-task-glance-upgrade

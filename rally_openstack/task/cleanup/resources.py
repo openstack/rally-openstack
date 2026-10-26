@@ -683,9 +683,9 @@ class GlanceImage(base.ResourceManager):
 
     def list(self):
         client = (self.admin or self.user).glance
-        return (client.list_images(owner=self.tenant_uuid)
-                + client.list_images(status=glance.ImageStatus.DEACTIVATED,
-                                     owner=self.tenant_uuid))
+        # images stuck in queued, importing and other transitional statuses
+        # need to be deleted as well
+        return client.list_images(status=None, owner=self.tenant_uuid)
 
     def delete(self):
         client = (self.admin or self.user).glance

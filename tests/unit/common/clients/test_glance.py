@@ -76,6 +76,17 @@ class GlanceTestCase(_ClientTestCase):
         self.image_cls = self.useFixture(fixtures.MockPatch(V2_IMAGE)).mock
         self.created = self.image_cls.new.return_value.create.return_value
         self.created.id = "img-id"
+        image = self.image_cls.existing.return_value
+        image.import_image.return_value.status_code = 202
+        image.upload.return_value.status_code = 204
+        self.proxy.post.return_value.status_code = 204
+
+    @staticmethod
+    def rejected(status_code=400):
+        """A response glance sends back for a refused request."""
+        return mock.Mock(status_code=status_code, headers={},
+                         reason="Bad Request", url="http://glance/v2",
+                         **{"json.return_value": {}})
 
     def some_images(self):
         """Four images, two of them sharing a name."""
@@ -327,10 +338,20 @@ class GlanceTestCase(_ClientTestCase):
                 self.assertFalse(visibility.is_everyone)
 
     def test_deactivate_and_reactivate_image(self):
+        for name, action in (("deactivate_image", "deactivate"),
+                             ("reactivate_image", "reactivate")):
+            with self.subTest(name):
+                self.proxy.post.reset_mock()
+                getattr(self.gl, name)("img")
+                self.proxy.post.assert_called_once_with(
+                    f"/images/img/actions/{action}")
+
+    def test_deactivate_and_reactivate_image_rejected_by_glance(self):
+        self.proxy.post.return_value = self.rejected(status_code=403)
         for name in ("deactivate_image", "reactivate_image"):
             with self.subTest(name):
-                getattr(self.gl, name)("img")
-                getattr(self.proxy, name).assert_called_once_with("img")
+                self.assertRaises(sdk_exc.ForbiddenException,
+                                  getattr(self.gl, name), "img")
 
     def test_find_image_by_name(self):
         uec = self.some_images()[0]
@@ -471,6 +492,14 @@ class GlanceTestCase(_ClientTestCase):
             self.proxy, data=opened)
         self.assertEqual("active", image.status)
 
+    def test_upload_image_rejected_by_glance(self):
+        image = self.image_cls.existing.return_value
+        image.upload.return_value = self.rejected()
+
+        self.assertRaises(sdk_exc.BadRequestException, self.gl.upload_image,
+                          "img", data=b"payload")
+        self.assertFalse(self.proxy.get_image.called)
+
     def test_stage_image(self):
         self.gl.stage_image("img", data=b"payload")
         self.image_cls.existing.return_value.stage.assert_called_once_with(
@@ -502,6 +531,15 @@ class GlanceTestCase(_ClientTestCase):
         self.assertEqual(glance.ImportMethod.WEB_DOWNLOAD, kwargs["method"])
         self.assertEqual("http://example.com/img", kwargs["uri"])
         self.assertFalse(image.stage.called)
+
+    def test_import_image_rejected_by_glance(self):
+        image = self.image_cls.existing.return_value
+        image.import_image.return_value = self.rejected()
+
+        self.assertRaises(sdk_exc.BadRequestException, self.gl.import_image,
+                          "img", data="http://example.com/img",
+                          method=glance.ImportMethod.WEB_DOWNLOAD)
+        self.assertFalse(self.proxy.get_image.called)
 
     def test_import_image_rejects_an_unknown_method(self):
         # glance would only reject it after the data has been staged

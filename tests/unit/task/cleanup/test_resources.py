@@ -792,19 +792,13 @@ class GlanceImageTestCase(test.TestCase):
                 admin = mock.Mock() if with_admin else None
                 user = mock.Mock()
                 client = (admin or user).glance
-                client.list_images.side_effect = (
-                    ["active-image1", "active-image2"],
-                    ["deactivated-image1"])
                 glance_image = resources.GlanceImage(
                     admin=admin, user=user, tenant_uuid="tenant-id")
 
-                self.assertEqual(
-                    ["active-image1", "active-image2", "deactivated-image1"],
-                    glance_image.list())
-                client.list_images.assert_has_calls([
-                    mock.call(owner="tenant-id"),
-                    mock.call(status=glance.ImageStatus.DEACTIVATED,
-                              owner="tenant-id")])
+                self.assertEqual(client.list_images.return_value,
+                                 glance_image.list())
+                client.list_images.assert_called_once_with(
+                    status=None, owner="tenant-id")
                 if with_admin:
                     self.assertFalse(user.glance.list_images.called)
 

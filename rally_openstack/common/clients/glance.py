@@ -657,11 +657,13 @@ class Glance(base.LegacyClientCompat):
                     data=stream)
             else:
 
+                from openstack import exceptions as sdk_exc
                 from openstack.image.v2 import image as v2_image
 
-                v2_image.Image.existing(id=image_id).upload(
+                response = v2_image.Image.existing(id=image_id).upload(
                     self._v2, data=stream
                 )
+                sdk_exc.raise_from_response(response)
         return self.wait_for_image(image_id)
 
     @atomic.action_timer("glance.stage_image")
@@ -716,6 +718,7 @@ class Glance(base.LegacyClientCompat):
         :param all_stores: import into every available store; left to glance's
             own default (a single store) when unset
         """
+        from openstack import exceptions as sdk_exc
         from openstack.image.v2 import image as v2_image
         from openstack.image.v2 import service_info as v2_service_info
 
@@ -749,8 +752,9 @@ class Glance(base.LegacyClientCompat):
             # The proxy helper refuses an image it has not fetched (it
             # asserts container_format/disk_format), so the request is
             # issued from the resource itself, off a bare id.
-            v2_image.Image.existing(id=image_id).import_image(
+            response = v2_image.Image.existing(id=image_id).import_image(
                 self._v2, method=method, **params)
+            sdk_exc.raise_from_response(response)
         return self.wait_for_image(
             image_id, ready_statuses=[ImageStatus.ACTIVE],
             timeout=CONF.openstack.glance_image_import_timeout,
@@ -1101,13 +1105,25 @@ class Glance(base.LegacyClientCompat):
     @_v2_only
     def deactivate_image(self, image: ImageRef) -> None:
         """Deactivate an image, making its data unavailable."""
-        self._v2.deactivate_image(image)
+        self._v2_action(image, "deactivate")
 
     @atomic.action_timer("glance.reactivate_image")
     @_v2_only
     def reactivate_image(self, image: ImageRef) -> None:
         """Reactivate a deactivated image."""
-        self._v2.reactivate_image(image)
+        self._v2_action(image, "reactivate")
+
+    def _v2_action(self, image: ImageRef, action: str) -> None:
+        """Call an image action, raising on anything but success.
+
+        The sdk drops the response of image actions, both in the proxy and in
+        the resource, so a rejected action would read as success.
+        """
+        from openstack import exceptions as sdk_exc
+
+        response = self._v2.post(
+            f"/images/{_id_of(image)}/actions/{action}")
+        sdk_exc.raise_from_response(response)
 
     def wait_for_image(
         self,
