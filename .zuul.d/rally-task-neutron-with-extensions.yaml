@@ -8,16 +8,22 @@
       - name: openstack/networking-bgpvpn
       - name: openstack/neutron-fwaas
       - name: openstack/neutron-vpnaas
+      - name: openstack/tap-as-a-service
     vars:
+      devstack_localrc:
+        TAAS_SERVICE_DRIVER: TAAS:TAAS:neutron_taas.services.taas.service_drivers.ovn.taas_ovn.TaasOvnDriver:default
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
         networking-bgpvpn: https://opendev.org/openstack/networking-bgpvpn
         neutron-fwaas: https://opendev.org/openstack/neutron-fwaas
         neutron-vpnaas: https://opendev.org/openstack/neutron-vpnaas
+        tap-as-a-service: https://opendev.org/openstack/tap-as-a-service
       devstack_services:
         networking-bgpvpn: true
         q-fwaas-v2: true
         neutron-vpnaas: true
+        taas: true
+        tap_mirror: true
         # disable redundant services for the job
         horizon: false
         tempest: false

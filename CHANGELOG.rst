@@ -77,12 +77,12 @@ Added
   for other Neutron workloads. Scenarios accept ``mirror_directions`` (e.g.
   ``IN``) and Rally auto-allocates tunnel IDs for safe concurrent runs.
 
-* Dedicated non-voting CI job ``rally-task-neutron-taas`` that enables
-  ``tap-as-a-service`` and runs the new TaaS scenarios (including an
-  ERSPANv1 delete subtask).
-
 Changed
 ~~~~~~~
+
+* OVN tap mirror scenarios now run in ``rally-task-neutron-with-extensions``,
+  replacing the standalone ``rally-task-neutron-taas`` job. The combined job
+  remains non-voting in the check pipeline.
 
 * FWaaS scenarios now run in ``rally-task-neutron-with-extensions`` alongside
   the existing extension scenarios, replacing the standalone
