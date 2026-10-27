@@ -322,3 +322,96 @@ subtasks:
     sla:
       failure_rate:
         max: 0
+  - title: NeutronTaaS.create_and_list_tap_mirrors tests
+    scenario:
+      NeutronTaaS.create_and_list_tap_mirrors:
+        remote_ip: "203.0.113.50"
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 4
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronTaaS.create_and_delete_tap_mirrors tests
+    scenario:
+      NeutronTaaS.create_and_delete_tap_mirrors:
+        remote_ip: "203.0.113.50"
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 4
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronTaaS.create_and_delete_tap_mirrors (ERSPANv1)
+    scenario:
+      NeutronTaaS.create_and_delete_tap_mirrors:
+        remote_ip: "203.0.113.50"
+        mirror_type: erspanv1
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 2
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 4
+        concurrency: 2
+    sla:
+      failure_rate:
+        max: 0
+  - title: NeutronTaaS.create_and_update_tap_mirrors tests
+    scenario:
+      NeutronTaaS.create_and_update_tap_mirrors:
+        remote_ip: "203.0.113.50"
+    contexts:
+      users:
+        tenants: 2
+        users_per_tenant: 1
+      network:
+        networks_per_tenant: 1
+        subnets_per_network: 1
+      ports:
+        ports_per_project: 4
+      quotas:
+        neutron:
+          port: -1
+    runner:
+      constant:
+        times: 8
+        concurrency: 4
+    sla:
+      failure_rate:
+        max: 0

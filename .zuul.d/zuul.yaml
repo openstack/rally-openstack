@@ -191,22 +191,6 @@
               - tests/ci/playbooks
         - rally-task-neutron:
             irrelevant-files: *trivial-files
-        - rally-task-neutron-taas:
-            files: &neutron-taas-files
-              - .zuul.d/zuul.yaml
-              - .zuul.d/rally-task-neutron-taas.yaml
-              - DOCKER_README.md
-              - devstack
-              - rally-jobs/taas.yaml
-              - rally_openstack/common/osclients.py
-              - rally_openstack/task/cleanup
-              - rally_openstack/task/contexts/keystone
-              - rally_openstack/task/scenarios/neutron/taas.py
-              - rally_openstack/task/scenarios/neutron/utils.py
-              - requirements.txt
-              - upper-constraints.txt
-              - tests/ci/osresources.py
-              - tests/ci/playbooks
         - rally-task-neutron-trunk:
             files: &neutron-trunk-files
               - .zuul.d/zuul.yaml
@@ -226,28 +210,31 @@
               - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-neutron-with-extensions:
-            files:
+            files: &neutron-with-extensions-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-neutron-with-extensions.yaml
               - DOCKER_README.md
               - devstack
               - rally-jobs/neutron-with-extensions.yaml
+              - rally_openstack/common/clients
               - rally_openstack/common/osclients.py
+              - rally_openstack/common/validators.py
               - rally_openstack/common/services/network
               - rally_openstack/task/cleanup
               - rally_openstack/task/contexts/glance
               - rally_openstack/task/contexts/keystone
               - rally_openstack/task/contexts/network
               - rally_openstack/task/contexts/nova
+              - rally_openstack/task/contexts/neutron/ports.py
               - rally_openstack/task/scenarios/neutron/bgpvpn.py
               - rally_openstack/task/scenarios/neutron/fwaas.py
+              - rally_openstack/task/scenarios/neutron/taas.py
               - rally_openstack/task/scenarios/neutron/utils.py
               - rally_openstack/task/scenarios/nova/utils.py
               - requirements.txt
               - upper-constraints.txt
               - tests/ci/osresources.py
               - tests/ci/playbooks
-            voting: false
         - rally-task-nova:
             irrelevant-files: *trivial-files
         - rally-task-octavia:
@@ -353,10 +340,10 @@
             files: *mistral-files
         - rally-task-neutron:
             irrelevant-files: *trivial-files
-        - rally-task-neutron-taas:
-            files: *neutron-taas-files
         - rally-task-neutron-trunk:
             files: *neutron-trunk-files
+        - rally-task-neutron-with-extensions:
+            files: *neutron-with-extensions-files
         - rally-task-nova:
             irrelevant-files: *trivial-files
         - rally-task-octavia:
