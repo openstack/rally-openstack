@@ -92,15 +92,15 @@ Added
 Changed
 ~~~~~~~
 
-* OVN tap mirror scenarios now run in ``rally-task-neutron-with-extensions``,
-  replacing the standalone ``rally-task-neutron-taas`` job. The combined job
-  remains non-voting in the check pipeline.
-
-* FWaaS scenarios now run in ``rally-task-neutron-with-extensions`` alongside
-  the existing extension scenarios, replacing the standalone
-  ``rally-task-fwaas`` job.
-
 * Bump minimal required version to Rally 5.2.0 including a base docker image.
+
+* The DevStack plugin installs Rally into its own virtualenv
+  (``$DATA_DIR/rally-venv``, overridable with ``RALLY_VENV``) constrained by
+  rally-openstack's ``upper-constraints.txt``, instead of the shared DevStack
+  one, so it can be deployed against clouds of older releases. The ``rally``
+  command is linked into ``/usr/local/bin``.The ``RALLY_ADD_DEPLOYMENT``
+  setting is renamed to ``RALLY_ADD_ENV`` and the old name is still honoured
+  for a backward compatibility.
 
 * The OpenStack client and service utilities have been restructured into a
   dedicated ``rally_openstack.common.clients`` package (``base``, ``keystone``,
@@ -135,11 +135,6 @@ Changed
   It used to hand back an unconsumed iterator, so the action timed the request
   setup only; expect its duration to grow from milliseconds to however long
   the transfer actually takes.
-
-* Fetching image data from a URL now honours the platform's
-  ``https_cacert`` / ``https_insecure`` settings. It used to disable TLS
-  verification unconditionally, so a task pointing at a host with a
-  self-signed certificate now needs ``https_insecure: true``.
 
 * The ``glance_image`` resource type takes its listing filters(``status``,
   ``visibility`` and ``owner``) as keys of its own. The free-form
@@ -234,6 +229,11 @@ Fixed
 * ``CinderVolumes.create_nested_snapshots_and_attach_volume`` accepted only the
   ``{"min": ..., "max": ...}`` form of ``size`` — an integer, which every other
   volume scenario accepts, raised a ``TypeError``.
+
+* The Tempest config generated for an env without ``https_cacert`` contained a
+  bare ``ca_certificates_file`` key that Tempest cannot parse, so every test
+  failed with ``ArgsAlreadyParsedError``. The option is now omitted. The
+  DevStack plugin also passes the DevStack CA bundle to the env it creates.
 
 [4.1.0] - 2026-07-23
 --------------------

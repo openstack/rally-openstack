@@ -26,6 +26,7 @@ from rally import plugins
 from rally.cli import yamlutils as yaml
 from rally.common import broker
 from rally.common import logging
+from rally.env import env_mgr
 from rally.task import engine
 
 import rally_openstack as rally_openstack_module
@@ -37,6 +38,7 @@ from tests.functional import utils
 class TestTaskSamples(unittest.TestCase):
 
     NUMBER_OF_THREADS = 20
+    ENV_NAME = "MAIN_WITH_USERS"
 
     def _skip(self, validation_output):
         """Help to decide do we want to skip this result or not.
@@ -66,9 +68,9 @@ class TestTaskSamples(unittest.TestCase):
         rally = utils.Rally(force_new_db=True)
         # let's use pre-created users to make TestTaskSamples quicker
         rapi = api.API(config_file=rally.config_filename)
-        deployment = rapi.deployment._get("MAIN")
+        env = env_mgr.EnvManager.get("MAIN")
 
-        openstack_platform = deployment.env_obj.data["platforms"]["openstack"]
+        openstack_platform = env.data["platforms"]["openstack"]
         admin_creds = credential.OpenStackCredential(
             permission=consts.EndpointPermission.ADMIN,
             **openstack_platform["platform_data"]["admin"])
@@ -80,12 +82,13 @@ class TestTaskSamples(unittest.TestCase):
                         "admin": admin_creds.to_dict(),
                         "users": []}}},
             "task": {"uuid": self.__class__.__name__,
-                     "deployment_uuid": deployment["uuid"]}}
+                     "deployment_uuid": env.uuid}}
         user_ctx = users.UserGenerator(ctx)
         user_ctx.setup()
         self.addCleanup(user_ctx.cleanup)
 
-        os_creds = deployment["config"]["openstack"]
+        spec = copy.deepcopy(env.data["spec"])
+        os_creds = spec["existing@openstack"]
 
         user = copy.copy(os_creds["admin"])
         user["username"] = ctx["users"][0]["credential"].username
@@ -97,11 +100,10 @@ class TestTaskSamples(unittest.TestCase):
             user["tenant_name"] = ctx["users"][0]["credential"].tenant_name
         os_creds["users"] = [user]
 
-        rally("deployment destroy MAIN", write_report=False)
-        deployment_cfg = os.path.join(rally.tmp_dir, "new_deployment.json")
-        with open(deployment_cfg, "w") as f:
-            f.write(json.dumps({"openstack": os_creds}))
-        rally("deployment create --name MAIN --filename %s" % deployment_cfg,
+        env_spec = os.path.join(rally.tmp_dir, "env_with_users.json")
+        with open(env_spec, "w") as f:
+            f.write(json.dumps(spec))
+        rally(f"env create --name {self.ENV_NAME} --spec {env_spec}",
               write_report=False)
 
         # store all failures and print them at once
@@ -136,7 +138,7 @@ class TestTaskSamples(unittest.TestCase):
             full_path, rendered_task = sample
             task_config = yaml.safe_load(rendered_task)
             try:
-                rapi.task.validate(deployment="MAIN",
+                rapi.task.validate(deployment=self.ENV_NAME,
                                    config=task_config)
             except Exception as e:
                 if not self._skip(str(e)):

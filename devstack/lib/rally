@@ -26,12 +26,18 @@ RALLY_DIR=$(readlink -m $DIR/../..)
 RALLY_CONF_DIR=${RALLY_CONF_DIR:-/etc/rally}
 RALLY_CONF_FILE=rally.conf
 
+# Rally should be treated as an "client" to the cloud. No matter of version
+#   of target cloud, rally should be installable, so we install it in
+#   a separate venv where we can manage requirements easily
+RALLY_VENV=${RALLY_VENV:-$DATA_DIR/rally-venv}
+
 # Debug mode
 RALLY_DEBUG=${RALLY_DEBUG:-False}
 
-# Create deployment
-RALLY_ADD_DEPLOYMENT=${RALLY_ADD_DEPLOYMENT:-"True"}
-RALLY_ADD_DEPLOYMENT=$(trueorfalse True $RALLY_ADD_DEPLOYMENT)
+# Create a rally env for the DevStack cloud. RALLY_ADD_DEPLOYMENT is the
+# former name of the setting and is still honoured.
+RALLY_ADD_ENV=${RALLY_ADD_ENV:-${RALLY_ADD_DEPLOYMENT:-"True"}}
+RALLY_ADD_ENV=$(trueorfalse True $RALLY_ADD_ENV)
 
 # Integration with OSprofiler
 OSPROFILER_HMAC_KEYS=${OSPROFILER_HMAC_KEYS:-""}
@@ -40,7 +46,7 @@ OSPROFILER_CONNECTION_STRING=${OSPROFILER_CONNECTION_STRING:-""}
 # Functions
 # ---------
 
-# Creates a configuration file for the current deployment
+# Creates a rally env spec for the DevStack cloud
 # Uses the following variables:
 #
 # - ``ADMIN_PASSWORD``, ``REGION_NAME``
@@ -53,11 +59,11 @@ OSPROFILER_CONNECTION_STRING=${OSPROFILER_CONNECTION_STRING:-""}
 #   ``RALLY_OSPROFILER_CHART`` - optional, a path to store osprofiler's reports
 #
 
-# _create_deployment_config filename
-function _create_deployment_config() {
+# _create_env_spec filename
+function _create_env_spec() {
 cat >$1 <<EOF
 {
-    "openstack": {
+    "existing@openstack": {
         "auth_url": "$KEYSTONE_SERVICE_URI",
         "region_name": "$REGION_NAME",
         "admin": {
@@ -68,6 +74,13 @@ cat >$1 <<EOF
             "project_domain_name": "Default"
         },
 EOF
+
+# Trust the DevStack CA (tls-proxy)
+if [[ -f "$SSL_BUNDLE_FILE" ]]; then
+    cat >>$1 <<EOF
+        "https_cacert": "$SSL_BUNDLE_FILE",
+EOF
+fi
 
 # Now add osprofiler config if necessary
 if [[ ! -z "$OSPROFILER_HMAC_KEYS" ]]; then
@@ -90,11 +103,40 @@ EOF
 
 # install_rally() - Collect source and prepare
 function install_rally() {
-    setup_package $RALLY_DIR -e
-    # Rally dependencies can pull certifi into the venv after stack.sh has
-    # already pointed the CA bundle to the system one, which hides the
-    # devstack CA from every service sharing the venv.
-    fix_system_ca_bundle_path
+    if [[ ! -d $RALLY_VENV ]]; then
+        python$PYTHON3_VERSION -m venv $RALLY_VENV
+        $RALLY_VENV/bin/pip install -U pip
+    fi
+    local rally_constraints=$RALLY_DIR/upper-constraints.txt
+    if use_library_from_git "rally"; then
+        # Zuul puts every required project into LIBS_FROM_GIT, so jobs that
+        # require openstack/rally install it from $DEST/rally. The source
+        # version never matches the rally pin in upper-constraints.txt.
+        rally_constraints=$DATA_DIR/rally-upper-constraints.txt
+        grep -v '^rally===' $RALLY_DIR/upper-constraints.txt > $rally_constraints
+    fi
+    local rally_pip="$RALLY_VENV/bin/pip install -c $rally_constraints"
+    if use_library_from_git "rally"; then
+        $rally_pip -e $DEST/rally
+    fi
+    $rally_pip -e $RALLY_DIR
+
+    # rally.conf gets the same database URL as the services, so the venv
+    # needs the driver and the SQLAlchemy plugin that URL refers to.
+    local db_url
+    db_url=$(database_connection_url rally)
+    if [[ $db_url == mysql+pymysql://* ]]; then
+        $rally_pip PyMySQL
+    fi
+    if [[ $db_url == *plugin=dbcounter* ]]; then
+        $rally_pip $TOP_DIR/tools/dbcounter
+    fi
+
+    # fix_system_ca_bundle_path only knows the devstack venv, point it at
+    # ours so rally trusts the devstack CA.
+    GLOBAL_VENV=True DEVSTACK_VENV=$RALLY_VENV fix_system_ca_bundle_path
+
+    sudo ln -sf $RALLY_VENV/bin/rally /usr/local/bin/rally
 }
 
 # configure_rally() - Set config files, create data dirs, etc
@@ -121,11 +163,11 @@ function init_rally() {
     recreate_database rally utf8
     # Recreate rally database
     rally --config-file $RALLY_CONF_DIR/$RALLY_CONF_FILE db recreate
-    # Add current DevStack deployment to Rally
-    if [ "$RALLY_ADD_DEPLOYMENT" = "True" ]; then
+    # Add the DevStack cloud to Rally as an env
+    if [ "$RALLY_ADD_ENV" = "True" ]; then
         local tmpfile=$(mktemp)
-        _create_deployment_config $tmpfile
-        rally --config-file $RALLY_CONF_DIR/$RALLY_CONF_FILE deployment create --name devstack --filename $tmpfile
+        _create_env_spec $tmpfile
+        rally --config-file $RALLY_CONF_DIR/$RALLY_CONF_FILE env create --name devstack --spec $tmpfile
     fi
 }
 

@@ -274,7 +274,7 @@ class GlanceTestCase(_ClientTestCase):
         with self.gl._data_stream("http://example.com/img") as stream:
             self.assertIs(mock_get.return_value.raw, stream)
         mock_get.assert_called_once_with(
-            "http://example.com/img", stream=True, verify=True)
+            "http://example.com/img", stream=True, verify=False)
         mock_get.return_value.close.assert_called_once_with()
 
     def test_get_image(self):

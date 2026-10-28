@@ -67,7 +67,7 @@ class TempestConfigfileManager:
         self.conf.set(section_name, "admin_domain_name",
                       self.credential.user_domain_name or "Default")
 
-    def _configure_identity(self, section_name="identity"):
+    def _configure_identity(self, section_name: str = "identity") -> None:
         self.conf.set(section_name, "region",
                       self.credential.region_name)
         # discover keystone versions
@@ -137,8 +137,9 @@ class TempestConfigfileManager:
 
         self.conf.set(section_name, "disable_ssl_certificate_validation",
                       str(self.credential.https_insecure))
-        self.conf.set(section_name, "ca_certificates_file",
-                      self.credential.https_cacert)
+        if self.credential.https_cacert:
+            self.conf.set(section_name, "ca_certificates_file",
+                          self.credential.https_cacert)
 
     # The compute section is configured in context class for Tempest resources.
     # Options which are configured there: 'image_ref', 'image_ref_alt',

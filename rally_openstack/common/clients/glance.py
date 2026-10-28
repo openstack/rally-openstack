@@ -463,12 +463,7 @@ class Glance(base.LegacyClientCompat):
             return
         import requests
 
-        response = requests.get(
-            data,
-            stream=True,
-            verify=(self.credential.https_cacert
-                    or not self.credential.https_insecure)
-        )
+        response = requests.get(data, stream=True, verify=False)
         try:
             yield response.raw
         finally:

@@ -3,19 +3,111 @@
     - run-devstack
 
 - hosts: controller
+  vars:
+    rally_results_dir: '/opt/stack/.rally/results'
+    devstack_openrc: /opt/stack/devstack/openrc
+    rally_env: devstack
+    verifier_name: my-verifier
+    rally_venv: /opt/stack/data/rally-venv
+  become: true
+  become_user: stack
+  # rally builds the verifier venv with the virtualenv executable found in
+  # PATH, which is installed only in the rally venv.
+  environment:
+    PATH: "{{ rally_venv }}/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Prepare env deployment for tempest
-      shell:
-        cmd: |
-          . /opt/stack/.rally/openrc admin admin
-          export OS_CACERT=/opt/stack/data/ca-bundle.pem
-          rally env create --from-sysenv --name tempest
-          rally env check
-        executable: /bin/bash
+    - name: Create the results dir
+      file:
+        path: '{{ rally_results_dir }}'
+        state: directory
 
-    - name: Run Rally verify
-      shell: |
-        . /opt/stack/data/venv/bin/activate
-        python3 tests/ci/rally_verify.py
-      args:
-        chdir: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}"
+    - name: Check and use the env
+      shell:
+        executable: /bin/bash
+        cmd: |
+          set -ex
+          rally --rally-debug env check --env {{ rally_env }}
+          rally --rally-debug env use --env {{ rally_env }}
+
+    - name: Create flavors for Tempest context to discover
+      shell:
+        executable: /bin/bash
+        cmd: |
+          set -e
+          . {{ devstack_openrc }} admin admin
+          set -x
+          openstack flavor create --ram 64 --disk 0 --vcpus 1 rally-verify-64
+          openstack flavor create --ram 128 --disk 0 --vcpus 1 rally-verify-128
+
+    - name: Create and configure a Tempest verifier
+      shell:
+        executable: /bin/bash
+        cmd: |
+          set -ex
+          rally --rally-debug verify list-plugins
+          rally --rally-debug verify create-verifier --type tempest --name {{ verifier_name }} --source https://opendev.org/openstack/tempest
+          rally --rally-debug verify show-verifier
+          rally --rally-debug verify list-verifiers
+
+          version=$(git -C ~/.rally/verification/verifier-*/repo log -n 1 --pretty=format:%H)
+          rally --rally-debug verify update-verifier --version $version --update-venv
+
+          rally --rally-debug verify configure-verifier --show
+          rally --rally-debug verify add-verifier-ext --source https://opendev.org/openstack/keystone-tempest-plugin
+          rally --rally-debug verify list-verifier-exts
+          rally --rally-debug verify list-verifier-tests
+
+    - name: Write the skip list
+      copy:
+        dest: '{{ rally_results_dir }}/skip-list.json'
+        content: |
+          {
+            "tempest.api.compute.flavors.test_flavors.FlavorsV2TestJSON.test_get_flavor[id-1f12046b-753d-40d2-abb6-d8eb8b30cb2f,smoke]": "This test was skipped intentionally"
+          }
+
+    - name: Write the xfail list
+      copy:
+        dest: '{{ rally_results_dir }}/xfail-list.json'
+        content: |
+          {
+            "tempest.scenario.test_dashboard_basic_ops.TestDashboardBasicOps.test_basic_scenario[dashboard,id-4f8851b1-0e69-482b-b63b-84c6e76f6c80,smoke]": "Fails for unknown reason"
+          }
+
+    - name: Run a verification
+      command: >-
+        rally --rally-debug verify start --pattern set=smoke
+        --skip-list {{ rally_results_dir }}/skip-list.json
+        --xfail-list {{ rally_results_dir }}/xfail-list.json
+        --tag tag-1 --tag tag-2 --detailed
+      register: verification
+      # 2 and 3 mean unexpected successes and failed tests. The verification
+      # exists, so the reports are still produced and the job fails at the end.
+      failed_when: verification.rc not in [0, 2, 3]
+
+    - name: Show and report the verification
+      shell:
+        executable: /bin/bash
+        cmd: |
+          set -ex
+          rally --rally-debug verify show
+          rally --rally-debug verify show --detailed
+          rally --rally-debug verify report --type html-static --to {{ rally_results_dir }}/report.html
+          rally --rally-debug verify report --type json --to {{ rally_results_dir }}/report.json
+          rally --rally-debug verify report --type junit-xml --to {{ rally_results_dir }}/junit.xml
+          rally --rally-debug verify list
+
+    - name: Clean up
+      shell:
+        executable: /bin/bash
+        cmd: |
+          set -ex
+          rally --rally-debug verify delete-verifier-ext --name keystone_tests
+          rally --rally-debug env destroy --env {{ rally_env }}
+          rally --rally-debug env delete --env {{ rally_env }}
+          rally --rally-debug verify delete-verifier --id {{ verifier_name }} --force
+
+    - name: Check the verification results
+      fail:
+        msg: "The verification has failed or unexpectedly passed tests, see the reports."
+      when: >-
+        verification.rc != 0 or "Success: 0" in verification.stdout

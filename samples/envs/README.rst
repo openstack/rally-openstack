@@ -1,14 +1,14 @@
-Rally Deployments
-=================
+Rally Environments
+==================
 
 Rally needs to have information about OpenStack Cloud before you actually
 can run any tests against it.
 
-You need create a deployment input file and run use command bellow:
+You need create an env spec file and run use command bellow:
 
 .. code-block::
 
-    rally deployment create --file <one_of_files_from_this_dir> --name my_cloud
+    rally env create --spec <one_of_files_from_this_dir> --name my_cloud
 
 Below you can find samples of supported configurations.
 

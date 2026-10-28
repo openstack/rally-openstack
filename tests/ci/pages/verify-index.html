@@ -70,14 +70,15 @@
       <li><a href="zuul-info/">Zuul info</a> <code>zuul-info</code>
       <li><a href="controller/logs/">Logs of controller node</a> <code>controller/logs/</code>
       <li><a href="ara-report/">ARA | Ansible Run Analysis</a>
-      <li><a href="rally-verify/">Results files</a> <code>rally-verify/</code>
+      <li><a href="results/">Results files</a> <code>results/</code>
     </ul>
 
-    <h2>Steps</h2>
-
-{% for step in steps %}
-    {{ step|safe }}
-{% endfor %}
+    <h2>Verification reports</h2>
+    <ul class="columns">
+      <li><a href="results/report.html" class="rich">HTML report</a> <code>$ rally verify report --type html-static</code>
+      <li><a href="results/report.json">JSON report</a> <code>$ rally verify report --type json</code>
+      <li><a href="results/junit.xml">JUnit XML report</a> <code>$ rally verify report --type junit-xml</code>
+    </ul>
 
     <h2>About Rally</h2>
     <p>Rally is benchmarking and verification system for OpenStack:</p>

@@ -6,12 +6,12 @@
     cmd: |
       set -e
       cd {{ rally_results_dir }}
-      rally task report --deployment devstack --html-static --out report.html
+      rally task report --env devstack --html-static --out report.html
 
 - name: Generate a JSON report
   become: true
   become_user: stack
-  command: rally task report --deployment devstack --json --out {{ rally_results_dir }}/report.json
+  command: rally task report --env devstack --json --out {{ rally_results_dir }}/report.json
 
 - name: Produce an old results file
   become: true
@@ -32,9 +32,9 @@
 - name: Make a JUnit report
   become: true
   become_user: stack
-  command: rally task export --deployment devstack --type junit-xml --to {{ rally_results_dir }}/junit.xml
+  command: rally task export --env devstack --type junit-xml --to {{ rally_results_dir }}/junit.xml
 
 - name: Make an ElasticSearch file
   become: true
   become_user: stack
-  command: rally task export --deployment devstack --type elastic --to {{ rally_results_dir }}/elasticsearch.txt
+  command: rally task export --env devstack --type elastic --to {{ rally_results_dir }}/elasticsearch.txt

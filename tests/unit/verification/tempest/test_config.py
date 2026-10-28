@@ -156,6 +156,28 @@ class TempestConfigfileManagerTestCase(test.TestCase):
             self.fail("self.tempest.conf.set('identity', 'region', None) "
                       "raised a TypeError: " + str(e))
 
+    def test__configure_identity_without_cacert(self):
+        self.tempest.conf.add_section("identity")
+        self.tempest.conf.add_section("identity-feature-enabled")
+        self.tempest.credential.auth_url = "http://example.com/v3"
+        self.tempest.credential.https_cacert = None
+        process_url = osclients.Keystone(
+            self.tempest.credential, 0)._remove_url_version
+        self.tempest.clients.keystone._remove_url_version = process_url
+
+        from keystoneauth1 import discover
+        from keystoneauth1 import session
+
+        with mock.patch.object(discover, "Discover") as mock_discover:
+            with mock.patch.object(session, "Session"):
+                mock_discover.return_value.version_data.return_value = [
+                    {"version": (3, 0), "url": "foo3.com"}]
+
+                self.tempest._configure_identity()
+
+        self.assertFalse(
+            self.tempest.conf.has_option("identity", "ca_certificates_file"))
+
     def test__configure_network_if_neutron(self):
         self.tempest.available_services = ["neutron"]
         client = self.tempest.clients.neutron()

@@ -2,10 +2,11 @@
 Content of samples directory
 ============================
 
-deployments
-~~~~~~~~~~~
+envs
+~~~~
 
-Input configurations for "rally deployment" command
+Input specs for "rally env create" command. Also available as
+``deployments`` for backward compatibility.
 
 
 plugins

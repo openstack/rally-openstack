@@ -12,7 +12,7 @@
 - name: Create a new Rally environment
   become: true
   become_user: stack
-  shell: rally env create --name devstask-with-users --spec "{{ existing_users_env_spec }}"
+  shell: rally env create --name devstack-with-users --spec "{{ existing_users_env_spec }}"
 
 - name: Print new Rally env spec
   become: true

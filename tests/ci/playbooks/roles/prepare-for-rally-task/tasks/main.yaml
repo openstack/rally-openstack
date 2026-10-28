@@ -94,9 +94,7 @@
     cmd: |
       set -e
 
-      rally deployment use --deployment devstack
-
-      . {{ rally_home_dir }}/openrc admin admin
+      . {{ devstack_openrc }} admin admin
 
       OPENSTACK_SERVICES=$(openstack service list)
       if [[ $OPENSTACK_SERVICES == *"glance"* ]]; then
@@ -131,13 +129,13 @@
   become: true
   become_user: stack
   shell:
-    executable: /bin/sh
+    executable: /bin/bash
     cmd: |
       set -e
 
-      . {{ rally_home_dir }}/openrc admin admin
+      . {{ devstack_openrc }} admin admin
 
-      if rally deployment check | grep 'nova' | grep 'Available' > /dev/null;
+      if rally env check | grep 'nova' | grep 'Available' > /dev/null;
       then
           openstack flavor create --id 42 --ram 64 --disk 0 --vcpus 1 m1.nano
       fi

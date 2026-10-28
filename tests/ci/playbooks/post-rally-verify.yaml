@@ -1,8 +1,16 @@
 - hosts: controller
+  vars:
+    rally_results_dir: '/opt/stack/.rally/results'
   tasks:
-    - name: Copy the html report
+    - name: Check the existence of results dir
+      stat:
+        path: '{{ rally_results_dir }}'
+      register: results_dir_stat
+
+    - name: Copy Rally results
+      become: true
       synchronize:
-        src: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/rally-verify"
+        src: '{{ rally_results_dir }}'
         dest: '{{ zuul.executor.log_root }}'
         mode: pull
         copy_links: true
@@ -12,10 +20,11 @@
           - --include=*/
           - --exclude=*
           - --prune-empty-dirs
+      when: results_dir_stat.stat.exists
 
     - name: Put index.html in the right place
       synchronize:
-        src: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/rally-verify/extra/index.html"
+        src: "{{ zuul.projects['opendev.org/openstack/rally-openstack'].src_dir }}/tests/ci/pages/verify-index.html"
         dest: '{{ zuul.executor.log_root }}/index.html'
         mode: pull
         copy_links: true
@@ -25,3 +34,34 @@
           - --include=*/
           - --exclude=*
           - --prune-empty-dirs
+
+    - name: List Rally results
+      become: true
+      find:
+        paths: '{{ rally_results_dir }}'
+      register: rally_results_files
+      when: results_dir_stat.stat.exists
+
+    - name: Return artifacts to Zuul
+      vars:
+        rally_index_artifact:
+          - name: "Rally CI report"
+            url: "index.html"
+        rally_report_artifacts:
+          - name: "HTML report"
+            url: "results/report.html"
+          - name: "JSON report"
+            url: "results/report.json"
+          - name: "JUnit XML report"
+            url: "results/junit.xml"
+        rally_existing_results: >-
+          {{ rally_results_files.files | default([])
+             | map(attribute='path') | map('basename')
+             | map('regex_replace', '^', 'results/') | list }}
+      zuul_return:
+        data:
+          zuul:
+            artifacts: >-
+              {{ rally_index_artifact
+                 + (rally_report_artifacts
+                    | selectattr('url', 'in', rally_existing_results) | list) }}

@@ -7,6 +7,7 @@
 - hosts: controller
   vars:
     rally_home_dir: '/opt/stack/.rally'
+    devstack_openrc: "{{ devstack_bases.old }}/devstack/openrc"
     rally_dummy_qcow2_image: "{{ rally_home_dir }}/extra/dummy_image.qcow2"
     rally_dummy_raw_image: "{{ rally_home_dir }}/extra/dummy_image.raw"
     rally_results_dir: '{{ rally_home_dir }}/results'
