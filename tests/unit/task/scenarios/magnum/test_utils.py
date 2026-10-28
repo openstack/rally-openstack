@@ -140,20 +140,12 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         self._test_atomic_action_timer(
             self.scenario.atomic_actions(), "magnum.create_ca_certificate")
 
+    @mock.patch("kubernetes.client.Configuration")
     @mock.patch("kubernetes.client.api_client.ApiClient")
     @mock.patch("kubernetes.client.api.core_v1_api.CoreV1Api")
     def test_get_k8s_api_client_using_tls(self, mock_core_v1_api,
-                                          mock_api_client):
-
-        if hasattr(kubernetes_client, "ConfigurationObject"):
-            # it is k8s-client < 4.0.0
-            m = mock.patch("kubernetes.client.ConfigurationObject")
-        else:
-            m = mock.patch("kubernetes.client.Configuration")
-
-        mock_configuration_object = m.start()
-        self.addCleanup(m.stop)
-
+                                          mock_api_client,
+                                          mock_configuration):
         self.context.update({
             "ca_certs_directory": "/home/stack",
             "tenant": {
@@ -172,35 +164,23 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         key_file = os.path.join(directory, cluster_uuid.__add__(".key"))
         cert_file = os.path.join(directory, cluster_uuid.__add__(".crt"))
         ca_certs = os.path.join(directory, cluster_uuid.__add__("_ca.crt"))
-        config = mock_configuration_object.return_value
+        config = mock_configuration.return_value
         config.host = cluster.api_address
         config.ssl_ca_cert = ca_certs
         config.cert_file = cert_file
         config.key_file = key_file
         _api_client = mock_api_client.return_value
         self.scenario._get_k8s_api_client()
-        mock_configuration_object.assert_called_once_with()
-        if hasattr(kubernetes_client, "ConfigurationObject"):
-            # k8s-python < 4.0.0
-            mock_api_client.assert_called_once_with(config=config)
-        else:
-            mock_api_client.assert_called_once_with(config)
+        mock_configuration.assert_called_once_with()
+        mock_api_client.assert_called_once_with(config)
 
         mock_core_v1_api.assert_called_once_with(_api_client)
 
+    @mock.patch("kubernetes.client.Configuration")
     @mock.patch("kubernetes.client.api_client.ApiClient")
     @mock.patch("kubernetes.client.api.core_v1_api.CoreV1Api")
-    def test_get_k8s_api_client(self, mock_core_v1_api, mock_api_client):
-
-        if hasattr(kubernetes_client, "ConfigurationObject"):
-            # it is k8s-client < 4.0.0
-            m = mock.patch("kubernetes.client.ConfigurationObject")
-        else:
-            m = mock.patch("kubernetes.client.Configuration")
-
-        mock_configuration_object = m.start()
-        self.addCleanup(m.stop)
-
+    def test_get_k8s_api_client(self, mock_core_v1_api, mock_api_client,
+                                mock_configuration):
         self.context.update({
             "tenant": {
                 "id": "rally_tenant_id",
@@ -214,19 +194,15 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         cluster = self.scenario._get_cluster(cluster_uuid)
         self.cluster_template.tls_disabled = True
         client.cluster_templates.get.return_value = self.cluster_template
-        config = mock_configuration_object.return_value
+        config = mock_configuration.return_value
         config.host = cluster.api_address
         config.ssl_ca_cert = None
         config.cert_file = None
         config.key_file = None
         _api_client = mock_api_client.return_value
         self.scenario._get_k8s_api_client()
-        mock_configuration_object.assert_called_once_with()
-        if hasattr(kubernetes_client, "ConfigurationObject"):
-            # k8s-python < 4.0.0
-            mock_api_client.assert_called_once_with(config=config)
-        else:
-            mock_api_client.assert_called_once_with(config)
+        mock_configuration.assert_called_once_with()
+        mock_api_client.assert_called_once_with(config)
         mock_core_v1_api.assert_called_once_with(_api_client)
 
     @mock.patch(MAGNUM_UTILS + ".MagnumScenario._get_k8s_api_client")
@@ -334,6 +310,7 @@ class MagnumScenarioTestCase(test.ScenarioTestCase):
         self.useFixture(fixtures.MockPatch(
             f"{MAGNUM_UTILS}.common_utils.interruptable_sleep",
             test.create_sleeper()))
+        mock_random_choice.return_value = "a"
         k8s_api = mock__get_k8s_api_client.return_value
         manifest = (
             {"apiVersion": "v1",

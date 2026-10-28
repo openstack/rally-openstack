@@ -100,7 +100,7 @@ Changed
   the existing extension scenarios, replacing the standalone
   ``rally-task-fwaas`` job.
 
-* Bump minimal required version to Rally 5.1.1. Switch docker image to use it.
+* Bump minimal required version to Rally 5.2.0 including a base docker image.
 
 * The OpenStack client and service utilities have been restructured into a
   dedicated ``rally_openstack.common.clients`` package (``base``, ``keystone``,

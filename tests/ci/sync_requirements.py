@@ -25,6 +25,8 @@ import sys
 import textwrap
 
 import requests
+from packaging import specifiers
+from packaging import version as pkg_version
 
 
 LOG = logging.getLogger(__name__)
@@ -66,20 +68,26 @@ _PYPI_CACHE = {}
 
 
 class PYPIPackage:
-    # NOTE(andreykurilin): one license can have different labels. Let's use
-    #   unified variant.
+    # NOTE(andreykurilin): one license can have different labels. Packages
+    #   that have not migrated to PEP 639 License-Expression still publish
+    #   free-text labels or classifiers, so map them to SPDX identifiers.
+    #   Ambiguous labels (e.g. "BSD License" does not tell the clause count)
+    #   are kept as is.
     LICENSE_MAP = {
         "MIT license": "MIT",
         "MIT License": "MIT",
-        "BSD License": "BSD",
-        "Apache-2.0": "Apache License, Version 2.0",
-        "Apache 2.0": "Apache License, Version 2.0",
+        "Apache 2.0": "Apache-2.0",
+        "Apache License, Version 2.0": "Apache-2.0",
+        "Apache Software License": "Apache-2.0",
+        "Mozilla Public License 2.0 (MPL 2.0)": "MPL-2.0",
+        "ISC License (ISCL)": "ISC",
+        "Python Software Foundation License": "PSF-2.0",
     }
 
     def __init__(self, package_name: str) -> None:
         self.package_name = package_name
         self._pypi_info = None
-        self._pypi_license = None
+        self._pypi_license: str | None = None
 
     @property
     def pypi_info(self):
@@ -105,22 +113,23 @@ class PYPIPackage:
         return self.pypi_info["info"]["version"]
 
     @property
-    def pypi_license(self):
+    def pypi_license(self) -> str:
         if self._pypi_license is None:
-            if self.pypi_info["info"]["license"]:
-                if "\n" not in self.pypi_info["info"]["license"]:
-                    self._pypi_license = self.pypi_info["info"]["license"]
-
-            if not self._pypi_license:
-                # try to parse classifiers
+            info = self.pypi_info["info"]
+            # PEP 639 SPDX expression is authoritative; the free-text
+            # License field and license classifiers are deprecated.
+            pkg_license = info.get("license_expression")
+            legacy = info["license"]
+            if not pkg_license and legacy and "\n" not in legacy:
+                pkg_license = self.LICENSE_MAP.get(legacy, legacy)
+            if not pkg_license:
                 prefix = "License :: OSI Approved :: "
-                classifiers = [c[len(prefix):]
-                               for c in self.pypi_info["info"]["classifiers"]
+                classifiers = [c[len(prefix):] for c in info["classifiers"]
                                if c.startswith(prefix)]
-                self._pypi_license = "/".join(classifiers)
-            self._license = self.LICENSE_MAP.get(self._pypi_license,
-                                                 self._pypi_license)
-        return self._license
+                pkg_license = " OR ".join(
+                    self.LICENSE_MAP.get(c, c) for c in classifiers)
+            self._pypi_license = pkg_license
+        return self._pypi_license
 
     def __eq__(self, other):
         return (isinstance(other, PYPIPackage)
@@ -133,6 +142,7 @@ class Requirement(PYPIPackage):
     RE_MIN_VERSION = re.compile(r">=?[a-zA-Z0-9.]+")
     RE_MAX_VERSION = re.compile(r"<=?[a-zA-Z0-9.]+")
     RE_NE_VERSIONS = re.compile(r"!=[a-zA-Z0-9.]+")
+    RE_SPEC = re.compile(r"(?P<op>[<>!=]=?)(?P<version>[a-zA-Z0-9.]+)")
 
     def __init__(self, package_name, version):
         super().__init__(package_name)
@@ -142,6 +152,71 @@ class Requirement(PYPIPackage):
     def sync_max_version_with_pypy(self):
         if isinstance(self.version, dict) and not self.do_not_touch:
             self.version["max"] = "<=%s" % self.pypi_version
+
+    @classmethod
+    def _parse_spec(cls, spec: str) -> tuple[str, pkg_version.Version]:
+        match = cls.RE_SPEC.fullmatch(spec)
+        if not match:
+            raise Exception(f"Unable to parse version specifier '{spec}'.")
+        return match.group("op"), pkg_version.Version(match.group("version"))
+
+    @classmethod
+    def _narrower_bound(
+        cls, ours: str | None, theirs: str | None, upper: bool
+    ) -> str | None:
+        if not ours or not theirs:
+            return ours or theirs
+        our_op, our_version = cls._parse_spec(ours)
+        their_op, their_version = cls._parse_spec(theirs)
+        if our_version == their_version:
+            # an exclusive bound (">", "<") is narrower than an inclusive one
+            return ours if len(our_op) == 1 else theirs
+        if (our_version < their_version) == upper:
+            return ours
+        return theirs
+
+    @staticmethod
+    def _as_dict(version: dict | str) -> dict:
+        if isinstance(version, dict):
+            return version
+        # a pinned version is written as a lower bound, see __str__
+        return {"min": f">={version[2:]}", "max": None, "ne": []}
+
+    def specifiers(self) -> list[str]:
+        if not isinstance(self.version, dict):
+            return [self.version if self.do_not_touch
+                    else f">={self.version[2:]}"]
+        return [s for s in (self.version["min"], *self.version["ne"],
+                            self.version["max"]) if s]
+
+    def drop_redundant_exclusions(self) -> None:
+        """Remove `!=` items that min and max versions exclude anyway."""
+        if not isinstance(self.version, dict):
+            return
+        bounds = specifiers.SpecifierSet(",".join(
+            s for s in (self.version["min"], self.version["max"]) if s))
+        self.version["ne"] = [
+            ne for ne in self.version["ne"]
+            if bounds.contains(self._parse_spec(ne)[1], prereleases=True)
+        ]
+
+    def merge_with(self, upstream: "Requirement") -> None:
+        """Merge with upstream requirement, keeping the narrower range."""
+        ours = self._as_dict(self.version)
+        theirs = self._as_dict(upstream.version)
+        self.version = {
+            "min": self._narrower_bound(ours["min"], theirs["min"],
+                                        upper=False),
+            "max": self._narrower_bound(ours["max"], theirs["max"],
+                                        upper=True),
+            "ne": ours["ne"] + [ne for ne in theirs["ne"]
+                                if ne not in ours["ne"]],
+        }
+        self.drop_redundant_exclusions()
+
+    def allows(self, version: str) -> bool:
+        return specifiers.SpecifierSet(",".join(self.specifiers())).contains(
+            version, prereleases=True)
 
     @classmethod
     def parse_line(cls, line):
@@ -335,42 +410,46 @@ def _write_requirements(filename, requirements):
             f.write("\n")
 
 
-def sync_requirements():
-    """Synchronizes Rally requirements with OpenStack global-requirements."""
+def sync_requirements(global_uc: dict[str, UpperConstraint]) -> None:
+    """Synchronizes Rally requirements with OpenStack global-requirements.
+
+    Our version specifiers are merged with global-requirements ones so the
+    result is never broader than either of them.
+    """
     LOG.info("Obtaining global-requirements of OpenStack...")
     raw_gr = _fetch_from_gr("global-requirements.txt")
 
     # NOTE(andreykurilin): global-requirements includes comments which can be
     #   unrelated to Rally project, so let's just ignore them
     gr = parse_data(raw_gr, include_comments=False)
+    errors = []
+    synced = {}
     for file_name in RALLY_REQUIREMENTS_FILES:
-        LOG.debug("Processing '%s'." % file_name)
+        LOG.debug(f"Processing '{file_name}'.")
         with open(file_name) as f:
             requirements = parse_data(f.read())
         for name, req in requirements.items():
-            if isinstance(req, Requirement) and not req.do_not_touch:
-                if name in gr:
-                    req.version = gr[req.package_name].version
-                else:
-                    # it not g-r requirements
-                    if isinstance(req.version, dict):
-                        req.version["max"] = None
+            if not isinstance(req, Requirement) or req.do_not_touch:
+                continue
+            if name in gr:
+                req.merge_with(gr[name])
+            else:
+                req.drop_redundant_exclusions()
+            uc = global_uc.get(name)
+            if uc and not req.allows(uc.version):
+                errors.append(
+                    f"{file_name}: '{name}{','.join(req.specifiers())}' "
+                    f"does not allow '{uc}' from OpenStack "
+                    f"upper-constraints.")
+        synced[file_name] = requirements
+    if errors:
+        raise Exception("\n".join(errors))
+    for file_name, requirements in synced.items():
         _write_requirements(file_name, requirements)
 
 
-def update_upper_constraints():
+def update_upper_constraints(global_uc: dict[str, UpperConstraint]) -> None:
     """Obtains latest version of packages and put them to upper-constraints."""
-    LOG.info("Obtaining upper-constrains from OpenStack...")
-    raw_g_uc = _fetch_from_gr("upper-constraints.txt")
-    # NOTE(andreykurilin): global OpenStack upper-constraints file includes
-    #   comments which can be unrelated to Rally project, so let's just ignore
-    #   them.
-    global_uc: dict[str, UpperConstraint] = parse_data(
-        raw_g_uc,
-        include_comments=False,
-        dependency_cls=UpperConstraint
-    )
-
     our_uc = [UpperConstraint(package_name=p.metadata["Name"],
                               version=p.version)
               for p in importlib.metadata.distributions()
@@ -390,8 +469,17 @@ def update_upper_constraints():
 
 
 def main():
-    sync_requirements()
-    update_upper_constraints()
+    LOG.info("Obtaining upper-constrains from OpenStack...")
+    # NOTE(andreykurilin): global OpenStack upper-constraints file includes
+    #   comments which can be unrelated to Rally project, so let's just ignore
+    #   them.
+    global_uc: dict[str, UpperConstraint] = parse_data(
+        _fetch_from_gr("upper-constraints.txt"),
+        include_comments=False,
+        dependency_cls=UpperConstraint
+    )
+    sync_requirements(global_uc)
+    update_upper_constraints(global_uc)
 
 
 if __name__ == "__main__":

@@ -1057,14 +1057,14 @@ class Glance(base.LegacyClientCompat):
                 # a GET here would answer with the image data instead
                 response = self._v1_request("head", f"/images/{image_id}")
                 return _v1_image(_v1_meta_from_headers(response.headers))
-            return self._image.get_image(image)
+            return self._v2.get_image(image)
         except sdk_exc.NotFoundException:
             raise exceptions.GetResourceNotFound(resource=image_id) from None
 
     @atomic.action_timer("glance.delete_image")
     def delete_image(self, image: ImageRef) -> None:
         """Delete an image."""
-        self._image.delete_image(image, ignore_missing=False)
+        self._image.delete_image(_id_of(image), ignore_missing=False)
 
     @atomic.action_timer("glance.download_image")
     def download_image(
@@ -1097,7 +1097,7 @@ class Glance(base.LegacyClientCompat):
             if self.version == "1":
                 self._v1_download(_id_of(image), sink, chunk_size)
             else:
-                self._image.download_image(
+                self._v2.download_image(
                     image, stream=True, output=sink, chunk_size=chunk_size)
             return sink.count
 

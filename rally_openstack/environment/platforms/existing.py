@@ -15,11 +15,13 @@
 import copy
 import json
 import traceback
+import typing as t
 
 from rally.common import cfg
 from rally.common import logging
 from rally.env import platform
 
+from rally_openstack.common import credential
 from rally_openstack.common import osclients
 
 
@@ -34,6 +36,7 @@ class OpenStack(platform.Platform):
 
     It may be used to test any existing OpenStack API compatible cloud.
     """
+
     VERSION_SCHEMA = {
         "anyOf": [
             {"type": "string", "description": "a string-like version."},
@@ -134,7 +137,7 @@ class OpenStack(platform.Platform):
         "additionalProperties": False
     }
 
-    def create(self):
+    def create(self) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
         defaults = {
             "region_name": None,
             "endpoint_type": None,
@@ -171,11 +174,11 @@ class OpenStack(platform.Platform):
             platform_data["api_info"] = api_info
         return platform_data, {}
 
-    def destroy(self):
+    def destroy(self) -> None:
         # NOTE(boris-42): No action need to be performed.
         pass
 
-    def cleanup(self, task_uuid=None):
+    def cleanup(self, task_uuid: str | None = None) -> platform.CleanupInfo:
         return {
             "message": "Coming soon!",
             "discovered": 0,
@@ -185,8 +188,12 @@ class OpenStack(platform.Platform):
             "errors": []
         }
 
-    def check_health(self):
+    def check_health(self) -> platform.HealthInfo:
         """Check whatever platform is alive."""
+
+        # it should never happen
+        if not self.platform_data:
+            return platform.HealthInfo(available=False)
 
         users_to_check = self.platform_data["users"]
         if self.platform_data["admin"]:
@@ -195,7 +202,8 @@ class OpenStack(platform.Platform):
         for user in users_to_check:
             user["api_info"] = self.platform_data.get("api_info", {})
             try:
-                clients = osclients.Clients(user)
+                clients = osclients.Clients(
+                    credential.OpenStackCredential(**user))
                 if self.platform_data["admin"] == user:
                     clients.verified_keystone()
                 else:
@@ -203,9 +211,11 @@ class OpenStack(platform.Platform):
             except osclients.exceptions.RallyException as e:
                 # all rally native exceptions should provide user-friendly
                 # messages
-                return {"available": False,
-                        "message": e.format_message(),
-                        "traceback": traceback.format_exc()}
+                return platform.HealthInfo(
+                    available=False,
+                    message=e.format_message(),
+                    traceback=traceback.format_exc()
+                )
             except Exception:
                 d = copy.deepcopy(user)
                 d["password"] = "***"
@@ -216,53 +226,54 @@ class OpenStack(platform.Platform):
                     user_role = "admin"
                 else:
                     user_role = "user"
-                return {
-                    "available": False,
-                    "message": (
-                        "Bad %s creds: \n%s"
-                        % (user_role,
-                           json.dumps(d, indent=2, sort_keys=True))),
-                    "traceback": traceback.format_exc()
-                }
+                return platform.HealthInfo(
+                    available=False,
+                    message=f"Bad {user_role} creds: \n"
+                            f"{json.dumps(d, indent=2, sort_keys=True)}",
+                    traceback=traceback.format_exc(),
+                )
 
         for name in self.platform_data.get("api_info", {}):
             if name == "keystone":
                 continue
             if not hasattr(clients, name):
-                return {
-                    "available": False,
-                    "message": ("There is no OSClient plugin '%s' for"
-                                " communicating with OpenStack API."
-                                % name)}
+                return platform.HealthInfo(
+                    available=False,
+                    message=f"There is no OSClient plugin '{name}' for "
+                            f"communicating with OpenStack API."
+                )
             client = getattr(clients, name)
             try:
                 client.spec.validate_version(client.choose_version())
                 client.create_client()
             except osclients.exceptions.RallyException as e:
-                return {
-                    "available": False,
-                    "message": ("Invalid setting for '%(client)s':"
-                                " %(error)s") % {
-                        "client": name, "error": e.format_message()}
-                }
+                return platform.HealthInfo(
+                    available=False,
+                    message=f"Invalid setting for '{name}': "
+                            f"{e.format_message()}"
+                )
             except Exception:
-                return {
-                    "available": False,
-                    "message": ("Can not create '%(client)s' with"
-                                " %(version)s version.") % {
-                        "client": name,
-                        "version": client.choose_version()},
-                    "traceback": traceback.format_exc()
-                }
+                return platform.HealthInfo(
+                    available=False,
+                    message=f"Can not create '{name}' with "
+                            f"{client.choose_version()} version.",
+                    traceback=traceback.format_exc()
+                )
 
-        return {"available": True}
+        return platform.HealthInfo(available=True)
 
-    def info(self):
+    def info(self) -> platform.PlatformInfo:
         """Return information about cloud as dict."""
+        # it should never happen
+        if not self.platform_data:
+            return platform.PlatformInfo(info={})
+
         active_user = (self.platform_data["admin"]
                        or self.platform_data["users"][0])
         services = []
-        for stype, name in osclients.Clients(active_user).services().items():
+        clients = osclients.Clients(
+            credential.OpenStackCredential(**active_user))
+        for stype, name in clients.services().items():
             if name == "__unknown__":
                 # `__unknown__` name misleads, let's just not include it...
                 services.append({"type": stype})
@@ -275,11 +286,13 @@ class OpenStack(platform.Platform):
             }
         }
 
-    def _get_validation_context(self):
+    def _get_validation_context(self) -> dict[str, t.Any]:
         return {"users@openstack": {}}
 
     @classmethod
-    def create_spec_from_sys_environ(cls, sys_environ):
+    def create_spec_from_sys_environ(
+        cls, sys_environ: t.Mapping[str, str]
+    ) -> platform.SysEnvSpec:
         """Create a spec based on system environment.
 
         * OS_AUTH_URL - The auth url for OpenStack cluster. Supported both
@@ -343,7 +356,7 @@ class OpenStack(platform.Platform):
         if endpoint_type and "URL" in endpoint_type:
             endpoint_type = endpoint_type.replace("URL", "")
 
-        spec = {
+        spec: dict[str, t.Any] = {
             "auth_url": sys_environ["OS_AUTH_URL"],
             "admin": {
                 "username": sys_environ["OS_USERNAME"],
@@ -389,14 +402,14 @@ class OpenStack(platform.Platform):
         return {"spec": spec, "available": True, "message": "Available"}
 
     @classmethod
-    def _get_doc(cls):
-        doc = cls.__doc__.strip()
+    def _get_doc(cls) -> str:
+        doc = (cls.__doc__ or "").strip()
 
-        env_vars_docs = cls.create_spec_from_sys_environ.__doc__
+        env_vars_docs = cls.create_spec_from_sys_environ.__doc__ or ""
         env_vars_description = "\n".join(
             line for line in env_vars_docs.split("\n")[1:]
         )
         doc += (f"\n\n**The following environment variables are expected for "
-                f"creation a Rally environment using sustem environment "
+                f"creation a Rally environment using system environment "
                 f"variables**\n{env_vars_description}")
         return doc

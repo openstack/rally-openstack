@@ -297,10 +297,6 @@ module = "rally_openstack.common.wrappers.network"
 disable_error_code = ["arg-type", "assignment", "call-overload", "no-untyped-def", "override"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.environment.platforms.existing"
-disable_error_code = ["no-untyped-def", "union-attr"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.task.cleanup.base"
 disable_error_code = ["attr-defined", "no-untyped-def"]
 

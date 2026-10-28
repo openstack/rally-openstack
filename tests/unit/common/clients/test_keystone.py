@@ -610,14 +610,20 @@ class KeystoneRoleMethodsTestCase(KeystoneTestMixin, test.TestCase):
         self.assertEqual(["a"], self.ks.list_role_assignments(
             "uid", project_id="pid", domain="dom"))
         self.proxy.role_assignments_filter.assert_called_once_with(
-            user="uid", project="pid", domain="did")
+            domain="did", user="uid")
 
     def test_list_role_assignments_v3_no_domain(self):
         self.ks = self._make_keystone(version="3")
         self.proxy.role_assignments_filter.return_value = iter(["a"])
         self.ks.list_role_assignments("uid", project_id="pid")
         self.proxy.role_assignments_filter.assert_called_once_with(
-            user="uid", project="pid", domain=None)
+            project="pid", user="uid")
+
+    def test_list_role_assignments_v3_no_scope(self):
+        self.ks = self._make_keystone(version="3")
+        self.assertRaises(exceptions.RallyException,
+                          self.ks.list_role_assignments, "uid")
+        self.assertFalse(self.proxy.role_assignments_filter.called)
 
     def test_list_roles_v3_name_filter(self):
         self.ks = self._make_keystone(version="3")

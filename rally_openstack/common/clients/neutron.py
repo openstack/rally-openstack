@@ -138,7 +138,7 @@ class Neutron(base.LegacyClientCompat):
 
     @atomic.action_timer("neutron.delete_network")
     def delete_network(self, network_id: str) -> None:
-        self._network.delete_network(network_id)
+        self._network.delete_network(network_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.create_port")
     def create_port(
@@ -163,7 +163,7 @@ class Neutron(base.LegacyClientCompat):
 
     @atomic.action_timer("neutron.delete_port")
     def delete_port(self, port_id: str) -> None:
-        self._network.delete_port(port_id)
+        self._network.delete_port(port_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.create_tap_mirror")
     def create_tap_mirror(
@@ -213,7 +213,7 @@ class Neutron(base.LegacyClientCompat):
 
     @atomic.action_timer("neutron.delete_tap_mirror")
     def delete_tap_mirror(self, tap_mirror_id: str) -> None:
-        self._network.delete_tap_mirror(tap_mirror_id)
+        self._network.delete_tap_mirror(tap_mirror_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.create_tap_service")
     def create_tap_service(

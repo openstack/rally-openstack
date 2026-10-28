@@ -20,6 +20,7 @@
       devstack_plugins:
         rally-openstack: https://opendev.org/openstack/rally-openstack
       tox_env: "functional"
+      ensure_tox_version: '!=4.67.5'
       rally_home_dir: '/opt/stack/.rally'
       rally_results_dir: '/opt/stack/.rally/results/'
       html_report: 'tox_func_report.html'

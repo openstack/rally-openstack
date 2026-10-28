@@ -123,7 +123,8 @@ class NeutronNetworkTestCase(NeutronTestMixin, test.TestCase):
     def test_delete_network(self):
         self.neutron.delete_network("net-id")
 
-        self.network.delete_network.assert_called_once_with("net-id")
+        self.network.delete_network.assert_called_once_with(
+            "net-id", ignore_missing=False)
 
     def test_create_port(self):
         mock_port = mock.Mock(id="port-id")
@@ -176,7 +177,8 @@ class NeutronNetworkTestCase(NeutronTestMixin, test.TestCase):
     def test_delete_port(self):
         self.neutron.delete_port("port-id")
 
-        self.network.delete_port.assert_called_once_with("port-id")
+        self.network.delete_port.assert_called_once_with(
+            "port-id", ignore_missing=False)
 
 
 class NeutronTapMirrorTestCase(NeutronTestMixin, test.TestCase):
@@ -323,7 +325,8 @@ class NeutronTapMirrorTestCase(NeutronTestMixin, test.TestCase):
     def test_delete_tap_mirror(self):
         self.neutron.delete_tap_mirror("mirror-id")
 
-        self.network.delete_tap_mirror.assert_called_once_with("mirror-id")
+        self.network.delete_tap_mirror.assert_called_once_with(
+            "mirror-id", ignore_missing=False)
 
 
 class NeutronTapServiceTestCase(NeutronTestMixin, test.TestCase):

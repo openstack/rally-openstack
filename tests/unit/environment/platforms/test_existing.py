@@ -21,8 +21,14 @@ from rally import exceptions
 from rally.env import env_mgr
 from rally.env import platform
 
+from rally_openstack.common import credential
 from rally_openstack.environment.platforms import existing
 from tests.unit import test
+
+
+def _user(username):
+    return {"auth_url": "http://example.com", "username": username,
+            "password": "12345"}
 
 
 class PlatformBaseTestCase(test.TestCase):
@@ -277,24 +283,24 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_health(self, mock_clients):
         pdata = {
-            "admin": mock.MagicMock(),
-            "users": [mock.MagicMock(), mock.MagicMock()]
+            "admin": _user("admin"),
+            "users": [_user("u1"), _user("u2")]
         }
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual({"available": True}, result)
         mock_clients.assert_has_calls(
-            [mock.call(pdata["users"][0]),
-             mock.call(pdata["users"][1]),
-             mock.call(pdata["admin"]), mock.call().verified_keystone()])
+            [mock.call(credential.OpenStackCredential(**pdata["users"][0])),
+             mock.call(credential.OpenStackCredential(**pdata["users"][1])),
+             mock.call(credential.OpenStackCredential(**pdata["admin"])),
+             mock.call().verified_keystone()])
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_failed_with_native_rally_exc(self, mock_clients):
         e = exceptions.RallyException("foo")
         type(mock_clients.return_value.keystone).auth_ref = mock.PropertyMock(
             side_effect=e)
-        pdata = {"admin": None,
-                 "users": [{"username": "balbab", "password": "12345"}]}
+        pdata = {"admin": None, "users": [_user("balbab")]}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual(
@@ -308,15 +314,15 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_failed_admin(self, mock_clients):
         mock_clients.return_value.verified_keystone.side_effect = Exception
-        pdata = {"admin": {"username": "balbab", "password": "12345"},
-                 "users": []}
+        pdata = {"admin": _user("balbab"), "users": []}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual(
             {"available": False,
              "message":
                 "Bad admin creds: \n%s"
-                % json.dumps({"username": "balbab", "password": "***",
+                % json.dumps({"auth_url": "http://example.com",
+                              "username": "balbab", "password": "***",
                               "api_info": {}},
                              indent=2, sort_keys=True),
              "traceback": mock.ANY},
@@ -327,15 +333,15 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
     def test_check_failed_users(self, mock_clients):
         type(mock_clients.return_value.keystone).auth_ref = mock.PropertyMock(
             side_effect=Exception)
-        pdata = {"admin": None,
-                 "users": [{"username": "balbab", "password": "12345"}]}
+        pdata = {"admin": None, "users": [_user("balbab")]}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual(
             {"available": False,
              "message":
                 "Bad user creds: \n%s"
-                % json.dumps({"username": "balbab", "password": "***",
+                % json.dumps({"auth_url": "http://example.com",
+                              "username": "balbab", "password": "***",
                               "api_info": {}},
                              indent=2, sort_keys=True),
              "traceback": mock.ANY},
@@ -344,14 +350,15 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_health_with_api_info(self, mock_clients):
-        pdata = {"admin": mock.MagicMock(),
+        pdata = {"admin": _user("admin"),
                  "users": [],
                  "api_info": {"fakeclient": "version"}}
         result = existing.OpenStack({}, platform_data=pdata).check_health()
         self._check_health_schema(result)
         self.assertEqual({"available": True}, result)
         mock_clients.assert_has_calls(
-            [mock.call(pdata["admin"]), mock.call().verified_keystone(),
+            [mock.call(credential.OpenStackCredential(**pdata["admin"])),
+             mock.call().verified_keystone(),
              mock.call().fakeclient.choose_version(),
              mock.call().fakeclient.spec.validate_version(
                  mock_clients.return_value.fakeclient.choose_version
@@ -360,7 +367,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_version_failed_with_api_info(self, mock_clients):
-        pdata = {"admin": mock.MagicMock(),
+        pdata = {"admin": _user("admin"),
                  "users": [],
                  "api_info": {"fakeclient": "version"}}
 
@@ -377,7 +384,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_check_unexpected_failed_with_api_info(self, mock_clients):
-        pdata = {"admin": mock.MagicMock(),
+        pdata = {"admin": _user("admin"),
                  "users": [],
                  "api_info": {"fakeclient": "version"}}
 
@@ -400,14 +407,12 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         mock_clients.return_value.services.return_value = {
             "foo": "bar",
             "volumev4": "__unknown__"}
-        platform_data = {
-            "admin": None,
-            "users": [{"username": "u1", "password": "123"}]
-        }
+        platform_data = {"admin": None, "users": [_user("u1")]}
         p = existing.OpenStack({}, platform_data=platform_data)
 
         result = p.info()
-        mock_clients.assert_called_once_with(platform_data["users"][0])
+        mock_clients.assert_called_once_with(
+            credential.OpenStackCredential(**platform_data["users"][0]))
         mock_clients.return_value.services.assert_called_once_with()
         self.assertEqual(
             {

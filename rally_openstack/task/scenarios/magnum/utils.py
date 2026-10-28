@@ -164,20 +164,12 @@ class MagnumScenario(scenario.OpenStackScenario):
             cert_file = os.path.join(directory, cert_file)
             ca_certs = cluster_uuid + "_ca.crt"
             ca_certs = os.path.join(directory, ca_certs)
-        if hasattr(k8s_config, "ConfigurationObject"):
-            # k8sclient < 4.0.0
-            config = k8s_config.ConfigurationObject()
-        else:
-            config = k8s_config.Configuration()
+        config = k8s_config.Configuration()
         config.host = cluster.api_address
         config.ssl_ca_cert = ca_certs
         config.cert_file = cert_file
         config.key_file = key_file
-        if hasattr(k8s_config, "ConfigurationObject"):
-            # k8sclient < 4.0.0
-            client = api_client.ApiClient(config=config)
-        else:
-            client = api_client.ApiClient(config)
+        client = api_client.ApiClient(config)
 
         return core_v1_api.CoreV1Api(client)
 

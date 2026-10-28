@@ -589,8 +589,15 @@ class Keystone(base.LegacyClientCompat):
                     for r in resp.json()["roles"]]
         domain_id = self.get_domain_id(domain) if domain else None
         with self._atomic_action("keystone_v3.list_role_assignments"):
-            return list(self._v3.role_assignments_filter(
-                user=user_id, project=project_id, domain=domain_id))
+            if domain_id:
+                return list(self._v3.role_assignments_filter(
+                    domain=domain_id, user=user_id))
+            if project_id:
+                return list(self._v3.role_assignments_filter(
+                    project=project_id, user=user_id))
+            raise exceptions.RallyException(
+                "Listing role assignments on keystone v3 requires either "
+                "project_id or domain.")
 
     @atomic.action_timer("keystone.delete_role")
     def delete_role(self, role_id: str) -> None:
