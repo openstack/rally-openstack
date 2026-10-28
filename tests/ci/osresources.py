@@ -20,7 +20,6 @@ import functools
 import json
 import sys
 import typing as t
-import uuid
 from collections import abc
 
 from openstack import exceptions as sdk_exceptions
@@ -73,6 +72,7 @@ if t.TYPE_CHECKING:
     from openstack.load_balancer.v2 import listener as octavia_listener
     from openstack.load_balancer.v2 import load_balancer as octavia_lb
     from openstack.load_balancer.v2 import pool as octavia_pool
+    from openstack.message.v2 import queue as zaqar_queue
     from openstack.network.v2 import bgpvpn as neutron_bgpvpn
     from openstack.network.v2 import firewall_group as neutron_fw_group
     from openstack.network.v2 import firewall_policy as neutron_fw_policy
@@ -497,27 +497,16 @@ class Zaqar(ResourceManager):
     SERVICE = "zaqar"
     SERVICE_TYPES = ("messaging",)
 
-    def list_queues(self) -> list[Resource]:
-        # zaqar answers an empty page with 204 and no body, which openstacksdk
-        # fails to decode
-        headers = {"Client-ID": str(uuid.uuid4()),
-                   "X-PROJECT-ID": self.conn.current_project_id}
-        params: dict[str, str] = {}
-        queues: list[Resource] = []
-        while True:
-            response = self.conn.message.get(
-                "/queues", headers=headers, params=params)
-            sdk_exceptions.raise_from_response(response)
-            if response.status_code == 204:
-                return queues
-            page = response.json()["queues"]
-            if not page:
-                return queues
-            queues.extend(
-                Resource(service=self.SERVICE, kind="queue", id=q["name"],
-                         name=q["name"])
-                for q in page)
-            params["marker"] = page[-1]["name"]
+    def list_queues(self) -> abc.Iterator["zaqar_queue.Queue"]:
+        # zaqar's version document links to "/v2/" relative to the host root,
+        # so version discovery drops the path prefix the API is mounted under
+        # (e.g. "/messaging" in devstack). An absolute URL skips discovery.
+        endpoint = self.conn.endpoint_for("messaging")
+        if endpoint is None:
+            raise sdk_exceptions.EndpointNotFound(
+                "No messaging endpoint in the catalog")
+        return self.conn.message.queues(
+            base_path=f"{endpoint.rstrip('/')}/v2/queues")
 
 
 class Gnocchi(ResourceManager):

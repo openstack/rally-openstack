@@ -110,6 +110,10 @@ class RallyJobsTestCase(test.TestCase):
     #   at all, which means at least one successful iteration.
     #
     FULL_FAILURE_ALLOWED: dict[str, set[tuple[int, int, str]]] = {
+        # python-barbicanclient dropped support for certificate orders
+        "barbican.yaml": {
+            (13, 1, "BarbicanOrders.create_certificate_and_delete"),
+        },
         # keystone rejects the pre-signed alarm_url used for scaling, see
         #   https://storyboard.openstack.org/#!/story/2011912
         "heat.yaml": {

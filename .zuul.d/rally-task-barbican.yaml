@@ -17,3 +17,5 @@
         horizon: false
         tempest: false
       rally_task: rally-jobs/barbican.yaml
+      # the BarbicanOrders scenarios leave generated secrets behind
+      rally_ignore_leaked_resources: true

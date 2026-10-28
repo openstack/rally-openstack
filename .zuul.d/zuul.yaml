@@ -20,7 +20,7 @@
         - rally-task-basic-with-existing-users
         - rally-task-simple-job
         - rally-task-barbican:
-            files:
+            files: &barbican-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-barbican.yaml
               - DOCKER_README.md
@@ -35,7 +35,6 @@
               - upper-constraints.txt
               - tests/ci/osresources.py
               - tests/ci/playbooks
-            voting: false
         - rally-task-cinder:
             irrelevant-files: *trivial-files
         - rally-task-designate:
@@ -62,6 +61,7 @@
               - devstack
               - rally-jobs/glance.yaml
               - rally_openstack/common/cfg/glance.py
+              - rally_openstack/common/clients/glance.py
               - rally_openstack/common/osclients.py
               - rally_openstack/common/services/image
               - rally_openstack/task/cleanup
@@ -74,7 +74,6 @@
               - tests/ci/playbooks
         - rally-task-glance-upgrade:
             files: *glance-files
-            voting: true
         - rally-task-heat:
             files: &heat-files
               - .zuul.d/zuul.yaml
@@ -169,10 +168,8 @@
               - upper-constraints.txt
               - tests/ci/osresources.py
               - tests/ci/playbooks
-            voting: false
         - rally-task-manila-ss:
             files: *manila-files
-            voting: false
         - rally-task-mistral:
             files: &mistral-files
               - .zuul.d/zuul.yaml
@@ -257,7 +254,7 @@
               - tests/ci/osresources.py
               - tests/ci/playbooks
         - rally-task-telemetry:
-            files:
+            files: &telemetry-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-telemetry.yaml
               - DOCKER_README.md
@@ -272,9 +269,8 @@
               - upper-constraints.txt
               - tests/ci/osresources.py
               - tests/ci/playbooks
-            voting: false
         - rally-task-watcher:
-            files:
+            files: &watcher-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-watcher.yaml
               - DOCKER_README.md
@@ -290,9 +286,8 @@
               - upper-constraints.txt
               - tests/ci/osresources.py
               - tests/ci/playbooks
-            voting: false
         - rally-task-zaqar:
-            files:
+            files: &zaqar-files
               - .zuul.d/zuul.yaml
               - .zuul.d/rally-task-zaqar.yaml
               - DOCKER_README.md
@@ -306,7 +301,6 @@
               - upper-constraints.txt
               - tests/ci/osresources.py
               - tests/ci/playbooks
-            voting: false
         - rally-verify-tempest
     gate:
       jobs:
@@ -320,6 +314,8 @@
         - rally-openstack-docker-build
         - rally-task-basic-with-existing-users
         - rally-task-simple-job
+        - rally-task-barbican:
+            files: *barbican-files
         - rally-task-cinder:
             irrelevant-files: *trivial-files
         - rally-task-designate:
@@ -336,6 +332,10 @@
             files: *keystone-swift-files
         - rally-task-magnum:
             files: *magnum-files
+        - rally-task-manila-no-ss:
+            files: *manila-files
+        - rally-task-manila-ss:
+            files: *manila-files
         - rally-task-mistral:
             files: *mistral-files
         - rally-task-neutron:
@@ -348,6 +348,12 @@
             irrelevant-files: *trivial-files
         - rally-task-octavia:
             files: *octavia-files
+        - rally-task-telemetry:
+            files: *telemetry-files
+        - rally-task-watcher:
+            files: *watcher-files
+        - rally-task-zaqar:
+            files: *zaqar-files
         - rally-verify-tempest
     post:
       jobs:

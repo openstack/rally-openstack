@@ -177,6 +177,10 @@
             constant:
               times: 4
               concurrency: 2
+          sla:
+            failure_rate:
+              min: 100
+              max: 100
     -
       title: BarbicanOrders.list
       workloads:
