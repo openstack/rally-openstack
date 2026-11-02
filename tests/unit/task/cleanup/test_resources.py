@@ -19,6 +19,7 @@ from unittest import mock
 import ddt
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exc
+from openstack.network.v2 import tap_service
 from watcherclient.common.apiclient import exceptions as watcher_exceptions
 
 from rally_openstack.common.clients import glance
@@ -555,6 +556,90 @@ class NeutronTapMirrorTestCase(test.TestCase):
         neut.delete()
         neut.user.neutron.delete_tap_mirror.assert_called_once_with(
             "mirror-id")
+
+
+class NeutronTapServiceTestCase(test.TestCase):
+
+    def get_tap_service_resource(self, extensions=None):
+        user = mock.MagicMock()
+        resource = resources.NeutronTapService(user=user)
+        resource.tenant_uuid = "user_tenant"
+        user.neutron.return_value.list_extensions.return_value = {
+            "extensions": [{"alias": ext} for ext in extensions or []]
+        }
+        return resource
+
+    def test_id_and_name(self):
+        resource = self.get_tap_service_resource()
+        resource.raw_resource = mock.Mock(id="service-id")
+        resource.raw_resource.name = "service-name"
+
+        self.assertEqual("service-id", resource.id())
+        self.assertEqual("service-name", resource.name())
+
+    def test_list_tap_service_available(self):
+        resource = self.get_tap_service_resource(extensions=["taas"])
+        services = [
+            tap_service.TapService(id="service-1", project_id="user_tenant"),
+            tap_service.TapService(id="service-2", project_id="other-project"),
+        ]
+        resource.user.neutron.list_tap_services.return_value = services
+
+        self.assertEqual([services[0]], resource.list())
+        resource.user.neutron.list_tap_services.assert_called_once_with()
+
+    def test_list_tap_service_with_legacy_project_attribute(self):
+        resource = self.get_tap_service_resource(extensions=["taas"])
+        service = tap_service.TapService(
+            id="service-1", tenant_id="user_tenant")
+        resource.user.neutron.list_tap_services.return_value = [service]
+
+        self.assertEqual([service], resource.list())
+        resource.user.neutron.list_tap_services.assert_called_once_with()
+
+    def test_list_tap_service_without_project(self):
+        resource = self.get_tap_service_resource(extensions=["taas"])
+        resource.tenant_uuid = None
+        services = [
+            tap_service.TapService(id="service-1", project_id="project-1"),
+            tap_service.TapService(id="service-2", project_id="project-2"),
+        ]
+        resource.user.neutron.list_tap_services.return_value = services
+
+        self.assertEqual(services, resource.list())
+        resource.user.neutron.list_tap_services.assert_called_once_with()
+
+    def test_list_tap_service_unavailable(self):
+        resource = self.get_tap_service_resource()
+
+        self.assertEqual([], resource.list())
+        resource.user.neutron.list_tap_services.assert_not_called()
+
+    def test_list_tap_service_as_admin(self):
+        resource = self.get_tap_service_resource(extensions=["taas"])
+        resource._admin_required = True
+        resource.admin = mock.MagicMock()
+        resource.admin.neutron.return_value.list_extensions.return_value = {
+            "extensions": [{"alias": "taas"}]
+        }
+        services = [
+            tap_service.TapService(id="service-1", project_id="user_tenant"),
+            tap_service.TapService(id="service-2", project_id="other-project"),
+        ]
+        resource.admin.neutron.list_tap_services.return_value = services
+
+        self.assertEqual([services[0]], resource.list())
+        resource.admin.neutron.list_tap_services.assert_called_once_with()
+        resource.user.neutron.list_tap_services.assert_not_called()
+
+    def test_delete(self):
+        resource = self.get_tap_service_resource()
+        resource.raw_resource = mock.Mock(id="service-id")
+
+        resource.delete()
+
+        resource.user.neutron.delete_tap_service.assert_called_once_with(
+            "service-id")
 
 
 class NeutronFloatingIPTestCase(test.TestCase):

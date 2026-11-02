@@ -77,6 +77,14 @@ class TapMirrorUpdateArgs(te.TypedDict, total=False):
     description: str
 
 
+class TapServiceCreateArgs(te.TypedDict, total=False):
+    description: str
+
+
+class TapServiceUpdateArgs(te.TypedDict, total=False):
+    description: str
+
+
 """Scenarios for Neutron TaaS (Tap-as-a-Service)."""
 
 
@@ -225,4 +233,116 @@ class CreateAndUpdateTapMirrors(TaaSScenario):
             tap_mirror.id,
             name=self.generate_random_name(),
             description=tap_mirror_update_args.get("description"),
+        )
+
+
+@validation.add("required_ports_per_project")
+@validation.add("required_contexts", contexts=["network", "ports"])
+@validation.add("required_neutron_extensions", extensions=["taas"])
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"],
+             "network@openstack": {},
+             "ports@openstack": {}},
+    name="NeutronTaaS.create_and_list_tap_services",
+    platform="openstack")
+class CreateAndListTapServices(TaaSScenario):
+
+    def run(
+        self,
+        tap_service_create_args: TapServiceCreateArgs | None = None,
+    ) -> None:
+        """Create and list Neutron TaaS tap services.
+
+        Requires ``network`` and ``ports`` contexts with
+        ``ports_per_project >= ceil(concurrency / projects)``.
+
+        :param tap_service_create_args: optional description on create
+        """
+        tap_service_create_args = tap_service_create_args or {}
+        ports = self.context["tenant"]["ports"]
+        port = ports[self.context["iteration"] % len(ports)]
+
+        self._clients.neutron.create_tap_service(
+            port_id=port["id"],
+            description=tap_service_create_args.get("description"),
+        )
+        self._clients.neutron.list_tap_services()
+
+
+@validation.add("required_ports_per_project")
+@validation.add("required_contexts", contexts=["network", "ports"])
+@validation.add("required_neutron_extensions", extensions=["taas"])
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"],
+             "network@openstack": {},
+             "ports@openstack": {}},
+    name="NeutronTaaS.create_and_delete_tap_services",
+    platform="openstack")
+class CreateAndDeleteTapServices(TaaSScenario):
+
+    def run(
+        self,
+        tap_service_create_args: TapServiceCreateArgs | None = None,
+    ) -> None:
+        """Create and delete Neutron TaaS tap services.
+
+        Requires ``network`` and ``ports`` contexts with
+        ``ports_per_project >= ceil(concurrency / projects)``.
+
+        :param tap_service_create_args: optional description on create
+        """
+        tap_service_create_args = tap_service_create_args or {}
+        ports = self.context["tenant"]["ports"]
+        port = ports[self.context["iteration"] % len(ports)]
+
+        tap_service = self._clients.neutron.create_tap_service(
+            port_id=port["id"],
+            description=tap_service_create_args.get("description"),
+        )
+        self._clients.neutron.delete_tap_service(tap_service.id)
+
+
+@validation.add("required_ports_per_project")
+@validation.add("required_contexts", contexts=["network", "ports"])
+@validation.add("required_neutron_extensions", extensions=["taas"])
+@validation.add("required_services", services=[consts.Service.NEUTRON])
+@validation.add("required_platform", platform="openstack", users=True)
+@scenario.configure(
+    context={"cleanup@openstack": ["neutron"],
+             "network@openstack": {},
+             "ports@openstack": {}},
+    name="NeutronTaaS.create_and_update_tap_services",
+    platform="openstack")
+class CreateAndUpdateTapServices(TaaSScenario):
+
+    def run(
+        self,
+        tap_service_create_args: TapServiceCreateArgs | None = None,
+        tap_service_update_args: TapServiceUpdateArgs | None = None,
+    ) -> None:
+        """Create and update Neutron TaaS tap services.
+
+        Requires ``network`` and ``ports`` contexts with
+        ``ports_per_project >= ceil(concurrency / projects)``.
+
+        :param tap_service_create_args: optional description on create
+        :param tap_service_update_args: optional description on update
+        """
+        tap_service_create_args = tap_service_create_args or {}
+        tap_service_update_args = tap_service_update_args or {}
+        ports = self.context["tenant"]["ports"]
+        port = ports[self.context["iteration"] % len(ports)]
+
+        tap_service = self._clients.neutron.create_tap_service(
+            port_id=port["id"],
+            description=tap_service_create_args.get("description"),
+        )
+        self._clients.neutron.update_tap_service(
+            tap_service.id,
+            name=self.generate_random_name(),
+            description=tap_service_update_args.get("description"),
         )

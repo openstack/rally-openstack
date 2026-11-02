@@ -207,3 +207,67 @@ class NeutronTaaSTestCase(test.TestCase):
         create_kwargs = (
             scenario._clients.neutron.create_tap_mirror.call_args.kwargs)
         self.assertNotIn("name", create_kwargs)
+
+    @ddt.data(
+        taas.CreateAndListTapServices,
+        taas.CreateAndDeleteTapServices,
+        taas.CreateAndUpdateTapServices,
+    )
+    def test_tap_services_use_context_ports(self, scenario_cls):
+        scenario = scenario_cls()
+        self._setup_scenario(scenario)
+        scenario.context["iteration"] = 6
+
+        scenario.run(tap_service_create_args={"description": "created"})
+
+        scenario._clients.neutron.create_tap_service.assert_called_once_with(
+            port_id="port-2", description="created")
+        scenario._clients.neutron.create_network.assert_not_called()
+        scenario._clients.neutron.create_port.assert_not_called()
+
+    def test_create_and_list_tap_services(self):
+        scenario = taas.CreateAndListTapServices()
+        self._setup_scenario(scenario)
+
+        scenario.run()
+
+        scenario._clients.neutron.list_tap_services.assert_called_once_with()
+        scenario._clients.neutron.delete_tap_service.assert_not_called()
+
+    def test_create_and_delete_tap_services(self):
+        scenario = taas.CreateAndDeleteTapServices()
+        self._setup_scenario(scenario)
+        client = scenario._clients.neutron
+        client.create_tap_service.return_value = mock.Mock(id="service-id")
+
+        scenario.run()
+
+        client.delete_tap_service.assert_called_once_with("service-id")
+
+    @ddt.data(None, {"description": "updated"}, {"description": ""})
+    def test_create_and_update_tap_services(self, update_args):
+        scenario = taas.CreateAndUpdateTapServices()
+        self._setup_scenario(scenario)
+        client = scenario._clients.neutron
+        client.create_tap_service.return_value = mock.Mock(id="service-id")
+
+        scenario.run(tap_service_update_args=update_args)
+
+        client.update_tap_service.assert_called_once_with(
+            "service-id", name="random_name",
+            description=(update_args or {}).get("description"))
+
+    def test_tap_service_names_are_generated(self):
+        scenario = taas.CreateAndUpdateTapServices()
+        self._setup_scenario(scenario)
+
+        scenario.run(
+            tap_service_create_args={"name": "custom-create"},
+            tap_service_update_args={"name": "custom-update"})
+
+        create_kwargs = (
+            scenario._clients.neutron.create_tap_service.call_args.kwargs)
+        self.assertNotIn("name", create_kwargs)
+        update_kwargs = (
+            scenario._clients.neutron.update_tap_service.call_args.kwargs)
+        self.assertEqual("random_name", update_kwargs["name"])

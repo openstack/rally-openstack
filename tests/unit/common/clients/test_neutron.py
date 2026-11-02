@@ -324,3 +324,97 @@ class NeutronTapMirrorTestCase(NeutronTestMixin, test.TestCase):
         self.neutron.delete_tap_mirror("mirror-id")
 
         self.network.delete_tap_mirror.assert_called_once_with("mirror-id")
+
+
+class NeutronTapServiceTestCase(NeutronTestMixin, test.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.neutron = self._make_neutron()
+
+    def test_create_tap_service(self):
+        self.neutron._atomic_actions = []
+        service = self.network.create_tap_service.return_value
+
+        result = self.neutron.create_tap_service("port-id")
+
+        self.assertIs(service, result)
+        self.network.create_tap_service.assert_called_once_with(
+            name="random_name", port_id="port-id")
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.create_tap_service")
+
+    def test_create_tap_service_with_description(self):
+        self.neutron.create_tap_service("port-id", description="desc")
+
+        self.network.create_tap_service.assert_called_once_with(
+            name="random_name", port_id="port-id", description="desc")
+
+    def test_create_tap_service_rejects_custom_name(self):
+        self.assertRaises(
+            TypeError, self.neutron.create_tap_service,
+            "port-id", name="custom-name")
+
+        self.network.create_tap_service.assert_not_called()
+
+    def test_list_tap_services(self):
+        services = [mock.Mock(id="service-1"), mock.Mock(id="service-2")]
+        self.network.tap_services.return_value = iter(services)
+
+        self.assertEqual(services, self.neutron.list_tap_services())
+        self.network.tap_services.assert_called_once_with()
+
+    def test_get_tap_service(self):
+        service = self.network.get_tap_service.return_value
+
+        self.assertIs(service, self.neutron.get_tap_service("service-id"))
+        self.network.get_tap_service.assert_called_once_with("service-id")
+
+    def test_update_tap_service(self):
+        service = self.network.update_tap_service.return_value
+
+        result = self.neutron.update_tap_service(
+            "service-id", description="updated")
+
+        self.assertIs(service, result)
+        self.network.update_tap_service.assert_called_once_with(
+            "service-id", description="updated")
+        self.neutron._name_generator.assert_not_called()
+
+    def test_update_tap_service_with_name(self):
+        self.neutron.update_tap_service("service-id", name="new-name")
+
+        self.network.update_tap_service.assert_called_once_with(
+            "service-id", name="new-name")
+
+    def test_update_tap_service_with_name_and_description(self):
+        self.neutron.update_tap_service(
+            "service-id", name="new-name", description="updated")
+
+        self.network.update_tap_service.assert_called_once_with(
+            "service-id", name="new-name", description="updated")
+
+    def test_update_tap_service_clears_description(self):
+        self.neutron.update_tap_service("service-id", description="")
+
+        self.network.update_tap_service.assert_called_once_with(
+            "service-id", description="")
+
+    def test_update_tap_service_requires_changes(self):
+        self.assertRaises(
+            ValueError, self.neutron.update_tap_service, "service-id")
+
+        self.network.update_tap_service.assert_not_called()
+
+    def test_update_tap_service_rejects_port_changes(self):
+        self.assertRaises(
+            TypeError, self.neutron.update_tap_service,
+            "service-id", port_id="another-port")
+
+        self.network.update_tap_service.assert_not_called()
+
+    def test_delete_tap_service(self):
+        self.neutron.delete_tap_service("service-id")
+
+        self.network.delete_tap_service.assert_called_once_with(
+            "service-id", ignore_missing=False)
