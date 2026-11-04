@@ -27,7 +27,8 @@ class CinderBasicTestCase(test.ScenarioTestCase):
 
         cred = credential.OpenStackCredential(auth_url="url",
                                               username="user",
-                                              password="pass")
+                                              password="pass",
+                                              project_name="project")
         context.update({
             "admin": {
                 "id": "fake_user_id",

@@ -43,8 +43,8 @@ class ClusterGenerator(context.OpenStackContext):
 
     DEFAULT_CONFIG = {"node_count": 1}
 
-    def setup(self):
-        for user, tenant_id in self._iterate_per_tenants():
+    def setup(self) -> None:
+        for user, project_id in self._iterate_per_projects():
 
             nova_scenario = nova_utils.NovaScenario({
                 "user": user,
@@ -66,14 +66,14 @@ class ClusterGenerator(context.OpenStackContext):
             # create a cluster
             ct_uuid = self.config.get("cluster_template_uuid", None)
             if ct_uuid is None:
-                ctx = self.context["tenants"][tenant_id]
+                ctx = self.context["tenants"][project_id]
                 ct_uuid = ctx.get("cluster_template")
             cluster = magnum_scenario._create_cluster(
                 cluster_template=ct_uuid,
                 node_count=self.config.get("node_count"), keypair=keypair)
-            self.context["tenants"][tenant_id]["cluster"] = cluster.uuid
+            self.context["tenants"][project_id]["cluster"] = cluster.uuid
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["magnum.clusters", "nova.keypairs"],
             users=self.context.get("users", []),

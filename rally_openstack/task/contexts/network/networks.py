@@ -100,15 +100,15 @@ class Network(context.OpenStackContext):
 
     config: dict
 
-    def setup(self):
+    def setup(self) -> None:
         # NOTE(rkiran): Some clients are not thread-safe. Thus during
         #               multithreading/multiprocessing, it is likely the
         #               sockets are left open. This problem is eliminated by
         #               creating a connection in setup and cleanup separately.
 
-        for user, tenant_id in self._iterate_per_tenants():
-            self.context["tenants"][tenant_id]["networks"] = []
-            self.context["tenants"][tenant_id]["subnets"] = []
+        for user, project_id in self._iterate_per_projects():
+            self.context["tenants"][project_id]["networks"] = []
+            self.context["tenants"][project_id]["subnets"] = []
 
             client = neutron.NeutronService(
                 user["credential"].clients(),
@@ -156,14 +156,14 @@ class Network(context.OpenStackContext):
                     router_port_id = None
                 net_infra["network"]["router_port_id"] = router_port_id
 
-                self.context["tenants"][tenant_id]["networks"].append(
+                self.context["tenants"][project_id]["networks"].append(
                     net_infra["network"]
                 )
-                self.context["tenants"][tenant_id]["subnets"].extend(
+                self.context["tenants"][project_id]["subnets"].extend(
                     net_infra["subnets"]
                 )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=[
                 "neutron.subnet", "neutron.network", "neutron.router",

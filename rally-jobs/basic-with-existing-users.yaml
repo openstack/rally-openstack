@@ -15,6 +15,9 @@
           scenario:
             CinderVolumes.create_volume:
               size: 1
+          contexts:
+            users:
+              user_choice_method: round_robin
           runner:
             constant:
               times: 2
@@ -28,6 +31,9 @@
               size: 1
               image:
                 name: {{image_name}}
+          contexts:
+            users:
+              user_choice_method: round_robin
           runner:
             constant:
               times: 1
@@ -46,6 +52,9 @@
                 name: {{image_name}}
               flavor:
                 name: {{flavor_name}}
+          contexts:
+            users:
+              user_choice_method: round_robin
           runner:
             constant:
               times: 2
@@ -64,6 +73,9 @@
               image:
                   name: {{image_name}}
               detailed: True
+          contexts:
+            users:
+              user_choice_method: round_robin
           runner:
             constant:
               times: 2
@@ -78,9 +90,12 @@
         -
           scenario:
             NeutronNetworks.create_and_list_networks: {}
+          contexts:
+            users:
+              user_choice_method: round_robin
           runner:
             constant:
-              times: 2
+              times: 4
               concurrency: 2
           sla:
             failure_rate:
@@ -91,6 +106,8 @@
               subnet_cidr_start: "1.1.0.0/30"
               subnets_per_network: 2
           contexts:
+            users:
+              user_choice_method: round_robin
             network: {}
           runner:
             constant:
@@ -104,6 +121,9 @@
             NeutronNetworks.create_and_list_floating_ips:
               floating_network: "public"
               floating_ip_args: {}
+          contexts:
+            users:
+              user_choice_method: random
           runner:
             constant:
               times: 2

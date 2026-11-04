@@ -15,20 +15,30 @@
 
 from __future__ import annotations
 
+import typing as t
+
 from rally.common import logging
 from rally.common import validation
 
 from rally_openstack.common.services.network import neutron
 from rally_openstack.task import context
 from rally_openstack.task.cleanup import manager as resource_manager
+from rally_openstack.task.contexts.keystone import users
 
 
 LOG = logging.getLogger(__name__)
 
 
+class UserWithSecgroup(users.UserInfo):
+    """An entry of ``context["users"]`` after the allow_ssh context ran."""
+
+    # the neutron security group, as returned by the API
+    secgroup: dict[str, t.Any]
+
+
 # This method is simplified version to what neutron has
-def _rule_to_key(rule):
-    def _normalize_rule_value(key, value):
+def _rule_to_key(rule: t.Mapping[str, object]) -> str:
+    def _normalize_rule_value(key: str, value: object) -> str:
         # This string is used as a placeholder for str(None), but shorter.
         none_char = "+"
 
@@ -112,7 +122,7 @@ _RULES_TO_ADD: list[dict[str, str | int]] = [
 class AllowSSH(context.OpenStackContext):
     """Sets up security groups for all users to access VM via SSH."""
 
-    def setup(self):
+    def setup(self) -> None:
         client = neutron.NeutronService(
             clients=self.context["users"][0]["credential"].clients(),
             name_generator=self.generate_random_name,
@@ -124,8 +134,8 @@ class AllowSSH(context.OpenStackContext):
             return
 
         secgroup_name = self.generate_random_name()
-        secgroups_per_tenant = {}
-        for user, tenant_id in self._iterate_per_tenants():
+        secgroups_per_project: dict[str, dict[str, t.Any]] = {}
+        for user, project_id in self._iterate_per_projects():
             client = neutron.NeutronService(
                 clients=user["credential"].clients(),
                 name_generator=self.generate_random_name,
@@ -134,7 +144,7 @@ class AllowSSH(context.OpenStackContext):
             secgroup = client.create_security_group(
                 name=secgroup_name,
                 description="Allow ssh access to VMs created by Rally")
-            secgroups_per_tenant[tenant_id] = secgroup
+            secgroups_per_project[project_id] = secgroup
 
             existing_rules = {
                 _rule_to_key(rule)
@@ -148,9 +158,9 @@ class AllowSSH(context.OpenStackContext):
                     )
 
         for user in self.context["users"]:
-            user["secgroup"] = secgroups_per_tenant[user["tenant_id"]]
+            user["secgroup"] = secgroups_per_project[user["tenant_id"]]
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["neutron.security_group"],
             admin=self.context.get("admin"),

@@ -100,8 +100,8 @@ class ClusterTemplateGenerator(context.OpenStackContext):
         "additionalProperties": False
     }
 
-    def setup(self):
-        for user, tenant_id in self._iterate_per_tenants():
+    def setup(self) -> None:
+        for user, project_id in self._iterate_per_projects():
 
             magnum_scenario = magnum_utils.MagnumScenario({
                 "user": user,
@@ -115,9 +115,9 @@ class ClusterTemplateGenerator(context.OpenStackContext):
                 **self.config)
 
             ct_uuid = cluster_template.uuid
-            self.context["tenants"][tenant_id]["cluster_template"] = ct_uuid
+            self.context["tenants"][project_id]["cluster_template"] = ct_uuid
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["magnum.cluster_templates"],
             users=self.context.get("users", []),

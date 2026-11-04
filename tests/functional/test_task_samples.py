@@ -93,11 +93,8 @@ class TestTaskSamples(unittest.TestCase):
         user = copy.copy(os_creds["admin"])
         user["username"] = ctx["users"][0]["credential"].username
         user["password"] = ctx["users"][0]["credential"].password
-        if "project_name" in os_creds["admin"]:
-            # it is Keystone
-            user["project_name"] = ctx["users"][0]["credential"].tenant_name
-        else:
-            user["tenant_name"] = ctx["users"][0]["credential"].tenant_name
+        user.pop("tenant_name", None)
+        user["project_name"] = ctx["users"][0]["credential"].project_name
         os_creds["users"] = [user]
 
         env_spec = os.path.join(rally.tmp_dir, "env_with_users.json")

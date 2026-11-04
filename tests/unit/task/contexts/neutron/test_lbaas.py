@@ -82,7 +82,7 @@ class LbaasTestCase(test.TestCase):
         fake_args = {"lbaas_version": 1}
 
         lb_context = lbaas_context.Lbaas(self.get_context(**fake_args))
-        lb_context._iterate_per_tenants = mock.MagicMock(
+        lb_context._iterate_per_projects = mock.MagicMock(
             return_value=[
                 ("foo_user", "foo_tenant"),
                 ("bar_user", "bar_tenant")]
@@ -90,7 +90,7 @@ class LbaasTestCase(test.TestCase):
 
         lb_context.setup()
 
-        lb_context._iterate_per_tenants.assert_called_once_with()
+        lb_context._iterate_per_projects.assert_called_once_with()
         net_wrapper.supports_extension.assert_called_once_with("lbaas")
         for tenant_id, tenant_ctx in (
                 sorted(lb_context.context["tenants"].items())):
@@ -108,12 +108,12 @@ class LbaasTestCase(test.TestCase):
         net_wrapper = mock_wrap(mock_clients.return_value)
         net_wrapper.supports_extension.return_value = (False, None)
 
-        lb_context._iterate_per_tenants = mock.MagicMock(
+        lb_context._iterate_per_projects = mock.MagicMock(
             return_value=[("bar_user", "bar_tenant")]
         )
         lb_context.setup()
 
-        lb_context._iterate_per_tenants.assert_not_called()
+        lb_context._iterate_per_projects.assert_not_called()
         net_wrapper.supports_extension.assert_called_once_with("lbaas")
         assert not net_wrapper.create_v1_pool.called
 
@@ -125,7 +125,7 @@ class LbaasTestCase(test.TestCase):
         fake_args = {"lbaas_version": 2}
 
         lb_context = lbaas_context.Lbaas(self.get_context(**fake_args))
-        lb_context._iterate_per_tenants = mock.MagicMock(
+        lb_context._iterate_per_projects = mock.MagicMock(
             return_value=[("bar_user", "bar_tenant")]
         )
         net_wrapper = mock_wrap(mock_clients.return_value)

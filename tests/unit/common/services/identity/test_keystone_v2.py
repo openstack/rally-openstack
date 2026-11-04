@@ -37,6 +37,11 @@ class KeystoneV2ServiceTestCase(test.TestCase):
         self.service._ng_cache = mock.MagicMock()
         self.ng = self.service._ng_cache
 
+    @mock.patch(f"{PATH}.identity.log_deprecation")
+    def test_init_logs_deprecation(self, mock_log_deprecation):
+        keystone_v2.KeystoneV2Service(self.clients)
+        mock_log_deprecation.assert_called_once_with()
+
     def test_create_tenant(self):
         name = "name"
         tenant = self.service.create_tenant(name)

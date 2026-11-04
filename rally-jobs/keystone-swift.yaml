@@ -56,9 +56,9 @@ subtasks:
         sla:
           failure_rate:
             max: 0
-  - title: KeystoneBasic.create_and_list_tenants tests
+  - title: KeystoneBasic.create_and_list_projects tests
     scenario:
-      KeystoneBasic.create_and_list_tenants: {}
+      KeystoneBasic.create_and_list_projects: {}
     runner:
       constant:
         times: 10
@@ -173,9 +173,9 @@ subtasks:
     sla:
       failure_rate:
         max: 0
-  - title: KeystoneBasic.create_tenant tests
+  - title: KeystoneBasic.create_project tests
     scenario:
-      KeystoneBasic.create_tenant: {}
+      KeystoneBasic.create_project: {}
     runner:
       constant:
         times: 10
@@ -183,10 +183,10 @@ subtasks:
     sla:
       failure_rate:
         max: 0
-  - title: KeystoneBasic.create_tenant_with_users tests
+  - title: KeystoneBasic.create_project_with_users tests
     scenario:
-      KeystoneBasic.create_tenant_with_users:
-        users_per_tenant: 10
+      KeystoneBasic.create_project_with_users:
+        users_per_project: 10
     contexts:
       users:
         tenants: 3
@@ -224,9 +224,9 @@ subtasks:
     sla:
       failure_rate:
         max: 0
-  - title: KeystoneBasic.create_update_and_delete_tenant tests
+  - title: KeystoneBasic.create_update_and_delete_project tests
     scenario:
-      KeystoneBasic.create_update_and_delete_tenant: {}
+      KeystoneBasic.create_update_and_delete_project: {}
     runner:
       constant:
         times: 10

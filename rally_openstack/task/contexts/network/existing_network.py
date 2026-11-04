@@ -33,16 +33,16 @@ class ExistingNetwork(context.OpenStackContext):
         "additionalProperties": False
     }
 
-    def setup(self):
-        for user, tenant_id in self._iterate_per_tenants():
+    def setup(self) -> None:
+        for user, project_id in self._iterate_per_projects():
             clients = osclients.Clients(user["credential"])
-            self.context["tenants"][tenant_id]["networks"] = (
+            self.context["tenants"][project_id]["networks"] = (
                 clients.neutron().list_networks()["networks"]
             )
 
-            self.context["tenants"][tenant_id]["subnets"] = (
+            self.context["tenants"][project_id]["subnets"] = (
                 clients.neutron().list_subnets()["subnets"]
             )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Networks were not created by Rally, so nothing to do."""

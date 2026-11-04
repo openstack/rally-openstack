@@ -61,24 +61,31 @@ class Shares(context.OpenStackContext):
         "share_type": None,
     }
 
-    def _create_shares(self, manila_scenario, tenant_id, share_proto, size=1,
-                       share_type=None):
-        tenant_ctxt = self.context["tenants"][tenant_id]
-        tenant_ctxt.setdefault("shares", [])
+    def _create_shares(
+        self,
+        manila_scenario: manila_utils.ManilaScenario,
+        project_id: str,
+        share_proto: str,
+        size: int = 1,
+        share_type: str | None = None,
+    ) -> None:
+        project_ctxt = self.context["tenants"][project_id]
+        project_ctxt.setdefault("shares", [])
         for i in range(self.config["shares_per_tenant"]):
-            kwargs = {"share_proto": share_proto, "size": size}
+            kwargs: dict[str, str | int] = {
+                "share_proto": share_proto, "size": size}
             if share_type:
                 kwargs["share_type"] = share_type
-            share_networks = tenant_ctxt.get("manila_share_networks", {}).get(
-                "share_networks", [])
+            share_networks = project_ctxt.get(
+                "manila_share_networks", {}).get("share_networks", [])
             if share_networks:
                 kwargs["share_network"] = share_networks[
                     i % len(share_networks)]["id"]
             share = manila_scenario._create_share(**kwargs)
-            tenant_ctxt["shares"].append(share.to_dict())
+            project_ctxt["shares"].append(share.to_dict())
 
-    def setup(self):
-        for user, tenant_id in self._iterate_per_tenants():
+    def setup(self) -> None:
+        for user, project_id in self._iterate_per_projects():
             manila_scenario = manila_utils.ManilaScenario({
                 "task": self.task,
                 "owner_id": self.context["owner_id"],
@@ -86,13 +93,13 @@ class Shares(context.OpenStackContext):
             })
             self._create_shares(
                 manila_scenario,
-                tenant_id,
+                project_id,
                 self.config["share_proto"],
                 self.config["size"],
                 self.config["share_type"],
             )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["manila.shares"],
             users=self.context.get("users", []),

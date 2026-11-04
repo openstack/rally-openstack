@@ -87,7 +87,7 @@ class Router(context.OpenStackContext):
         "routers_per_tenant": 1,
     }
 
-    def setup(self):
+    def setup(self) -> None:
         kwargs = {}
         parameters = ("admin_state_up", "external_gateway_info", "network_id",
                       "external_fixed_ips", "distributed", "ha",
@@ -95,17 +95,17 @@ class Router(context.OpenStackContext):
         for parameter in parameters:
             if parameter in self.config:
                 kwargs[parameter] = self.config[parameter]
-        for user, tenant_id in self._iterate_per_tenants():
-            self.context["tenants"][tenant_id]["routers"] = []
+        for user, project_id in self._iterate_per_projects():
+            self.context["tenants"][project_id]["routers"] = []
             scenario = neutron_utils.NeutronScenario(
                 context={"user": user, "task": self.context["task"],
                          "owner_id": self.context["owner_id"]}
             )
             for i in range(self.config["routers_per_tenant"]):
                 router = scenario._create_router(kwargs)
-                self.context["tenants"][tenant_id]["routers"].append(router)
+                self.context["tenants"][project_id]["routers"].append(router)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["neutron.router"],
             users=self.context.get("users", []),

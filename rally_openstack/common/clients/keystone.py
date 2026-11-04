@@ -94,14 +94,14 @@ class Keystone(base.LegacyClientCompat):
             e = base.AuthenticationFailed(
                 error=original_e,
                 username=self.credential.username,
-                project=self.credential.tenant_name,
+                project=self.credential.project_name,
                 url=self.credential.auth_url
             )
             if logging.is_debug() and e.is_trace_helpful():
                 LOG.exception(
                     f"Unable to authenticate for user "
                     f"{self.credential.username} in project "
-                    f"{self.credential.tenant_name}"
+                    f"{self.credential.project_name}"
                 )
 
             raise e from None
@@ -127,7 +127,7 @@ class Keystone(base.LegacyClientCompat):
                 "auth_url": auth_url,
                 "username": self.credential.username,
                 "password": self.credential.password,
-                "tenant_name": self.credential.tenant_name
+                "project_name": self.credential.project_name
             }
 
             if version is None:

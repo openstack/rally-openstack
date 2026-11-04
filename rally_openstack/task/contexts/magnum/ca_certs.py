@@ -69,8 +69,8 @@ class CaCertGenerator(context.OpenStackContext):
 
         return result
 
-    def setup(self):
-        for user, tenant_id in self._iterate_per_tenants():
+    def setup(self) -> None:
+        for user, project_id in self._iterate_per_projects():
 
             magnum_scenario = magnum_utils.MagnumScenario({
                 "user": user,
@@ -80,7 +80,7 @@ class CaCertGenerator(context.OpenStackContext):
             })
 
             # get the cluster and cluster_template
-            cluster_uuid = str(self.context["tenants"][tenant_id]["cluster"])
+            cluster_uuid = str(self.context["tenants"][project_id]["cluster"])
             cluster = magnum_scenario._get_cluster(cluster_uuid)
             cluster_template = magnum_scenario._get_cluster_template(
                 cluster.cluster_template_id)

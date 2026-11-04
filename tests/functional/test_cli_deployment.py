@@ -111,13 +111,7 @@ class DeploymentTestCase(unittest.TestCase):
                          config["openstack"]["admin"]["username"])
         self.assertEqual(TEST_ENV["OS_PASSWORD"],
                          config["openstack"]["admin"]["password"])
-        if "project_name" in config["openstack"]["admin"]:
-            # keystone v3
-            self.assertEqual(TEST_ENV["OS_TENANT_NAME"],
-                             config["openstack"]["admin"]["project_name"])
-        else:
-            # keystone v2
-            self.assertEqual(TEST_ENV["OS_TENANT_NAME"],
-                             config["openstack"]["admin"]["tenant_name"])
+        self.assertEqual(TEST_ENV["OS_TENANT_NAME"],
+                         config["openstack"]["admin"]["project_name"])
         self.assertEqual(TEST_ENV["OS_AUTH_URL"],
                          config["openstack"]["auth_url"])

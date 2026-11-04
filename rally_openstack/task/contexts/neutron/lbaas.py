@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 @plugin.deprecated(
     "Neutron LBaaS v1 API was removed from Neutron. Use Octavia related "
-    "scenarios instead.", rally_version="4.3.0")
+    "scenarios instead.", rally_version="4.2.0")
 @validation.add("required_platform", platform="openstack", admin=True,
                 users=True)
 @context.configure(name="lbaas", platform="openstack", order=360)
@@ -57,7 +57,7 @@ class Lbaas(context.OpenStackContext):
 
     config: dict
 
-    def setup(self):
+    def setup(self) -> None:
         net_wrapper = network_wrapper.wrap(
             osclients.Clients(self.context["admin"]["credential"]),
             self, config=self.config)
@@ -68,13 +68,13 @@ class Lbaas(context.OpenStackContext):
             return
 
         # Creates a lb-pool for every subnet created in network context.
-        for user, tenant_id in self._iterate_per_tenants():
-            for network in self.context["tenants"][tenant_id]["networks"]:
+        for user, project_id in self._iterate_per_projects():
+            for network in self.context["tenants"][project_id]["networks"]:
                 for subnet in network.get("subnets", []):
                     if self.config["lbaas_version"] == 1:
                         network.setdefault("lb_pools", []).append(
                             net_wrapper.create_v1_pool(
-                                tenant_id,
+                                project_id,
                                 subnet,
                                 **self.config["pool"]))
                     else:

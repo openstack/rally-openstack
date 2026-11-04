@@ -136,11 +136,11 @@ class KeystoneSessionTestCase(KeystoneTestMixin, test.TestCase):
         if auth_url.endswith("v2.0"):
             password.assert_called_once_with(
                 auth_url=auth_url, password="pass",
-                tenant_name="tenant", username="user")
+                project_name="tenant", username="user")
         else:
             password.assert_called_once_with(
                 auth_url=auth_url, password="pass",
-                tenant_name="tenant", username="user",
+                project_name="tenant", username="user",
                 domain_name=None, project_domain_name=None,
                 user_domain_name=None)
         self.assertFalse(password.return_value.set_auth_state.called)

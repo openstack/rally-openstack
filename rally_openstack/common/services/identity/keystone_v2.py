@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
+import typing as t
 import uuid
 
 from rally.task import atomic
@@ -21,8 +24,21 @@ from rally_openstack.common.services.identity import identity
 from rally_openstack.common.services.identity import keystone_common
 
 
+if t.TYPE_CHECKING:
+    from rally_openstack.common import osclients
+
+
 @service.service("keystone", service_type="identity", version="2")
 class KeystoneV2Service(service.Service, keystone_common.KeystoneMixin):
+
+    def __init__(
+        self,
+        clients: osclients.Clients,
+        name_generator: t.Callable[[], str] | None = None,
+        atomic_inst: t.Any = None,
+    ) -> None:
+        identity.log_deprecation()
+        super().__init__(clients, name_generator, atomic_inst)
 
     def create_tenant(self, tenant_name=None):
         return self._ng.create_project(tenant_name)

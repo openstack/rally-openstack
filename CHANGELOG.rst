@@ -177,12 +177,43 @@ Changed
   and the plugin reference rather than only spelled out in prose,
   and a wrong value is reported per argument.
 
+* An environment created from system variables (``--from-sysenv``) uses
+  Keystone V3 unless ``OS_IDENTITY_API_VERSION=2`` is set.
+
+* The existing platform stores the project of a credential as
+  ``project_name``. A ``tenant_name`` copy is kept for now, since Rally core
+  still reads it (``rally deployment use`` / ``show``).
+
+* ``KeystoneBasic.*`` scenarios declare every argument they accept instead of
+  passing ``**kwargs`` through, so an argument the identity client does not
+  support is reported at task validation rather than failing at runtime.
+
 Deprecated
 ~~~~~~~~~~
 
-* The ``identity.Identity`` service layer, together with the ``keystone_v2`` /
-  ``keystone_v3`` service implementations, is deprecated in favour of the
-  ``clients.keystone`` client. Using it now emits a warning.
+* The identity service layer (``rally_openstack.common.services.identity``:
+  ``identity.Identity`` and the ``keystone_v2`` / ``keystone_v3`` service
+  implementations) is deprecated in favour of the ``clients.keystone`` client.
+  Using any of it now emits a warning.
+
+* ``OpenStackCredential.tenant_name`` (and ``credential["tenant_name"]``) is
+  deprecated in favour of ``project_name``. ``tenant_name`` is still accepted
+  by the constructor, so environments saved by older versions keep working.
+
+* ``OpenStackContext._iterate_per_tenants`` is deprecated in favour of
+  ``_iterate_per_projects``.
+
+* ``KeystoneBasic.create_tenant``, ``KeystoneBasic.create_tenant_with_users``,
+  ``KeystoneBasic.create_and_list_tenants`` and
+  ``KeystoneBasic.create_update_and_delete_tenant`` are deprecated in favour of
+  the new ``KeystoneBasic.create_project``,
+  ``KeystoneBasic.create_project_with_users`` (``users_per_project``),
+  ``KeystoneBasic.create_and_list_projects`` and
+  ``KeystoneBasic.create_update_and_delete_project``.
+
+* The ``create_role_kwargs`` and ``list_role_kwargs`` arguments of
+  ``KeystoneBasic.create_and_list_roles`` are deprecated in favour of a single
+  ``domain`` argument used for both creating and listing the roles.
 
 * Accessing the raw ``python-keystoneclient`` via ``clients.keystone(...)`` is
   deprecated. It stays the default for backward compatibility but emits a
@@ -213,6 +244,16 @@ Deprecated
 
 Fixed
 ~~~~~
+
+* The ``round_robin`` user choice method failed with a ``KeyError`` for
+  environments with existing users.
+
+* Asking the ``users`` context to create temporary users in an environment
+  without admin credentials failed with a bare ``KeyError: 'admin'``. It is
+  now reported at task validation with an explanation.
+
+* ``KeystoneBasic.create_and_update_user`` crashed with a ``TypeError`` when
+  its optional ``update_user_kwargs`` argument was omitted.
 
 * Proactive token refresh for the clients built by a scenario never actually
   worked; it does now, so long-running workloads no longer risk a reused token

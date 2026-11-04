@@ -52,13 +52,13 @@ class VolumeGenerator(context.OpenStackContext):
         "volumes_per_tenant": 1
     }
 
-    def setup(self):
+    def setup(self) -> None:
         size = self.config["size"]
         volume_type = self.config.get("type", None)
         volumes_per_tenant = self.config["volumes_per_tenant"]
 
-        for user, tenant_id in self._iterate_per_tenants():
-            self.context["tenants"][tenant_id].setdefault("volumes", [])
+        for user, project_id in self._iterate_per_projects():
+            self.context["tenants"][project_id].setdefault("volumes", [])
             clients = osclients.Clients(user["credential"])
             cinder_service = block.BlockStorage(
                 clients,
@@ -67,10 +67,10 @@ class VolumeGenerator(context.OpenStackContext):
             for i in range(volumes_per_tenant):
                 vol = cinder_service.create_volume(size,
                                                    volume_type=volume_type)
-                self.context["tenants"][tenant_id]["volumes"].append(
+                self.context["tenants"][project_id]["volumes"].append(
                     vol._as_dict())
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["cinder.volumes"],
             users=self.context.get("users", []),

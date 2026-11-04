@@ -88,6 +88,7 @@ class FakeCredential(credential.OpenStackCredential):
         creds.setdefault("auth_url", "https://example.com")
         creds.setdefault("username", "admin")
         creds.setdefault("password", "pass")
+        creds.setdefault("project_name", "admin")
         super().__init__(**creds)
         self.clients = mock.Mock()
 
@@ -1502,7 +1503,7 @@ class FakeClients:
             auth_url="http://fake.example.org:5000/v2.0/",
             username="fake_username",
             password="fake_password",
-            tenant_name="fake_tenant_name")
+            project_name="fake_tenant_name")
 
     def keystone(self, version=None, *, legacy=False):
         if not self._keystone:
@@ -1700,7 +1701,7 @@ class FakeUserContext(FakeContext):
             auth_url="aurl",
             username="aname",
             password="apwd",
-            tenant_name="atenant")
+            project_name="atenant")
     }
     user = {
         "id": "uuid",
@@ -1708,7 +1709,7 @@ class FakeUserContext(FakeContext):
             auth_url="url",
             username="name",
             password="pwd",
-            tenant_name="tenant"),
+            project_name="tenant"),
         "tenant_id": "uuid"
     }
     tenants = {"uuid": {"name": "tenant"}}

@@ -56,13 +56,13 @@ class TempestConfigfileManager:
             if s_name == service_name:
                 return s_type
 
-    def _configure_auth(self, section_name="auth"):
+    def _configure_auth(self, section_name: str = "auth") -> None:
         self.conf.set(section_name, "admin_username",
                       self.credential.username)
         self.conf.set(section_name, "admin_password",
                       self.credential.password)
         self.conf.set(section_name, "admin_project_name",
-                      self.credential.tenant_name)
+                      self.credential.project_name)
         # Keystone v3 related parameter
         self.conf.set(section_name, "admin_domain_name",
                       self.credential.user_domain_name or "Default")

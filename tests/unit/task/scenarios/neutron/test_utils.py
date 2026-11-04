@@ -42,6 +42,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
                 auth_url="example.com",
                 username="root",
                 password="changeme",
+                project_name="project",
                 permission=consts.EndpointPermission.ADMIN
             )
         )

@@ -26,6 +26,7 @@ from rally.common import cfg
 from rally.common import logging
 from rally.common import utils
 from rally.common import validation
+from rally.common.plugin import plugin
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential
@@ -48,6 +49,62 @@ PROJECT_DOMAIN_DESCR = "ID of domain in which projects will be created."
 USER_DOMAIN_DESCR = "ID of domain in which users will be created."
 
 
+class UserInfo(t.TypedDict):
+    """An entry of ``context["users"]``."""
+
+    id: str
+    credential: credential.OpenStackCredential
+    tenant_id: str
+
+
+class ProjectInfo(t.TypedDict):
+    """A value of ``context["tenants"]``, keyed by the project id."""
+
+    id: str
+    name: str
+    users: list[UserInfo]
+
+
+def _uses_existing_users(
+    platform_users: list[dict[str, t.Any]], config: t.Mapping[str, t.Any]
+) -> bool:
+    """Whether the users context reuses the users of the environment.
+
+    It does so when the environment has users and the context is not asked
+    to create new ones (the only option for existing users is the user
+    choice method).
+    """
+    return bool(platform_users) and not (
+        set(config) - {"user_choice_method"})
+
+
+@validation.add("required_platform", platform="openstack", users=True)
+@validation.configure("check_users_context_admin", platform="openstack")
+class AdminForNewUsersValidator(validation.Validator):
+    """Ensure there is an admin when the users context creates users."""
+
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin],
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        platform_data = context["env"]["platforms"]["openstack"]
+        if platform_data.get("admin"):
+            return
+        if _uses_existing_users(platform_data.get("users", []),
+                                plugin_cfg or {}):
+            return
+        self.fail(
+            "Creating temporary users and projects requires admin "
+            "credentials, but the environment has none. Remove the users "
+            "context settings other than 'user_choice_method' to use the "
+            "existing users of the environment, or add admin credentials "
+            "to it.")
+
+
+@validation.add("check_users_context_admin")
 @validation.add("required_platform", platform="openstack", users=True)
 @context.configure(name="users", platform="openstack", order=100)
 class UserGenerator(context.OpenStackContext):
@@ -113,8 +170,10 @@ class UserGenerator(context.OpenStackContext):
             cfg.CONF.openstack.users_context_resource_management_workers,
     }
 
-    def __init__(self, context):
-        super().__init__(context)
+    config: utils.LockedDict
+
+    def __init__(self, ctx: dict[str, t.Any]) -> None:
+        super().__init__(ctx)
 
         creds = self.env["platforms"]["openstack"]
         if creds.get("admin"):
@@ -123,54 +182,54 @@ class UserGenerator(context.OpenStackContext):
             if "api_info" in admin_cred:
                 api_info.update(creds["admin"]["api_info"])
             admin_cred["api_info"] = api_info
-            context["admin"] = {
+            ctx["admin"] = {
                 "credential": credential.OpenStackCredential(**admin_cred)
             }
 
-        if creds["users"] and not (set(self.config) - {"user_choice_method"}):
+        if _uses_existing_users(creds["users"], self.config):
             self.existing_users = creds["users"]
         else:
             self.existing_users = []
-            self.credential = context["admin"]["credential"]
-            project_domain = (self.credential["project_domain_name"]
-                              or cfg.CONF.openstack.project_domain)
-            user_domain = (self.credential["user_domain_name"]
-                           or cfg.CONF.openstack.user_domain)
-            self.DEFAULT_FOR_NEW_USERS["project_domain"] = project_domain
-            self.DEFAULT_FOR_NEW_USERS["user_domain"] = user_domain
-            with t.cast(utils.LockedDict, self.config).unlocked():
+            self.credential: credential.OpenStackCredential = (
+                ctx["admin"]["credential"])
+            self.DEFAULT_FOR_NEW_USERS["project_domain"] = (
+                self.credential.project_domain_name
+                or cfg.CONF.openstack.project_domain
+            )
+            self.DEFAULT_FOR_NEW_USERS["user_domain"] = (
+                self.credential.user_domain_name
+                or cfg.CONF.openstack.user_domain
+            )
+            with self.config.unlocked():
                 for key, value in self.DEFAULT_FOR_NEW_USERS.items():
                     self.config.setdefault(key, value)
 
-    def _create_tenants(self, threads):
-        tenants = collections.deque()
+    def _create_projects(self, threads: int) -> dict[str, ProjectInfo]:
+        projects: collections.deque[ProjectInfo] = collections.deque()
 
-        def publish(queue):
+        def publish(queue: collections.deque[tuple[str, str, int]]) -> None:
             for i in range(self.config["tenants"]):
                 args = (self.config["project_domain"], self.task["uuid"], i)
                 queue.append(args)
 
-        def consume(cache, args):
+        def consume(
+            cache: dict[str, keystone.Keystone],
+            args: tuple[str, str, int],
+        ) -> None:
             domain, task_id, i = args
             if "client" not in cache:
                 clients = osclients.Clients(
                     self.credential,
                     name_generator=self.generate_random_name)
                 cache["client"] = clients.keystone
-            ks: keystone.Keystone = cache["client"]
-            project = ks.create_project(domain=domain)
-            project_dict = {
-                "id": project.id, "name": project.name, "users": []
-            }
-            tenants.append(project_dict)
+            project = cache["client"].create_project(domain=domain)
+            projects.append(
+                {"id": project.id, "name": project.name, "users": []}
+            )
 
-        # NOTE(msdubov): consume() will fill the tenants list in the closure.
+        # NOTE(msdubov): consume() will fill the projects list in the closure.
         broker.run(publish, consume, threads)
-        tenants_dict = {}
-        for tenant in tenants:
-            tenants_dict[tenant["id"]] = tenant
-
-        return tenants_dict
+        return {project["id"]: project for project in projects}
 
     def _get_default_role_id(self) -> str | None:
         """Resolve the role every created user gets, once.
@@ -194,43 +253,48 @@ class UserGenerator(context.OpenStackContext):
             return None
         return role.id
 
-    def _create_users(self, threads):
-        # NOTE(msdubov): This should be called after _create_tenants().
-        users_per_tenant = self.config["users_per_tenant"]
+    def _create_users(self, threads: int) -> list[UserInfo]:
+        # NOTE(msdubov): This should be called after _create_projects().
+        users_per_project = self.config["users_per_tenant"]
         default_role_id = self._get_default_role_id()
 
-        users = collections.deque()
+        users: collections.deque[UserInfo] = collections.deque()
 
-        def publish(queue):
-            for tenant_id in self.context["tenants"]:
-                for user_id in range(users_per_tenant):
+        def publish(
+            queue: collections.deque[tuple[str, str, str, str, str]],
+        ) -> None:
+            for project_id in self.context["tenants"]:
+                for user_id in range(users_per_project):
                     username = self.generate_random_name()
                     password = (str(uuid.uuid4())
                                 if self.config.get("user_password") is None
                                 else self.config["user_password"])
                     args = (username, password, self.config["project_domain"],
-                            self.config["user_domain"], tenant_id)
+                            self.config["user_domain"], project_id)
                     queue.append(args)
 
-        def consume(cache, args):
-            username, password, project_dom, user_dom, tenant_id = args
+        def consume(
+            cache: dict[str, keystone.Keystone],
+            args: tuple[str, str, str, str, str],
+        ) -> None:
+            username, password, project_dom, user_dom, project_id = args
             if "client" not in cache:
                 clients = osclients.Clients(
                     self.credential,
                     name_generator=self.generate_random_name)
                 cache["client"] = clients.keystone
-            client: keystone.Keystone = cache["client"]
+            client = cache["client"]
             user = client.create_user(username, password=password,
-                                      project_id=tenant_id,
+                                      project_id=project_id,
                                       domain=user_dom)
             if default_role_id is not None:
                 client.add_role(role_id=default_role_id, user_id=user.id,
-                                project_id=tenant_id)
+                                project_id=project_id)
             user_credential = credential.OpenStackCredential(
                 auth_url=self.credential["auth_url"],
                 username=user.name,
                 password=password,
-                tenant_name=self.context["tenants"][tenant_id]["name"],
+                project_name=self.context["tenants"][project_id]["name"],
                 permission=consts.EndpointPermission.USER,
                 project_domain_name=project_dom,
                 user_domain_name=user_dom,
@@ -243,41 +307,42 @@ class UserGenerator(context.OpenStackContext):
                 api_info=self.credential["api_info"])
             users.append({"id": user.id,
                           "credential": user_credential,
-                          "tenant_id": tenant_id})
+                          "tenant_id": project_id})
 
         # NOTE(msdubov): consume() will fill the users list in the closure.
         broker.run(publish, consume, threads)
         return list(users)
 
-    def create_users(self):
+    def create_users(self) -> None:
         """Create tenants and users, using the broker pattern."""
 
         threads = min(self.config["resource_management_workers"],
                       self.config["tenants"])
 
-        LOG.debug("Creating %(tenants)d tenants using %(threads)s threads"
-                  % {"tenants": self.config["tenants"], "threads": threads})
-        self.context["tenants"] = self._create_tenants(threads)
+        LOG.debug(f"Creating {self.config['tenants']} tenants using "
+                  f"{threads} threads")
+        projects = self._create_projects(threads)
+        self.context["tenants"] = projects
 
-        if len(self.context["tenants"]) < self.config["tenants"]:
+        if len(projects) < self.config["tenants"]:
             raise exceptions.ContextSetupFailure(
                 ctx_name=self.get_name(),
                 msg="Failed to create the requested number of tenants.")
 
         users_num = self.config["users_per_tenant"] * self.config["tenants"]
         threads = min(self.config["resource_management_workers"], users_num)
-        LOG.debug("Creating %(users)d users using %(threads)s threads"
-                  % {"users": users_num, "threads": threads})
-        self.context["users"] = self._create_users(threads)
-        for user in self.context["users"]:
-            self.context["tenants"][user["tenant_id"]]["users"].append(user)
+        LOG.debug(f"Creating {users_num} users using {threads} threads")
+        users = self._create_users(threads)
+        self.context["users"] = users
+        for user in users:
+            projects[user["tenant_id"]]["users"].append(user)
 
-        if len(self.context["users"]) < users_num:
+        if len(users) < users_num:
             raise exceptions.ContextSetupFailure(
                 ctx_name=self.get_name(),
                 msg="Failed to create the requested number of users.")
 
-    def use_existing_users(self):
+    def use_existing_users(self) -> None:
         LOG.debug("Using existing users for OpenStack platform.")
         api_info = copy.deepcopy(self.env["platforms"]["openstack"].get(
             "api_info", {}))
@@ -290,25 +355,33 @@ class UserGenerator(context.OpenStackContext):
             user_credential = credential.OpenStackCredential(**user_credential)
             user_clients = osclients.Clients(user_credential)
             user_id = user_clients.keystone.auth_ref.user_id
-            tenant_id = user_clients.keystone.auth_ref.project_id
+            project_id = user_clients.keystone.auth_ref.project_id
+            if user_id is None or project_id is None:
+                raise exceptions.ContextSetupFailure(
+                    ctx_name=self.get_name(),
+                    msg=f"Existing user '{user_credential.username}' is not "
+                        f"scoped to a project.")
             # the user is authenticated now, so keep that auth state instead
             # of paying for a second authentication in _seed_auth_state.
             user_credential.auth = (
                 user_clients.keystone.get_session()[1].get_auth_state())
 
-            if tenant_id not in self.context["tenants"]:
-                self.context["tenants"][tenant_id] = {
-                    "id": tenant_id,
-                    "name": user_credential.tenant_name
-                }
+            if project_id not in self.context["tenants"]:
+                self.context["tenants"][project_id] = ProjectInfo(
+                    id=project_id,
+                    name=user_credential.project_name,
+                    users=[]
+                )
 
-            self.context["users"].append({
-                "credential": user_credential,
-                "id": user_id,
-                "tenant_id": tenant_id
-            })
+            user = UserInfo(
+                id=user_id,
+                credential=user_credential,
+                tenant_id=project_id
+            )
+            self.context["users"].append(user)
+            self.context["tenants"][project_id]["users"].append(user)
 
-    def setup(self):
+    def setup(self) -> None:
         self.context["users"] = []
         self.context["tenants"] = {}
         self.context["user_choice_method"] = self.config["user_choice_method"]
@@ -320,25 +393,31 @@ class UserGenerator(context.OpenStackContext):
 
         self._seed_auth_state()
 
-    def _seed_auth_state(self):
+    def _seed_auth_state(self) -> None:
         """Authenticate each user (and admin) once so iterations reuse it.
 
         Credentials that are already authenticated (the existing_users path
         does it while resolving user and tenant ids) are skipped.
         """
-        credentials = [user["credential"] for user in self.context["users"]]
+        credentials: list[credential.OpenStackCredential] = [
+            user["credential"] for user in self.context["users"]
+        ]
         admin = self.context.get("admin", {}).get("credential")
         if admin is not None:
             credentials.append(admin)
         if not credentials:
             return
 
-        def publish(queue):
+        def publish(
+            queue: collections.deque[credential.OpenStackCredential],
+        ) -> None:
             for cred in credentials:
                 if not cred.auth:
                     queue.append(cred)
 
-        def consume(cache, cred):
+        def consume(
+            cache: dict[str, object], cred: credential.OpenStackCredential
+        ) -> None:
             clients = osclients.Clients(cred)
             sess, plugin = clients.keystone.get_session()
             plugin.get_access(sess)
@@ -353,7 +432,7 @@ class UserGenerator(context.OpenStackContext):
             len(credentials))
         broker.run(publish, consume, threads)
 
-    def _remove_default_security_group(self):
+    def _remove_default_security_group(self) -> None:
         """Delete default security group for tenants."""
 
         clients = osclients.Clients(self.credential)
@@ -377,29 +456,33 @@ class UserGenerator(context.OpenStackContext):
                 continue
             admin_client.delete_security_group(security_group["id"])
 
-    def _get_consumer_for_deletion(self, func_name):
-        def consume(cache, resource_id):
+    def _get_consumer_for_deletion(
+        self, func_name: str
+    ) -> t.Callable[[dict[str, keystone.Keystone], str], None]:
+        def consume(
+            cache: dict[str, keystone.Keystone], resource_id: str
+        ) -> None:
             if "client" not in cache:
                 clients = osclients.Clients(self.credential)
                 cache["client"] = clients.keystone
             getattr(cache["client"], func_name)(resource_id)
         return consume
 
-    def _delete_tenants(self):
-        threads = self.config["resource_management_workers"]
+    def _delete_projects(self) -> None:
+        threads: int = self.config["resource_management_workers"]
 
-        def publish(queue):
-            for tenant_id in self.context["tenants"]:
-                queue.append(tenant_id)
+        def publish(queue: collections.deque[str]) -> None:
+            for project_id in self.context["tenants"]:
+                queue.append(project_id)
 
         broker.run(publish, self._get_consumer_for_deletion("delete_project"),
                    threads)
         self.context["tenants"] = {}
 
-    def _delete_users(self):
-        threads = self.config["resource_management_workers"]
+    def _delete_users(self) -> None:
+        threads: int = self.config["resource_management_workers"]
 
-        def publish(queue):
+        def publish(queue: collections.deque[str]) -> None:
             for user in self.context["users"]:
                 queue.append(user["id"])
 
@@ -407,7 +490,7 @@ class UserGenerator(context.OpenStackContext):
                    threads)
         self.context["users"] = []
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Delete tenants and users, using the broker pattern."""
         if self.existing_users:
             # nothing to do here.
@@ -415,4 +498,4 @@ class UserGenerator(context.OpenStackContext):
         else:
             self._remove_default_security_group()
             self._delete_users()
-            self._delete_tenants()
+            self._delete_projects()

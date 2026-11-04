@@ -157,15 +157,20 @@ class OpenStack(platform.Platform):
         users = new_data.pop("users", [])
         api_info = new_data.pop("api_info", None)
 
+        # NOTE(andreykurilin): rally core reads 'tenant_name' from the stored
+        #   credentials (`rally deployment use/show`), so it is kept as a copy
+        #   of 'project_name' until rally core switches to the latter.
         if admin:
-            if "project_name" in admin:
-                admin["tenant_name"] = admin.pop("project_name")
+            admin["project_name"] = admin.get(
+                "project_name", admin.get("tenant_name"))
+            admin["tenant_name"] = admin["project_name"]
             admin.update(new_data)
             for k, v in defaults.items():
                 admin.setdefault(k, v)
         for user in users:
-            if "project_name" in user:
-                user["tenant_name"] = user.pop("project_name")
+            user["project_name"] = user.get(
+                "project_name", user.get("tenant_name"))
+            user["tenant_name"] = user["project_name"]
             user.update(new_data)
             for k, v in defaults.items():
                 user.setdefault(k, v)
@@ -312,6 +317,9 @@ class OpenStack(platform.Platform):
         * OS_PROJECT_DOMAIN_NAME - Domain name containing project (in case of
           Keystone V3)
 
+        * OS_IDENTITY_API_VERSION - Keystone API version. Keystone V3 is used
+          unless it is set to 2
+
         * OS_ENDPOINT_TYPE - Type of endpoint. Valid endpoint types: admin,
           public, internal
 
@@ -344,9 +352,9 @@ class OpenStack(platform.Platform):
             return {"available": False,
                     "message": "The following variable(s) are missed: %s" %
                                missing_env_vars}
-        tenant_name = sys_environ.get("OS_PROJECT_NAME",
-                                      sys_environ.get("OS_TENANT_NAME"))
-        if tenant_name is None:
+        project_name = sys_environ.get("OS_PROJECT_NAME",
+                                       sys_environ.get("OS_TENANT_NAME"))
+        if project_name is None:
             return {"available": False,
                     "message": "One of OS_PROJECT_NAME or OS_TENANT_NAME "
                                "should be specified."}
@@ -361,7 +369,7 @@ class OpenStack(platform.Platform):
             "admin": {
                 "username": sys_environ["OS_USERNAME"],
                 "password": sys_environ["OS_PASSWORD"],
-                "tenant_name": tenant_name
+                "project_name": project_name
             },
             "endpoint_type": endpoint_type,
             "region_name": sys_environ.get("OS_REGION_NAME", ""),
@@ -372,26 +380,22 @@ class OpenStack(platform.Platform):
                 sys_environ.get("OS_INSECURE")),
             "profiler_hmac_key": sys_environ.get("OSPROFILER_HMAC_KEY"),
             "profiler_conn_str": sys_environ.get("OSPROFILER_CONN_STR"),
-            "api_info": {
+        }
+
+        identity_api_version = sys_environ.get(
+            "OS_IDENTITY_API_VERSION", sys_environ.get("IDENTITY_API_VERSION"))
+        if identity_api_version == "2":
+            spec["api_info"] = {
                 "keystone": {
                     "version": 2,
                     "service_type": "identity"
                 }
             }
-        }
-
-        user_domain_name = sys_environ.get("OS_USER_DOMAIN_NAME")
-        project_domain_name = sys_environ.get("OS_PROJECT_DOMAIN_NAME")
-        identity_api_version = sys_environ.get(
-            "OS_IDENTITY_API_VERSION", sys_environ.get("IDENTITY_API_VERSION"))
-        if (identity_api_version == "3"
-                or (identity_api_version is None
-                    and (user_domain_name or project_domain_name))):
-            # it is Keystone v3 and it has another config scheme
-            spec["admin"]["project_name"] = spec["admin"].pop("tenant_name")
-            spec["admin"]["user_domain_name"] = user_domain_name or "Default"
-            project_domain_name = project_domain_name or "Default"
-            spec["admin"]["project_domain_name"] = project_domain_name
+        else:
+            spec["admin"]["user_domain_name"] = sys_environ.get(
+                "OS_USER_DOMAIN_NAME") or "Default"
+            spec["admin"]["project_domain_name"] = sys_environ.get(
+                "OS_PROJECT_DOMAIN_NAME") or "Default"
             spec["api_info"] = {
                 "keystone": {
                     "version": 3,

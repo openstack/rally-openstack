@@ -138,27 +138,29 @@ class ShareNetworks(context.OpenStackContext):
                 self.context["tenants"][tenant_id][CONTEXT_NAME][
                     "share_networks"].append(sn.to_dict())
 
-    def _setup_for_autocreated_users(self):
-        # Create share network for each network of tenant
-        for user, tenant_id in (self._iterate_per_tenants(
+    def _setup_for_autocreated_users(self) -> None:
+        # Create share network for each network of project
+        for user, project_id in (self._iterate_per_projects(
                 self.context.get("users", []))):
-            networks = self.context["tenants"][tenant_id].get("networks")
+            networks = self.context["tenants"][project_id].get("networks")
             manila_scenario = manila_utils.ManilaScenario({
                 "task": self.task,
                 "owner_id": self.get_owner_id(),
                 "user": user
             })
             manila_scenario.RESOURCE_NAME_FORMAT = self.RESOURCE_NAME_FORMAT
-            self.context["tenants"][tenant_id][CONTEXT_NAME] = {
+            self.context["tenants"][project_id][CONTEXT_NAME] = {
                 "share_networks": []}
-            data = {}
+            data: dict[str, str] = {}
 
-            def _setup_share_network(tenant_id, data):
+            def _setup_share_network(
+                project_id: str, data: dict[str, str]
+            ) -> None:
                 share_network = manila_scenario._create_share_network(
                     **data).to_dict()
-                self.context["tenants"][tenant_id][CONTEXT_NAME][
+                self.context["tenants"][project_id][CONTEXT_NAME][
                     "share_networks"].append(share_network)
-                for ss in self.context["tenants"][tenant_id].get(
+                for ss in self.context["tenants"][project_id].get(
                         consts.SECURITY_SERVICES_CONTEXT_NAME, {}).get(
                             "security_services", []):
                     manila_scenario._add_security_service_to_share_network(
@@ -174,9 +176,9 @@ class ShareNetworks(context.OpenStackContext):
                     else:
                         LOG.warning("Can't determine network service provider."
                                     " Share network will have no data.")
-                    _setup_share_network(tenant_id, data)
+                    _setup_share_network(project_id, data)
             else:
-                _setup_share_network(tenant_id, data)
+                _setup_share_network(project_id, data)
 
     def setup(self):
         self.context[CONTEXT_NAME] = {}

@@ -45,7 +45,7 @@ class ServiceApiInfo(t.TypedDict, total=False):
     pre_newton: bool
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class OpenStackCredential:
     """Credential for OpenStack.
 
@@ -55,61 +55,105 @@ class OpenStackCredential:
     :meth:`__getitem__` / :meth:`__setitem__` for backward compatibility;
     new code should prefer attribute access (``credential.auth_url``).
 
-    ``project_name`` and ``https_key`` are constructor-only aliases: the former
-    falls back into ``tenant_name``, the latter is merged into ``https_cert``.
+    ``tenant_name`` and ``https_key`` are constructor-only aliases: the former
+    is the legacy name of ``project_name`` that platform data stored in the
+    database may still carry, the latter is merged into ``https_cert``.
     """
 
     auth_url: str
     username: str
     password: str
-    tenant_name: str | None = None
-    project_name: dataclasses.InitVar[str | None] = None
-    region_name: str | None = None
-    endpoint_type: t.Any = None
-    domain_name: str | None = None
-    user_domain_name: str | None = None
-    project_domain_name: str | None = None
-    https_insecure: bool = False
-    https_cacert: str | None = None
-    https_cert: t.Any = None
-    https_key: dataclasses.InitVar[str | None] = None
-    profiler_hmac_key: str | None = None
-    profiler_conn_str: str | None = None
-    api_info: dict[str, ServiceApiInfo] = dataclasses.field(
-        default_factory=dict)
-    auth: t.Any = None
-    discovery_cache: dict[str, t.Any] = dataclasses.field(default_factory=dict)
+    project_name: str
+    region_name: str | None
+    endpoint_type: t.Any
+    domain_name: str | None
+    user_domain_name: str | None
+    project_domain_name: str | None
+    https_insecure: bool
+    https_cacert: str | None
+    https_cert: t.Any
+    profiler_hmac_key: str | None
+    profiler_conn_str: str | None
+    api_info: dict[str, ServiceApiInfo]
+    auth: t.Any
+    discovery_cache: dict[str, t.Any]
 
     # TODO(andreykurilin): deprecate permission and endpoint
-    permission: t.Any = None
-    endpoint: str | None = None
+    permission: t.Any
+    endpoint: str | None
 
-    def __post_init__(
-        self, project_name: str | None, https_key: str | None
+    def __init__(
+        self,
+        auth_url: str,
+        username: str,
+        password: str,
+        project_name: str | None = None,
+        region_name: str | None = None,
+        endpoint_type: t.Any = None,
+        domain_name: str | None = None,
+        user_domain_name: str | None = None,
+        project_domain_name: str | None = None,
+        https_insecure: bool = False,
+        https_cacert: str | None = None,
+        https_cert: t.Any = None,
+        profiler_hmac_key: str | None = None,
+        profiler_conn_str: str | None = None,
+        api_info: dict[str, ServiceApiInfo] | None = None,
+        auth: t.Any = None,
+        discovery_cache: dict[str, t.Any] | None = None,
+        permission: t.Any = None,
+        endpoint: str | None = None,
+        tenant_name: str | None = None,
+        https_key: str | None = None,
     ) -> None:
-        # TODO(andreykurilin): deprecate permission and endpoint
-        if self.tenant_name is None:
-            self.tenant_name = project_name
-        if self.https_cert and https_key:
-            self.https_cert = (self.https_cert, https_key)
-        if self.api_info is None:
-            self.api_info = {}
-        if self.discovery_cache is None:
-            self.discovery_cache = {}
+        project_name = project_name or tenant_name
+        if not project_name:
+            raise TypeError(
+                "OpenStackCredential requires 'project_name' (or its legacy "
+                "alias 'tenant_name').")
+        self.auth_url = auth_url
+        self.username = username
+        self.password = password
+        self.project_name = project_name
+        self.region_name = region_name
+        self.endpoint_type = endpoint_type
+        self.domain_name = domain_name
+        self.user_domain_name = user_domain_name
+        self.project_domain_name = project_domain_name
+        self.https_insecure = https_insecure
+        self.https_cacert = https_cacert
+        self.https_cert = https_cert
+        if https_cert and https_key:
+            self.https_cert = (https_cert, https_key)
+        self.profiler_hmac_key = profiler_hmac_key
+        self.profiler_conn_str = profiler_conn_str
+        self.api_info = {} if api_info is None else api_info
+        self.auth = auth
+        self.discovery_cache = (
+            {} if discovery_cache is None else discovery_cache)
+        self.permission = permission
+        self.endpoint = endpoint
         # per-credential runtime cache reused by :meth:`clients`; not a field,
         # so it never lands in :meth:`to_dict` / deepcopy.
         self._clients_cache: dict[str, t.Any] = {}
 
-    @t.overload
-    def __getitem__(
-        self, key: t.Literal["auth_url", "username", "password"]) -> str: ...
+    @property
+    @logging.log_deprecated("use 'project_name' instead", "4.2.0", once=True)
+    def tenant_name(self) -> str:
+        return self.project_name
 
     @t.overload
     def __getitem__(
         self,
         key: t.Literal[
-            "tenant_name",
-            "project_name",
+            "auth_url", "username", "password", "project_name", "tenant_name"
+        ],
+    ) -> str: ...
+
+    @t.overload
+    def __getitem__(
+        self,
+        key: t.Literal[
             "region_name",
             "domain_name",
             "endpoint",

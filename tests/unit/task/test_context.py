@@ -16,20 +16,29 @@ from rally_openstack.task import context
 from tests.unit import test
 
 
+class DummyContext(context.OpenStackContext):
+    def __init__(self, ctx):
+        self.context = ctx
+
+    def setup(self):
+        pass
+
+    def cleanup(self):
+        pass
+
+
 class TenantIteratorTestCase(test.TestCase):
 
+    def test__iterate_per_tenants_delegates_to_projects(self):
+        users = [{"id": "0", "tenant_id": "t0"},
+                 {"id": "1", "tenant_id": "t0"},
+                 {"id": "2", "tenant_id": "t1"}]
+        ctx = DummyContext({"users": users})
+
+        self.assertEqual(list(ctx._iterate_per_projects()),
+                         list(ctx._iterate_per_tenants()))
+
     def test__iterate_per_tenant(self):
-
-        class DummyContext(context.OpenStackContext):
-            def __init__(self, ctx):
-                self.context = ctx
-
-            def setup(self):
-                pass
-
-            def cleanup(self):
-                pass
-
         users = []
         tenants_count = 2
         users_per_tenant = 5
@@ -42,6 +51,6 @@ class TenantIteratorTestCase(test.TestCase):
             ({"id": "0", "tenant_id": str(i)}, str(i)) for i in range(
                 tenants_count)]
         real_result = list(
-            DummyContext({"users": users})._iterate_per_tenants())
+            DummyContext({"users": users})._iterate_per_projects())
 
         self.assertEqual(expected_result, real_result)

@@ -309,19 +309,7 @@ module = "rally_openstack.task.cleanup.resources"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.task.context"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.api_versions"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.cinder.volume_types"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.cinder.volumes"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
@@ -337,18 +325,6 @@ module = "rally_openstack.task.contexts.cleanup.user"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.dataplane.heat"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.designate.zones"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.glance.images"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.heat.stacks"
 disable_error_code = ["index", "no-untyped-def"]
 
@@ -357,39 +333,15 @@ module = "rally_openstack.task.contexts.keystone.roles"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.keystone.users"
-disable_error_code = ["no-untyped-def", "var-annotated"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.magnum.ca_certs"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.magnum.cluster_templates"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.magnum.clusters"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.manila.manila_security_services"
-disable_error_code = ["no-untyped-def", "var-annotated"]
+disable_error_code = ["var-annotated"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.manila.manila_share_networks"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.manila.manila_shares"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.network.allow_ssh"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.network.existing_network"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
@@ -398,11 +350,7 @@ disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.network.networks"
-disable_error_code = ["assignment", "no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.network.routers"
-disable_error_code = ["no-untyped-def"]
+disable_error_code = ["assignment"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.neutron.lbaas"
@@ -410,14 +358,6 @@ disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.nova.flavors"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.nova.keypairs"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.nova.servers"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
@@ -451,14 +391,6 @@ disable_error_code = ["no-untyped-def"]
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.swift.utils"
 disable_error_code = ["attr-defined", "no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.vm.custom_image"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.contexts.vm.image_command_customizer"
-disable_error_code = ["index", "no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.contexts.watcher.audit_templates"
@@ -554,10 +486,6 @@ disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = "rally_openstack.task.scenarios.ironic.utils"
-disable_error_code = ["no-untyped-def"]
-
-[[tool.mypy.overrides]]
-module = "rally_openstack.task.scenarios.keystone.basic"
 disable_error_code = ["no-untyped-def"]
 
 [[tool.mypy.overrides]]

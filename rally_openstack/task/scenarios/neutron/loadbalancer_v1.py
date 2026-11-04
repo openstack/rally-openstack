@@ -28,7 +28,7 @@ _DEPRECATION_REASON = (
     "scenarios instead (i.e. Octavia.create_and_list_pools).")
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("restricted_parameters", param_names="subnet_id",
                 subdict="pool_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -55,7 +55,7 @@ class CreateAndListPools(utils.NeutronScenario):
         self._list_v1_pools()
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("restricted_parameters", param_names="subnet_id",
                 subdict="pool_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -84,7 +84,7 @@ class CreateAndDeletePools(utils.NeutronScenario):
             self._delete_v1_pool(pool["pool"])
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("restricted_parameters", param_names="subnet_id",
                 subdict="pool_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -115,7 +115,7 @@ class CreateAndUpdatePools(utils.NeutronScenario):
             self._update_v1_pool(pool, **pool_update_args)
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("restricted_parameters", param_names=["pool_id", "subnet_id"],
                 subdict="vip_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -147,7 +147,7 @@ class CreateAndListVips(utils.NeutronScenario):
         self._list_v1_vips()
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("restricted_parameters", param_names=["pool_id", "subnet_id"],
                 subdict="vip_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -181,7 +181,7 @@ class CreateAndDeleteVips(utils.NeutronScenario):
             self._delete_v1_vip(vip["vip"])
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("restricted_parameters", param_names=["pool_id", "subnet_id"],
                 subdict="vip_create_args")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
@@ -218,7 +218,7 @@ class CreateAndUpdateVips(utils.NeutronScenario):
             self._update_v1_vip(vip, **vip_update_args)
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
@@ -243,7 +243,7 @@ class CreateAndListHealthmonitors(utils.NeutronScenario):
         self._list_v1_healthmonitors()
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
@@ -270,7 +270,7 @@ class CreateAndDeleteHealthmonitors(utils.NeutronScenario):
         self._delete_v1_healthmonitor(healthmonitor["health_monitor"])
 
 
-@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.3.0")
+@plugin.deprecated(_DEPRECATION_REASON, rally_version="4.2.0")
 @validation.add("required_neutron_extensions", extensions=["lbaas"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])

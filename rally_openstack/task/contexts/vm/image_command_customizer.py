@@ -13,7 +13,10 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from __future__ import annotations
+
 import copy
+import typing as t
 
 from rally import exceptions
 from rally.common import validation
@@ -21,6 +24,11 @@ from rally.common import validation
 from rally_openstack.task import context
 from rally_openstack.task.contexts.vm import custom_image
 from rally_openstack.task.scenarios.vm import utils as vm_utils
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.task.contexts.keystone import users
+    from rally_openstack.task.contexts.nova import keypairs
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -88,12 +96,15 @@ class ImageCommandCustomizerContext(custom_image.BaseCustomImageGenerator):
         "$ref": "#/definitions/commandDict"
     }
 
-    def _customize_image(self, server, fip, user):
+    def _customize_image(
+        self, server: t.Any, fip: dict[str, t.Any], user: users.UserInfo
+    ) -> tuple[int, str, str]:
         code, out, err = vm_utils.VMScenario(self.context)._run_command(
             fip["ip"], self.config["port"],
             self.config["username"], self.config.get("password"),
             command=self.config["command"],
-            pkey=user["keypair"]["private"])
+            pkey=t.cast(
+                "keypairs.UserWithKeypair", user)["keypair"]["private"])
 
         if code:
             raise exceptions.ScriptError(

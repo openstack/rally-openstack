@@ -15,10 +15,12 @@
 
 from unittest import mock
 
+import ddt
 from openstack.network.v2 import extension as sdk_extension
 from openstack.network.v2 import security_group as sdk_sg
 
 from rally import exceptions
+from rally.task import context
 
 from rally_openstack.common import consts
 from rally_openstack.common import credential as oscredential
@@ -27,6 +29,36 @@ from tests.unit import test
 
 
 CTX = "rally_openstack.task.contexts.keystone.users"
+
+
+@ddt.ddt
+class UserGeneratorValidationTestCase(test.TestCase):
+
+    @ddt.data(
+        ({"admin": {"username": "a"}, "users": []},
+         {"tenants": 2}, True),
+        ({"admin": None, "users": [{"username": "u"}]},
+         {}, True),
+        ({"admin": None, "users": [{"username": "u"}]},
+         {"user_choice_method": "round_robin"}, True),
+        ({"admin": None, "users": [{"username": "u"}]},
+         {"tenants": 2}, False),
+        ({"admin": None, "users": [{"username": "u"}]},
+         {"users_per_tenant": 2, "user_choice_method": "random"}, False),
+    )
+    @ddt.unpack
+    def test_validate_admin_for_new_users(self, platform_data, config, valid):
+        platforms = {"openstack": platform_data}
+        results = context.Context.validate(
+            "users@openstack",
+            {"platforms": platforms, "env": {"platforms": platforms}},
+            None, config)
+
+        messages = [r for r in results if "requires admin" in r]
+        if valid:
+            self.assertEqual([], messages)
+        else:
+            self.assertEqual(1, len(messages))
 
 
 class UserGeneratorBaseTestCase(test.ScenarioTestCase):
@@ -42,6 +74,7 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
         self.admin_cred = {
             "username": "root", "password": "qwerty",
+            "project_name": "admin",
             "auth_url": "https://example.com",
             "project_domain_name": "foo",
             "user_domain_name": "bar"}
@@ -132,7 +165,7 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
         user_generator = users.UserGenerator(self.context)
         user_generator._remove_default_security_group = mock.Mock()
         user_generator._delete_users = mock.Mock()
-        user_generator._delete_tenants = mock.Mock()
+        user_generator._delete_projects = mock.Mock()
 
         # In case if existing users nothing should be done
         user_generator.existing_users = [mock.Mock]
@@ -141,7 +174,7 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
         self.assertFalse(user_generator._remove_default_security_group.called)
         self.assertFalse(user_generator._delete_users.called)
-        self.assertFalse(user_generator._delete_tenants.called)
+        self.assertFalse(user_generator._delete_projects.called)
 
         # In case when new users were created, the proper cleanup should be
         #   performed
@@ -151,9 +184,10 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
         user_generator._remove_default_security_group.assert_called_once_with()
         user_generator._delete_users.assert_called_once_with()
-        user_generator._delete_tenants.assert_called_once_with()
+        user_generator._delete_projects.assert_called_once_with()
 
 
+@ddt.ddt
 class UserGeneratorForExistingUsersTestCase(test.ScenarioTestCase):
     def setUp(self):
         super().setUp()
@@ -167,6 +201,7 @@ class UserGeneratorForExistingUsersTestCase(test.ScenarioTestCase):
             "openstack": {
                 "admin": {"username": "root",
                           "password": "qwerty",
+                          "project_name": "admin",
                           "auth_url": "https://example.com"},
                 "users": []
             }
@@ -223,15 +258,38 @@ class UserGeneratorForExistingUsersTestCase(test.ScenarioTestCase):
         self.assertEqual("random", self.context["user_choice_method"])
 
         creds = mock_open_stack_credential.return_value
+        u1 = {"id": "u1", "credential": creds, "tenant_id": "p1"}
+        u2 = {"id": "u2", "credential": creds, "tenant_id": "p0"}
+        u3 = {"id": "u3", "credential": creds, "tenant_id": "p1"}
+        self.assertEqual([u1, u2, u3], self.context["users"])
         self.assertEqual(
-            [{"id": "u1", "credential": creds, "tenant_id": "p1"},
-             {"id": "u2", "credential": creds, "tenant_id": "p0"},
-             {"id": "u3", "credential": creds, "tenant_id": "p1"}],
-            self.context["users"]
-        )
-        self.assertEqual({"p0": {"id": "p0", "name": creds.tenant_name},
-                          "p1": {"id": "p1", "name": creds.tenant_name}},
-                         self.context["tenants"])
+            {"p0": {"id": "p0", "name": creds.project_name, "users": [u2]},
+             "p1": {"id": "p1", "name": creds.project_name,
+                    "users": [u1, u3]}},
+            self.context["tenants"])
+
+    @ddt.data(
+        {"user_id": None, "project_id": "p1"},
+        {"user_id": "u1", "project_id": None},
+    )
+    @ddt.unpack
+    @mock.patch(f"{CTX}.credential.OpenStackCredential")
+    @mock.patch(f"{CTX}.osclients.Clients")
+    def test_use_existing_users_not_scoped(
+        self, mock_clients, mock_open_stack_credential, user_id, project_id
+    ):
+        auth_ref = mock_clients.return_value.keystone.auth_ref
+        auth_ref.user_id = user_id
+        auth_ref.project_id = project_id
+        self.platforms["openstack"]["users"] = [
+            {"username": "usr", "password": "pswd",
+             "auth_url": "https://example.com"}
+        ]
+
+        user_generator = users.UserGenerator(self.context)
+        self.assertRaises(exceptions.ContextSetupFailure,
+                          user_generator.use_existing_users)
+        self.assertEqual([], self.context["users"])
 
 
 class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
@@ -256,6 +314,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
             "openstack": {
                 "admin": {"username": "root",
                           "password": "qwerty",
+                          "project_name": "admin",
                           "auth_url": "https://example.com"},
                 "users": []
             }
@@ -347,7 +406,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
     def test__create_tenants(self):
         self.context["config"]["users"]["tenants"] = 1
         user_generator = users.UserGenerator(self.context)
-        tenants = user_generator._create_tenants(1)
+        tenants = user_generator._create_projects(1)
         self.assertEqual(1, len(tenants))
         _id, tenant = tenants.popitem()
         self.assertIn("name", tenant)
@@ -380,7 +439,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
                                              "t2": {"id": "t2", "name": "t2"}}
-        user_generator._delete_tenants()
+        user_generator._delete_projects()
         self.assertEqual(0, len(user_generator.context["tenants"]))
 
     def test__delete_tenants_failure(self):
@@ -388,7 +447,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
         user_generator = users.UserGenerator(self.context)
         user_generator.context["tenants"] = {"t1": {"id": "t1", "name": "t1"},
                                              "t2": {"id": "t2", "name": "t2"}}
-        user_generator._delete_tenants()
+        user_generator._delete_projects()
         self.assertEqual(0, len(user_generator.context["tenants"]))
 
     def test__delete_users(self):
@@ -438,7 +497,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
 
     def test_users_and_tenants_in_context(self):
         credential = oscredential.OpenStackCredential(
-            "foo_url", "foo", "foo_pass",
+            "foo_url", "foo", "foo_pass", "foo_project",
             https_insecure=True,
             https_cacert="cacert")
         tmp_context = dict(self.context)
@@ -470,7 +529,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
                 user_credential_dict = user["credential"].to_dict()
 
                 excluded_keys = ["auth_url", "username", "password",
-                                 "tenant_name", "region_name",
+                                 "project_name", "region_name",
                                  "project_domain_name",
                                  "user_domain_name", "permission"]
                 for key in (set(credential_dict.keys()) - set(excluded_keys)):
@@ -489,7 +548,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
 
     def test_users_contains_correct_endpoint_type(self):
         credential = oscredential.OpenStackCredential(
-            "foo_url", "foo", "foo_pass",
+            "foo_url", "foo", "foo_pass", "foo_project",
             endpoint_type=consts.EndpointType.INTERNAL)
         config = {
             "config": {
@@ -512,7 +571,7 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
 
     def test_users_contains_default_endpoint_type(self):
         credential = oscredential.OpenStackCredential(
-            "foo_url", "foo", "foo_pass")
+            "foo_url", "foo", "foo_pass", "foo_project")
         config = {
             "config": {
                 "users": {

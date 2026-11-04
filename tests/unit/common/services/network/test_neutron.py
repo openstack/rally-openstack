@@ -46,7 +46,8 @@ class NeutronServiceTestCase(test.TestCase):
             credential=credential.OpenStackCredential(
                 auth_url="example.com",
                 username="root",
-                password="changeme"
+                password="changeme",
+                project_name="project"
             )
         )
         # NeutronService now drives the openstacksdk network proxy exposed

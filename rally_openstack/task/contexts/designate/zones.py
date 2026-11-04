@@ -47,24 +47,24 @@ class ZoneGenerator(context.OpenStackContext):
         "set_zone_in_network": False
     }
 
-    def setup(self):
-        for user, tenant_id in self._iterate_per_tenants(
+    def setup(self) -> None:
+        for user, project_id in self._iterate_per_projects(
                 self.context["users"]):
-            self.context["tenants"][tenant_id].setdefault("zones", [])
+            self.context["tenants"][project_id].setdefault("zones", [])
             designate_util = utils.DesignateScenario(
                 {"user": user,
                  "task": self.context["task"],
                  "owner_id": self.context["owner_id"]})
             for i in range(self.config["zones_per_tenant"]):
                 zone = designate_util._create_zone()
-                self.context["tenants"][tenant_id]["zones"].append(zone)
+                self.context["tenants"][project_id]["zones"].append(zone)
         if self.config["set_zone_in_network"]:
-            for user, tenant_id in self._iterate_per_tenants(
+            for user, project_id in self._iterate_per_projects(
                     self.context["users"]):
-                tenant = self.context["tenants"][tenant_id]
+                project = self.context["tenants"][project_id]
 
                 network_update_args = {
-                    "dns_domain": tenant["zones"][0]["name"]
+                    "dns_domain": project["zones"][0]["name"]
                 }
                 body = {"network": network_update_args}
                 scenario = neutron_utils.NeutronScenario(
@@ -72,9 +72,9 @@ class ZoneGenerator(context.OpenStackContext):
                              "owner_id": self.context["owner_id"]}
                 )
                 scenario.clients("neutron").update_network(
-                    tenant["networks"][0]["id"], body)
+                    project["networks"][0]["id"], body)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(names=["designate.zones"],
                                  users=self.context.get("users", []),
                                  superclass=utils.DesignateScenario,

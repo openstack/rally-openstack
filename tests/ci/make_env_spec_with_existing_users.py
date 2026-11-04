@@ -86,7 +86,7 @@ def create_projects_and_users(
         users.append({
             "username": user["credential"]["username"],
             "password": user["credential"]["password"],
-            "project_name": user["credential"]["tenant_name"]
+            "project_name": user["credential"].project_name
         })
 
         for optional in ("domain_name",

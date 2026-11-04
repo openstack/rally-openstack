@@ -26,6 +26,22 @@ Service = service.make_resource_cls("Service", properties=["id", "name"])
 Role = service.make_resource_cls("Role", properties=["id", "name"])
 
 
+_DEPRECATION_LOGGED = False
+
+
+def log_deprecation() -> None:
+    """Log once per process that this service package is deprecated."""
+    global _DEPRECATION_LOGGED
+    if not _DEPRECATION_LOGGED:
+        LOG.warning(
+            "The rally_openstack.common.services.identity package is "
+            "deprecated since Rally-OpenStack 4.2.0 and will be removed. Use "
+            "the rally-owned identity client (the `clients.keystone` "
+            "attribute) instead."
+        )
+        _DEPRECATION_LOGGED = True
+
+
 class Identity(service.UnifiedService):
     """Deprecated identity service wrapper.
 
@@ -34,17 +50,8 @@ class Identity(service.UnifiedService):
     Kept for backward compatibility with out-of-tree plugins.
     """
 
-    #: process-wide guard so the deprecation is logged only once
-    _deprecation_logged = False
-
     def __init__(self, *args, **kwargs):
-        if not Identity._deprecation_logged:
-            LOG.warning(
-                "The identity.Identity service layer is deprecated and will "
-                "be removed. Use the rally-owned identity client (the "
-                "`clients.keystone` attribute) instead."
-            )
-            Identity._deprecation_logged = True
+        log_deprecation()
         super().__init__(*args, **kwargs)
 
     @classmethod

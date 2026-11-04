@@ -59,6 +59,7 @@ def _credential(**kwargs):
     kwargs.setdefault("auth_url", "http://auth/v3")
     kwargs.setdefault("username", "user")
     kwargs.setdefault("password", "pass")
+    kwargs.setdefault("project_name", "project")
     return oscredential.OpenStackCredential(**kwargs)
 
 
@@ -94,7 +95,7 @@ class BaseClientTestCase(test.TestCase):
 
     def test_init_normalizes_dict_credential(self):
         client = _BaseTestClient({"auth_url": "u", "username": "n",
-                                  "password": "p"})
+                                  "password": "p", "project_name": "t"})
         self.assertIsInstance(client.credential,
                               oscredential.OpenStackCredential)
         self.assertEqual("u", client.credential.auth_url)
@@ -128,7 +129,7 @@ class BaseClientTestCase(test.TestCase):
 class LegacyClientCompatTestCase(test.TestCase):
 
     def test_get_auth_info_v3_with_endpoint_type(self):
-        cred = _credential(auth_url="http://auth/v3", tenant_name="tenant",
+        cred = _credential(auth_url="http://auth/v3", project_name="tenant",
                            domain_name="d", user_domain_name="ud",
                            project_domain_name="pd", endpoint_type="internal")
         info = _BaseTestClient(cred)._get_auth_info()
@@ -147,7 +148,7 @@ class LegacyClientCompatTestCase(test.TestCase):
         self.assertEqual("Default", info["project_domain_name"])
 
     def test_get_auth_info_v2_without_project_key(self):
-        cred = _credential(auth_url="http://auth/v2.0", tenant_name="tenant")
+        cred = _credential(auth_url="http://auth/v2.0", project_name="tenant")
         info = _BaseTestClient(cred)._get_auth_info(project_name_key=None)
         self.assertNotIn("project_id", info)
         # v2.0 in auth_url -> no domain args

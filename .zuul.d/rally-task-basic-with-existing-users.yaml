@@ -4,3 +4,4 @@
     vars:
       rally_task: rally-jobs/basic-with-existing-users.yaml
       rally_use_existing_users: True
+      users_per_project: 2

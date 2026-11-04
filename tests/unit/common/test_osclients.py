@@ -93,7 +93,8 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
             create_client = mock.MagicMock()
 
         fake_client = FakeClient({"auth_url": "url", "username": "user",
-                                  "password": "pass"}, {})
+                                  "password": "pass", "project_name": "p"},
+                                 {})
         self.assertEqual(default_service_type,
                          fake_client.choose_service_type())
         self.assertEqual("foo",
@@ -108,7 +109,7 @@ class OSClientTestCase(test.TestCase, OSClientTestCaseUtils):
     def test__get_endpoint(self, mock_keystone_service_catalog, endpoint_type,
                            service_type, region_name):
         credential = oscredential.OpenStackCredential(
-            "http://auth_url/v2.0", "user", "pass",
+            "http://auth_url/v2.0", "user", "pass", "tenant",
             endpoint_type=endpoint_type,
             region_name=region_name)
         osclient = osclients.OSClient(credential, mock.MagicMock())
@@ -133,7 +134,7 @@ class CachedTestCase(test.TestCase):
 
     def test_cached(self):
         clients = osclients.Clients({"auth_url": "url", "username": "user",
-                                     "password": "pass"})
+                                     "password": "pass", "project_name": "p"})
 
         @osclients.configure(self.id())
         class SomeClient(osclients.OSClient):
@@ -248,11 +249,11 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         if auth_url.endswith("v2.0"):
             self.ksa_password.assert_called_once_with(
                 auth_url=auth_url, password="pass",
-                tenant_name="tenant", username="user")
+                project_name="tenant", username="user")
         else:
             self.ksa_password.assert_called_once_with(
                 auth_url=auth_url, password="pass",
-                tenant_name="tenant", username="user",
+                project_name="tenant", username="user",
                 domain_name=None, project_domain_name=None,
                 user_domain_name=None)
         self.assertEqual(
@@ -437,7 +438,7 @@ class OSClientsTestCase(test.TestCase):
         self.assertEqual("foo_auth_url", clients.credential.auth_url)
         self.assertEqual("foo_username", clients.credential.username)
         self.assertEqual("foo_password", clients.credential.password)
-        self.assertEqual("foo_tenant_name", clients.credential.tenant_name)
+        self.assertEqual("foo_tenant_name", clients.credential.project_name)
         self.assertEqual("foo_region_name", clients.credential.region_name)
 
     def test_keystone(self):
@@ -477,7 +478,7 @@ class OSClientsTestCase(test.TestCase):
         mock_keystone_get_session.side_effect = (
             exceptions.AuthenticationFailed(
                 username=self.credential.username,
-                project=self.credential.tenant_name,
+                project=self.credential.project_name,
                 url=self.credential.auth_url,
                 etype=KeyError,
                 error="oops")
@@ -819,7 +820,7 @@ class OSClientsTestCase(test.TestCase):
                   "insecure": False,
                   "cacert": None,
                   "user": self.credential.username,
-                  "tenant_name": self.credential.tenant_name,
+                  "tenant_name": self.credential.project_name,
                   }
             mock_swift.client.Connection.assert_called_once_with(**kw)
             self.assertEqual(fake_swift, self.clients.cache["swift"])

@@ -108,16 +108,9 @@ class EnvTestCase(unittest.TestCase):
                          config["existing@openstack"]["admin"]["username"])
         self.assertEqual(TEST_ENV["OS_PASSWORD"],
                          config["existing@openstack"]["admin"]["password"])
-        if "project_name" in config["existing@openstack"]["admin"]:
-            # keystone v3
-            self.assertEqual(
-                TEST_ENV["OS_TENANT_NAME"],
-                config["existing@openstack"]["admin"]["project_name"])
-        else:
-            # keystone v2
-            self.assertEqual(
-                TEST_ENV["OS_TENANT_NAME"],
-                config["existing@openstack"]["admin"]["tenant_name"])
+        self.assertEqual(
+            TEST_ENV["OS_TENANT_NAME"],
+            config["existing@openstack"]["admin"]["project_name"])
         self.assertEqual(
             TEST_ENV["OS_AUTH_URL"],
             config["existing@openstack"]["auth_url"])

@@ -13,11 +13,14 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from __future__ import annotations
+
 import abc
+import collections
+import typing as t
 
 from rally.common import broker
 from rally.common import logging
-from rally.common import utils
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
@@ -25,6 +28,12 @@ from rally_openstack.common.clients import glance
 from rally_openstack.task import context
 from rally_openstack.task import types
 from rally_openstack.task.scenarios.vm import vmtasks
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.task.contexts.keystone import users
+    from rally_openstack.task.contexts.network import allow_ssh
+    from rally_openstack.task.contexts.nova import keypairs
 
 
 LOG = logging.getLogger(__name__)
@@ -102,7 +111,7 @@ class BaseCustomImageGenerator(context.OpenStackContext,
         "workers": 1
     }
 
-    def setup(self):
+    def setup(self) -> None:
         """Creates custom image(s) with preinstalled applications.
 
         When admin is present creates one public image that is usable
@@ -111,12 +120,9 @@ class BaseCustomImageGenerator(context.OpenStackContext,
         """
 
         if "admin" in self.context:
-            if self.context["users"]:
-                # NOTE(pboldin): Create by first user and make it public by
-                #                the admin
-                user = self.context["users"][0]
-            else:
-                user = self.context["admin"]
+            # NOTE(pboldin): Create by first user and make it public by
+            #                the admin
+            user: users.UserInfo = self.context["users"][0]
             tenant = self.context["tenants"][user["tenant_id"]]
 
             nics = None
@@ -132,18 +138,22 @@ class BaseCustomImageGenerator(context.OpenStackContext,
             for tenant in self.context["tenants"].values():
                 tenant["custom_image"] = custom_image
         else:
-            def publish(queue):
-                for user, tenant_id in self._iterate_per_tenants():
-                    queue.append((user, tenant_id))
+            def publish(
+                queue: collections.deque[tuple[users.UserInfo, str]]
+            ) -> None:
+                for user, project_id in self._iterate_per_projects():
+                    queue.append((user, project_id))
 
-            def consume(cache, args):
-                user, tenant_id = args
-                tenant = self.context["tenants"][tenant_id]
-                tenant["custom_image"] = self.create_one_image(user)
+            def consume(
+                cache: dict[str, object], args: tuple[users.UserInfo, str]
+            ) -> None:
+                user, project_id = args
+                project = self.context["tenants"][project_id]
+                project["custom_image"] = self.create_one_image(user)
 
             broker.run(publish, consume, self.config["workers"])
 
-    def create_one_image(self, user, **kwargs):
+    def create_one_image(self, user: users.UserInfo, **kwargs: t.Any) -> t.Any:
         """Create one image for the user."""
 
         clients = osclients.Clients(user["credential"])
@@ -162,8 +172,11 @@ class BaseCustomImageGenerator(context.OpenStackContext,
             image=image_id, flavor=flavor_id,
             floating_network=self.config.get("floating_network"),
             userdata=self.config.get("userdata"),
-            key_name=user["keypair"]["name"],
-            security_groups=[user["secgroup"]["name"]],
+            key_name=t.cast(
+                "keypairs.UserWithKeypair", user)["keypair"]["name"],
+            security_groups=[
+                t.cast("allow_ssh.UserWithSecgroup", user)["secgroup"]["name"]
+            ],
             **kwargs)
 
         try:
@@ -180,44 +193,53 @@ class BaseCustomImageGenerator(context.OpenStackContext,
 
         return custom_image
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Delete created custom image(s)."""
 
         if "admin" in self.context:
-            user = self.context["users"][0]
+            user: users.UserInfo = self.context["users"][0]
             tenant = self.context["tenants"][user["tenant_id"]]
             if "custom_image" in tenant:
                 self.delete_one_image(user, tenant["custom_image"])
                 tenant.pop("custom_image")
         else:
-            def publish(queue):
-                users = self.context.get("users", [])
-                for user, tenant_id in utils.iterate_per_tenants(users):
-                    queue.append((user, tenant_id))
+            def publish(
+                queue: collections.deque[tuple[users.UserInfo, str]]
+            ) -> None:
+                for user, project_id in self._iterate_per_projects():
+                    queue.append((user, project_id))
 
-            def consume(cache, args):
-                user, tenant_id = args
-                tenant = self.context["tenants"][tenant_id]
-                if "custom_image" in tenant:
-                    self.delete_one_image(user, tenant["custom_image"])
-                    tenant.pop("custom_image")
+            def consume(
+                cache: dict[str, object], args: tuple[users.UserInfo, str]
+            ) -> None:
+                user, project_id = args
+                project = self.context["tenants"][project_id]
+                if "custom_image" in project:
+                    self.delete_one_image(user, project["custom_image"])
+                    project.pop("custom_image")
 
             broker.run(publish, consume, self.config["workers"])
 
-    def delete_one_image(self, user, custom_image):
+    def delete_one_image(
+        self, user: users.UserInfo, custom_image: t.Any
+    ) -> None:
         """Delete the image created for the user and tenant."""
 
         with logging.ExceptionLogger(
-                LOG, "Unable to delete image %s" % custom_image.id):
+                LOG, f"Unable to delete image {custom_image.id}"):
 
             user["credential"].clients().glance.delete_image(custom_image.id)
 
     @logging.log_task_wrapper(LOG.info, "Custom image context: customizing")
-    def customize_image(self, server, ip, user):
+    def customize_image(
+        self, server: t.Any, ip: dict[str, t.Any], user: users.UserInfo
+    ) -> t.Any:
         return self._customize_image(server, ip, user)
 
     @abc.abstractmethod
-    def _customize_image(self, server, ip, user):
+    def _customize_image(
+        self, server: t.Any, ip: dict[str, t.Any], user: users.UserInfo
+    ) -> t.Any:
         """Override this method with one that customizes image.
 
         Basically, code can simply call `VMScenario._run_command` function

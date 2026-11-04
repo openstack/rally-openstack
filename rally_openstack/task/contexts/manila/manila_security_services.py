@@ -63,10 +63,10 @@ class SecurityServices(context.OpenStackContext):
         "security_services": [],
     }
 
-    def setup(self):
-        for user, tenant_id in (self._iterate_per_tenants(
+    def setup(self) -> None:
+        for user, project_id in (self._iterate_per_projects(
                 self.context.get("users", []))):
-            self.context["tenants"][tenant_id][CONTEXT_NAME] = {
+            self.context["tenants"][project_id][CONTEXT_NAME] = {
                 "security_services": [],
             }
             if self.config["security_services"]:
@@ -78,10 +78,10 @@ class SecurityServices(context.OpenStackContext):
                 for ss in self.config["security_services"]:
                     inst = manila_scenario._create_security_service(
                         **ss).to_dict()
-                    self.context["tenants"][tenant_id][CONTEXT_NAME][
+                    self.context["tenants"][project_id][CONTEXT_NAME][
                         "security_services"].append(inst)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(
             names=["manila.security_services"],
             users=self.context.get("users", []),

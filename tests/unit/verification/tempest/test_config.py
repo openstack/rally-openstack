@@ -30,7 +30,7 @@ CONF = cfg.CONF
 
 CRED = {
     "username": "admin",
-    "tenant_name": "admin",
+    "project_name": "admin",
     "password": "admin-12345",
     "auth_url": "http://test:5000/v2.0/",
     "region_name": "test",
@@ -71,7 +71,7 @@ class TempestConfigfileManagerTestCase(test.TestCase):
         expected = (
             ("admin_username", CRED["username"]),
             ("admin_password", CRED["password"]),
-            ("admin_project_name", CRED["tenant_name"]),
+            ("admin_project_name", CRED["project_name"]),
             ("admin_domain_name", CRED["user_domain_name"]))
         result = self.tempest.conf.items("auth")
         for item in expected:

@@ -36,7 +36,7 @@ CONF = cfg.CONF
 
 CRED = {
     "username": "admin",
-    "tenant_name": "admin",
+    "project_name": "admin",
     "password": "admin-12345",
     "auth_url": "http://test:5000/v2.0/",
     "permission": "admin",

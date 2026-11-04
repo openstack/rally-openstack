@@ -5,9 +5,7 @@ description: Test creating Keystone identity resources
 subtasks:
 - title: Create and list roles
   scenario:
-    KeystoneBasic.create_and_list_roles:
-      create_role_kwargs: {}
-      list_role_kwargs: {}
+    KeystoneBasic.create_and_list_roles: {}
   runner:
     constant:
       times: 10

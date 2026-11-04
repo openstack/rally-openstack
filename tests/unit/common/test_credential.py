@@ -24,14 +24,13 @@ class OpenStackCredentialTestCase(test.TestCase):
     def setUp(self):
         super().setUp()
         self.credential = credential.OpenStackCredential(
-            "foo_url", "foo_user", "foo_password",
-            tenant_name="foo_tenant")
+            "foo_url", "foo_user", "foo_password", "foo_project")
 
     def test_to_dict(self):
         self.assertEqual({"auth_url": "foo_url",
                           "username": "foo_user",
                           "password": "foo_password",
-                          "tenant_name": "foo_tenant",
+                          "project_name": "foo_project",
                           "region_name": None,
                           "domain_name": None,
                           "permission": None,
@@ -49,34 +48,40 @@ class OpenStackCredentialTestCase(test.TestCase):
                           "discovery_cache": {}},
                          self.credential.to_dict())
 
-    def test_project_name_falls_back_to_tenant_name(self):
+    def test_legacy_tenant_name(self):
         cred = credential.OpenStackCredential(
-            "foo_url", "foo_user", "foo_password",
-            project_name="foo_project")
-        self.assertEqual("foo_project", cred.tenant_name)
+            "foo_url", "foo_user", "foo_password", tenant_name="foo_tenant")
+        self.assertEqual("foo_tenant", cred.project_name)
+        self.assertEqual("foo_tenant", cred.tenant_name)
+        self.assertEqual("foo_tenant", cred["tenant_name"])
+        self.assertNotIn("tenant_name", cred.to_dict())
 
-    def test_explicit_tenant_name_wins_over_project_name(self):
+    def test_project_name_wins_over_tenant_name(self):
         cred = credential.OpenStackCredential(
             "foo_url", "foo_user", "foo_password",
             tenant_name="foo_tenant", project_name="foo_project")
-        self.assertEqual("foo_tenant", cred.tenant_name)
+        self.assertEqual("foo_project", cred.project_name)
+
+    def test_project_name_is_required(self):
+        self.assertRaises(TypeError, credential.OpenStackCredential,
+                          "foo_url", "foo_user", "foo_password")
 
     def test_https_cert_and_key_are_merged(self):
         cred = credential.OpenStackCredential(
-            "foo_url", "foo_user", "foo_password",
+            "foo_url", "foo_user", "foo_password", "foo_project",
             https_cert="foo_cert", https_key="foo_key")
         self.assertEqual(("foo_cert", "foo_key"), cred.https_cert)
 
     def test_none_api_info_and_discovery_cache_normalized(self):
         cred = credential.OpenStackCredential(
-            "foo_url", "foo_user", "foo_password",
+            "foo_url", "foo_user", "foo_password", "foo_project",
             api_info=None, discovery_cache=None)
         self.assertEqual({}, cred.api_info)
         self.assertEqual({}, cred.discovery_cache)
 
     def test_getitem(self):
         self.assertEqual("foo_url", self.credential["auth_url"])
-        self.assertEqual("foo_tenant", self.credential["tenant_name"])
+        self.assertEqual("foo_project", self.credential["project_name"])
 
     def test_setitem(self):
         self.credential["region_name"] = "foo_region"

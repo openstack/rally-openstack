@@ -1,0 +1,26 @@
+{
+    "version": 2,
+    "title": "Keystone Create Project With Users",
+    "description": "Test creating Keystone identity resources",
+    "subtasks": [
+        {
+            "title": "Create project with users",
+            "scenario": {
+                "KeystoneBasic.create_project_with_users": {
+                    "users_per_project": 10
+                }
+            },
+            "runner": {
+                "constant": {
+                    "times": 10,
+                    "concurrency": 10
+                }
+            },
+            "sla": {
+                "failure_rate": {
+                    "max": 0
+                }
+            }
+        }
+    ]
+}

@@ -32,10 +32,10 @@ class ExistingNetworkTestCase(test.TestCase):
             "users": [
                 {"id": 1,
                  "tenant_id": "tenant1",
-                 "credential": mock.Mock(tenant_name="tenant_1")},
+                 "credential": mock.Mock(project_name="tenant_1")},
                 {"id": 2,
                  "tenant_id": "tenant2",
-                 "credential": mock.Mock(tenant_name="tenant_2")},
+                 "credential": mock.Mock(project_name="tenant_2")},
             ],
             "tenants": {
                 "tenant1": {},
@@ -49,11 +49,11 @@ class ExistingNetworkTestCase(test.TestCase):
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_setup(self, mock_clients):
         clients = {
-            # key is tenant_name
+            # key is project_name
             "tenant_1": mock.MagicMock(),
             "tenant_2": mock.MagicMock()
         }
-        mock_clients.side_effect = lambda cred: clients[cred.tenant_name]
+        mock_clients.side_effect = lambda cred: clients[cred.project_name]
 
         networks = {
             # key is tenant_id

@@ -13,17 +13,29 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
+import collections
 import tempfile
+import typing as t
 
 from rally.common import broker
 
 from rally_openstack.task.scenarios.swift import utils as swift_utils
 
 
+if t.TYPE_CHECKING:
+    from rally_openstack.task.contexts.keystone import users
+
+    _ContainerJob = tuple[users.UserInfo, list[dict[str, t.Any]]]
+
+
 class SwiftObjectMixin:
     """Mix-in method for Swift Object Context."""
 
-    def _create_containers(self, containers_per_tenant, threads):
+    def _create_containers(
+        self, containers_per_tenant: int, threads: int
+    ) -> list[tuple[str, str]]:
         """Create containers and store results in Rally context.
 
         :param containers_per_tenant: int, number of containers to create
@@ -32,17 +44,19 @@ class SwiftObjectMixin:
 
         :returns: list of tuples containing (account, container)
         """
-        containers = []
+        containers: list[tuple[str, str]] = []
 
-        def publish(queue):
-            for user, tenant_id in self._iterate_per_tenants():
-                self.context["tenants"][tenant_id]["containers"] = []
+        def publish(queue: collections.deque[_ContainerJob]) -> None:
+            for user, project_id in self._iterate_per_projects():
+                self.context["tenants"][project_id]["containers"] = []
                 for i in range(containers_per_tenant):
                     args = (user,
-                            self.context["tenants"][tenant_id]["containers"])
+                            self.context["tenants"][project_id]["containers"])
                     queue.append(args)
 
-        def consume(cache, args):
+        def consume(
+            cache: dict[str, swift_utils.SwiftScenario], args: _ContainerJob
+        ) -> None:
             user, tenant_containers = args
             if user["id"] not in cache:
                 cache[user["id"]] = swift_utils.SwiftScenario(

@@ -118,7 +118,7 @@ class ImageGenerator(context.OpenStackContext):
 
     config: dict
 
-    def setup(self):
+    def setup(self) -> None:
         image_url = self.config.get("image_url")
         disk_format = self.config.get("disk_format")
         container_format = self.config.get("container_format")
@@ -164,7 +164,7 @@ class ImageGenerator(context.OpenStackContext):
         if "image_name" in self.config and images_per_tenant == 1:
             image_name = self.config["image_name"]
 
-        for user, tenant_id in self._iterate_per_tenants():
+        for user, project_id in self._iterate_per_projects():
             current_images = []
             glance = osclients.Clients(
                 user["credential"],
@@ -181,9 +181,9 @@ class ImageGenerator(context.OpenStackContext):
                     min_ram=min_ram)
                 current_images.append(image_obj.id)
 
-            self.context["tenants"][tenant_id]["images"] = current_images
+            self.context["tenants"][project_id]["images"] = current_images
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         if self.context.get("admin", {}):
             # NOTE(andreykurilin): Glance does not require the admin for
             #   listing tenant images, but the admin is required for

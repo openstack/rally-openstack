@@ -28,7 +28,7 @@ from tests.unit import test
 
 def _user(username):
     return {"auth_url": "http://example.com", "username": username,
-            "password": "12345"}
+            "password": "12345", "project_name": "project"}
 
 
 class PlatformBaseTestCase(test.TestCase):
@@ -123,7 +123,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                         "user_domain_name": "default",
                         "project_domain_name": "default",
                         "https_insecure": False, "https_cacert": None,
-                        "tenant_name": "a", "username": "a", "password": "a"
+                        "project_name": "a", "tenant_name": "a",
+                        "username": "a", "password": "a"
                     },
                     {
                         "auth_url": "https://best", "endpoint_type": None,
@@ -132,7 +133,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                         "user_domain_name": "default",
                         "project_domain_name": "default",
                         "https_insecure": False, "https_cacert": None,
-                        "tenant_name": "b", "username": "b", "password": "b"
+                        "project_name": "b", "tenant_name": "b",
+                        "username": "b", "password": "b"
                     }
                 ]
             }, {}),
@@ -163,7 +165,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                         "profiler_conn_str": "http://prof",
                         "region_name": None, "domain_name": "d",
                         "user_domain_name": "d", "project_domain_name": "d",
-                        "tenant_name": "d", "username": "d", "password": "d"
+                        "project_name": "d", "tenant_name": "d",
+                        "username": "d", "password": "d"
                     },
                     "users": []
                 },
@@ -171,9 +174,23 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
             ),
             existing.OpenStack(spec).create())
 
+    def test_create_with_legacy_tenant_name(self):
+        spec = {
+            "auth_url": "https://best",
+            "admin": {"tenant_name": "t", "username": "a", "password": "a"},
+            "users": [{"tenant_name": "u", "username": "u", "password": "u"}]
+        }
+
+        platform_data, _ = existing.OpenStack(spec).create()
+
+        self.assertEqual("t", platform_data["admin"]["project_name"])
+        self.assertEqual("t", platform_data["admin"]["tenant_name"])
+        self.assertEqual("u", platform_data["users"][0]["project_name"])
+        self.assertEqual("u", platform_data["users"][0]["tenant_name"])
+
     def test_create_spec_from_sys_environ(self):
-        # keystone v2
         sys_env = {
+            "OS_IDENTITY_API_VERSION": "2",
             "OS_AUTH_URL": "https://example.com",
             "OS_USERNAME": "user",
             "OS_PASSWORD": "pass",
@@ -194,7 +211,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
             {
                 "admin": {
                     "username": "user",
-                    "tenant_name": "projectX",
+                    "project_name": "projectX",
                     "password": "pass"
                 },
                 "auth_url": "https://example.com",
@@ -214,8 +231,8 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 }
             }, result["spec"])
 
-        # keystone v3
-        sys_env["OS_IDENTITY_API_VERSION"] = "3"
+        sys_env.pop("OS_IDENTITY_API_VERSION")
+        sys_env["OS_PROJECT_DOMAIN_NAME"] = "pdom"
 
         result = existing.OpenStack.create_spec_from_sys_environ(sys_env)
 
@@ -226,7 +243,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                     "project_name": "projectX",
                     "user_domain_name": "Default",
                     "password": "pass",
-                    "project_domain_name": "Default"
+                    "project_domain_name": "pdom"
                 },
                 "endpoint_type": "public",
                 "auth_url": "https://example.com",
@@ -323,7 +340,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 "Bad admin creds: \n%s"
                 % json.dumps({"auth_url": "http://example.com",
                               "username": "balbab", "password": "***",
-                              "api_info": {}},
+                              "project_name": "project", "api_info": {}},
                              indent=2, sort_keys=True),
              "traceback": mock.ANY},
             result)
@@ -342,7 +359,7 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
                 "Bad user creds: \n%s"
                 % json.dumps({"auth_url": "http://example.com",
                               "username": "balbab", "password": "***",
-                              "api_info": {}},
+                              "project_name": "project", "api_info": {}},
                              indent=2, sort_keys=True),
              "traceback": mock.ANY},
             result)

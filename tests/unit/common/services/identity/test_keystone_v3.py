@@ -39,6 +39,11 @@ class KeystoneV3ServiceTestCase(test.TestCase):
         self.service._ng_cache = mock.MagicMock()
         self.ng = self.service._ng_cache
 
+    @mock.patch(f"{PATH}.identity.log_deprecation")
+    def test_init_logs_deprecation(self, mock_log_deprecation):
+        keystone_v3.KeystoneV3Service(self.clients)
+        mock_log_deprecation.assert_called_once_with()
+
     def test__get_domain_id_not_found(self):
         from keystoneclient import exceptions as kc_exceptions
 

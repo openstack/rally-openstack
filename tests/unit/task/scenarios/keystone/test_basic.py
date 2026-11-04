@@ -59,20 +59,18 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
 
         scenario.run(password="tttt", project_id="id")
         self.mock_keystone.create_user.assert_called_once_with(
-            password="tttt", project_id="id")
+            password="tttt", project_id="id", domain="Default", enabled=True)
 
     def test_create_delete_user(self):
         identity_service = self.mock_keystone
-
-        fake_email = "abcd"
         fake_user = identity_service.create_user.return_value
 
         scenario = basic.CreateDeleteUser(self.context)
 
-        scenario.run(email=fake_email, enabled=True)
+        scenario.run(domain="dom", enabled=False)
 
         identity_service.create_user.assert_called_once_with(
-            email=fake_email, enabled=True)
+            password=None, project_id=None, domain="dom", enabled=False)
         identity_service.delete_user.assert_called_once_with(fake_user.id)
 
     def test_create_user_set_enabled_and_delete(self):
@@ -80,12 +78,11 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
 
         scenario = basic.CreateUserSetEnabledAndDelete(self.context)
 
-        fake_email = "abcd"
         fake_user = identity_service.create_user.return_value
-        scenario.run(enabled=True, email=fake_email)
+        scenario.run(enabled=True, password="pswd")
 
         identity_service.create_user.assert_called_once_with(
-            email=fake_email, enabled=True)
+            password="pswd", project_id=None, domain="Default", enabled=True)
         identity_service.update_user.assert_called_once_with(
             fake_user.id, enabled=False)
         identity_service.delete_user.assert_called_once_with(fake_user.id)
@@ -101,27 +98,44 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.fetch_token.assert_called_once_with()
         identity_service.validate_token.assert_called_once_with(fake_token)
 
-    def test_create_tenant(self):
-        scenario = basic.CreateTenant(self.context)
+    @ddt.data(basic.CreateProject, basic.CreateTenant)
+    def test_create_project(self, scenario_cls):
+        scenario = scenario_cls(self.context)
 
-        scenario.run(enabled=True)
+        scenario.run(domain="dom")
 
         self.mock_keystone.create_project.assert_called_once_with(
-            enabled=True)
+            domain="dom")
 
-    def test_create_tenant_with_users(self):
+    @ddt.data((basic.CreateProjectWithUsers, "users_per_project"),
+              (basic.CreateTenantWithUsers, "users_per_tenant"))
+    @ddt.unpack
+    def test_create_project_with_users(self, scenario_cls, users_arg):
         identity_service = self.mock_keystone
-
         fake_project = identity_service.create_project.return_value
-        number_of_users = 1
+        fake_user = identity_service.create_user.return_value
+        fake_role = identity_service.find_role.return_value
 
-        scenario = basic.CreateTenantWithUsers(self.context)
+        scenario = scenario_cls(self.context)
 
-        scenario.run(users_per_tenant=number_of_users, enabled=True)
+        scenario.run(**{users_arg: 1}, domain="dom")
 
-        identity_service.create_project.assert_called_once_with(enabled=True)
+        identity_service.create_project.assert_called_once_with(domain="dom")
+        identity_service.find_role.assert_called_once_with("member")
         identity_service.create_user.assert_called_once_with(
+            project_id=fake_project.id, domain="dom")
+        identity_service.add_role.assert_called_once_with(
+            role_id=fake_role.id, user_id=fake_user.id,
             project_id=fake_project.id)
+
+    def test_create_project_with_users_without_member_role(self):
+        identity_service = self.mock_keystone
+        identity_service.find_role.return_value = None
+
+        basic.CreateProjectWithUsers(self.context).run(users_per_project=2)
+
+        self.assertEqual(2, identity_service.create_user.call_count)
+        self.assertFalse(identity_service.add_role.called)
 
     def test_create_and_list_users(self):
         scenario = basic.CreateAndListUsers(self.context)
@@ -131,14 +145,16 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
 
         scenario.run(password=passwd, project_id=project_id)
         self.mock_keystone.create_user.assert_called_once_with(
-            password=passwd, project_id=project_id)
+            password=passwd, project_id=project_id, domain="Default",
+            enabled=True)
         self.mock_keystone.list_users.assert_called_once_with()
 
-    def test_create_and_list_tenants(self):
+    @ddt.data(basic.CreateAndListProjects, basic.CreateAndListTenants)
+    def test_create_and_list_projects(self, scenario_cls):
         identity_service = self.mock_keystone
-        scenario = basic.CreateAndListTenants(self.context)
-        scenario.run(enabled=True)
-        identity_service.create_project.assert_called_once_with(enabled=True)
+        scenario = scenario_cls(self.context)
+        scenario.run(domain="dom")
+        identity_service.create_project.assert_called_once_with(domain="dom")
         identity_service.list_projects.assert_called_once_with()
 
     def test_assign_and_remove_user_role(self):
@@ -176,7 +192,7 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         scenario = basic.CreateAndGetRole(self.context)
         scenario.run()
 
-        self.mock_keystone.create_role.assert_called_once_with()
+        self.mock_keystone.create_role.assert_called_once_with(domain=None)
         self.mock_keystone.get_role.assert_called_once_with(
             fake_role.id)
 
@@ -195,39 +211,31 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         self.mock_keystone.list_role_assignments.assert_called_once_with(
             fake_user, project_id=fake_tenant)
 
-    def test_create_and_list_roles(self):
-        # Positive case
+    @ddt.data(
+        ({}, None, {"name": None, "domain": None}),
+        ({"domain": "dom"}, "dom", {"name": None, "domain": "dom"}),
+        ({"domain": "dom", "create_role_kwargs": {"domain": "c_dom"},
+          "list_role_kwargs": {"name": "role1"}},
+         "c_dom", {"name": "role1", "domain": "dom"}),
+    )
+    @ddt.unpack
+    def test_create_and_list_roles(self, args, create_domain, list_args):
         scenario = basic.CreateAddListRoles(self.context)
-        create_kwargs = {"fakewargs": "name"}
-        list_kwargs = {"fakewargs": "f"}
-        self.mock_keystone.create_role = mock.Mock(
-            return_value="role1")
+        self.mock_keystone.create_role = mock.Mock(return_value="role1")
         self.mock_keystone.list_roles = mock.Mock(
             return_value=("role1", "role2"))
-        scenario.run(create_role_kwargs=create_kwargs,
-                     list_role_kwargs=list_kwargs)
+
+        scenario.run(**args)
+
         self.mock_keystone.create_role.assert_called_once_with(
-            **create_kwargs)
-        self.mock_keystone.list_roles.assert_called_once_with(
-            **list_kwargs)
+            domain=create_domain)
+        self.mock_keystone.list_roles.assert_called_once_with(**list_args)
 
-        # Negative case 1: role isn't created
         self.mock_keystone.create_role.return_value = None
-        self.assertRaises(exceptions.RallyAssertionError,
-                          scenario.run, create_role_kwargs=create_kwargs,
-                          list_role_kwargs=list_kwargs)
-        self.mock_keystone.create_role.assert_called_with(
-            **create_kwargs)
+        self.assertRaises(exceptions.RallyAssertionError, scenario.run, **args)
 
-        # Negative case 2: role was created but included into list
         self.mock_keystone.create_role.return_value = "role3"
-        self.assertRaises(exceptions.RallyAssertionError,
-                          scenario.run, create_role_kwargs=create_kwargs,
-                          list_role_kwargs=list_kwargs)
-        self.mock_keystone.create_role.assert_called_with(
-            **create_kwargs)
-        self.mock_keystone.list_roles.assert_called_with(
-            **list_kwargs)
+        self.assertRaises(exceptions.RallyAssertionError, scenario.run, **args)
 
     @ddt.data(None, "keystone", "fooservice")
     def test_get_entities(self, service_name):
@@ -278,22 +286,24 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.delete_service.assert_called_once_with(
             fake_service.id)
 
-    def test_create_update_and_delete_tenant(self):
+    @ddt.data(basic.CreateUpdateAndDeleteProject,
+              basic.CreateUpdateAndDeleteTenant)
+    def test_create_update_and_delete_project(self, scenario_cls):
         identity_service = self.mock_keystone
 
-        scenario = basic.CreateUpdateAndDeleteTenant(self.context)
-
-        gen_name = mock.MagicMock()
-        basic.CreateUpdateAndDeleteTenant.generate_random_name = gen_name
+        scenario = scenario_cls(self.context)
+        scenario.generate_random_name = mock.MagicMock()
         fake_project = identity_service.create_project.return_value
 
-        scenario.run()
+        scenario.run(domain="dom")
 
-        identity_service.create_project.assert_called_once_with()
+        identity_service.create_project.assert_called_once_with(domain="dom")
         identity_service.update_project.assert_called_once_with(
-            fake_project.id, description=gen_name.return_value,
-            name=gen_name.return_value)
-        identity_service.delete_project(fake_project.id)
+            fake_project.id,
+            description=scenario.generate_random_name.return_value,
+            name=scenario.generate_random_name.return_value)
+        identity_service.delete_project.assert_called_once_with(
+            fake_project.id)
 
     def test_create_user_update_password(self):
         identity_service = self.mock_keystone
@@ -318,10 +328,10 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         scenario = basic.CreateAndUpdateUser(self.context)
         fake_user = identity_service.create_user.return_value
 
-        create_args = {"fakearg1": "f"}
-        update_args = {"fakearg1": "fakearg"}
-        # the scenario reads the updated attribute back via get_user
-        identity_service.get_user.return_value.fakearg1 = "fakearg"
+        create_args = {"password": "pswd"}
+        update_args = {"email": "e@mail", "enabled": False}
+        identity_service.get_user.return_value.email = "e@mail"
+        identity_service.get_user.return_value.is_enabled = False
 
         scenario.run(create_user_kwargs=create_args,
                      update_user_kwargs=update_args)
@@ -330,6 +340,15 @@ class KeystoneBasicTestCase(test.ScenarioTestCase):
         identity_service.update_user.assert_called_once_with(
             fake_user.id, **update_args)
         identity_service.get_user.assert_called_once_with(fake_user.id)
+
+    def test_create_and_update_user_without_kwargs(self):
+        identity_service = self.mock_keystone
+        fake_user = identity_service.create_user.return_value
+
+        basic.CreateAndUpdateUser(self.context).run()
+
+        identity_service.create_user.assert_called_once_with()
+        identity_service.update_user.assert_called_once_with(fake_user.id)
 
     def test_create_and_list_services(self):
         identity_service = self.mock_keystone

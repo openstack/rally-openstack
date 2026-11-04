@@ -53,15 +53,14 @@ class Ports(context.OpenStackContext):
     config: dict
 
     def setup(self) -> None:
-        for user, tenant_id in self._iterate_per_tenants():
-            tenant_ctx = self.context["tenants"][tenant_id]
-            tenant_ctx["ports"] = []
-            networks = tenant_ctx.get("networks", [])
+        for user, project_id in self._iterate_per_projects():
+            project_ctx = self.context["tenants"][project_id]
+            project_ctx["ports"] = []
+            networks = project_ctx.get("networks", [])
             if not networks:
                 raise ValueError(
-                    "No networks found for project %s. "
-                    "Ensure network@openstack context is configured."
-                    % tenant_id)
+                    f"No networks found for project {project_id}. "
+                    f"Ensure network@openstack context is configured.")
 
             client = neutron.NeutronService(
                 osclients.Clients(user["credential"]),
@@ -71,19 +70,19 @@ class Ports(context.OpenStackContext):
             for i in range(self.config["ports_per_project"]):
                 network = networks[i % len(networks)]
                 port = client.create_port(network_id=network["id"])
-                tenant_ctx["ports"].append(port)
+                project_ctx["ports"].append(port)
 
     def cleanup(self) -> None:
-        for user, tenant_id in self._iterate_per_tenants():
+        for user, project_id in self._iterate_per_projects():
             client = neutron.NeutronService(
                 osclients.Clients(user["credential"]),
                 name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions(),
             )
-            for port in self.context["tenants"][tenant_id].get(
+            for port in self.context["tenants"][project_id].get(
                     "ports", []):
                 with logging.ExceptionLogger(
                         LOG,
-                        "Failed to delete port %s for project %s"
-                        % (port["id"], tenant_id)):
+                        f"Failed to delete port {port['id']} for project "
+                        f"{project_id}"):
                     client.delete_port(port["id"])

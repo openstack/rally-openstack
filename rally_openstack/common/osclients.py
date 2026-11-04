@@ -33,6 +33,7 @@ from rally_openstack.common.clients import neutron as neutron_client
 
 if t.TYPE_CHECKING:
     import openstack.connection
+    from swiftclient import client as swift_client
 
 
 # backward compatibility
@@ -319,7 +320,9 @@ class Swift(base.OSClient):
 
     """
 
-    def create_client(self, service_type=None):
+    def create_client(
+        self, service_type: str | None = None
+    ) -> swift_client.Connection:
         """Return swift client."""
         from swiftclient import client as swift
 
@@ -330,7 +333,7 @@ class Swift(base.OSClient):
                                   insecure=self.credential.https_insecure,
                                   cacert=self.credential.https_cacert,
                                   user=self.credential.username,
-                                  tenant_name=self.credential.tenant_name,
+                                  tenant_name=self.credential.project_name,
                                   )
         return client
 
@@ -448,7 +451,7 @@ class Clients:
         return self.cache[key]
 
     @classmethod
-    def create_from_env(cls):
+    def create_from_env(cls) -> t.Self:
         from rally_openstack.common import credential
         from rally_openstack.environment.platforms import existing
 
@@ -461,8 +464,7 @@ class Clients:
             auth_url=creds["auth_url"],
             username=creds["admin"]["username"],
             password=creds["admin"]["password"],
-            tenant_name=creds["admin"].get(
-                "tenant_name", creds["admin"].get("project_name")),
+            project_name=creds["admin"]["project_name"],
             endpoint_type=creds["endpoint_type"],
             user_domain_name=creds["admin"].get("user_domain_name"),
             project_domain_name=creds["admin"].get("project_domain_name"),

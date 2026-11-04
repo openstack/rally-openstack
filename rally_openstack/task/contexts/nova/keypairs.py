@@ -13,11 +13,32 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
+import typing as t
+
 from rally.common import validation
 
+from rally_openstack.common import credential as os_credential
 from rally_openstack.common import osclients
 from rally_openstack.task import context
 from rally_openstack.task.cleanup import manager as resource_manager
+from rally_openstack.task.contexts.keystone import users
+
+
+class KeypairInfo(t.TypedDict):
+    """A nova keypair created for a user."""
+
+    id: str
+    name: str
+    private: str
+    public: str
+
+
+class UserWithKeypair(users.UserInfo):
+    """An entry of ``context["users"]`` after the keypair context ran."""
+
+    keypair: KeypairInfo
 
 
 @validation.add("required_platform", platform="openstack", users=True)
@@ -31,7 +52,9 @@ class Keypair(context.OpenStackContext):
     CONFIG_SCHEMA = {"type": "object",
                      "additionalProperties": False}
 
-    def _generate_keypair(self, credential):
+    def _generate_keypair(
+        self, credential: os_credential.OpenStackCredential
+    ) -> KeypairInfo:
         nova_client = osclients.Clients(credential).nova()
         # NOTE(hughsaunders): If keypair exists, it should re-generate name.
 
@@ -43,16 +66,18 @@ class Keypair(context.OpenStackContext):
                 break
 
         keypair = nova_client.keypairs.create(keypair_name)
-        return {"private": keypair.private_key,
-                "public": keypair.public_key,
-                "name": keypair_name,
-                "id": keypair.id}
+        return KeypairInfo(
+            private=keypair.private_key,
+            public=keypair.public_key,
+            name=keypair_name,
+            id=keypair.id
+        )
 
-    def setup(self):
+    def setup(self) -> None:
         for user in self.context["users"]:
             user["keypair"] = self._generate_keypair(user["credential"])
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(names=["nova.keypairs"],
                                  users=self.context.get("users", []),
                                  superclass=self.__class__,

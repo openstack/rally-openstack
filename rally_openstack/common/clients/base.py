@@ -472,7 +472,7 @@ class LegacyClientCompat(BaseClient):
             cacert_key: self.credential.https_cacert,
         }
         if project_name_key:
-            kw.update({project_name_key: self.credential.tenant_name})
+            kw.update({project_name_key: self.credential.project_name})
 
         if "v2.0" not in self.credential.auth_url:
             kw.update({

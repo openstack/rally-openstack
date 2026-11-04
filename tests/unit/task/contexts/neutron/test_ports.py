@@ -53,7 +53,7 @@ class PortsContextTestCase(test.TestCase):
         ]
         context = self._get_context(ports_per_project=2)
         ctx = ports.Ports(context)
-        ctx._iterate_per_tenants = mock.MagicMock(return_value=[
+        ctx._iterate_per_projects = mock.MagicMock(return_value=[
             (context["users"][0], "foo_tenant"),
             (context["users"][1], "bar_tenant"),
         ])
@@ -82,7 +82,7 @@ class PortsContextTestCase(test.TestCase):
         ]
         context = self._get_context(ports_per_project=3)
         ctx = ports.Ports(context)
-        ctx._iterate_per_tenants = mock.MagicMock(return_value=[
+        ctx._iterate_per_projects = mock.MagicMock(return_value=[
             (context["users"][0], "foo_tenant"),
         ])
 
@@ -98,7 +98,7 @@ class PortsContextTestCase(test.TestCase):
         context = self._get_context(ports_per_project=2)
         context["tenants"]["foo_tenant"]["networks"] = []
         ctx = ports.Ports(context)
-        ctx._iterate_per_tenants = mock.MagicMock(return_value=[
+        ctx._iterate_per_projects = mock.MagicMock(return_value=[
             (context["users"][0], "foo_tenant"),
         ])
 
@@ -116,7 +116,7 @@ class PortsContextTestCase(test.TestCase):
             {"id": "port-1"}, {"id": "port-2"}]
         context["tenants"]["bar_tenant"]["ports"] = []
         ctx = ports.Ports(context)
-        ctx._iterate_per_tenants = mock.MagicMock(return_value=[
+        ctx._iterate_per_projects = mock.MagicMock(return_value=[
             (context["users"][0], "foo_tenant"),
             (context["users"][1], "bar_tenant"),
         ])
@@ -139,7 +139,7 @@ class PortsContextTestCase(test.TestCase):
             {"id": "port-1"}, {"id": "port-2"}]
         context["tenants"]["bar_tenant"]["ports"] = []
         ctx = ports.Ports(context)
-        ctx._iterate_per_tenants = mock.MagicMock(return_value=[
+        ctx._iterate_per_projects = mock.MagicMock(return_value=[
             (context["users"][0], "foo_tenant"),
         ])
 

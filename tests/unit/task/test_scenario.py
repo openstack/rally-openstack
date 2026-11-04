@@ -25,12 +25,14 @@ from tests.unit import test
 CREDENTIAL_WITHOUT_HMAC = OpenStackCredential(
     "auth_url",
     "username",
-    "password")
+    "password",
+    "project")
 
 CREDENTIAL_WITH_HMAC = OpenStackCredential(
     "auth_url",
     "username",
     "password",
+    "project",
     profiler_hmac_key="test_profiler_hmac_key")
 
 

@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import pkgutil
+import typing as t
 
 from rally import exceptions
 from rally.common import utils as rutils
@@ -26,7 +29,12 @@ from rally_openstack.task.cleanup import manager as resource_manager
 from rally_openstack.task.scenarios.heat import utils as heat_utils
 
 
-def get_data(filename_or_resource):
+if t.TYPE_CHECKING:
+    from rally_openstack.task.contexts.keystone import users
+    from rally_openstack.task.contexts.nova import keypairs
+
+
+def get_data(filename_or_resource: str | list[str]) -> str | bytes | None:
     if isinstance(filename_or_resource, list):
         return pkgutil.get_data(*filename_or_resource)
     return open(filename_or_resource).read()
@@ -95,9 +103,11 @@ class HeatDataplane(context.OpenStackContext):
         "stacks_per_tenant": 1,
     }
 
-    def _get_context_parameter(self, user, tenant_id, path):
-        value: list | dict = {
-            "user": user, "tenant": self.context["tenants"][tenant_id]
+    def _get_context_parameter(
+        self, user: users.UserInfo, project_id: str, path: str
+    ) -> t.Any:
+        value: t.Any = {
+            "user": user, "tenant": self.context["tenants"][project_id]
         }
         for key in path.split("."):
             try:
@@ -113,12 +123,12 @@ class HeatDataplane(context.OpenStackContext):
                     f"There is no key {path} in context")
         return value
 
-    def _get_public_network_id(self):
+    def _get_public_network_id(self) -> str:
         nc = osclients.Clients(self.context["admin"]["credential"]).neutron()
         networks = nc.list_networks(**{"router:external": True})["networks"]
         return networks[0]["id"]
 
-    def setup(self):
+    def setup(self) -> None:
         template = get_data(self.config["template"])
         files = {}
         for key, filename in self.config.get("files", {}).items():
@@ -127,29 +137,30 @@ class HeatDataplane(context.OpenStackContext):
         with parameters.unlocked():
             if "network_id" not in parameters:
                 parameters["network_id"] = self._get_public_network_id()
-            for user, tenant_id in self._iterate_per_tenants():
+            for user, project_id in self._iterate_per_projects():
                 for name, path in self.config.get("context_parameters",
                                                   {}).items():
-                    parameters[name] = self._get_context_parameter(user,
-                                                                   tenant_id,
-                                                                   path)
+                    parameters[name] = self._get_context_parameter(
+                        user, project_id, path
+                    )
                 if "router_id" not in parameters:
-                    networks = self.context["tenants"][tenant_id]["networks"]
+                    networks = self.context["tenants"][project_id]["networks"]
                     parameters["router_id"] = networks[0]["router_id"]
                 if "key_name" not in parameters:
-                    parameters["key_name"] = user["keypair"]["name"]
+                    parameters["key_name"] = t.cast(
+                        "keypairs.UserWithKeypair", user)["keypair"]["name"]
                 heat_scenario = heat_utils.HeatScenario(
                     {"user": user, "task": self.context["task"],
                      "owner_id": self.context["owner_id"]})
-                self.context["tenants"][tenant_id]["stack_dataplane"] = []
+                self.context["tenants"][project_id]["stack_dataplane"] = []
                 for i in range(self.config["stacks_per_tenant"]):
                     stack = heat_scenario._create_stack(template, files=files,
                                                         parameters=parameters)
-                    tenant_data = self.context["tenants"][tenant_id]
+                    tenant_data = self.context["tenants"][project_id]
                     tenant_data["stack_dataplane"].append([stack.id, template,
                                                            files, parameters])
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(names=["heat.stacks"],
                                  users=self.context.get("users", []),
                                  superclass=heat_utils.HeatScenario,

@@ -33,6 +33,23 @@ class IdentityTestCase(test.TestCase):
             service = identity.Identity(self.clients)
         return service
 
+    @mock.patch("rally_openstack.common.services.identity.identity.LOG")
+    def test_log_deprecation_once(self, mock_log):
+        patcher = mock.patch.object(identity, "_DEPRECATION_LOGGED", False)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        identity.log_deprecation()
+        identity.log_deprecation()
+
+        mock_log.warning.assert_called_once_with(mock.ANY)
+
+    @mock.patch("rally_openstack.common.services.identity.identity"
+                ".log_deprecation")
+    def test_init_logs_deprecation(self, mock_log_deprecation):
+        self.get_service_with_fake_impl()
+        mock_log_deprecation.assert_called_once_with()
+
     def test_create_project(self):
         service = self.get_service_with_fake_impl()
         project_name = "name"

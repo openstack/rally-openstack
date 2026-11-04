@@ -13,9 +13,11 @@
 from __future__ import annotations
 
 import random
+import typing as t
 
 from rally import exceptions
 from rally.common import validation
+from rally.common.plugin import plugin
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
@@ -26,23 +28,29 @@ from rally_openstack.task import context
 class CheckOpenStackAPIVersionsValidator(validation.Validator):
     """Additional validation for api_versions context"""
 
-    def validate(self, context, config, plugin_cls, plugin_cfg):
-        for client in plugin_cfg:
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin],
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        if not plugin_cfg:
+            return
+        for client, client_cfg in plugin_cfg.items():
             client_cls = osclients.BaseClient.get(client)
             try:
-                if ("service_type" in plugin_cfg[client]
-                        or "service_name" in plugin_cfg[client]):
+                if ("service_type" in client_cfg
+                        or "service_name" in client_cfg):
                     client_cls.spec.is_service_type_configurable()
 
-                if "version" in plugin_cfg[client]:
-                    client_cls.spec.validate_version(
-                        plugin_cfg[client]["version"])
+                if "version" in client_cfg:
+                    client_cls.spec.validate_version(client_cfg["version"])
 
             except exceptions.RallyException as e:
-                return self.fail(
-                    "Invalid settings for '%(client)s': %(error)s" % {
-                        "client": client,
-                        "error": e.format_message()})
+                self.fail(
+                    f"Invalid settings for '{client}': "
+                    f"{e.format_message()}")
 
 
 @validation.add("check_api_versions")
@@ -250,7 +258,7 @@ class OpenStackAPIVersions(context.OpenStackContext):
 
     config: dict[str, dict[str, str | int]]
 
-    def setup(self):
+    def setup(self) -> None:
         # FIXME(andreykurilin): move all checks to validate method.
 
         # use admin only when `service_name` is presented
@@ -293,6 +301,6 @@ class OpenStackAPIVersions(context.OpenStackContext):
                 self.context["config"]["api_versions@openstack"]
             )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         # nothing to do here
         pass

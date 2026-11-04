@@ -13,180 +13,281 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing as t
+
 from rally import exceptions
 from rally.common import logging
+from rally.common.plugin import plugin
 from rally.task import validation
 
 from rally_openstack.task import scenario
 
 
-class KeystoneBasic(scenario.OpenStackScenario):
-    """Base class for Keystone scenarios with initialized service object."""
-
-    def __init__(self, context=None, admin_clients=None, clients=None):
-        super().__init__(context, admin_clients, clients)
-        if hasattr(self, "_admin_clients"):
-            self.admin_keystone = self._admin_clients.keystone
-        if hasattr(self, "_clients"):
-            self.keystone = self._clients.keystone
+_TENANT_DEPRECATION = "Keystone tenants are called projects since Keystone V3"
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_user",
                     platform="openstack")
-class CreateUser(KeystoneBasic):
+class CreateUser(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name_length' argument to create_user is ignored",
         "0.1.2", ["name_length"], once=True)
-    def run(self, name_length=10, **kwargs):
+    def run(
+        self,
+        name_length: int = 10,
+        password: str | None = None,
+        project_id: str | None = None,
+        domain: str = "Default",
+        enabled: bool = True,
+    ) -> None:
         """Create a keystone user with random name.
 
         :param name_length: the length of name
-        :param kwargs: Other optional parameters to create users like
-                         "tenant_id", "enabled".
+        :param password: the password of the user
+        :param project_id: the default project of the user
+        :param domain: name or id of the domain to create the user in
+        :param enabled: whether the user is enabled
         """
-        self.admin_keystone.create_user(**kwargs)
+        self._admin_clients.keystone.create_user(
+            password=password, project_id=project_id, domain=domain,
+            enabled=enabled)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_delete_user",
                     platform="openstack")
-class CreateDeleteUser(KeystoneBasic):
+class CreateDeleteUser(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name_length' argument to create_delete_user is ignored",
         "0.1.2", ["name_length"], once=True)
-    def run(self, name_length=10, **kwargs):
+    def run(
+        self,
+        name_length: int = 10,
+        password: str | None = None,
+        project_id: str | None = None,
+        domain: str = "Default",
+        enabled: bool = True,
+    ) -> None:
         """Create a keystone user with random name and then delete it.
 
         :param name_length: the length of name
-        :param kwargs: Other optional parameters to create users like
-                         "tenant_id", "enabled".
+        :param password: the password of the user
+        :param project_id: the default project of the user
+        :param domain: name or id of the domain to create the user in
+        :param enabled: whether the user is enabled
         """
-        user = self.admin_keystone.create_user(**kwargs)
-        self.admin_keystone.delete_user(user.id)
+        user = self._admin_clients.keystone.create_user(
+            password=password, project_id=project_id, domain=domain,
+            enabled=enabled)
+        self._admin_clients.keystone.delete_user(user.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_user_set_enabled_and_delete",
                     platform="openstack")
-class CreateUserSetEnabledAndDelete(KeystoneBasic):
+class CreateUserSetEnabledAndDelete(scenario.OpenStackScenario):
 
-    def run(self, enabled=True, **kwargs):
+    def run(
+        self,
+        enabled: bool = True,
+        password: str | None = None,
+        project_id: str | None = None,
+        domain: str = "Default",
+    ) -> None:
         """Create a keystone user, enable or disable it, and delete it.
 
         :param enabled: Initial state of user 'enabled' flag. The user
                         will be created with 'enabled' set to this
                         value, and then it will be toggled.
-        :param kwargs: Other optional parameters to create user.
+        :param password: the password of the user
+        :param project_id: the default project of the user
+        :param domain: name or id of the domain to create the user in
         """
-        user = self.admin_keystone.create_user(enabled=enabled, **kwargs)
-        self.admin_keystone.update_user(user.id, enabled=(not enabled))
-        self.admin_keystone.delete_user(user.id)
+        user = self._admin_clients.keystone.create_user(
+            password=password, project_id=project_id, domain=domain,
+            enabled=enabled)
+        self._admin_clients.keystone.update_user(
+            user.id, enabled=(not enabled))
+        self._admin_clients.keystone.delete_user(user.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
+                    name="KeystoneBasic.create_project",
+                    platform="openstack")
+class CreateProject(scenario.OpenStackScenario):
+
+    def run(self, domain: str = "Default") -> None:
+        """Create a keystone project with random name.
+
+        :param domain: name or id of the domain to create the project in
+        """
+        self._admin_clients.keystone.create_project(domain=domain)
+
+
+@plugin.deprecated(f"{_TENANT_DEPRECATION}, use "
+                   f"'KeystoneBasic.create_project' instead.",
+                   rally_version="4.2.0")
+@validation.add("required_platform", platform="openstack", admin=True)
+@scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_tenant",
                     platform="openstack")
-class CreateTenant(KeystoneBasic):
+class CreateTenant(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name_length' argument to create_tenant is ignored",
         "0.1.2", ["name_length"], once=True)
-    def run(self, name_length=10, **kwargs):
+    def run(self, name_length: int = 10, domain: str = "Default") -> None:
         """Create a keystone tenant with random name.
 
         :param name_length: the length of name
-        :param kwargs: Other optional parameters
+        :param domain: name or id of the domain to create the tenant in
         """
-        self.admin_keystone.create_project(**kwargs)
+        self._admin_clients.keystone.create_project(domain=domain)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.authenticate_user_and_validate_token",
                     platform="openstack")
-class AuthenticateUserAndValidateToken(KeystoneBasic):
+class AuthenticateUserAndValidateToken(scenario.OpenStackScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Authenticate and validate a keystone token."""
-        token = self.admin_keystone.fetch_token()
-        self.admin_keystone.validate_token(token)
+        token = self._admin_clients.keystone.fetch_token()
+        self._admin_clients.keystone.validate_token(token)
 
 
+@validation.add("number", param_name="users_per_project", minval=1)
+@validation.add("required_platform", platform="openstack", admin=True)
+@scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
+                    name="KeystoneBasic.create_project_with_users",
+                    platform="openstack")
+class CreateProjectWithUsers(scenario.OpenStackScenario):
+
+    def run(self, users_per_project: int, domain: str = "Default") -> None:
+        """Create a keystone project and several users belonging to it.
+
+        :param users_per_project: number of users to create for the project
+        :param domain: name or id of the domain to create the project and
+            users in
+        """
+        project = self._admin_clients.keystone.create_project(domain=domain)
+        # the same role for every user, so it is resolved once rather than
+        # listing all role definitions per created user.
+        role = self._admin_clients.keystone.find_role("member")
+        for _ in range(users_per_project):
+            user = self._admin_clients.keystone.create_user(
+                project_id=project.id, domain=domain)
+            if role is not None:
+                self._admin_clients.keystone.add_role(
+                    role_id=role.id, user_id=user.id, project_id=project.id
+                )
+
+
+@plugin.deprecated(f"{_TENANT_DEPRECATION}, use "
+                   f"'KeystoneBasic.create_project_with_users' instead.",
+                   rally_version="4.2.0")
 @validation.add("number", param_name="users_per_tenant", minval=1)
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_tenant_with_users",
                     platform="openstack")
-class CreateTenantWithUsers(KeystoneBasic):
+class CreateTenantWithUsers(CreateProjectWithUsers):
 
     @logging.log_deprecated_args(
         "The 'name_length' argument to create_tenant_with_users is ignored",
         "0.1.2", ["name_length"], once=True)
-    def run(self, users_per_tenant, name_length=10, **kwargs):
+    def run(
+        self,
+        users_per_tenant: int,
+        name_length: int = 10,
+        domain: str = "Default",
+    ) -> None:
         """Create a keystone tenant and several users belonging to it.
 
         :param users_per_tenant: number of users to create for the tenant
         :param name_length: the length of name
-        :param kwargs: Other optional parameters for tenant creation
-        :returns: keystone tenant instance
+        :param domain: name or id of the domain to create the tenant and
+            users in
         """
-        tenant = self.admin_keystone.create_project(**kwargs)
-        # the same role for every user, so it is resolved once rather than
-        # listing all role definitions per created user.
-        role = self.admin_keystone.find_role("member")
-        for _ in range(users_per_tenant):
-            user = self.admin_keystone.create_user(project_id=tenant.id)
-            if role is not None:
-                self.admin_keystone.add_role(role_id=role.id, user_id=user.id,
-                                             project_id=tenant.id)
+        super().run(users_per_project=users_per_tenant, domain=domain)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_list_users",
                     platform="openstack")
-class CreateAndListUsers(KeystoneBasic):
+class CreateAndListUsers(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
-        "The 'name_length' argument to create_and_list_users is ignored",
-        "0.1.2", ["name_length"], once=True)
-    def run(self, name_length=10, **kwargs):
+        "The 'name_length' and 'name' arguments to create_and_list_users are "
+        "ignored", "0.1.2", ["name_length", "name"], once=True)
+    def run(
+        self,
+        name_length: int = 10,
+        name: str | None = None,
+        password: str | None = None,
+        project_id: str | None = None,
+        domain: str = "Default",
+        enabled: bool = True,
+    ) -> None:
         """Create a keystone user with random name and list all users.
 
         :param name_length: the length of name
-        :param kwargs: Other optional parameters to create users like
-                         "tenant_id", "enabled".
+        :param name: ignored, the user always gets a random name
+        :param password: the password of the user
+        :param project_id: the default project of the user
+        :param domain: name or id of the domain to create the user in
+        :param enabled: whether the user is enabled
         """
-
-        kwargs.pop("name", None)
-        self.admin_keystone.create_user(**kwargs)
-        self.admin_keystone.list_users()
+        self._admin_clients.keystone.create_user(
+            password=password, project_id=project_id, domain=domain,
+            enabled=enabled)
+        self._admin_clients.keystone.list_users()
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
+                    name="KeystoneBasic.create_and_list_projects",
+                    platform="openstack")
+class CreateAndListProjects(scenario.OpenStackScenario):
+
+    def run(self, domain: str = "Default") -> None:
+        """Create a keystone project with random name and list all projects.
+
+        :param domain: name or id of the domain to create the project in
+        """
+        self._admin_clients.keystone.create_project(domain=domain)
+        self._admin_clients.keystone.list_projects()
+
+
+@plugin.deprecated(f"{_TENANT_DEPRECATION}, use "
+                   f"'KeystoneBasic.create_and_list_projects' instead.",
+                   rally_version="4.2.0")
+@validation.add("required_platform", platform="openstack", admin=True)
+@scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_list_tenants",
                     platform="openstack")
-class CreateAndListTenants(KeystoneBasic):
+class CreateAndListTenants(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name_length' argument to create_and_list_tenants is ignored",
         "0.1.2", ["name_length"], once=True)
-    def run(self, name_length=10, **kwargs):
+    def run(self, name_length: int = 10, domain: str = "Default") -> None:
         """Create a keystone tenant with random name and list all tenants.
 
         :param name_length: the length of name
-        :param kwargs: Other optional parameters
+        :param domain: name or id of the domain to create the tenant in
         """
-        self.admin_keystone.create_project(**kwargs)
-        self.admin_keystone.list_projects()
+        self._admin_clients.keystone.create_project(domain=domain)
+        self._admin_clients.keystone.list_projects()
 
 
 @validation.add("required_platform", platform="openstack",
@@ -194,29 +295,29 @@ class CreateAndListTenants(KeystoneBasic):
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.add_and_remove_user_role",
                     platform="openstack")
-class AddAndRemoveUserRole(KeystoneBasic):
+class AddAndRemoveUserRole(scenario.OpenStackScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Create a user role add to a user and disassociate."""
-        tenant_id = self.context["tenant"]["id"]
+        project_id = self.context["tenant"]["id"]
         user_id = self.context["user"]["id"]
-        role = self.admin_keystone.create_role()
-        self.admin_keystone.add_role(role_id=role.id, user_id=user_id,
-                                     project_id=tenant_id)
-        self.admin_keystone.revoke_role(role.id, user_id=user_id,
-                                        project_id=tenant_id)
+        role = self._admin_clients.keystone.create_role()
+        self._admin_clients.keystone.add_role(
+            role_id=role.id, user_id=user_id, project_id=project_id)
+        self._admin_clients.keystone.revoke_role(
+            role.id, user_id=user_id, project_id=project_id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_delete_role",
                     platform="openstack")
-class CreateAndDeleteRole(KeystoneBasic):
+class CreateAndDeleteRole(scenario.OpenStackScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Create a user role and delete it."""
-        role = self.admin_keystone.create_role()
-        self.admin_keystone.delete_role(role.id)
+        role = self._admin_clients.keystone.create_role()
+        self._admin_clients.keystone.delete_role(role.id)
 
 
 @validation.add("required_platform", platform="openstack",
@@ -224,29 +325,29 @@ class CreateAndDeleteRole(KeystoneBasic):
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_add_and_list_user_roles",
                     platform="openstack")
-class CreateAddAndListUserRoles(KeystoneBasic):
+class CreateAddAndListUserRoles(scenario.OpenStackScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Create user role, add it and list user roles for given user."""
-        tenant_id = self.context["tenant"]["id"]
+        project_id = self.context["tenant"]["id"]
         user_id = self.context["user"]["id"]
-        role = self.admin_keystone.create_role()
-        self.admin_keystone.add_role(user_id=user_id, role_id=role.id,
-                                     project_id=tenant_id)
-        self.admin_keystone.list_role_assignments(
-            user_id, project_id=tenant_id)
+        role = self._admin_clients.keystone.create_role()
+        self._admin_clients.keystone.add_role(
+            user_id=user_id, role_id=role.id, project_id=project_id)
+        self._admin_clients.keystone.list_role_assignments(
+            user_id, project_id=project_id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.get_entities",
                     platform="openstack")
-class GetEntities(KeystoneBasic):
+class GetEntities(scenario.OpenStackScenario):
 
-    def run(self, service_name="keystone"):
-        """Get instance of a tenant, user, role and service by id's.
+    def run(self, service_name: str | None = "keystone") -> None:
+        """Get instance of a project, user, role and service by id's.
 
-        An ephemeral tenant, user, and role are each created. By
+        An ephemeral project, user, and role are each created. By
         default, fetches the 'keystone' service. This can be
         overridden (for instance, to get the 'Identity Service'
         service on older OpenStack), or None can be passed explicitly
@@ -257,118 +358,158 @@ class GetEntities(KeystoneBasic):
                              None, to create an ephemeral service and
                              get it by ID.
         """
-        project = self.admin_keystone.create_project()
-        user = self.admin_keystone.create_user(project_id=project.id)
-        role = self.admin_keystone.create_role()
-        self.admin_keystone.get_project(project.id)
-        self.admin_keystone.get_user(user.id)
-        self.admin_keystone.get_role(role.id)
+        project = self._admin_clients.keystone.create_project()
+        user = self._admin_clients.keystone.create_user(project_id=project.id)
+        role = self._admin_clients.keystone.create_role()
+        self._admin_clients.keystone.get_project(project.id)
+        self._admin_clients.keystone.get_user(user.id)
+        self._admin_clients.keystone.get_role(role.id)
         if service_name is None:
-            service = self.admin_keystone.create_service()
+            service = self._admin_clients.keystone.create_service()
         else:
-            services = self.admin_keystone.list_services(name=service_name)
+            services = self._admin_clients.keystone.list_services(
+                name=service_name)
             if not services:
                 raise exceptions.GetResourceNotFound(
                     resource=f"Service({service_name})")
             service = services[0]
-        self.admin_keystone.get_service(service.id)
+        self._admin_clients.keystone.get_service(service.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_delete_service",
                     platform="openstack")
-class CreateAndDeleteService(KeystoneBasic):
+class CreateAndDeleteService(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name' argument to create_and_delete_service will be ignored",
         "0.0.5", ["name"])
-    def run(self, name=None, service_type=None, description=None):
+    def run(
+        self,
+        name: str | None = None,
+        service_type: str | None = None,
+        description: str | None = None,
+    ) -> None:
         """Create and delete service.
 
         :param name: name of the service
         :param service_type: type of the service
         :param description: description of the service
         """
-        service = self.admin_keystone.create_service(service_type=service_type,
-                                                     description=description)
-        self.admin_keystone.delete_service(service.id)
+        service = self._admin_clients.keystone.create_service(
+            service_type=service_type, description=description)
+        self._admin_clients.keystone.delete_service(service.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
+                    name="KeystoneBasic.create_update_and_delete_project",
+                    platform="openstack")
+class CreateUpdateAndDeleteProject(scenario.OpenStackScenario):
+
+    def run(self, domain: str = "Default") -> None:
+        """Create, update and delete project.
+
+        :param domain: name or id of the domain to create the project in
+        """
+        project = self._admin_clients.keystone.create_project(domain=domain)
+        self._admin_clients.keystone.update_project(
+            project.id,
+            name=self.generate_random_name(),
+            description=self.generate_random_name(),
+        )
+        self._admin_clients.keystone.delete_project(project.id)
+
+
+@plugin.deprecated(f"{_TENANT_DEPRECATION}, use "
+                   f"'KeystoneBasic.create_update_and_delete_project' "
+                   f"instead.",
+                   rally_version="4.2.0")
+@validation.add("required_platform", platform="openstack", admin=True)
+@scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_update_and_delete_tenant",
                     platform="openstack")
-class CreateUpdateAndDeleteTenant(KeystoneBasic):
+class CreateUpdateAndDeleteTenant(CreateUpdateAndDeleteProject):
 
     @logging.log_deprecated_args(
         "The 'name_length' argument to create_update_and_delete_tenant is "
         "ignored", "0.1.2", ["name_length"], once=True)
-    def run(self, name_length=None, **kwargs):
+    def run(
+        self, name_length: int | None = None, domain: str = "Default"
+    ) -> None:
         """Create, update and delete tenant.
 
         :param name_length: the length of name
-        :param kwargs: Other optional parameters for tenant creation
+        :param domain: name or id of the domain to create the tenant in
         """
-        project = self.admin_keystone.create_project(**kwargs)
-        new_name = self.generate_random_name()
-        new_description = self.generate_random_name()
-        self.admin_keystone.update_project(project.id, name=new_name,
-                                           description=new_description)
-        self.admin_keystone.delete_project(project.id)
+        super().run(domain=domain)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_user_update_password",
                     platform="openstack")
-class CreateUserUpdatePassword(KeystoneBasic):
+class CreateUserUpdatePassword(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name_length' and 'password_length' arguments to "
         "create_user_update_password are ignored",
         "0.1.2", ["name_length", "password_length"], once=True)
-    def run(self, name_length=None, password_length=None):
-        """Create user and update password for that user."""
-        user = self.admin_keystone.create_user()
-        password = self.generate_random_name()
-        self.admin_keystone.update_user(user.id, password=password)
+    def run(
+        self,
+        name_length: int | None = None,
+        password_length: int | None = None,
+    ) -> None:
+        """Create user and update password for that user.
+
+        :param name_length: the length of name
+        :param password_length: the length of password
+        """
+        user = self._admin_clients.keystone.create_user()
+        self._admin_clients.keystone.update_user(
+            user.id, password=self.generate_random_name())
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_list_services",
                     platform="openstack")
-class CreateAndListServices(KeystoneBasic):
+class CreateAndListServices(scenario.OpenStackScenario):
 
     @logging.log_deprecated_args(
         "The 'name' argument to create_and_list_services will be ignored",
         "0.0.5", ["name"])
-    def run(self, name=None, service_type=None, description=None):
+    def run(
+        self,
+        name: str | None = None,
+        service_type: str | None = None,
+        description: str | None = None,
+    ) -> None:
         """Create and list services.
 
         :param name: name of the service
         :param service_type: type of the service
         :param description: description of the service
         """
-        self.admin_keystone.create_service(service_type=service_type,
-                                           description=description)
-        self.admin_keystone.list_services()
+        self._admin_clients.keystone.create_service(
+            service_type=service_type, description=description)
+        self._admin_clients.keystone.list_services()
 
 
 @validation.add("required_platform", platform="openstack", users=True)
 @scenario.configure(context={"cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_list_ec2credentials",
                     platform="openstack")
-class CreateAndListEc2Credentials(KeystoneBasic):
+class CreateAndListEc2Credentials(scenario.OpenStackScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Create and list all keystone ec2-credentials."""
-        self.keystone.create_credential(
+        self._clients.keystone.create_credential(
             "ec2",
             user_id=self.context["user"]["id"],
             project_id=self.context["tenant"]["id"])
-        self.keystone.list_credentials(
+        self._clients.keystone.list_credentials(
             user_id=self.context["user"]["id"], cred_type="ec2")
 
 
@@ -376,41 +517,66 @@ class CreateAndListEc2Credentials(KeystoneBasic):
 @scenario.configure(context={"cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_delete_ec2credential",
                     platform="openstack")
-class CreateAndDeleteEc2Credential(KeystoneBasic):
+class CreateAndDeleteEc2Credential(scenario.OpenStackScenario):
 
-    def run(self):
+    def run(self) -> None:
         """Create and delete keystone ec2-credential."""
-        cred = self.keystone.create_credential(
+        cred = self._clients.keystone.create_credential(
             "ec2",
             user_id=self.context["user"]["id"],
             project_id=self.context["tenant"]["id"])
-        self.keystone.delete_credential(cred.id)
+        self._clients.keystone.delete_credential(cred.id)
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_get_role",
                     platform="openstack")
-class CreateAndGetRole(KeystoneBasic):
+class CreateAndGetRole(scenario.OpenStackScenario):
 
-    def run(self, **kwargs):
+    def run(self, domain: str | None = None) -> None:
         """Create a user role and get it detailed information.
 
-        :param kwargs: Optional additional arguments for roles creation
+        :param domain: name or id of the domain to create the role in;
+            a global role is created when omitted
         """
-        role = self.admin_keystone.create_role(**kwargs)
-        self.admin_keystone.get_role(role.id)
+        role = self._admin_clients.keystone.create_role(domain=domain)
+        self._admin_clients.keystone.get_role(role.id)
+
+
+class CreateRoleArgs(t.TypedDict, total=False):
+    """Optional arguments for creating a keystone role."""
+
+    domain: str
+
+
+class ListRolesArgs(t.TypedDict, total=False):
+    """Optional arguments for listing keystone roles."""
+
+    name: str
+    domain: str
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_list_roles",
                     platform="openstack")
-class CreateAddListRoles(KeystoneBasic):
+class CreateAddListRoles(scenario.OpenStackScenario):
 
-    def run(self, create_role_kwargs=None, list_role_kwargs=None):
+    @logging.log_deprecated_args(
+        "Use the 'domain' argument of create_and_list_roles instead of "
+        "'create_role_kwargs' and 'list_role_kwargs'",
+        "4.2.0", ["create_role_kwargs", "list_role_kwargs"], once=True)
+    def run(
+        self,
+        domain: str | None = None,
+        create_role_kwargs: CreateRoleArgs | None = None,
+        list_role_kwargs: ListRolesArgs | None = None,
+    ) -> None:
         """Create a role, then list all roles.
 
+        :param domain: name or id of the domain to create the role in and to
+            list the roles of; global roles are used when omitted
         :param create_role_kwargs: Optional additional arguments for
                                    roles create
         :param list_role_kwargs: Optional additional arguments for roles list
@@ -418,22 +584,45 @@ class CreateAddListRoles(KeystoneBasic):
         create_role_kwargs = create_role_kwargs or {}
         list_role_kwargs = list_role_kwargs or {}
 
-        role = self.admin_keystone.create_role(**create_role_kwargs)
-        msg = "Role isn't created"
-        self.assertTrue(role, err_msg=msg)
-        all_roles = self.admin_keystone.list_roles(**list_role_kwargs)
-        msg = ("Created role is not in the"
-               " list of all available roles")
-        self.assertIn(role, all_roles, err_msg=msg)
+        role = self._admin_clients.keystone.create_role(
+            domain=create_role_kwargs.get("domain", domain))
+        self.assertTrue(role, err_msg="Role isn't created")
+        all_roles = self._admin_clients.keystone.list_roles(
+            name=list_role_kwargs.get("name"),
+            domain=list_role_kwargs.get("domain", domain))
+        self.assertIn(role, all_roles,
+                      err_msg="Created role is not in the list of all "
+                              "available roles")
+
+
+class CreateUserArgs(t.TypedDict, total=False):
+    """Optional arguments for creating a keystone user."""
+
+    password: str
+    project_id: str
+    domain: str
+    enabled: bool
+
+
+class UpdateUserArgs(t.TypedDict, total=False):
+    """Optional arguments for updating a keystone user."""
+
+    enabled: bool
+    email: str
+    password: str
 
 
 @validation.add("required_platform", platform="openstack", admin=True)
 @scenario.configure(context={"admin_cleanup@openstack": ["keystone"]},
                     name="KeystoneBasic.create_and_update_user",
                     platform="openstack")
-class CreateAndUpdateUser(KeystoneBasic):
+class CreateAndUpdateUser(scenario.OpenStackScenario):
 
-    def run(self, create_user_kwargs=None, update_user_kwargs=None):
+    def run(
+        self,
+        create_user_kwargs: CreateUserArgs | None = None,
+        update_user_kwargs: UpdateUserArgs | None = None,
+    ) -> None:
         """Create user and update the user.
 
         :param create_user_kwargs: Optional additional arguments for user
@@ -441,15 +630,17 @@ class CreateAndUpdateUser(KeystoneBasic):
         :param update_user_kwargs: Optional additional arguments for user
                                    updation
         """
-        create_user_kwargs = create_user_kwargs or {}
+        update_user_kwargs = update_user_kwargs or {}
 
-        user = self.admin_keystone.create_user(**create_user_kwargs)
-        self.admin_keystone.update_user(user.id, **update_user_kwargs)
-        user_data = self.admin_keystone.get_user(user.id)
+        user = self._admin_clients.keystone.create_user(
+            **(create_user_kwargs or {}))
+        self._admin_clients.keystone.update_user(
+            user.id, **update_user_kwargs)
+        user_data = self._admin_clients.keystone.get_user(user.id)
 
         for key, expected in update_user_kwargs.items():
             # the openstacksdk user resource exposes ``enabled`` as
             # ``is_enabled``.
             attr = "is_enabled" if key == "enabled" else key
-            msg = ("%s isn't updated" % key)
-            self.assertEqual(getattr(user_data, attr), expected, err_msg=msg)
+            self.assertEqual(getattr(user_data, attr), expected,
+                             err_msg=f"{key} isn't updated")

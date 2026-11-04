@@ -68,19 +68,19 @@ class StackGenerator(context.OpenStackContext):
             template["resources"]["TestResource%d" % i] = rand_string
         return template
 
-    def setup(self):
+    def setup(self) -> None:
         template = self._prepare_stack_template(
             self.config["resources_per_stack"])
-        for user, tenant_id in self._iterate_per_tenants():
+        for user, project_id in self._iterate_per_projects():
             heat_scenario = heat_utils.HeatScenario(
                 {"user": user, "task": self.context["task"],
                  "owner_id": self.context["owner_id"]})
-            self.context["tenants"][tenant_id]["stacks"] = []
+            self.context["tenants"][project_id]["stacks"] = []
             for i in range(self.config["stacks_per_tenant"]):
                 stack = heat_scenario._create_stack(template)
-                self.context["tenants"][tenant_id]["stacks"].append(stack.id)
+                self.context["tenants"][project_id]["stacks"].append(stack.id)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(names=["heat.stacks"],
                                  users=self.context.get("users", []),
                                  superclass=heat_utils.HeatScenario,

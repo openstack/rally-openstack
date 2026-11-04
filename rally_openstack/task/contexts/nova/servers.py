@@ -87,7 +87,7 @@ class ServerGenerator(context.OpenStackContext):
         "auto_assign_nic": False
     }
 
-    def setup(self):
+    def setup(self) -> None:
         image = self.config["image"]
         flavor = self.config["flavor"]
         auto_nic = self.config["auto_assign_nic"]
@@ -118,10 +118,11 @@ class ServerGenerator(context.OpenStackContext):
             resource_spec=flavor, config={"type": "nova_flavor"},
             output_type=str)
 
-        for iter_, (user, tenant_id) in enumerate(self._iterate_per_tenants()):
+        for iter_, (user, project_id) in enumerate(
+                self._iterate_per_projects()):
             LOG.debug("Booting servers for user tenant %s" % user["tenant_id"])
             tmp_context = {"user": user,
-                           "tenant": self.context["tenants"][tenant_id],
+                           "tenant": self.context["tenants"][project_id],
                            "task": self.context["task"],
                            "owner_id": self.context["owner_id"],
                            "iteration": iter_}
@@ -144,10 +145,10 @@ class ServerGenerator(context.OpenStackContext):
 
             LOG.debug("Adding booted servers %s to context" % current_servers)
 
-            self.context["tenants"][tenant_id][
+            self.context["tenants"][project_id][
                 "servers"] = current_servers
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         resource_manager.cleanup(names=["nova.servers"],
                                  users=self.context.get("users", []),
                                  superclass=nova_utils.NovaScenario,
