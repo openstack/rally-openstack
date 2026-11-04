@@ -10,8 +10,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
-
 import ddt
 
 from rally.task import validation
@@ -20,6 +18,7 @@ from rally_openstack.common import consts
 from rally_openstack.common import credential
 from rally_openstack.task import scenario
 from rally_openstack.task.contexts import clients_prefetch
+from tests.unit import fakes
 from tests.unit import test
 
 
@@ -46,43 +45,6 @@ class LegacyServicesScenario(scenario.OpenStackScenario):
         pass
 
 
-class FakeProxy:
-    """An openstacksdk proxy whose discovery fills the session cache."""
-
-    def __init__(self, session, service_type, skip_discovery, error):
-        self._session = session
-        self._service_type = service_type
-        self.skip_discovery = skip_discovery
-        self._error = error
-
-    def get_endpoint_data(self):
-        if self._error:
-            raise self._error
-        url = f"https://{self._service_type}.example.com/"
-        self._session._discovery_cache[url] = {"service": self._service_type}
-
-
-class FakeConnection:
-    """An openstacksdk Connection exposing the image and network proxies."""
-
-    def __init__(self, session, skip_discovery, errors):
-        self.session = session
-        self.accessed = []
-        self._proxies = {
-            name: FakeProxy(session, name, name in skip_discovery,
-                            errors.get(name))
-            for name in ("image", "network")
-        }
-
-    def __getattr__(self, name):
-        if name.startswith("_"):
-            raise AttributeError(name)
-        self.accessed.append(name)
-        if name not in self._proxies:
-            raise AttributeError(name)
-        return self._proxies[name]
-
-
 def _credential(username):
     return credential.OpenStackCredential(
         "https://keystone.example.com/v3", username, "secret", "project",
@@ -94,23 +56,11 @@ class ClientsPrefetchTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.skip_discovery = set()
-        self.errors = {}
-        self.connections = []
-
-        def connection(session, **kwargs):
-            conn = FakeConnection(session, self.skip_discovery, self.errors)
-            self.connections.append(conn)
-            return conn
-
-        patcher = mock.patch("openstack.connection.Connection",
-                             side_effect=connection)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self.cloud = fakes.FakeOpenStack(self)
 
     @ddt.data(True, False)
     def test_setup(self, with_admin):
-        self.skip_discovery.add("image")
+        self.cloud.skip_discovery.add("image")
         users = [_credential("u1"), _credential("u2")]
         creds = ([_credential("admin")] if with_admin else []) + users
         ctx = {"scenario_name": "ClientsPrefetchTestCase.mixed_services",
@@ -120,24 +70,23 @@ class ClientsPrefetchTestCase(test.TestCase):
 
         clients_prefetch.ClientsPrefetch(ctx).setup()
 
-        self.assertEqual(1, len(self.connections))
-        conn = self.connections[0]
-        self.assertIs(creds[0].discovery_cache, conn.session._discovery_cache)
-        self.assertEqual(["image", "network"], sorted(conn.accessed))
+        self.assertEqual(1, len(self.cloud.connections))
+        self.assertIs(creds[0].discovery_cache,
+                      self.cloud.connections[0].session._discovery_cache)
+        self.assertEqual(["image", "network"], self.cloud.accessed)
         expected = {"https://network.example.com/": {"service": "network"}}
         for cred in creds:
             self.assertEqual(expected, cred.discovery_cache)
 
     def test_setup_tolerates_discovery_errors(self):
-        self.errors["network"] = RuntimeError("boom")
+        self.cloud.errors["network"] = RuntimeError("boom")
         users = [_credential("u1"), _credential("u2")]
         ctx = {"scenario_name": "ClientsPrefetchTestCase.mixed_services",
                "users": [{"credential": u} for u in users]}
 
         clients_prefetch.ClientsPrefetch(ctx).setup()
 
-        self.assertEqual(["image", "network"],
-                         sorted(self.connections[0].accessed))
+        self.assertEqual(["image", "network"], self.cloud.accessed)
         self.assertEqual(
             {"https://image.example.com/": {"service": "image"}},
             users[1].discovery_cache)
@@ -154,7 +103,6 @@ class ClientsPrefetchTestCase(test.TestCase):
     def test_setup_without_services_to_warm(self, ctx):
         clients_prefetch.ClientsPrefetch(ctx).setup()
 
-        self.assertEqual([], [name for conn in self.connections
-                              for name in conn.accessed])
+        self.assertEqual([], self.cloud.accessed)
         for user in ctx["users"]:
             self.assertEqual({}, user["credential"].discovery_cache)

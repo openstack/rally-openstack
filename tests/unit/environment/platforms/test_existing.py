@@ -15,6 +15,7 @@
 import json
 from unittest import mock
 
+import ddt
 import jsonschema
 
 from rally import exceptions
@@ -22,7 +23,9 @@ from rally.env import env_mgr
 from rally.env import platform
 
 from rally_openstack.common import credential
+from rally_openstack.common import osclients
 from rally_openstack.environment.platforms import existing
+from tests.unit import fakes
 from tests.unit import test
 
 
@@ -46,6 +49,7 @@ class PlatformBaseTestCase(test.TestCase):
         self._check_schema(env_mgr.EnvManager._INFO_FORMAT, obj)
 
 
+@ddt.ddt
 class ExistingPlatformTestCase(PlatformBaseTestCase):
 
     def test_validate_spec_schema(self):
@@ -297,127 +301,80 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         )
         self._check_cleanup_schema(result1)
 
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_health(self, mock_clients):
-        pdata = {
-            "admin": _user("admin"),
-            "users": [_user("u1"), _user("u2")]
-        }
-        result = existing.OpenStack({}, platform_data=pdata).check_health()
-        self._check_health_schema(result)
-        self.assertEqual({"available": True}, result)
-        mock_clients.assert_has_calls(
-            [mock.call(credential.OpenStackCredential(**pdata["users"][0])),
-             mock.call(credential.OpenStackCredential(**pdata["users"][1])),
-             mock.call(credential.OpenStackCredential(**pdata["admin"])),
-             mock.call().verified_keystone()])
-
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_failed_with_native_rally_exc(self, mock_clients):
-        e = exceptions.RallyException("foo")
-        type(mock_clients.return_value.keystone).auth_ref = mock.PropertyMock(
-            side_effect=e)
-        pdata = {"admin": None, "users": [_user("balbab")]}
-        result = existing.OpenStack({}, platform_data=pdata).check_health()
-        self._check_health_schema(result)
-        self.assertEqual(
-            {
-                "available": False,
-                "message": e.format_message(),
-                "traceback": mock.ANY
-            },
-            result)
-
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_failed_admin(self, mock_clients):
-        mock_clients.return_value.verified_keystone.side_effect = Exception
-        pdata = {"admin": _user("balbab"), "users": []}
-        result = existing.OpenStack({}, platform_data=pdata).check_health()
-        self._check_health_schema(result)
-        self.assertEqual(
-            {"available": False,
-             "message":
-                "Bad admin creds: \n%s"
-                % json.dumps({"auth_url": "http://example.com",
-                              "username": "balbab", "password": "***",
-                              "project_name": "project", "api_info": {}},
-                             indent=2, sort_keys=True),
-             "traceback": mock.ANY},
-            result)
-        self.assertIn("Traceback (most recent call last)", result["traceback"])
-
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_failed_users(self, mock_clients):
-        type(mock_clients.return_value.keystone).auth_ref = mock.PropertyMock(
-            side_effect=Exception)
-        pdata = {"admin": None, "users": [_user("balbab")]}
-        result = existing.OpenStack({}, platform_data=pdata).check_health()
-        self._check_health_schema(result)
-        self.assertEqual(
-            {"available": False,
-             "message":
-                "Bad user creds: \n%s"
-                % json.dumps({"auth_url": "http://example.com",
-                              "username": "balbab", "password": "***",
-                              "project_name": "project", "api_info": {}},
-                             indent=2, sort_keys=True),
-             "traceback": mock.ANY},
-            result)
-        self.assertIn("Traceback (most recent call last)", result["traceback"])
-
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_health_with_api_info(self, mock_clients):
+    @ddt.data(
+        ({}, (3, 0), [], ["identity"]),
+        ({"glance": {"version": 2}, "neutron": {"service_type": "network"}},
+         (3, 0), [], ["identity", "image", "network"]),
+        ({"glance": {"version": 1}, "keystone": {"version": 2}},
+         (2, 0), [("glance", 1), ("keystone", 2)],
+         ["identity", "identity", "image"]),
+        ({}, (2, 0), [("keystone", 2)], ["identity"]),
+    )
+    @ddt.unpack
+    def test_check_health(self, api_info, identity_version, deprecated,
+                          accessed):
+        cloud = fakes.FakeOpenStack(self)
+        cloud.identity_version = identity_version
         pdata = {"admin": _user("admin"),
-                 "users": [],
-                 "api_info": {"fakeclient": "version"}}
+                 "users": [_user("u1"), _user("u2")],
+                 "api_info": api_info}
+
         result = existing.OpenStack({}, platform_data=pdata).check_health()
+
         self._check_health_schema(result)
-        self.assertEqual({"available": True}, result)
-        mock_clients.assert_has_calls(
-            [mock.call(credential.OpenStackCredential(**pdata["admin"])),
-             mock.call().verified_keystone(),
-             mock.call().fakeclient.choose_version(),
-             mock.call().fakeclient.spec.validate_version(
-                 mock_clients.return_value.fakeclient.choose_version
-                 .return_value),
-             mock.call().fakeclient.create_client()])
+        expected = {"available": True}
+        if deprecated:
+            expected["message"] = "\n".join(
+                osclients.BaseClient.get(name).spec.get_deprecation(version)
+                for name, version in deprecated)
+        self.assertEqual(expected, result)
+        self.assertEqual(accessed, cloud.accessed)
 
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_version_failed_with_api_info(self, mock_clients):
-        pdata = {"admin": _user("admin"),
-                 "users": [],
-                 "api_info": {"fakeclient": "version"}}
+    @ddt.data(
+        ({"api_info": {"fakeclient": {"version": 1}}},
+         "There is no OSClient plugin 'fakeclient' for communicating with "
+         "OpenStack API."),
+        ({"api_info": {"glance": {"version": 5}}},
+         "Invalid setting for 'glance': Validation error: '5' is not "
+         "supported. Should be one of '('1', '2')'"),
+        ({"api_info": {"glance": {}},
+          "errors": {"image": exceptions.RallyException("unreachable")}},
+         "Invalid setting for 'glance': unreachable"),
+        ({"api_info": {"glance": {}}, "errors": {"image": RuntimeError()}},
+         "Can not create 'glance' with 2 version."),
+        ({"admins": set()}, "user 'admin' doesn't have 'admin' role"),
+        ({"auth_error": RuntimeError("bad password")},
+         "Failed to authenticate to http://example.com for user 'u1' in "
+         "project 'project': [RuntimeError] bad password"),
+        ({"identity_version": None, "api_info": {"keystone": {"version": 3}}},
+         "Invalid setting for 'keystone': Unable to determine the identity "
+         "API version."),
+        ({"users": [], "admin": None},
+         "There are no OpenStack credentials to check."),
+        ({"users": [{"auth_url": "http://example.com", "username": "u1",
+                     "password": "12345"}]},
+         "Bad user creds: \n" + json.dumps(
+             {"api_info": {}, "auth_url": "http://example.com",
+              "password": "***", "username": "u1"},
+             indent=2, sort_keys=True)),
+    )
+    @ddt.unpack
+    def test_check_health_failed(self, case, message):
+        cloud = fakes.FakeOpenStack(self)
+        cloud.errors = case.get("errors", {})
+        cloud.admins = case.get("admins", cloud.admins)
+        cloud.auth_error = case.get("auth_error")
+        cloud.identity_version = case.get("identity_version",
+                                          cloud.identity_version)
+        pdata = {"admin": case.get("admin", _user("admin")),
+                 "users": case.get("users", [_user("u1")]),
+                 "api_info": case.get("api_info", {})}
 
-        def validate_version(version):
-            raise exceptions.RallyException("Version is not supported.")
-        (mock_clients.return_value.fakeclient
-         .spec.validate_version) = validate_version
         result = existing.OpenStack({}, platform_data=pdata).check_health()
+
         self._check_health_schema(result)
-        self.assertEqual({"available": False,
-                          "message": ("Invalid setting for 'fakeclient':"
-                                      " Version is not supported.")},
-                         result)
-
-    @mock.patch("rally_openstack.common.osclients.Clients")
-    def test_check_unexpected_failed_with_api_info(self, mock_clients):
-        pdata = {"admin": _user("admin"),
-                 "users": [],
-                 "api_info": {"fakeclient": "version"}}
-
-        def create_client():
-            raise Exception("Invalid client.")
-
-        (mock_clients.return_value.fakeclient
-         .choose_version.return_value) = "1.0"
-        mock_clients.return_value.fakeclient.create_client = create_client
-        result = existing.OpenStack({}, platform_data=pdata).check_health()
-        self._check_health_schema(result)
-        self.assertEqual({"available": False,
-                          "message": ("Can not create 'fakeclient' with"
-                                      " 1.0 version."),
-                          "traceback": mock.ANY},
-                         result)
+        self.assertFalse(result["available"])
+        self.assertEqual(message, result["message"])
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_info(self, mock_clients):

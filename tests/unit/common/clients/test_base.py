@@ -15,10 +15,14 @@
 
 from unittest import mock
 
+import ddt
+
 from rally import exceptions
 
 from rally_openstack.common import credential as oscredential
+from rally_openstack.common import osclients
 from rally_openstack.common.clients import base
+from tests.unit import fakes
 from tests.unit import test
 
 
@@ -53,6 +57,29 @@ class _BaseTestBadVersionClient(base.OSClient):
 class _BaseTestPortedClient(base.LegacyClientCompat):
     def create_client(self, *args, **kwargs):
         return mock.Mock()
+
+
+@base.configure("base_test_dashed_client", default_service_type="foo-bar")
+class _BaseTestDashedClient(base.LegacyClientCompat):
+    pass
+
+
+@base.configure("base_test_typeless_client")
+class _BaseTestTypelessClient(base.LegacyClientCompat):
+    pass
+
+
+@base.configure("base_test_deprecating_client", supported_versions=["1", "2"],
+                deprecated_versions={"1": "4.2.0"})
+class _BaseTestDeprecatingClient(base.OSClient):
+    def create_client(self, *args, **kwargs):
+        pass
+
+
+@base.configure("base_test_legacy_client", default_service_type="legacy")
+class _BaseTestLegacyClient(base.OSClient):
+    def create_client(self, *args, **kwargs):
+        self.cache["native_clients"] = self.cache.get("native_clients", 0) + 1
 
 
 def _credential(**kwargs):
@@ -90,7 +117,29 @@ class ClientSpecTestCase(test.TestCase):
     def test_is_service_type_configurable(self):
         self.assertIsNone(_BaseTestClient.spec.is_service_type_configurable())
 
+    def test_deprecated_versions(self):
+        patcher = mock.patch.object(
+            base, "_reported_deprecated_versions", set())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        spec = _BaseTestDeprecatingClient.spec
+        notice = ("The 'base_test_deprecating_client' API v1 is deprecated "
+                  "since Rally-OpenStack 4.2.0 and its support will be "
+                  "removed.")
 
+        with self.assertLogs("rally_openstack.common.clients.base",
+                             level="WARNING") as logs:
+            spec.validate_version("1")
+            spec.validate_version(1)
+            spec.validate_version("2")
+            self.assertEqual(notice, spec.warn_if_deprecated(1))
+
+        self.assertEqual([notice], [r.getMessage() for r in logs.records])
+        self.assertIsNone(spec.get_deprecation("2"))
+        self.assertIsNone(_BaseTestClient.spec.get_deprecation("1"))
+
+
+@ddt.ddt
 class BaseClientTestCase(test.TestCase):
 
     def test_init_normalizes_dict_credential(self):
@@ -109,6 +158,36 @@ class BaseClientTestCase(test.TestCase):
         client = _BaseTestPortedClient(_credential(), clients=fake_clients,
                                        atomic_inst=[])
         self.assertEqual(fake_clients._conn, client._conn)
+
+    @ddt.data(("glance", "image", False),
+              ("base_test_dashed_client", "foo_bar", False),
+              ("glance", "image", True))
+    @ddt.unpack
+    def test_check_availability(self, client_name, proxy, skip_discovery):
+        cloud = fakes.FakeOpenStack(self)
+        cloud.services.add(proxy)
+        if skip_discovery:
+            cloud.skip_discovery.add(proxy)
+        cred = _credential()
+
+        getattr(osclients.Clients(cred), client_name).check_availability()
+
+        self.assertEqual([proxy], cloud.accessed)
+        if skip_discovery:
+            self.assertEqual({}, cred.discovery_cache)
+        else:
+            self.assertIn({"service": proxy}, cred.discovery_cache.values())
+
+    def test_check_availability_without_openstacksdk(self):
+        cloud = fakes.FakeOpenStack(self)
+        clients = osclients.Clients(_credential())
+
+        clients.base_test_legacy_client.check_availability()
+        self.assertRaises(exceptions.RallyException,
+                          clients.base_test_typeless_client.check_availability)
+
+        self.assertEqual(1, clients.cache["native_clients"])
+        self.assertEqual([], cloud.accessed)
 
     def test_atomic_action(self):
         timer = _BaseTestClient(_credential())._atomic_action("foo")

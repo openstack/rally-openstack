@@ -200,12 +200,37 @@ class OpenStack(platform.Platform):
         if not self.platform_data:
             return platform.HealthInfo(available=False)
 
+        api_info = self.platform_data.get("api_info", {})
+        notices: list[str] = []
+        for name, service_info in api_info.items():
+            try:
+                client_cls = osclients.BaseClient.get(name)
+            except osclients.exceptions.PluginNotFound:
+                return platform.HealthInfo(
+                    available=False,
+                    message=f"There is no OSClient plugin '{name}' for "
+                            f"communicating with OpenStack API."
+                )
+            if "version" not in service_info:
+                continue
+            try:
+                client_cls.spec.validate_version(service_info["version"])
+            except osclients.exceptions.RallyException as e:
+                return platform.HealthInfo(
+                    available=False,
+                    message=f"Invalid setting for '{name}': "
+                            f"{e.format_message()}"
+                )
+            notice = client_cls.spec.get_deprecation(service_info["version"])
+            if notice:
+                notices.append(notice)
+
         users_to_check = self.platform_data["users"]
         if self.platform_data["admin"]:
             users_to_check.append(self.platform_data["admin"])
-        clients = None
+        clients: osclients.Clients | None = None
         for user in users_to_check:
-            user["api_info"] = self.platform_data.get("api_info", {})
+            user["api_info"] = api_info
             try:
                 clients = osclients.Clients(
                     credential.OpenStackCredential(**user))
@@ -238,19 +263,14 @@ class OpenStack(platform.Platform):
                     traceback=traceback.format_exc(),
                 )
 
-        for name in self.platform_data.get("api_info", {}):
-            if name == "keystone":
-                continue
-            if not hasattr(clients, name):
-                return platform.HealthInfo(
-                    available=False,
-                    message=f"There is no OSClient plugin '{name}' for "
-                            f"communicating with OpenStack API."
-                )
+        if clients is None:
+            return platform.HealthInfo(
+                available=False,
+                message="There are no OpenStack credentials to check.")
+        for name in api_info:
             client = getattr(clients, name)
             try:
-                client.spec.validate_version(client.choose_version())
-                client.create_client()
+                client.check_availability()
             except osclients.exceptions.RallyException as e:
                 return platform.HealthInfo(
                     available=False,
@@ -265,6 +285,23 @@ class OpenStack(platform.Platform):
                     traceback=traceback.format_exc()
                 )
 
+        # keystone may run a deprecated API version without it being pinned:
+        # the auth_url or the version discovery can select it as well.
+        keystone = clients.keystone
+        try:
+            notice = keystone.spec.warn_if_deprecated(keystone.version)
+        except osclients.exceptions.RallyException as e:
+            return platform.HealthInfo(
+                available=False,
+                message=f"Invalid setting for 'keystone': "
+                        f"{e.format_message()}"
+            )
+        if notice and notice not in notices:
+            notices.append(notice)
+
+        if notices:
+            return platform.HealthInfo(available=True,
+                                       message="\n".join(notices))
         return platform.HealthInfo(available=True)
 
     def info(self) -> platform.PlatformInfo:

@@ -165,7 +165,8 @@ class EnvTestCase(unittest.TestCase):
             rally("--plugin-paths %s env check" % plugings)
         except utils.RallyCliError as e:
             self.assertIn(
-                "Plugin existing@openstack.check_health() method is broken",
+                "There is no OSClient plugin 'noneclient' for communicating "
+                "with OpenStack API.",
                 e.output)
 
     def test_check_api_info_fail_3(self):

@@ -20,7 +20,9 @@ import ddt
 from rally import exceptions
 
 from rally_openstack.common import credential as oscredential
+from rally_openstack.common import osclients
 from rally_openstack.common.clients import keystone
+from tests.unit import fakes
 from tests.unit import test
 
 
@@ -303,6 +305,24 @@ class KeystoneVersionTestCase(KeystoneTestMixin, test.TestCase):
         ks._clients = mock.Mock()
         ks._clients._conn.identity.get_api_major_version.return_value = None
         self.assertRaises(exceptions.RallyException, lambda: ks.version)
+
+    def test_check_availability(self):
+        cloud = fakes.FakeOpenStack(self)
+        clients = osclients.Clients(self.credential)
+
+        clients.keystone.check_availability()
+
+        self.assertEqual(["identity"], cloud.accessed)
+        self.assertEqual(
+            {"https://identity.example.com/": {"service": "identity"}},
+            self.credential.discovery_cache)
+
+        cloud.auth_error = RuntimeError("bad credentials")
+        clients = osclients.Clients(oscredential.OpenStackCredential(
+            "http://auth_url/v3", "user", "wrong", "tenant"))
+        self.assertRaises(keystone.base.AuthenticationFailed,
+                          clients.keystone.check_availability)
+        self.assertEqual(["identity"], cloud.accessed)
 
     def test_identity(self):
         self.ks = self._make_keystone()

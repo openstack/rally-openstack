@@ -304,7 +304,7 @@ class _CountingSink(io.RawIOBase):
 
 @base.configure(
     "glance", default_version="2", default_service_type="image",
-    supported_versions=("1", "2")
+    supported_versions=("1", "2"), deprecated_versions={"1": "4.2.0"}
 )
 class Glance(base.LegacyClientCompat):
     """Image (glance) client backed by openstacksdk.

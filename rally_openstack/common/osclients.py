@@ -51,10 +51,11 @@ CONF = cfg.CONF
 
 
 class NovaSpec(base.ClientSpec):
-    def validate_version(self, version):
+    def validate_version(self, version: str | int | float) -> None:
         from novaclient import api_versions
         from novaclient import exceptions as nova_exc
 
+        self.warn_if_deprecated(version)
         try:
             api_versions.get_api_version(version)
         except nova_exc.UnsupportedVersion:
@@ -125,10 +126,11 @@ class Heat(base.OSClient):
 
 
 class CinderSpec(base.ClientSpec):
-    def validate_version(self, version):
+    def validate_version(self, version: str | int | float) -> None:
         from cinderclient import api_versions
         from cinderclient import exceptions as cinder_exc
 
+        self.warn_if_deprecated(version)
         version = str(version)
         if version in api_versions.REPLACEMENT_VERSIONS:
             LOG.warning(
@@ -147,7 +149,8 @@ class CinderSpec(base.ClientSpec):
 
 
 @base.configure("cinder", default_version="3",
-                default_service_type="block-storage", spec=CinderSpec)
+                default_service_type="block-storage", spec=CinderSpec,
+                deprecated_versions={"1": "4.2.0", "2": "4.2.0"})
 class Cinder(base.OSClient):
     """Wrapper for CinderClient which returns an authenticated native client.
 
@@ -165,10 +168,11 @@ class Cinder(base.OSClient):
 
 
 class ManilaSpec(base.ClientSpec):
-    def validate_version(self, version):
+    def validate_version(self, version: str | int | float) -> None:
         from manilaclient import api_versions
         from manilaclient import exceptions as manila_exc
 
+        self.warn_if_deprecated(version)
         try:
             api_versions.get_api_version(version)
         except manila_exc.UnsupportedVersion:

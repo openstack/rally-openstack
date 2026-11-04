@@ -188,8 +188,19 @@ Changed
   passing ``**kwargs`` through, so an argument the identity client does not
   support is reported at task validation rather than failing at runtime.
 
+* The health check of the existing platform (``rally env check``, and every
+  task validation) checks the services configured in ``api_info`` through
+  the openstacksdk-backed clients where they exist, instead of building the
+  raw ``python-*client`` they replace.
+
 Deprecated
 ~~~~~~~~~~
+
+* Keystone V2, Glance V1 and Cinder V1 / V2 APIs are deprecated. Selecting
+  such a version, in the ``api_info`` of an environment or via the
+  ``api_versions`` context, logs a warning. The health check of the existing
+  platform also reports it, including Keystone V2 selected by the
+  ``auth_url`` or the version discovery.
 
 * The identity service layer (``rally_openstack.common.services.identity``:
   ``identity.Identity`` and the ``keystone_v2`` / ``keystone_v3`` service
@@ -244,6 +255,11 @@ Deprecated
 
 Fixed
 ~~~~~
+
+* The health check of the existing platform failed for an ``api_info``
+  entry that sets only a service type of a client without versions (e.g.
+  ``swift``), never validated a Keystone version set in ``api_info``, and
+  broke on an unknown client name instead of reporting it.
 
 * The ``round_robin`` user choice method failed with a ``KeyError`` for
   environments with existing users.

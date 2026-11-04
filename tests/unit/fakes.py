@@ -22,6 +22,10 @@ import uuid
 from unittest import mock
 
 from glanceclient import exc
+from keystoneauth1 import access as ks_access
+from keystoneauth1 import discover as ks_discover
+from keystoneauth1 import fixture as ks_fixture
+from keystoneauth1.identity.generic import password as ks_password
 from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exceptions
 from swiftclient import exceptions as swift_exceptions
@@ -1797,3 +1801,112 @@ class FakeAPI:
     @property
     def verification(self):
         return self._verification
+
+
+class FakeSDKProxy:
+    """An openstacksdk proxy whose discovery fills the session cache."""
+
+    def __init__(self, cloud, session, service_type):
+        self._cloud = cloud
+        self._session = session
+        self._service_type = service_type
+        self.skip_discovery = service_type in cloud.skip_discovery
+
+    def get_endpoint_data(self):
+        error = self._cloud.errors.get(self._service_type)
+        if error:
+            raise error
+        url = f"https://{self._service_type}.example.com/"
+        self._session._discovery_cache[url] = {"service": self._service_type}
+
+    def get_api_major_version(self):
+        return self._cloud.identity_version
+
+
+class FakeSDKConnection:
+    """An openstacksdk Connection exposing the proxies of the fake cloud."""
+
+    def __init__(self, cloud, session):
+        self.session = session
+        self.accessed = []
+        self._proxies = {name: FakeSDKProxy(cloud, session, name)
+                         for name in cloud.services}
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        self.accessed.append(name)
+        if name not in self._proxies:
+            raise AttributeError(name)
+        return self._proxies[name]
+
+
+class FakeIdentityDiscover:
+    """keystoneauth version discovery of the fake identity service."""
+
+    def __init__(self, cloud):
+        self._cloud = cloud
+
+    def version_data(self):
+        return [{"version": self._cloud.identity_version}]
+
+
+class FakeOpenStack:
+    """Answer the openstacksdk and keystoneauth calls a test would send.
+
+    Everything rally builds on top (credentials, ``osclients.Clients``, the
+    rally clients, keystoneauth sessions and plugins) stays real; only the
+    calls that would reach a cloud are answered here.
+
+    :ivar services: proxy names the openstacksdk Connection exposes
+    :ivar skip_discovery: proxy names without version discovery
+    :ivar errors: proxy name to the exception its discovery raises
+    :ivar identity_version: identity API version the cloud runs
+    :ivar admins: user names whose token carries the admin role
+    :ivar auth_error: exception the token request raises, if any
+    :ivar connections: every openstacksdk Connection built so far
+    """
+
+    def __init__(self, test_case):
+        self.services = {"identity", "image", "network"}
+        self.skip_discovery = set()
+        self.errors = {}
+        self.identity_version = (3, 0)
+        self.admins = {"admin"}
+        self.auth_error = None
+        self.connections = []
+
+        patchers = [
+            mock.patch("openstack.connection.Connection",
+                       side_effect=self._connection),
+            mock.patch.object(ks_password.Password, "get_auth_ref",
+                              autospec=True, side_effect=self._token),
+            mock.patch.object(ks_discover, "Discover",
+                              side_effect=self._discover),
+        ]
+        for patcher in patchers:
+            patcher.start()
+            test_case.addCleanup(patcher.stop)
+
+    def _connection(self, session, **kwargs):
+        connection = FakeSDKConnection(self, session)
+        self.connections.append(connection)
+        return connection
+
+    def _token(self, plugin, session):
+        if self.auth_error:
+            raise self.auth_error
+        token = ks_fixture.V3Token(user_name=plugin._username)
+        token.set_project_scope()
+        token.add_role(name="admin" if plugin._username in self.admins
+                       else "member")
+        return ks_access.create(body=token, auth_token="token")
+
+    def _discover(self, session, url):
+        return FakeIdentityDiscover(self)
+
+    @property
+    def accessed(self):
+        """Proxy names accessed through any Connection, sorted."""
+        return sorted(name for connection in self.connections
+                      for name in connection.accessed)

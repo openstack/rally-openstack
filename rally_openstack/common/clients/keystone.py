@@ -65,7 +65,8 @@ CONF = cfg.CONF
 
 
 @base.configure(
-    "keystone", sdk_service_type="identity", supported_versions=("2", "3")
+    "keystone", sdk_service_type="identity", supported_versions=("2", "3"),
+    deprecated_versions={"2": "4.2.0"}
 )
 class Keystone(base.LegacyClientCompat):
     """Identity (keystone) client backed by openstacksdk.
@@ -278,6 +279,11 @@ class Keystone(base.LegacyClientCompat):
                 "Cannot pin a version on a client that is not attached to a "
                 "Clients container.")
         return self._clients.override(keystone=str(version)).keystone
+
+    def check_availability(self) -> None:
+        """Ensure the credential authenticates and identity is reachable."""
+        self.auth_ref
+        super().check_availability()
 
     @functools.cached_property
     def version(self) -> str:

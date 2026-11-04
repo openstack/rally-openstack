@@ -47,6 +47,9 @@ _reported_legacy_usage: set[tuple[str, str]] = set()
 # services whose raw python-*client hand-out has already been reported
 _reported_legacy_clients: set[str] = set()
 
+# (client name, API version) pairs whose deprecation has already been reported
+_reported_deprecated_versions: set[tuple[str, str]] = set()
+
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
@@ -165,6 +168,32 @@ class ClientSpec:
         return self._cls._meta_get("supported_versions")
 
     @property
+    def deprecated_versions(self) -> t.Mapping[str, str]:
+        """Deprecated API versions mapped to the release deprecating them."""
+        return self._cls._meta_get("deprecated_versions")
+
+    def get_deprecation(self, version: str | int | float) -> str | None:
+        """Return the deprecation notice for an API version, if any."""
+        release = self.deprecated_versions.get(str(version))
+        if release is None:
+            return None
+        return (f"The '{self._cls.get_name()}' API v{version} is deprecated "
+                f"since Rally-OpenStack {release} and its support will be "
+                f"removed.")
+
+    def warn_if_deprecated(self, version: str | int | float) -> str | None:
+        """Log, once per process, if an API version is deprecated.
+
+        :returns: the deprecation notice, or None for a supported version
+        """
+        notice = self.get_deprecation(version)
+        key = (self._cls.get_name(), str(version))
+        if notice and key not in _reported_deprecated_versions:
+            _reported_deprecated_versions.add(key)
+            LOG.warning(notice)
+        return notice
+
+    @property
     def sdk_service_type(self) -> str | None:
         """openstacksdk service type for this client, or None.
 
@@ -172,7 +201,7 @@ class ClientSpec:
         which can differ from the catalog ``default_service_type`` (for example
         magnum). It is used both for the api_info version config on the
         Connection (``<type>_api_version``) and, for ported clients, to pick
-        the proxy whose version discovery the ``api_versions`` context warms.
+        the proxy checked by :meth:`BaseClient.check_availability`.
         None means the client is not openstacksdk-backed and contributes to
         neither.
         """
@@ -212,6 +241,7 @@ class ClientSpec:
                     "service_type") or self.default_service_type)
 
     def validate_version(self, version: str | int | float) -> None:
+        self.warn_if_deprecated(version)
         if self.supported_versions:
             if str(version) not in self.supported_versions:
                 raise exceptions.ValidationError(
@@ -241,6 +271,7 @@ def configure(
     supported_versions: t.Sequence[str] | None = None,
     sdk_service_type: str | None = None,
     spec: type[ClientSpec] = ClientSpec,
+    deprecated_versions: t.Mapping[str, str] | None = None,
 ) -> t.Callable[[type[ClientT]], type[ClientT]]:
     """OpenStack client class wrapper.
 
@@ -260,7 +291,7 @@ def configure(
     :param sdk_service_type: openstacksdk service type this client maps to. It
         drives the api_info version config (openstacksdk keys version config by
         service type, e.g. ``identity_api_version``) and, for ported clients,
-        the proxy whose discovery the ``api_versions`` context warms. Set it
+        the proxy checked by :meth:`BaseClient.check_availability`. Set it
         only when the openstacksdk type differs from ``default_service_type``
         (e.g. magnum's ``container_infrastructure_management`` versus the
         catalog's ``container-infra``), or when the client is
@@ -268,6 +299,9 @@ def configure(
         Falls back to ``default_service_type`` when unset.
     :param spec: :class:`ClientSpec` subclass for client-specific metadata /
         version validation. Defaults to :class:`ClientSpec`.
+    :param deprecated_versions: deprecated API versions mapped to the
+        Rally-OpenStack release that deprecated them. Validating such a
+        version logs a deprecation warning.
     """
     def wrapper(cls: type[ClientT]) -> type[ClientT]:
         cls = plugin.configure(name=name, platform="openstack")(cls)
@@ -275,6 +309,7 @@ def configure(
         cls._meta_set("default_service_type", default_service_type)
         cls._meta_set("supported_versions", supported_versions or tuple())
         cls._meta_set("sdk_service_type", sdk_service_type)
+        cls._meta_set("deprecated_versions", dict(deprecated_versions or {}))
         cls.spec = spec(cls)
         return cls
 
@@ -327,6 +362,26 @@ class BaseClient(plugin.Plugin, atomic.ActionTimerMixin):
                 "This client is not attached to a Clients container, so it "
                 "has no openstacksdk connection.")
         return self._clients._conn
+
+    def check_availability(self) -> None:
+        """Ensure the service is reachable with the configured API version.
+
+        Resolves the endpoint and the API version of the service, which is
+        the same discovery data a workload needs, so calling it ahead of
+        the workload also warms the discovery cache of the credential.
+        Raises if the service cannot be reached.
+        """
+        service_type = self.spec.sdk_service_type
+        if not service_type:
+            raise exceptions.RallyException(
+                f"Client '{self.get_name()}' has no openstacksdk service "
+                f"type to check.")
+        proxy = getattr(self._conn, service_type.replace("-", "_"))
+        # A versioned catalog URL lets proxy creation skip the version
+        # document, which microversion negotiation reads through this same
+        # call later.
+        if not getattr(proxy, "skip_discovery", False):
+            proxy.get_endpoint_data()
 
     def _atomic_action(self, name: str) -> atomic.ActionTimer:
         """Return a context manager that times an atomic action."""
@@ -516,3 +571,11 @@ class OSClient(LegacyClientCompat):
         cache_obj: dict[str, t.Any] | None = None,
     ) -> None:
         super().__init__(credential, cache_obj)
+
+    def check_availability(self) -> None:
+        """Ensure the service is reachable with the configured API version.
+
+        A legacy wrapper has no openstacksdk proxy, so its native client is
+        built instead.
+        """
+        self.create_client()

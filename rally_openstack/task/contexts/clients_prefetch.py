@@ -64,7 +64,7 @@ class ClientsPrefetch(context.OpenStackContext):
             return
 
         # ok, we can continue
-        connection = osclients.Clients(credentials[0])._conn
+        clients = osclients.Clients(credentials[0])
         processed: set[str] = set()
         for name, _args, kwargs in scenario_cls._meta_get("validators"):
             if name != "required_services":
@@ -77,6 +77,8 @@ class ClientsPrefetch(context.OpenStackContext):
                     client_cls = osclients.BaseClient.get(service)
                 except exceptions.PluginNotFound:
                     continue
+                # a legacy wrapper builds its native client to check the
+                # service, and that client does not read the discovery cache
                 if issubclass(client_cls, osclients.OSClient):
                     continue
                 sdk_type = client_cls.spec.sdk_service_type
@@ -84,12 +86,7 @@ class ClientsPrefetch(context.OpenStackContext):
                     continue
 
                 try:
-                    proxy = getattr(connection, sdk_type.replace("-", "_"))
-                    # A versioned catalog URL lets proxy creation skip the
-                    # version document, which microversion negotiation reads
-                    # through this same call later.
-                    if not getattr(proxy, "skip_discovery", False):
-                        proxy.get_endpoint_data()
+                    getattr(clients, service).check_availability()
                 except Exception:
                     LOG.debug(
                         f"Failed to prefetch {sdk_type} version "
