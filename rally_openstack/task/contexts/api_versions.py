@@ -15,16 +15,11 @@ from __future__ import annotations
 import random
 
 from rally import exceptions
-from rally.common import logging
 from rally.common import validation
-from rally.task import scenario
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
 from rally_openstack.task import context
-
-
-LOG = logging.getLogger(__name__)
 
 
 @validation.configure("check_api_versions")
@@ -255,77 +250,6 @@ class OpenStackAPIVersions(context.OpenStackContext):
 
     config: dict[str, dict[str, str | int]]
 
-    def _prefetch_discovery(self):
-        """Warm the version-discovery cache once for the scenario's services.
-
-        openstacksdk resolves a service proxy's endpoint and API version with
-        an on-the-wire discovery request the first time the proxy is accessed.
-        Doing it here, in the context and before the credentials are pickled to
-        worker processes, populates the picklable
-        ``credential.discovery_cache`` so no discovery round-trip happens per
-        worker or iteration.
-
-        The services to warm are the workload scenario's ``required_services``
-        that are backed by a ported (openstacksdk) client. A legacy
-        ``python-*client`` wrapper resolves its version itself, so warming the
-        SDK connection's discovery for it would be wasted work. Each ported
-        client is warmed under its ``sdk_service_type`` proxy; keystone is a
-        no-op there since it pins its endpoint via ``endpoint_override`` and
-        never discovers. Discovery is user-independent, so it is fetched with a
-        single credential and shared with the rest (one request per service,
-        not one per user). Runs after ``api_info`` is finalized so connections
-        are built with the pinned versions.
-        """
-        scenario_name = self.context.get("scenario_name")
-        if not scenario_name:
-            return
-        try:
-            scenario_cls = scenario.Scenario.get(scenario_name)
-        except exceptions.PluginNotFound:
-            return
-        service_types = set()
-        for name, _args, kwargs in scenario_cls._meta_get("validators"):
-            if name != "required_services":
-                continue
-            services = kwargs.get("services", [])
-            if not isinstance(services, (list, tuple)):
-                services = [services]
-            for service in services:
-                try:
-                    client_cls = osclients.BaseClient.get(service)
-                except exceptions.PluginNotFound:
-                    continue
-                # Only ported clients resolve their version through the SDK
-                # connection's discovery; legacy OSClient wrappers do not (this
-                # is the same split Clients dispatches on).
-                if issubclass(client_cls, osclients.OSClient):
-                    continue
-                sdk_type = client_cls.spec.sdk_service_type
-                if sdk_type:
-                    service_types.add(sdk_type)
-        if not service_types:
-            return
-
-        credentials = [u["credential"] for u in self.context["users"]]
-        admin_cred = self.context.get("admin", {}).get("credential")
-        if admin_cred:
-            credentials.append(admin_cred)
-        if not credentials:
-            return
-        connection = osclients.Clients(credentials[0])._conn
-        for service_type in service_types:
-            try:
-                # Accessing the proxy resolves its endpoint and version, which
-                # is the discovery request we want to warm and cache.
-                getattr(connection, service_type.replace("-", "_"))
-            except Exception:
-                LOG.debug(f"Failed to prefetch {service_type} version "
-                          f"discovery; it will be resolved lazily per worker "
-                          f"instead.", exc_info=True)
-        discovered = credentials[0].discovery_cache
-        for credential in credentials[1:]:
-            credential.discovery_cache.update(discovered)
-
     def setup(self):
         # FIXME(andreykurilin): move all checks to validate method.
 
@@ -368,8 +292,6 @@ class OpenStackAPIVersions(context.OpenStackContext):
             user["credential"]["api_info"].update(
                 self.context["config"]["api_versions@openstack"]
             )
-
-        self._prefetch_discovery()
 
     def cleanup(self):
         # nothing to do here

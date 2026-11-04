@@ -35,6 +35,7 @@ CONF = cfg.CONF
 
 
 @context.add_default_context("users@openstack", {})
+@context.add_default_context("clients_prefetch@openstack", {})
 @plugin.default_meta(inherit=True)
 class OpenStackScenario(scenario.Scenario):
     """Base class for all OpenStack scenarios."""
