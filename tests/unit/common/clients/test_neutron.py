@@ -22,7 +22,7 @@ from tests.unit import test
 PATH = "rally_openstack.common.clients.neutron"
 
 
-class NeutronTestMixin:
+class NeutronTestMixin(test.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -42,7 +42,7 @@ class NeutronTestMixin:
         return self.neutron._clients._conn.network
 
 
-class NeutronLegacyClientTestCase(NeutronTestMixin, test.TestCase):
+class NeutronLegacyClientTestCase(NeutronTestMixin):
 
     @mock.patch("%s.Neutron.keystone" % PATH, new_callable=mock.PropertyMock)
     def test_create_client(self, mock_neutron_keystone):
@@ -78,7 +78,7 @@ class NeutronLegacyClientTestCase(NeutronTestMixin, test.TestCase):
         self.assertIs(self.neutron, self.neutron(legacy=False))
 
 
-class NeutronNetworkTestCase(NeutronTestMixin, test.TestCase):
+class NeutronTestCase(NeutronTestMixin):
 
     def setUp(self):
         super().setUp()
@@ -180,8 +180,60 @@ class NeutronNetworkTestCase(NeutronTestMixin, test.TestCase):
         self.network.delete_port.assert_called_once_with(
             "port-id", ignore_missing=False)
 
+    def test_list_security_groups(self):
+        self.neutron._atomic_actions = []
+        groups = [mock.Mock(id="sg-1")]
+        self.network.security_groups.return_value = iter(groups)
 
-class NeutronTapMirrorTestCase(NeutronTestMixin, test.TestCase):
+        self.assertEqual(groups, self.neutron.list_security_groups())
+        self.network.security_groups.assert_called_once_with()
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.list_security_groups")
+
+    def test_list_security_groups_with_filters(self):
+        self.network.security_groups.return_value = iter([])
+
+        self.neutron.list_security_groups(
+            project_id="project-id", name="default")
+
+        self.network.security_groups.assert_called_once_with(
+            project_id="project-id", name="default")
+
+    def test_delete_security_group(self):
+        self.neutron.delete_security_group("sg-id")
+
+        self.network.delete_security_group.assert_called_once_with(
+            "sg-id", ignore_missing=False)
+
+    def test_list_extensions_is_cached(self):
+        extensions = [mock.Mock(alias="ext-1"), mock.Mock(alias="ext-2")]
+        self.network.extensions.return_value = iter(extensions)
+
+        self.assertEqual(extensions, self.neutron.list_extensions())
+        self.assertEqual(extensions, self.neutron.list_extensions())
+
+        self.network.extensions.assert_called_once_with()
+
+    def test_list_extensions_shares_cache(self):
+        cache = {}
+        extensions = [mock.Mock(alias="ext-1")]
+        first = self._make_neutron(cache=cache)
+        first._clients._conn.network.extensions.return_value = extensions
+        second = self._make_neutron(cache=cache)
+
+        first.list_extensions()
+
+        self.assertEqual(extensions, second.list_extensions())
+        self.assertFalse(second._clients._conn.network.extensions.called)
+
+    def test_supports_extension(self):
+        self.network.extensions.return_value = [mock.Mock(alias="fwaas_v2")]
+
+        self.assertTrue(self.neutron.supports_extension("fwaas_v2"))
+        self.assertFalse(self.neutron.supports_extension("taas"))
+
+
+class NeutronTapMirrorTestCase(NeutronTestMixin):
 
     def setUp(self):
         super().setUp()
@@ -329,7 +381,7 @@ class NeutronTapMirrorTestCase(NeutronTestMixin, test.TestCase):
             "mirror-id", ignore_missing=False)
 
 
-class NeutronTapServiceTestCase(NeutronTestMixin, test.TestCase):
+class NeutronTapServiceTestCase(NeutronTestMixin):
 
     def setUp(self):
         super().setUp()
@@ -423,7 +475,276 @@ class NeutronTapServiceTestCase(NeutronTestMixin, test.TestCase):
             "service-id", ignore_missing=False)
 
 
-class NeutronTrunkClientTestCase(NeutronTestMixin, test.TestCase):
+class NeutronFWaaSTestCase(NeutronTestMixin):
+
+    def setUp(self):
+        super().setUp()
+        self.neutron = self._make_neutron()
+
+    def test_create_firewall_rule(self):
+        self.neutron._atomic_actions = []
+        rule = self.network.create_firewall_rule.return_value
+
+        result = self.neutron.create_firewall_rule()
+
+        self.assertIs(rule, result)
+        self.network.create_firewall_rule.assert_called_once_with(
+            name="random_name", protocol=None)
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.create_firewall_rule")
+
+    def test_create_firewall_rule_with_all_args(self):
+        self.neutron.create_firewall_rule(
+            protocol=neutron.FirewallProtocol.TCP,
+            action=neutron.FirewallAction.ALLOW,
+            ip_version=6,
+            source_ip_address="::1",
+            destination_ip_address="::2",
+            source_port="1000:2000",
+            destination_port=22,
+            enabled=False,
+            shared=True,
+            description="desc")
+
+        self.network.create_firewall_rule.assert_called_once_with(
+            name="random_name", protocol="tcp", action="allow", ip_version=6,
+            source_ip_address="::1", destination_ip_address="::2",
+            source_port="1000:2000", destination_port=22, enabled=False,
+            shared=True, description="desc")
+
+    def test_create_firewall_rule_rejects_custom_name(self):
+        self.assertRaises(
+            TypeError, self.neutron.create_firewall_rule, name="custom")
+
+        self.assertFalse(self.network.create_firewall_rule.called)
+
+    def test_list_firewall_rules(self):
+        rules = [mock.Mock(id="rule-1")]
+        self.network.firewall_rules.return_value = iter(rules)
+
+        self.assertEqual(rules, self.neutron.list_firewall_rules())
+        self.network.firewall_rules.assert_called_once_with()
+
+    def test_list_firewall_rules_by_project(self):
+        self.network.firewall_rules.return_value = iter([])
+
+        self.neutron.list_firewall_rules(project_id="project-id")
+
+        self.network.firewall_rules.assert_called_once_with(
+            project_id="project-id")
+
+    def test_update_firewall_rule(self):
+        rule = self.network.update_firewall_rule.return_value
+
+        result = self.neutron.update_firewall_rule(
+            "rule-id", name="new-name",
+            action=neutron.FirewallAction.REJECT, enabled=False)
+
+        self.assertIs(rule, result)
+        self.network.update_firewall_rule.assert_called_once_with(
+            "rule-id", name="new-name", action="reject", enabled=False)
+        self.assertFalse(self.neutron._name_generator.called)
+
+    def test_update_firewall_rule_to_any_protocol(self):
+        self.neutron.update_firewall_rule(
+            "rule-id", protocol=neutron.FirewallProtocol.ANY)
+
+        self.network.update_firewall_rule.assert_called_once_with(
+            "rule-id", protocol=None)
+
+    def test_update_firewall_rule_requires_changes(self):
+        self.assertRaises(
+            ValueError, self.neutron.update_firewall_rule, "rule-id")
+
+        self.assertFalse(self.network.update_firewall_rule.called)
+
+    def test_delete_firewall_rule(self):
+        self.neutron.delete_firewall_rule("rule-id")
+
+        self.network.delete_firewall_rule.assert_called_once_with(
+            "rule-id", ignore_missing=False)
+
+    def test_create_firewall_policy(self):
+        self.neutron._atomic_actions = []
+        policy = self.network.create_firewall_policy.return_value
+
+        result = self.neutron.create_firewall_policy()
+
+        self.assertIs(policy, result)
+        self.network.create_firewall_policy.assert_called_once_with(
+            name="random_name")
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.create_firewall_policy")
+
+    def test_create_firewall_policy_with_all_args(self):
+        self.neutron.create_firewall_policy(
+            firewall_rules=["rule-1", "rule-2"], audited=True, shared=False,
+            description="desc")
+
+        self.network.create_firewall_policy.assert_called_once_with(
+            name="random_name", firewall_rules=["rule-1", "rule-2"],
+            audited=True, shared=False, description="desc")
+
+    def test_list_firewall_policies(self):
+        policies = [mock.Mock(id="policy-1")]
+        self.network.firewall_policies.return_value = iter(policies)
+
+        self.assertEqual(policies, self.neutron.list_firewall_policies())
+        self.network.firewall_policies.assert_called_once_with()
+
+    def test_list_firewall_policies_by_project(self):
+        self.network.firewall_policies.return_value = iter([])
+
+        self.neutron.list_firewall_policies(project_id="project-id")
+
+        self.network.firewall_policies.assert_called_once_with(
+            project_id="project-id")
+
+    def test_get_firewall_policy(self):
+        policy = self.network.get_firewall_policy.return_value
+
+        self.assertIs(policy, self.neutron.get_firewall_policy("policy-id"))
+        self.network.get_firewall_policy.assert_called_once_with("policy-id")
+
+    def test_update_firewall_policy(self):
+        policy = self.network.update_firewall_policy.return_value
+
+        result = self.neutron.update_firewall_policy(
+            "policy-id", name="new-name", firewall_rules=[])
+
+        self.assertIs(policy, result)
+        self.network.update_firewall_policy.assert_called_once_with(
+            "policy-id", name="new-name", firewall_rules=[])
+
+    def test_update_firewall_policy_requires_changes(self):
+        self.assertRaises(
+            ValueError, self.neutron.update_firewall_policy, "policy-id")
+
+        self.assertFalse(self.network.update_firewall_policy.called)
+
+    def test_delete_firewall_policy(self):
+        self.neutron.delete_firewall_policy("policy-id")
+
+        self.network.delete_firewall_policy.assert_called_once_with(
+            "policy-id", ignore_missing=False)
+
+    def test_insert_firewall_rule_in_policy(self):
+        self.neutron._atomic_actions = []
+        policy = self.network.insert_rule_into_policy.return_value
+
+        result = self.neutron.insert_firewall_rule_in_policy(
+            "policy-id", "rule-id", insert_before="rule-0")
+
+        self.assertIs(policy, result)
+        self.network.insert_rule_into_policy.assert_called_once_with(
+            "policy-id", "rule-id", insert_after=None, insert_before="rule-0")
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(),
+            "neutron.insert_firewall_rule_in_policy")
+
+    def test_remove_firewall_rule_from_policy(self):
+        policy = self.network.remove_rule_from_policy.return_value
+
+        result = self.neutron.remove_firewall_rule_from_policy(
+            "policy-id", "rule-id")
+
+        self.assertIs(policy, result)
+        self.network.remove_rule_from_policy.assert_called_once_with(
+            "policy-id", "rule-id")
+
+    def test_create_firewall_group(self):
+        self.neutron._atomic_actions = []
+        group = self.network.create_firewall_group.return_value
+
+        result = self.neutron.create_firewall_group()
+
+        self.assertIs(group, result)
+        self.network.create_firewall_group.assert_called_once_with(
+            name="random_name")
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.create_firewall_group")
+
+    def test_create_firewall_group_with_all_args(self):
+        self.neutron.create_firewall_group(
+            ingress_firewall_policy_id="in-id",
+            egress_firewall_policy_id="eg-id",
+            ports=["port-1"],
+            admin_state_up=False,
+            shared=True,
+            description="desc")
+
+        self.network.create_firewall_group.assert_called_once_with(
+            name="random_name", ingress_firewall_policy_id="in-id",
+            egress_firewall_policy_id="eg-id", ports=["port-1"],
+            admin_state_up=False, shared=True, description="desc")
+
+    def test_list_firewall_groups(self):
+        groups = [mock.Mock(id="group-1")]
+        self.network.firewall_groups.return_value = iter(groups)
+
+        self.assertEqual(groups, self.neutron.list_firewall_groups())
+        self.network.firewall_groups.assert_called_once_with()
+
+    def test_list_firewall_groups_with_filters(self):
+        self.network.firewall_groups.return_value = iter([])
+
+        self.neutron.list_firewall_groups(
+            project_id="project-id", name="default")
+
+        self.network.firewall_groups.assert_called_once_with(
+            project_id="project-id", name="default")
+
+    def test_update_firewall_group(self):
+        group = self.network.update_firewall_group.return_value
+
+        result = self.neutron.update_firewall_group(
+            "group-id", name="new-name", ingress_firewall_policy_id="in-id")
+
+        self.assertIs(group, result)
+        self.network.update_firewall_group.assert_called_once_with(
+            "group-id", name="new-name", ingress_firewall_policy_id="in-id")
+
+    def test_update_firewall_group_requires_changes(self):
+        self.assertRaises(
+            ValueError, self.neutron.update_firewall_group, "group-id")
+
+        self.assertFalse(self.network.update_firewall_group.called)
+
+    def test_associate_firewall_group_ports(self):
+        self.neutron._atomic_actions = []
+        group = self.network.update_firewall_group.return_value
+
+        result = self.neutron.associate_firewall_group_ports(
+            "group-id", ["port-1", "port-2"])
+
+        self.assertIs(group, result)
+        self.network.update_firewall_group.assert_called_once_with(
+            "group-id", ports=["port-1", "port-2"])
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(),
+            "neutron.associate_firewall_group_port")
+
+    def test_disassociate_firewall_group_ports(self):
+        self.neutron._atomic_actions = []
+        group = self.network.update_firewall_group.return_value
+
+        result = self.neutron.disassociate_firewall_group_ports("group-id")
+
+        self.assertIs(group, result)
+        self.network.update_firewall_group.assert_called_once_with(
+            "group-id", ports=[])
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(),
+            "neutron.disassociate_firewall_group_port")
+
+    def test_delete_firewall_group(self):
+        self.neutron.delete_firewall_group("group-id")
+
+        self.network.delete_firewall_group.assert_called_once_with(
+            "group-id", ignore_missing=False)
+
+
+class NeutronTrunkClientTestCase(NeutronTestMixin):
 
     def setUp(self):
         super().setUp()

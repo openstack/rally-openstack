@@ -32,11 +32,53 @@ class MirrorType(enum.StrEnum):
 MirrorDirection = t.Literal["IN", "OUT"]
 
 
+class FirewallAction(enum.StrEnum):
+    """What a firewall rule does with the traffic it matches."""
+
+    ALLOW = "allow"
+    DENY = "deny"
+    REJECT = "reject"
+
+
+class FirewallProtocol(enum.StrEnum):
+    """IP protocol a firewall rule matches."""
+
+    # The API expresses "any protocol" as null, which this client reserves
+    # for "leave the field alone".
+    ANY = "any"
+    TCP = "tcp"
+    UDP = "udp"
+    ICMP = "icmp"
+    IPV6_ICMP = "ipv6-icmp"
+    SCTP = "sctp"
+    DCCP = "dccp"
+
+
+IPVersion = t.Literal[4, 6]
+
+# A single port or a "min:max" range.
+PortRange = int | str
+
+# neutron-fwaas creates a group with this name, two policies and four rules
+# for every project that touches the FWaaS API, and only admin may delete it.
+DEFAULT_FIREWALL_GROUP_NAME = "default"
+
+
+def _clean_dict(**kwargs: t.Any) -> dict[str, t.Any]:
+    """Build a dict from keyword arguments, dropping the ones set to None."""
+    return {k: v for k, v in kwargs.items() if v is not None}
+
+
 if t.TYPE_CHECKING:
     import typing_extensions as te
     from openstack.network.v2._proxy import Proxy as NetworkProxy
+    from openstack.network.v2.extension import Extension
+    from openstack.network.v2.firewall_group import FirewallGroup
+    from openstack.network.v2.firewall_policy import FirewallPolicy
+    from openstack.network.v2.firewall_rule import FirewallRule
     from openstack.network.v2.network import Network
     from openstack.network.v2.port import Port
+    from openstack.network.v2.security_group import SecurityGroup
     from openstack.network.v2.tap_mirror import TapMirror
     from openstack.network.v2.tap_service import TapService
     from openstack.network.v2.trunk import Trunk
@@ -175,16 +217,14 @@ class Neutron(base.LegacyClientCompat):
         mirror_type: MirrorType = MirrorType.GRE,
         description: str | None = None,
     ) -> TapMirror:
-        kwargs: dict[str, t.Any] = {
-            "name": self.generate_random_name(),
-            "port_id": port_id,
-            "directions": directions,
-            "remote_ip": remote_ip,
-            "mirror_type": mirror_type.value,
-        }
-        if description is not None:
-            kwargs["description"] = description
-        return self._network.create_tap_mirror(**kwargs)
+        return self._network.create_tap_mirror(**_clean_dict(
+            name=self.generate_random_name(),
+            port_id=port_id,
+            directions=directions,
+            remote_ip=remote_ip,
+            mirror_type=mirror_type.value,
+            description=description,
+        ))
 
     @atomic.action_timer("neutron.list_tap_mirrors")
     def list_tap_mirrors(self, **filters: t.Any) -> list[TapMirror]:
@@ -201,11 +241,7 @@ class Neutron(base.LegacyClientCompat):
         name: str | None = None,
         description: str | None = None,
     ) -> TapMirror:
-        update_args: dict[str, t.Any] = {}
-        if name:
-            update_args["name"] = name
-        if description is not None:
-            update_args["description"] = description
+        update_args = _clean_dict(name=name, description=description)
         if not update_args:
             raise ValueError(
                 "update_tap_mirror requires at least name or description")
@@ -222,13 +258,11 @@ class Neutron(base.LegacyClientCompat):
         port_id: str,
         description: str | None = None,
     ) -> TapService:
-        kwargs: dict[str, t.Any] = {
-            "name": self.generate_random_name(),
-            "port_id": port_id,
-        }
-        if description is not None:
-            kwargs["description"] = description
-        return self._network.create_tap_service(**kwargs)
+        return self._network.create_tap_service(**_clean_dict(
+            name=self.generate_random_name(),
+            port_id=port_id,
+            description=description,
+        ))
 
     @atomic.action_timer("neutron.list_tap_services")
     def list_tap_services(self) -> list[TapService]:
@@ -245,11 +279,7 @@ class Neutron(base.LegacyClientCompat):
         name: str | None = None,
         description: str | None = None,
     ) -> TapService:
-        update_args: dict[str, t.Any] = {}
-        if name:
-            update_args["name"] = name
-        if description is not None:
-            update_args["description"] = description
+        update_args = _clean_dict(name=name, description=description)
         if not update_args:
             raise ValueError(
                 "update_tap_service requires at least name or description")
@@ -260,6 +290,289 @@ class Neutron(base.LegacyClientCompat):
     def delete_tap_service(self, tap_service_id: str) -> None:
         self._network.delete_tap_service(
             tap_service_id, ignore_missing=False)
+
+    @atomic.action_timer("neutron.list_security_groups")
+    def list_security_groups(
+        self,
+        project_id: str | None = None,
+        name: str | None = None,
+    ) -> list[SecurityGroup]:
+        return list(self._network.security_groups(
+            **_clean_dict(project_id=project_id, name=name)))
+
+    @atomic.action_timer("neutron.delete_security_group")
+    def delete_security_group(self, security_group_id: str) -> None:
+        self._network.delete_security_group(
+            security_group_id, ignore_missing=False)
+
+    def list_extensions(self) -> list[Extension]:
+        """Return the extensions neutron has loaded."""
+        key = "neutron:extensions"
+        if key not in self._cache:
+            self._cache[key] = list(self._network.extensions())
+        return self._cache[key]
+
+    def supports_extension(self, alias: str) -> bool:
+        """Tell whether neutron has the extension with this alias loaded."""
+        return any(ext.alias == alias for ext in self.list_extensions())
+
+    @atomic.action_timer("neutron.create_firewall_rule")
+    def create_firewall_rule(
+        self,
+        *,
+        protocol: FirewallProtocol = FirewallProtocol.ANY,
+        action: FirewallAction | None = None,
+        ip_version: IPVersion | None = None,
+        source_ip_address: str | None = None,
+        destination_ip_address: str | None = None,
+        source_port: PortRange | None = None,
+        destination_port: PortRange | None = None,
+        enabled: bool | None = None,
+        shared: bool | None = None,
+        description: str | None = None,
+    ) -> FirewallRule:
+        """Create a firewall rule with a generated name.
+
+        Arguments left as None are not sent, so neutron applies its own
+        defaults (IPv4, ``deny``, enabled, not shared).
+        """
+        attrs = _clean_dict(
+            action=action,
+            ip_version=ip_version,
+            source_ip_address=source_ip_address,
+            destination_ip_address=destination_ip_address,
+            source_port=source_port,
+            destination_port=destination_port,
+            enabled=enabled,
+            shared=shared,
+            description=description,
+        )
+        attrs["protocol"] = (
+            None if protocol == FirewallProtocol.ANY else protocol)
+        return self._network.create_firewall_rule(
+            name=self.generate_random_name(), **attrs)
+
+    @atomic.action_timer("neutron.list_firewall_rules")
+    def list_firewall_rules(
+        self, project_id: str | None = None
+    ) -> list[FirewallRule]:
+        return list(self._network.firewall_rules(
+            **_clean_dict(project_id=project_id)))
+
+    @atomic.action_timer("neutron.update_firewall_rule")
+    def update_firewall_rule(
+        self,
+        rule_id: str,
+        *,
+        name: str | None = None,
+        protocol: FirewallProtocol | None = None,
+        action: FirewallAction | None = None,
+        ip_version: IPVersion | None = None,
+        source_ip_address: str | None = None,
+        destination_ip_address: str | None = None,
+        source_port: PortRange | None = None,
+        destination_port: PortRange | None = None,
+        enabled: bool | None = None,
+        shared: bool | None = None,
+        description: str | None = None,
+    ) -> FirewallRule:
+        """Update a firewall rule. Only the arguments given are changed.
+
+        :param protocol: new protocol, ``any`` to match every protocol
+        """
+        attrs = _clean_dict(
+            name=name,
+            action=action,
+            ip_version=ip_version,
+            source_ip_address=source_ip_address,
+            destination_ip_address=destination_ip_address,
+            source_port=source_port,
+            destination_port=destination_port,
+            enabled=enabled,
+            shared=shared,
+            description=description,
+        )
+        if protocol is not None:
+            attrs["protocol"] = (
+                None if protocol == FirewallProtocol.ANY else protocol)
+        if not attrs:
+            raise ValueError("update_firewall_rule requires something to "
+                             "change")
+        return self._network.update_firewall_rule(rule_id, **attrs)
+
+    @atomic.action_timer("neutron.delete_firewall_rule")
+    def delete_firewall_rule(self, rule_id: str) -> None:
+        self._network.delete_firewall_rule(rule_id, ignore_missing=False)
+
+    @atomic.action_timer("neutron.create_firewall_policy")
+    def create_firewall_policy(
+        self,
+        *,
+        firewall_rules: list[str] | None = None,
+        audited: bool | None = None,
+        shared: bool | None = None,
+        description: str | None = None,
+    ) -> FirewallPolicy:
+        """Create a firewall policy with a generated name.
+
+        :param firewall_rules: ids of the rules, in the order they apply
+        """
+        return self._network.create_firewall_policy(**_clean_dict(
+            name=self.generate_random_name(),
+            firewall_rules=firewall_rules,
+            audited=audited,
+            shared=shared,
+            description=description,
+        ))
+
+    @atomic.action_timer("neutron.list_firewall_policies")
+    def list_firewall_policies(
+        self, project_id: str | None = None
+    ) -> list[FirewallPolicy]:
+        return list(self._network.firewall_policies(
+            **_clean_dict(project_id=project_id)))
+
+    @atomic.action_timer("neutron.show_firewall_policy")
+    def get_firewall_policy(self, policy_id: str) -> FirewallPolicy:
+        return self._network.get_firewall_policy(policy_id)
+
+    @atomic.action_timer("neutron.update_firewall_policy")
+    def update_firewall_policy(
+        self,
+        policy_id: str,
+        *,
+        name: str | None = None,
+        firewall_rules: list[str] | None = None,
+        audited: bool | None = None,
+        shared: bool | None = None,
+        description: str | None = None,
+    ) -> FirewallPolicy:
+        """Update a firewall policy. Only the arguments given are changed.
+
+        :param firewall_rules: ids of the rules replacing the current ones
+        """
+        attrs = _clean_dict(
+            name=name,
+            firewall_rules=firewall_rules,
+            audited=audited,
+            shared=shared,
+            description=description,
+        )
+        if not attrs:
+            raise ValueError("update_firewall_policy requires something to "
+                             "change")
+        return self._network.update_firewall_policy(policy_id, **attrs)
+
+    @atomic.action_timer("neutron.delete_firewall_policy")
+    def delete_firewall_policy(self, policy_id: str) -> None:
+        self._network.delete_firewall_policy(policy_id, ignore_missing=False)
+
+    @atomic.action_timer("neutron.insert_firewall_rule_in_policy")
+    def insert_firewall_rule_in_policy(
+        self,
+        policy_id: str,
+        rule_id: str,
+        *,
+        insert_before: str | None = None,
+        insert_after: str | None = None,
+    ) -> FirewallPolicy:
+        """Insert a rule into a policy.
+
+        :param insert_before: id of a policy rule to place the new one before
+        :param insert_after: id of a policy rule to place the new one after;
+            ignored when ``insert_before`` is given
+        """
+        return self._network.insert_rule_into_policy(
+            policy_id, rule_id,
+            insert_after=insert_after, insert_before=insert_before)
+
+    @atomic.action_timer("neutron.remove_firewall_rule_from_policy")
+    def remove_firewall_rule_from_policy(
+        self, policy_id: str, rule_id: str
+    ) -> FirewallPolicy:
+        return self._network.remove_rule_from_policy(policy_id, rule_id)
+
+    @atomic.action_timer("neutron.create_firewall_group")
+    def create_firewall_group(
+        self,
+        *,
+        ingress_firewall_policy_id: str | None = None,
+        egress_firewall_policy_id: str | None = None,
+        ports: list[str] | None = None,
+        admin_state_up: bool | None = None,
+        shared: bool | None = None,
+        description: str | None = None,
+    ) -> FirewallGroup:
+        """Create a firewall group with a generated name.
+
+        :param ports: ids of the router or VM ports to protect
+        """
+        return self._network.create_firewall_group(**_clean_dict(
+            name=self.generate_random_name(),
+            ingress_firewall_policy_id=ingress_firewall_policy_id,
+            egress_firewall_policy_id=egress_firewall_policy_id,
+            ports=ports,
+            admin_state_up=admin_state_up,
+            shared=shared,
+            description=description,
+        ))
+
+    @atomic.action_timer("neutron.list_firewall_groups")
+    def list_firewall_groups(
+        self,
+        project_id: str | None = None,
+        name: str | None = None,
+    ) -> list[FirewallGroup]:
+        return list(self._network.firewall_groups(
+            **_clean_dict(project_id=project_id, name=name)))
+
+    @atomic.action_timer("neutron.update_firewall_group")
+    def update_firewall_group(
+        self,
+        group_id: str,
+        *,
+        name: str | None = None,
+        ingress_firewall_policy_id: str | None = None,
+        egress_firewall_policy_id: str | None = None,
+        admin_state_up: bool | None = None,
+        shared: bool | None = None,
+        description: str | None = None,
+    ) -> FirewallGroup:
+        """Update a firewall group. Only the arguments given are changed.
+
+        Ports are changed with :meth:`associate_firewall_group_ports` and
+        :meth:`disassociate_firewall_group_ports`.
+        """
+        attrs = _clean_dict(
+            name=name,
+            ingress_firewall_policy_id=ingress_firewall_policy_id,
+            egress_firewall_policy_id=egress_firewall_policy_id,
+            admin_state_up=admin_state_up,
+            shared=shared,
+            description=description,
+        )
+        if not attrs:
+            raise ValueError("update_firewall_group requires something to "
+                             "change")
+        return self._network.update_firewall_group(group_id, **attrs)
+
+    @atomic.action_timer("neutron.associate_firewall_group_port")
+    def associate_firewall_group_ports(
+        self, group_id: str, port_ids: list[str]
+    ) -> FirewallGroup:
+        """Make these ports the ones the group protects."""
+        return self._network.update_firewall_group(group_id, ports=port_ids)
+
+    @atomic.action_timer("neutron.disassociate_firewall_group_port")
+    def disassociate_firewall_group_ports(
+        self, group_id: str
+    ) -> FirewallGroup:
+        """Detach every port from the group."""
+        return self._network.update_firewall_group(group_id, ports=[])
+
+    @atomic.action_timer("neutron.delete_firewall_group")
+    def delete_firewall_group(self, group_id: str) -> None:
+        self._network.delete_firewall_group(group_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.list_trunks")
     def list_trunks(self, **filters: t.Any) -> list[Trunk]:

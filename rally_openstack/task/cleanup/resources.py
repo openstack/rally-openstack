@@ -25,8 +25,15 @@ from rally_openstack.task.scenarios.nova import utils as nova_utils
 
 
 if t.TYPE_CHECKING:
+    from openstack.network.v2.firewall_group import FirewallGroup
+    from openstack.network.v2.firewall_policy import FirewallPolicy
+    from openstack.network.v2.firewall_rule import FirewallRule
+    from openstack.network.v2.tap_mirror import TapMirror
+    from openstack.network.v2.tap_service import TapService
+
     from rally_openstack.common import osclients
     from rally_openstack.common.clients import keystone
+    from rally_openstack.common.clients import neutron as neutron_client
 
 
 CONF = cfg.CONF
@@ -364,124 +371,100 @@ class NeutronBgpvpn(NeutronMixin):
         return []
 
 
+class NeutronSDKMixin(NeutronMixin):
+    """Neutron resource handled through the openstacksdk-backed client."""
+
+    @property
+    def _neutron_client(self) -> "neutron_client.Neutron":
+        clients: osclients.Clients = (
+            self._admin_required and self.admin or self.user)
+        return clients.neutron
+
+    def id(self) -> str:
+        return self.raw_resource.id
+
+    def name(self) -> str:
+        return self.raw_resource.name
+
+
 @base.resource("neutron", "firewall_group", order=next(_neutron_order),
                tenant_resource=True)
-class NeutronFirewallGroup(NeutronMixin):
+class NeutronFirewallGroup(NeutronSDKMixin):
 
-    def list(self):
-        if not self._neutron.supports_extension("fwaas_v2", silent=True):
+    def list(self) -> list["FirewallGroup"]:
+        client = self._neutron_client
+        if not client.supports_extension("fwaas_v2"):
             return []
-        result = self._manager().list_fwaas_firewall_groups(
-            tenant_id=self.tenant_uuid)["firewall_groups"]
-        if self.tenant_uuid:
-            result = [
-                g for g in result
-                if g.get("tenant_id", g.get("project_id")) == self.tenant_uuid
-            ]
-        return result
+        return client.list_firewall_groups(project_id=self.tenant_uuid)
 
-    def delete(self):
-        # Skip default firewall group - OpenStack does not allow deleting it
-        if self.raw_resource.get("name") == "default":
-            return
-        # Disassociate all ports before deleting - FWaaS v2 requires this
-        if self.raw_resource.get("ports"):
-            try:
-                self._manager().update_fwaas_firewall_group(
-                    self.id(), {"firewall_group": {"ports": []}})
-            except Exception:
-                # If disassociate fails (e.g., PENDING state), still try delete
-                pass
-        self._manager().delete_fwaas_firewall_group(self.id())
+    def delete(self) -> None:
+        client = self._neutron_client
+        # neutron refuses to delete a group that still protects ports
+        if self.raw_resource.ports:
+            client.disassociate_firewall_group_ports(self.id())
+        client.delete_firewall_group(self.id())
 
 
 @base.resource("neutron", "firewall_policy", order=next(_neutron_order),
                tenant_resource=True)
-class NeutronFirewallPolicy(NeutronMixin):
+class NeutronFirewallPolicy(NeutronSDKMixin):
 
-    def list(self):
-        if not self._neutron.supports_extension("fwaas_v2", silent=True):
+    def list(self) -> list["FirewallPolicy"]:
+        client = self._neutron_client
+        if not client.supports_extension("fwaas_v2"):
             return []
-        result = self._manager().list_fwaas_firewall_policies(
-            tenant_id=self.tenant_uuid)["firewall_policies"]
-        if self.tenant_uuid:
-            result = [
-                p for p in result
-                if p.get("tenant_id", p.get("project_id")) == self.tenant_uuid
-            ]
-        return result
+        return client.list_firewall_policies(project_id=self.tenant_uuid)
 
-    def delete(self):
-        self._manager().delete_fwaas_firewall_policy(self.id())
+    def delete(self) -> None:
+        self._neutron_client.delete_firewall_policy(self.id())
 
 
 @base.resource("neutron", "firewall_rule", order=next(_neutron_order),
                tenant_resource=True)
-class NeutronFirewallRule(NeutronMixin):
+class NeutronFirewallRule(NeutronSDKMixin):
 
-    def list(self):
-        if not self._neutron.supports_extension("fwaas_v2", silent=True):
+    def list(self) -> list["FirewallRule"]:
+        client = self._neutron_client
+        if not client.supports_extension("fwaas_v2"):
             return []
-        result = self._manager().list_fwaas_firewall_rules(
-            tenant_id=self.tenant_uuid)["firewall_rules"]
-        if self.tenant_uuid:
-            result = [
-                r for r in result
-                if r.get("tenant_id", r.get("project_id")) == self.tenant_uuid
-            ]
-        return result
+        return client.list_firewall_rules(project_id=self.tenant_uuid)
 
-    def delete(self):
-        self._manager().delete_fwaas_firewall_rule(self.id())
+    def delete(self) -> None:
+        self._neutron_client.delete_firewall_rule(self.id())
 
 
 @base.resource("neutron", "tap_mirror", order=next(_neutron_order),
                tenant_resource=True)
-class NeutronTapMirror(NeutronMixin):
+class NeutronTapMirror(NeutronSDKMixin):
 
-    def _neutron_client(self):
-        return (self._admin_required and self.admin or self.user).neutron
-
-    def id(self):
-        return self.raw_resource.id
-
-    def name(self):
-        return self.raw_resource.name
-
-    def list(self):
-        if not self._neutron.supports_extension("tap-mirror", silent=True):
+    def list(self) -> list["TapMirror"]:
+        client = self._neutron_client
+        if not client.supports_extension("tap-mirror"):
             return []
-        return self._neutron_client().list_tap_mirrors(
-            project_id=self.tenant_uuid)
+        return client.list_tap_mirrors(project_id=self.tenant_uuid)
 
-    def delete(self):
-        self._neutron_client().delete_tap_mirror(self.id())
+    def delete(self) -> None:
+        self._neutron_client.delete_tap_mirror(self.id())
 
 
 @base.resource("neutron", "tap_service", order=next(_neutron_order),
                tenant_resource=True)
-class NeutronTapService(NeutronMixin):
+class NeutronTapService(NeutronSDKMixin):
 
-    def _neutron_client(self):
-        return (self._admin_required and self.admin or self.user).neutron
-
-    def id(self):
-        return self.raw_resource.id
-
-    def name(self):
-        return self.raw_resource.name
-
-    def list(self):
-        if not self._neutron.supports_extension("taas", silent=True):
+    def list(self) -> list["TapService"]:
+        client = self._neutron_client
+        if not client.supports_extension("taas"):
             return []
-        services = self._neutron_client().list_tap_services()
+        services = client.list_tap_services()
+        # TaaS marks no tap_service attribute as a filter, so neutron answers
+        # ?project_id= with 400 when filter validation is on (the default).
         if self.tenant_uuid:
             services = [service for service in services
                         if service.project_id == self.tenant_uuid]
         return services
 
-    def delete(self):
-        self._neutron_client().delete_tap_service(self.id())
+    def delete(self) -> None:
+        self._neutron_client.delete_tap_service(self.id())
 
 
 @base.resource("neutron", "floatingip", order=next(_neutron_order),

@@ -270,27 +270,28 @@ class RequiredNeutronExtensionsValidatorTestCase(test.TestCase):
 
     def test_validator(self):
         validator = validators.RequiredNeutronExtensionsValidator(
-            "existing_extension")
+            ["ext_a", "ext_b"])
         clients = self.context["users"][0]["credential"].clients()
-
-        clients.neutron().list_extensions.return_value = {
-            "extensions": [{"alias": "existing_extension"}]}
+        clients.neutron.supports_extension.return_value = True
 
         validator.validate(self.context, {}, None, None)
+
+        clients.neutron.supports_extension.assert_has_calls(
+            [mock.call("ext_a"), mock.call("ext_b")])
 
     def test_validator_failed(self):
         err_msg = "Neutron extension absent_extension is not configured"
         validator = validators.RequiredNeutronExtensionsValidator(
             "absent_extension")
         clients = self.context["users"][0]["credential"].clients()
-
-        clients.neutron().list_extensions.return_value = {
-            "extensions": [{"alias": "existing_extension"}]}
+        clients.neutron.supports_extension.return_value = False
 
         e = self.assertRaises(
             validators.validation.ValidationError,
             validator.validate, self.context, {}, None, None)
         self.assertEqual(err_msg, e.message)
+        clients.neutron.supports_extension.assert_called_once_with(
+            "absent_extension")
 
 
 class FlavorExistsValidatorTestCase(test.TestCase):

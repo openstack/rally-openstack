@@ -31,7 +31,7 @@ from rally.common.plugin import plugin
 from rally_openstack.common import consts
 from rally_openstack.common import credential
 from rally_openstack.common import osclients
-from rally_openstack.common.services.network import neutron
+from rally_openstack.common.clients import neutron as neutron_client
 from rally_openstack.task import context
 
 
@@ -432,29 +432,45 @@ class UserGenerator(context.OpenStackContext):
             len(credentials))
         broker.run(publish, consume, threads)
 
-    def _remove_default_security_group(self) -> None:
-        """Delete default security group for tenants."""
+    def _remove_default_neutron_resources(self) -> None:
+        """Delete the resources neutron creates for every project by itself.
 
-        clients = osclients.Clients(self.credential)
+        These are the default security group and, with FWaaS v2, the default
+        firewall group with its policies and rules. Only admin may delete
+        them, so the generic cleanup leaves them behind.
+        """
+        clients = osclients.Clients(
+            self.credential, atomic_inst=self.atomic_actions())
         if "neutron" not in clients.services().values():
-            LOG.debug("Security group cleanup is disabled: "
+            LOG.debug("Default neutron resources cleanup is disabled: "
                       "neutron is not available.")
             return
+        client = clients.neutron
 
-        admin_client = neutron.NeutronService(
-            clients=clients,
-            atomic_inst=self.atomic_actions()
-        )
+        if client.supports_extension("security-group"):
+            for security_group in client.list_security_groups(name="default"):
+                if security_group.project_id in self.context["tenants"]:
+                    client.delete_security_group(security_group.id)
 
-        if not admin_client.supports_extension("security-group", silent=True):
-            LOG.debug("Security group context is disabled.")
+        if not client.supports_extension("fwaas_v2"):
             return
 
-        security_groups = admin_client.list_security_groups(name="default")
-        for security_group in security_groups:
-            if security_group["tenant_id"] not in self.context["tenants"]:
+        groups = client.list_firewall_groups(
+            name=neutron_client.DEFAULT_FIREWALL_GROUP_NAME)
+        for group in groups:
+            if group.project_id not in self.context["tenants"]:
                 continue
-            admin_client.delete_security_group(security_group["id"])
+            rule_ids: list[str] = []
+            for policy_id in (group.ingress_firewall_policy_id,
+                              group.egress_firewall_policy_id):
+                if policy_id:
+                    policy = client.get_firewall_policy(policy_id)
+                    rule_ids.extend(policy.firewall_rules or [])
+            if group.ports:
+                client.disassociate_firewall_group_ports(group.id)
+            client.delete_firewall_group(group.id)
+            for rule_id in rule_ids:
+                client.delete_firewall_rule(rule_id)
 
     def _get_consumer_for_deletion(
         self, func_name: str
@@ -496,6 +512,6 @@ class UserGenerator(context.OpenStackContext):
             # nothing to do here.
             return
         else:
-            self._remove_default_security_group()
+            self._remove_default_neutron_resources()
             self._delete_users()
             self._delete_projects()

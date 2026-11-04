@@ -212,11 +212,9 @@ class RequiredNeutronExtensionsValidator(validation.Validator):
     @with_roles_ctx()
     def validate(self, context, config, plugin_cls, plugin_cfg):
         clients = context["users"][0]["credential"].clients()
-        extensions = clients.neutron().list_extensions()["extensions"]
-        aliases = [x["alias"] for x in extensions]
         for extension in self.req_ext:
-            if extension not in aliases:
-                self.fail("Neutron extension %s is not configured" % extension)
+            if not clients.neutron.supports_extension(extension):
+                self.fail(f"Neutron extension {extension} is not configured")
 
 
 @validation.add("required_platform", platform="openstack", users=True)

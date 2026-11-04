@@ -12,431 +12,230 @@
 
 from unittest import mock
 
-import ddt
-
+from rally_openstack.common.clients import neutron as neutron_client
 from rally_openstack.task.scenarios.neutron import fwaas
 from tests.unit import test
 
 
-@ddt.ddt
-class NeutronFWaaSTestCase(test.TestCase):
+RULE_KWARGS_UNSET = {
+    "protocol": neutron_client.FirewallProtocol.ANY,
+    "action": None,
+    "ip_version": None,
+    "source_ip_address": None,
+    "destination_ip_address": None,
+    "source_port": None,
+    "destination_port": None,
+    "enabled": None,
+    "description": None,
+}
 
-    @ddt.data(
-        {},
-        {"firewall_rule_create_args": {}},
-        {"firewall_rule_create_args": {"description": "fake-description"}},
-    )
-    @ddt.unpack
-    def test_create_and_list_firewall_rules(
-            self, firewall_rule_create_args=None):
-        scenario = fwaas.CreateAndListFirewallRules()
-        firewall_rule_data = firewall_rule_create_args or {}
-        scenario._create_firewall_rule = mock.Mock()
-        scenario._list_firewall_rules = mock.Mock()
-        scenario.run(firewall_rule_create_args=firewall_rule_create_args)
-        scenario._create_firewall_rule.assert_called_once_with(
-            **firewall_rule_data)
-        scenario._list_firewall_rules.assert_called_once_with()
 
-    @ddt.data(
-        {},
-        {"firewall_rule_create_args": {}},
-        {"firewall_rule_create_args": {"description": "fake-description"}},
-    )
-    @ddt.unpack
-    def test_create_and_delete_firewall_rules(
-            self, firewall_rule_create_args=None):
-        scenario = fwaas.CreateAndDeleteFirewallRules()
-        firewall_rule_data = firewall_rule_create_args or {}
-        scenario._create_firewall_rule = mock.Mock()
-        scenario._delete_firewall_rule = mock.Mock()
-        scenario.run(firewall_rule_create_args=firewall_rule_create_args)
-        scenario._create_firewall_rule.assert_called_once_with(
-            **firewall_rule_data)
-        scenario._delete_firewall_rule.assert_called_once_with(
-            scenario._create_firewall_rule.return_value)
+class FirewallScenarioTestCase(test.ScenarioTestCase):
 
-    @ddt.data(
-        {},
-        {"firewall_rule_create_args": {}},
-        {"firewall_rule_create_args": {"description": "fake-description"}},
-        {"firewall_rule_update_args": {}},
-        {"firewall_rule_update_args": {"description": "fake-updated-descr"}},
-    )
-    @ddt.unpack
-    def test_create_and_update_firewall_rules(
-            self, firewall_rule_create_args=None,
-            firewall_rule_update_args=None):
-        scenario = fwaas.CreateAndUpdateFirewallRules()
-        firewall_rule_data = firewall_rule_create_args or {}
-        firewall_rule_update_data = firewall_rule_update_args or {}
-        scenario._create_firewall_rule = mock.Mock()
-        scenario._update_firewall_rule = mock.Mock()
-        scenario.run(firewall_rule_create_args=firewall_rule_create_args,
-                     firewall_rule_update_args=firewall_rule_update_args)
-        scenario._create_firewall_rule.assert_called_once_with(
-            **firewall_rule_data)
-        scenario._update_firewall_rule.assert_called_once_with(
-            scenario._create_firewall_rule.return_value,
-            **firewall_rule_update_data)
+    def make_scenario(self, scenario_cls, **context):
+        self.context.update(context)
+        scenario = scenario_cls(self.context, clients=mock.MagicMock())
+        scenario.generate_random_name = mock.Mock(return_value="new-name")
+        return scenario
 
-    @ddt.data(
-        {},
-        {"firewall_policy_create_args": {}},
-        {"firewall_policy_create_args": {"description": "fake-description"}},
-    )
-    @ddt.unpack
-    def test_create_and_list_firewall_policies(
-            self, firewall_policy_create_args=None):
-        scenario = fwaas.CreateAndListFirewallPolicies()
-        firewall_policy_data = firewall_policy_create_args or {}
-        scenario._create_firewall_policy = mock.Mock()
-        scenario._list_firewall_policies = mock.Mock()
-        scenario.run(firewall_policy_create_args=firewall_policy_create_args)
-        scenario._create_firewall_policy.assert_called_once_with(
-            **firewall_policy_data)
-        scenario._list_firewall_policies.assert_called_once_with()
+    def test_create_and_list_firewall_rules(self):
+        scenario = self.make_scenario(fwaas.CreateAndListFirewallRules)
+        neutron = scenario._clients.neutron
 
-    @ddt.data(
-        {},
-        {"firewall_policy_create_args": {}},
-        {"firewall_policy_create_args": {"description": "fake-description"}},
-    )
-    @ddt.unpack
-    def test_create_and_delete_firewall_policies(
-            self, firewall_policy_create_args=None):
-        scenario = fwaas.CreateAndDeleteFirewallPolicies()
-        firewall_policy_data = firewall_policy_create_args or {}
-        scenario._create_firewall_policy = mock.Mock()
-        scenario._delete_firewall_policy = mock.Mock()
-        scenario.run(firewall_policy_create_args=firewall_policy_create_args)
-        scenario._create_firewall_policy.assert_called_once_with(
-            **firewall_policy_data)
-        scenario._delete_firewall_policy.assert_called_once_with(
-            scenario._create_firewall_policy.return_value)
+        scenario.run(protocol=neutron_client.FirewallProtocol.UDP,
+                     destination_port=53)
 
-    @ddt.data(
-        {},
-        {"firewall_policy_create_args": {}},
-        {"firewall_policy_create_args": {"description": "fake-description"}},
-        {"firewall_policy_update_args": {}},
-        {"firewall_policy_update_args": {"description": "fake-updated-descr"}},
-    )
-    @ddt.unpack
-    def test_create_and_update_firewall_policies(
-            self, firewall_policy_create_args=None,
-            firewall_policy_update_args=None):
-        scenario = fwaas.CreateAndUpdateFirewallPolicies()
-        firewall_policy_data = firewall_policy_create_args or {}
-        firewall_policy_update_data = firewall_policy_update_args or {}
-        scenario._create_firewall_policy = mock.Mock()
-        scenario._update_firewall_policy = mock.Mock()
-        scenario.run(firewall_policy_create_args=firewall_policy_create_args,
-                     firewall_policy_update_args=firewall_policy_update_args)
-        scenario._create_firewall_policy.assert_called_once_with(
-            **firewall_policy_data)
-        scenario._update_firewall_policy.assert_called_once_with(
-            scenario._create_firewall_policy.return_value,
-            **firewall_policy_update_data)
+        neutron.create_firewall_rule.assert_called_once_with(
+            **dict(RULE_KWARGS_UNSET, protocol="udp", destination_port=53))
+        neutron.list_firewall_rules.assert_called_once_with()
 
-    @ddt.data(
-        {},
-        {"firewall_rule_create_args": {"description": "fake-rule"}},
-        {"firewall_policy_create_args": {"description": "fake-policy"}},
-        {"firewall_rule_create_args": {"description": "fake-rule"},
-         "firewall_policy_create_args": {"description": "fake-policy"}},
-    )
-    @ddt.unpack
-    def test_create_policy_add_and_remove_rules(
-            self, firewall_rule_create_args=None,
-            firewall_policy_create_args=None):
-        scenario = fwaas.CreatePolicyAddAndRemoveRules()
-        firewall_rule_data = firewall_rule_create_args or {}
-        firewall_policy_data = firewall_policy_create_args or {}
-        scenario._create_firewall_rule = mock.Mock()
-        scenario._create_firewall_policy = mock.Mock()
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._remove_firewall_rule_from_policy = mock.Mock()
-        scenario.run(firewall_rule_create_args=firewall_rule_create_args,
-                     firewall_policy_create_args=firewall_policy_create_args)
-        scenario._create_firewall_rule.assert_called_once_with(
-            **firewall_rule_data)
-        scenario._create_firewall_policy.assert_called_once_with(
-            **firewall_policy_data)
-        scenario._insert_firewall_rule_in_policy.assert_called_once_with(
-            scenario._create_firewall_policy.return_value,
-            scenario._create_firewall_rule.return_value)
-        scenario._remove_firewall_rule_from_policy.assert_called_once_with(
-            scenario._create_firewall_policy.return_value,
-            scenario._create_firewall_rule.return_value)
+    def test_create_and_delete_firewall_rules(self):
+        scenario = self.make_scenario(fwaas.CreateAndDeleteFirewallRules)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_rule.return_value = mock.Mock(id="rule-id")
 
-    @ddt.data(
-        {},
-        {"firewall_group_create_args": {}},
-        {"firewall_group_create_args": {"description": "fake-description"}},
-    )
-    @ddt.unpack
-    def test_create_and_list_firewall_groups(
-            self, firewall_group_create_args=None):
-        scenario = fwaas.CreateAndListFirewallGroups()
-        firewall_group_data = firewall_group_create_args or {}
-        scenario._create_firewall_group = mock.Mock()
-        scenario._list_firewall_groups = mock.Mock()
-        scenario.run(firewall_group_create_args=firewall_group_create_args)
-        scenario._create_firewall_group.assert_called_once_with(
-            **firewall_group_data)
-        scenario._list_firewall_groups.assert_called_once_with()
+        scenario.run(action=neutron_client.FirewallAction.ALLOW)
 
-    @ddt.data(
-        {},
-        {"firewall_group_create_args": {}},
-        {"firewall_group_create_args": {"description": "fake-description"}},
-    )
-    @ddt.unpack
-    def test_create_and_delete_firewall_groups(
-            self, firewall_group_create_args=None):
-        scenario = fwaas.CreateAndDeleteFirewallGroups()
-        firewall_group_data = firewall_group_create_args or {}
-        scenario._create_firewall_group = mock.Mock()
-        scenario._delete_firewall_group = mock.Mock()
-        scenario.run(firewall_group_create_args=firewall_group_create_args)
-        scenario._create_firewall_group.assert_called_once_with(
-            **firewall_group_data)
-        scenario._delete_firewall_group.assert_called_once_with(
-            scenario._create_firewall_group.return_value)
+        neutron.create_firewall_rule.assert_called_once_with(
+            **dict(RULE_KWARGS_UNSET, action="allow"))
+        neutron.delete_firewall_rule.assert_called_once_with("rule-id")
 
-    @ddt.data(
-        {},
-        {"firewall_group_create_args": {}},
-        {"firewall_group_create_args": {"description": "fake-description"}},
-        {"firewall_group_update_args": {}},
-        {"firewall_group_update_args": {"description": "fake-updated-descr"}},
-    )
-    @ddt.unpack
-    def test_create_and_update_firewall_groups(
-            self, firewall_group_create_args=None,
-            firewall_group_update_args=None):
-        scenario = fwaas.CreateAndUpdateFirewallGroups()
-        firewall_group_data = firewall_group_create_args or {}
-        firewall_group_update_data = firewall_group_update_args or {}
-        scenario._create_firewall_group = mock.Mock()
-        scenario._update_firewall_group = mock.Mock()
-        scenario.run(firewall_group_create_args=firewall_group_create_args,
-                     firewall_group_update_args=firewall_group_update_args)
-        scenario._create_firewall_group.assert_called_once_with(
-            **firewall_group_data)
-        scenario._update_firewall_group.assert_called_once_with(
-            scenario._create_firewall_group.return_value,
-            **firewall_group_update_data)
+    def test_create_and_update_firewall_rules(self):
+        scenario = self.make_scenario(fwaas.CreateAndUpdateFirewallRules)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_rule.return_value = mock.Mock(id="rule-id")
+
+        scenario.run(enabled=True,
+                     firewall_rule_update_args={"enabled": False})
+
+        neutron.create_firewall_rule.assert_called_once_with(
+            **dict(RULE_KWARGS_UNSET, enabled=True))
+        neutron.update_firewall_rule.assert_called_once_with(
+            "rule-id", name="new-name", enabled=False)
+
+    def test_create_and_update_firewall_rules_name_only(self):
+        scenario = self.make_scenario(fwaas.CreateAndUpdateFirewallRules)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_rule.return_value = mock.Mock(id="rule-id")
+
+        scenario.run()
+
+        neutron.update_firewall_rule.assert_called_once_with(
+            "rule-id", name="new-name")
+
+    def test_create_and_list_firewall_policies(self):
+        scenario = self.make_scenario(fwaas.CreateAndListFirewallPolicies)
+        neutron = scenario._clients.neutron
+
+        scenario.run(description="desc")
+
+        neutron.create_firewall_policy.assert_called_once_with(
+            audited=None, description="desc")
+        neutron.list_firewall_policies.assert_called_once_with()
+
+    def test_create_and_delete_firewall_policies(self):
+        scenario = self.make_scenario(fwaas.CreateAndDeleteFirewallPolicies)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_policy.return_value = mock.Mock(
+            id="policy-id")
+
+        scenario.run(audited=True)
+
+        neutron.create_firewall_policy.assert_called_once_with(
+            audited=True, description=None)
+        neutron.delete_firewall_policy.assert_called_once_with("policy-id")
+
+    def test_create_and_update_firewall_policies(self):
+        scenario = self.make_scenario(fwaas.CreateAndUpdateFirewallPolicies)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_policy.return_value = mock.Mock(
+            id="policy-id")
+
+        scenario.run(firewall_policy_update_args={"description": "new"})
+
+        neutron.create_firewall_policy.assert_called_once_with(
+            audited=None, description=None)
+        neutron.update_firewall_policy.assert_called_once_with(
+            "policy-id", name="new-name", description="new")
+
+    def test_create_policy_add_and_remove_rules(self):
+        scenario = self.make_scenario(fwaas.CreatePolicyAddAndRemoveRules)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_rule.return_value = mock.Mock(id="rule-id")
+        neutron.create_firewall_policy.return_value = mock.Mock(
+            id="policy-id")
+
+        scenario.run(firewall_rule_args={"protocol": "tcp"},
+                     firewall_policy_args={"audited": True})
+
+        neutron.create_firewall_rule.assert_called_once_with(protocol="tcp")
+        neutron.create_firewall_policy.assert_called_once_with(audited=True)
+        neutron.insert_firewall_rule_in_policy.assert_called_once_with(
+            "policy-id", "rule-id")
+        neutron.remove_firewall_rule_from_policy.assert_called_once_with(
+            "policy-id", "rule-id")
+
+    def test_create_and_list_firewall_groups(self):
+        scenario = self.make_scenario(fwaas.CreateAndListFirewallGroups)
+        neutron = scenario._clients.neutron
+
+        scenario.run(admin_state_up=False)
+
+        neutron.create_firewall_group.assert_called_once_with(
+            admin_state_up=False, description=None)
+        neutron.list_firewall_groups.assert_called_once_with()
+
+    def test_create_and_delete_firewall_groups(self):
+        scenario = self.make_scenario(fwaas.CreateAndDeleteFirewallGroups)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_group.return_value = mock.Mock(id="group-id")
+
+        scenario.run()
+
+        neutron.create_firewall_group.assert_called_once_with(
+            admin_state_up=None, description=None)
+        neutron.delete_firewall_group.assert_called_once_with("group-id")
+
+    def test_create_and_update_firewall_groups(self):
+        scenario = self.make_scenario(fwaas.CreateAndUpdateFirewallGroups)
+        neutron = scenario._clients.neutron
+        neutron.create_firewall_group.return_value = mock.Mock(id="group-id")
+
+        scenario.run(description="old",
+                     firewall_group_update_args={"admin_state_up": False})
+
+        neutron.create_firewall_group.assert_called_once_with(
+            admin_state_up=None, description="old")
+        neutron.update_firewall_group.assert_called_once_with(
+            "group-id", name="new-name", admin_state_up=False)
+
+    def _mock_group_with_rule(self, neutron):
+        neutron.create_firewall_rule.side_effect = [
+            mock.Mock(id="rule-1"), mock.Mock(id="rule-2")]
+        neutron.create_firewall_policy.side_effect = [
+            mock.Mock(id="ingress"), mock.Mock(id="egress"),
+            mock.Mock(id="new-ingress")]
+        neutron.create_firewall_group.return_value = mock.Mock(id="group-id")
+
+    def _router_networks(self, iteration):
+        return {
+            "iteration": iteration,
+            "tenant": {"networks": [{"router_port_id": "port-0"},
+                                    {"router_port_id": "port-1"}]},
+        }
 
     def test_associate_disassociate_firewall_group_router_ports(self):
-        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
-        scenario.context = {
-            "tenant": {
-                "networks": [{"id": "network-id", "router_id": "router-id",
-                              "router_port_id": "port-id"}]
-            },
-            "iteration": 1,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": ["port-id"]}})
-        scenario._disassociate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": []}})
+        scenario = self.make_scenario(
+            fwaas.AssociateDisassociateFirewallGroupRouterPorts,
+            **self._router_networks(iteration=3))
+        neutron = scenario._clients.neutron
+        self._mock_group_with_rule(neutron)
 
-        scenario.run()
+        scenario.run(firewall_rule_args={"action": "allow"},
+                     firewall_group_args={"description": "desc"})
 
-        scenario._create_firewall_rule.assert_called_once()
-        self.assertEqual(2, scenario._create_firewall_policy.call_count)
-        call_count = scenario._insert_firewall_rule_in_policy.call_count
-        self.assertEqual(2, call_count)
-        scenario._create_firewall_group.assert_called_once()
-        scenario._associate_firewall_group_port.assert_called_once()
-        scenario._disassociate_firewall_group_port.assert_called_once()
-
-    def test_associate_disassociate_firewall_group_router_ports_network_sel(
-            self):
-        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
-        scenario.context = {
-            "tenant": {
-                "networks": [
-                    {"id": "network-0", "router_id": "router-0",
-                     "router_port_id": "port-0"},
-                    {"id": "network-1", "router_id": "router-1",
-                     "router_port_id": "port-1"},
-                ]
-            },
-            "iteration": 3,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": ["port-id"]}})
-        scenario._disassociate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": []}})
-
-        scenario.run()
-
-        scenario._associate_firewall_group_port.assert_called_once_with(
-            scenario._create_firewall_group.return_value,
-            {"port": {"id": "port-1"}})
-
-    def test_associate_disassociate_firewall_group_router_ports_skips_finally_when_associate_fails(  # noqa: E501
-            self):
-        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
-        scenario.context = {
-            "tenant": {
-                "networks": [{"id": "network-id", "router_id": "router-id",
-                              "router_port_id": "port-id"}]
-            },
-            "iteration": 1,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            side_effect=RuntimeError("associate failed"))
-        scenario._disassociate_firewall_group_port = mock.Mock()
-
-        self.assertRaises(RuntimeError, scenario.run)
-        scenario._disassociate_firewall_group_port.assert_not_called()
-
-    def test_associate_disassociate_firewall_group_router_ports_fails_on_disassociate(  # noqa: E501
-            self):
-        scenario = fwaas.AssociateDisassociateFirewallGroupRouterPorts()
-        scenario.context = {
-            "tenant": {
-                "networks": [{"id": "network-id", "router_id": "router-id",
-                              "router_port_id": "port-id"}]
-            },
-            "iteration": 1,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": ["port-id"]}})
-        scenario._disassociate_firewall_group_port = mock.Mock(
-            side_effect=RuntimeError("disassociate failed"))
-
-        self.assertRaises(RuntimeError, scenario.run)
-        scenario._disassociate_firewall_group_port.assert_called_once()
+        neutron.create_firewall_rule.assert_called_once_with(action="allow")
+        self.assertEqual(2, neutron.create_firewall_policy.call_count)
+        self.assertEqual(
+            [mock.call("ingress", "rule-1"), mock.call("egress", "rule-1")],
+            neutron.insert_firewall_rule_in_policy.call_args_list)
+        neutron.create_firewall_group.assert_called_once_with(
+            ingress_firewall_policy_id="ingress",
+            egress_firewall_policy_id="egress",
+            description="desc")
+        neutron.associate_firewall_group_ports.assert_called_once_with(
+            "group-id", ["port-1"])
+        neutron.disassociate_firewall_group_ports.assert_called_once_with(
+            "group-id")
 
     def test_update_policy_on_active_firewall_group(self):
-        scenario = fwaas.UpdatePolicyOnActiveFirewallGroup()
-        scenario.context = {
-            "tenant": {
-                "networks": [{"id": "network-id", "router_id": "router-id",
-                              "router_port_id": "port-id"}]
-            },
-            "iteration": 1,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": ["port-id"]}})
-        scenario._update_firewall_group = mock.Mock()
-        scenario._disassociate_firewall_group_port = mock.Mock()
+        scenario = self.make_scenario(
+            fwaas.UpdatePolicyOnActiveFirewallGroup,
+            **self._router_networks(iteration=2))
+        neutron = scenario._clients.neutron
+        self._mock_group_with_rule(neutron)
 
         scenario.run()
 
-        # 2 rules: initial + updated
-        self.assertEqual(2, scenario._create_firewall_rule.call_count)
-        # 3 policies: ingress, egress, updated
-        self.assertEqual(3, scenario._create_firewall_policy.call_count)
-        call_count = scenario._insert_firewall_rule_in_policy.call_count
-        self.assertEqual(3, call_count)
-        scenario._create_firewall_group.assert_called_once()
-        scenario._associate_firewall_group_port.assert_called_once()
-        scenario._update_firewall_group.assert_called_once()
-        scenario._disassociate_firewall_group_port.assert_called_once()
+        neutron.associate_firewall_group_ports.assert_called_once_with(
+            "group-id", ["port-0"])
+        neutron.insert_firewall_rule_in_policy.assert_called_with(
+            "new-ingress", "rule-2")
+        neutron.update_firewall_group.assert_called_once_with(
+            "group-id", name="new-name",
+            ingress_firewall_policy_id="new-ingress")
+        neutron.disassociate_firewall_group_ports.assert_called_once_with(
+            "group-id")
 
-    def test_update_policy_on_active_firewall_group_network_selection(self):
-        scenario = fwaas.UpdatePolicyOnActiveFirewallGroup()
-        scenario.context = {
-            "tenant": {
-                "networks": [
-                    {"id": "network-0", "router_id": "router-0",
-                     "router_port_id": "port-0"},
-                    {"id": "network-1", "router_id": "router-1",
-                     "router_port_id": "port-1"},
-                ]
-            },
-            "iteration": 3,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": ["port-id"]}})
-        scenario._update_firewall_group = mock.Mock()
-        scenario._disassociate_firewall_group_port = mock.Mock()
-
-        scenario.run()
-
-        scenario._associate_firewall_group_port.assert_called_once_with(
-            scenario._create_firewall_group.return_value,
-            {"port": {"id": "port-1"}})
-
-    def test_update_policy_on_active_firewall_group_disassociates_on_failure(
-            self):
-        scenario = fwaas.UpdatePolicyOnActiveFirewallGroup()
-        scenario.context = {
-            "tenant": {
-                "networks": [{"id": "network-id", "router_id": "router-id",
-                              "router_port_id": "port-id"}]
-            },
-            "iteration": 1,
-        }
-        scenario._create_firewall_rule = mock.Mock(
-            return_value={"firewall_rule": {"id": "rule-id"}})
-        scenario._create_firewall_policy = mock.Mock(
-            return_value={"firewall_policy": {"id": "policy-id"}})
-        scenario._insert_firewall_rule_in_policy = mock.Mock()
-        scenario._create_firewall_group = mock.Mock(
-            return_value={"firewall_group": {"id": "group-id", "ports": []}})
-        scenario._associate_firewall_group_port = mock.Mock(
-            return_value={"firewall_group": {
-                "id": "group-id", "ports": ["port-id"]}})
-        scenario._update_firewall_group = mock.Mock(
-            side_effect=RuntimeError("update failed"))
-        scenario._disassociate_firewall_group_port = mock.Mock()
+    def test_update_policy_on_active_firewall_group_disassociates(self):
+        scenario = self.make_scenario(
+            fwaas.UpdatePolicyOnActiveFirewallGroup,
+            **self._router_networks(iteration=0))
+        neutron = scenario._clients.neutron
+        self._mock_group_with_rule(neutron)
+        neutron.update_firewall_group.side_effect = RuntimeError("boom")
 
         self.assertRaises(RuntimeError, scenario.run)
-        scenario._disassociate_firewall_group_port.assert_called_once()
 
+        neutron.disassociate_firewall_group_ports.assert_called_once_with(
+            "group-id")

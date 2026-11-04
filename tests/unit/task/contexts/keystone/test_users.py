@@ -16,8 +16,6 @@
 from unittest import mock
 
 import ddt
-from openstack.network.v2 import extension as sdk_extension
-from openstack.network.v2 import security_group as sdk_sg
 
 from rally import exceptions
 from rally.task import context
@@ -163,7 +161,7 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
     def test_cleanup(self):
         user_generator = users.UserGenerator(self.context)
-        user_generator._remove_default_security_group = mock.Mock()
+        user_generator._remove_default_neutron_resources = mock.Mock()
         user_generator._delete_users = mock.Mock()
         user_generator._delete_projects = mock.Mock()
 
@@ -172,7 +170,8 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
         user_generator.cleanup()
 
-        self.assertFalse(user_generator._remove_default_security_group.called)
+        self.assertFalse(
+            user_generator._remove_default_neutron_resources.called)
         self.assertFalse(user_generator._delete_users.called)
         self.assertFalse(user_generator._delete_projects.called)
 
@@ -182,7 +181,8 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
 
         user_generator.cleanup()
 
-        user_generator._remove_default_security_group.assert_called_once_with()
+        remove_neutron = user_generator._remove_default_neutron_resources
+        remove_neutron.assert_called_once_with()
         user_generator._delete_users.assert_called_once_with()
         user_generator._delete_projects.assert_called_once_with()
 
@@ -333,75 +333,79 @@ class UserGeneratorForNewUsersTestCase(test.ScenarioTestCase):
             "task": {"uuid": "task_id", "deployment_uuid": "dep_uuid"}
         })
 
-    def test__remove_default_security_group(self):
+    def _mock_neutron_client(self, extensions=(), services=None):
+        self.context.update(tenants={"tenant-1": {}, "tenant-2": {}})
+        clients = self.osclients.Clients.return_value
+        clients.services.return_value = (
+            {"network": "neutron"} if services is None else services)
+        clients.neutron.supports_extension.side_effect = (
+            lambda alias: alias in extensions)
+        return clients.neutron
 
-        self.context.update(
-            tenants={
-                "tenant-1": {},
-                "tenant-2": {}
-            }
-        )
-
-        self.osclients.Clients.return_value = mock.Mock()
-        self.osclients.Clients.return_value.services.return_value = {
-            "network": "neutron"}
-        neutron = self.osclients.Clients.return_value._conn.network
-
-        neutron.extensions.return_value = [
-            sdk_extension.Extension(**{"alias": "security-group"})]
-        neutron.security_groups.return_value = [
-            sdk_sg.SecurityGroup(
-                **{"id": "id-1", "name": "default", "tenant_id": "tenant-1"}),
-            sdk_sg.SecurityGroup(
-                **{"id": "id-2", "name": "default", "tenant_id": "tenant-2"}),
-            sdk_sg.SecurityGroup(
-                **{"id": "id-3", "name": "default", "tenant_id": "tenant-3"})
+    def test__remove_default_neutron_resources_security_groups(self):
+        neutron = self._mock_neutron_client(extensions=["security-group"])
+        neutron.list_security_groups.return_value = [
+            mock.Mock(id="id-1", project_id="tenant-1"),
+            mock.Mock(id="id-2", project_id="tenant-2"),
+            mock.Mock(id="id-3", project_id="tenant-3"),
         ]
 
-        users.UserGenerator(self.context)._remove_default_security_group()
+        users.UserGenerator(self.context)._remove_default_neutron_resources()
 
-        neutron.security_groups.assert_called_once_with(name="default")
+        neutron.list_security_groups.assert_called_once_with(name="default")
         self.assertEqual(
-            [mock.call("id-1", ignore_missing=False),
-             mock.call("id-2", ignore_missing=False)],
-            neutron.delete_security_group.call_args_list
-        )
+            [mock.call("id-1"), mock.call("id-2")],
+            neutron.delete_security_group.call_args_list)
+        self.assertFalse(neutron.list_firewall_groups.called)
 
-    def test__remove_default_security_group_no_sg(self):
-        self.context.update(
-            tenants={
-                "tenant-1": {},
-                "tenant-2": {}
-            }
-        )
+    def test__remove_default_neutron_resources_no_extensions(self):
+        neutron = self._mock_neutron_client()
 
-        self.osclients.Clients.return_value = mock.Mock()
-        self.osclients.Clients.return_value.services.return_value = {
-            "network": "neutron"}
-        neutron = self.osclients.Clients.return_value._conn.network
-        neutron.extensions.return_value = []
+        users.UserGenerator(self.context)._remove_default_neutron_resources()
 
-        users.UserGenerator(self.context)._remove_default_security_group()
+        self.assertFalse(neutron.list_security_groups.called)
+        self.assertFalse(neutron.list_firewall_groups.called)
 
-        self.assertFalse(neutron.security_groups.called)
-        self.assertFalse(neutron.delete_security_group.called)
+    def test__remove_default_neutron_resources_no_neutron(self):
+        neutron = self._mock_neutron_client(services={})
 
-    def test__remove_default_security_group_no_neutron(self):
-        self.context.update(
-            tenants={
-                "tenant-1": {},
-                "tenant-2": {}
-            }
-        )
+        users.UserGenerator(self.context)._remove_default_neutron_resources()
 
-        self.osclients.Clients.return_value = mock.Mock()
-        self.osclients.Clients.return_value.services.return_value = {}
+        self.assertFalse(neutron.supports_extension.called)
 
-        users.UserGenerator(self.context)._remove_default_security_group()
+    def test__remove_default_neutron_resources_firewall_groups(self):
+        neutron = self._mock_neutron_client(extensions=["fwaas_v2"])
+        neutron.list_firewall_groups.return_value = [
+            mock.Mock(id="fwg-1", project_id="tenant-1", ports=["port-1"],
+                      ingress_firewall_policy_id="in-1",
+                      egress_firewall_policy_id="eg-1"),
+            mock.Mock(id="fwg-2", project_id="tenant-2", ports=[],
+                      ingress_firewall_policy_id="in-2",
+                      egress_firewall_policy_id=None),
+            mock.Mock(id="fwg-3", project_id="tenant-3", ports=[],
+                      ingress_firewall_policy_id="in-3",
+                      egress_firewall_policy_id="eg-3"),
+        ]
+        policies = {
+            "in-1": mock.Mock(firewall_rules=["r-1", "r-2"]),
+            "eg-1": mock.Mock(firewall_rules=["r-3"]),
+            "in-2": mock.Mock(firewall_rules=["r-4"]),
+        }
+        neutron.get_firewall_policy.side_effect = policies.__getitem__
 
-        self.assertFalse(
-            self.osclients.Clients.return_value._conn.network
-            .security_groups.called)
+        users.UserGenerator(self.context)._remove_default_neutron_resources()
+
+        self.assertFalse(neutron.list_security_groups.called)
+        neutron.list_firewall_groups.assert_called_once_with(name="default")
+        neutron.disassociate_firewall_group_ports.assert_called_once_with(
+            "fwg-1")
+        self.assertEqual(
+            [mock.call("fwg-1"), mock.call("fwg-2")],
+            neutron.delete_firewall_group.call_args_list)
+        self.assertEqual(
+            [mock.call("r-1"), mock.call("r-2"), mock.call("r-3"),
+             mock.call("r-4")],
+            neutron.delete_firewall_rule.call_args_list)
 
     def test__create_tenants(self):
         self.context["config"]["users"]["tenants"] = 1

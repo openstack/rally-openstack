@@ -344,183 +344,148 @@ class NeutronBgpvpnTestCase(test.TestCase):
         self.assertEqual(neut.list(), admin_bgpvpns["bgpvpns"])
 
 
+def _set_client_extensions(clients, extensions):
+    clients.neutron.supports_extension.side_effect = (
+        lambda alias: alias in extensions)
+
+
 class NeutronFirewallRuleTestCase(test.TestCase):
 
-    def get_firewall_rule_resource(self, extensions=None):
-        if extensions is None:
-            extensions = []
+    def get_firewall_rule_resource(self, extensions=()):
         user = mock.MagicMock()
         neut = resources.NeutronFirewallRule(user=user)
         neut.tenant_uuid = "user_tenant"
-        neut._manager = mock.Mock()
-        _set_extensions(user, extensions)
+        _set_client_extensions(user, extensions)
         return neut
 
     def test_list_fwaas_available(self):
         neut = self.get_firewall_rule_resource(extensions=["fwaas_v2"])
-        rules = {
-            "firewall_rules": [
-                {"tenant_id": "user_tenant", "id": "rule-1"},
-                {"tenant_id": "other", "id": "rule-2"},
-                {"project_id": "user_tenant", "id": "rule-3"},
-            ]
-        }
-        neut._manager().list_fwaas_firewall_rules.return_value = rules
+        rules = [mock.Mock(id="rule-1"), mock.Mock(id="rule-2")]
+        neut.user.neutron.list_firewall_rules.return_value = rules
 
         self.assertEqual("firewall_rule", neut._resource)
-        self.assertEqual(
-            [rules["firewall_rules"][0], rules["firewall_rules"][2]],
-            neut.list())
-        neut._manager().list_fwaas_firewall_rules.assert_called_once_with(
-            tenant_id="user_tenant")
+        self.assertEqual(rules, neut.list())
+        neut.user.neutron.supports_extension.assert_called_once_with(
+            "fwaas_v2")
+        neut.user.neutron.list_firewall_rules.assert_called_once_with(
+            project_id="user_tenant")
 
     def test_list_fwaas_unavailable(self):
         neut = self.get_firewall_rule_resource()
 
         self.assertEqual([], neut.list())
-        self.assertFalse(neut._manager().list_fwaas_firewall_rules.called)
+        self.assertFalse(neut.user.neutron.list_firewall_rules.called)
 
     def test_delete(self):
         neut = self.get_firewall_rule_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {"id": "rule-id"}
+        neut.raw_resource = mock.Mock(id="rule-id")
+
         neut.delete()
-        neut._manager().delete_fwaas_firewall_rule.assert_called_once_with(
+
+        neut.user.neutron.delete_firewall_rule.assert_called_once_with(
             "rule-id")
 
 
 class NeutronFirewallPolicyTestCase(test.TestCase):
 
-    def get_firewall_policy_resource(self, extensions=None):
-        if extensions is None:
-            extensions = []
+    def get_firewall_policy_resource(self, extensions=()):
         user = mock.MagicMock()
         neut = resources.NeutronFirewallPolicy(user=user)
         neut.tenant_uuid = "user_tenant"
-        neut._manager = mock.Mock()
-        _set_extensions(user, extensions)
+        _set_client_extensions(user, extensions)
         return neut
 
     def test_list_fwaas_available(self):
         neut = self.get_firewall_policy_resource(extensions=["fwaas_v2"])
-        policies = {
-            "firewall_policies": [
-                {"tenant_id": "user_tenant", "id": "policy-1"},
-                {"tenant_id": "other", "id": "policy-2"},
-                {"project_id": "user_tenant", "id": "policy-3"},
-            ]
-        }
-        neut._manager().list_fwaas_firewall_policies.return_value = policies
+        policies = [mock.Mock(id="policy-1"), mock.Mock(id="policy-2")]
+        neut.user.neutron.list_firewall_policies.return_value = policies
 
         self.assertEqual("firewall_policy", neut._resource)
-        self.assertEqual(
-            [policies["firewall_policies"][0],
-             policies["firewall_policies"][2]],
-            neut.list())
-        neut._manager().list_fwaas_firewall_policies.assert_called_once_with(
-            tenant_id="user_tenant")
+        self.assertEqual(policies, neut.list())
+        neut.user.neutron.list_firewall_policies.assert_called_once_with(
+            project_id="user_tenant")
 
     def test_list_fwaas_unavailable(self):
         neut = self.get_firewall_policy_resource()
 
         self.assertEqual([], neut.list())
-        self.assertFalse(neut._manager().list_fwaas_firewall_policies.called)
+        self.assertFalse(neut.user.neutron.list_firewall_policies.called)
 
     def test_delete(self):
         neut = self.get_firewall_policy_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {"id": "policy-id"}
+        neut.raw_resource = mock.Mock(id="policy-id")
+
         neut.delete()
-        neut._manager().delete_fwaas_firewall_policy.assert_called_once_with(
+
+        neut.user.neutron.delete_firewall_policy.assert_called_once_with(
             "policy-id")
 
 
 class NeutronFirewallGroupTestCase(test.TestCase):
 
-    def get_firewall_group_resource(self, extensions=None):
-        if extensions is None:
-            extensions = []
+    def get_firewall_group_resource(self, extensions=()):
         user = mock.MagicMock()
         neut = resources.NeutronFirewallGroup(user=user)
         neut.tenant_uuid = "user_tenant"
-        neut._manager = mock.Mock()
-        _set_extensions(user, extensions)
+        _set_client_extensions(user, extensions)
         return neut
+
+    def test_id_and_name(self):
+        neut = self.get_firewall_group_resource()
+        neut.raw_resource = mock.Mock(id="group-id")
+        neut.raw_resource.name = "group-name"
+
+        self.assertEqual("group-id", neut.id())
+        self.assertEqual("group-name", neut.name())
 
     def test_list_fwaas_available(self):
         neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
-        groups = {
-            "firewall_groups": [
-                {"tenant_id": "user_tenant", "id": "group-1"},
-                {"tenant_id": "other", "id": "group-2"},
-                {"project_id": "user_tenant", "id": "group-3"},
-            ]
-        }
-        neut._manager().list_fwaas_firewall_groups.return_value = groups
+        groups = [mock.Mock(id="group-1"), mock.Mock(id="group-2")]
+        neut.user.neutron.list_firewall_groups.return_value = groups
 
         self.assertEqual("firewall_group", neut._resource)
-        self.assertEqual(
-            [groups["firewall_groups"][0], groups["firewall_groups"][2]],
-            neut.list())
-        neut._manager().list_fwaas_firewall_groups.assert_called_once_with(
-            tenant_id="user_tenant")
+        self.assertEqual(groups, neut.list())
+        neut.user.neutron.list_firewall_groups.assert_called_once_with(
+            project_id="user_tenant")
 
     def test_list_fwaas_unavailable(self):
         neut = self.get_firewall_group_resource()
 
         self.assertEqual([], neut.list())
-        self.assertFalse(neut._manager().list_fwaas_firewall_groups.called)
+        self.assertFalse(neut.user.neutron.list_firewall_groups.called)
 
     def test_delete(self):
         neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {"id": "group-id", "name": "my-group", "ports": []}
+        neut.raw_resource = mock.Mock(id="group-id", ports=[])
+
         neut.delete()
-        neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
+
+        neut.user.neutron.delete_firewall_group.assert_called_once_with(
             "group-id")
-        self.assertFalse(neut._manager().update_fwaas_firewall_group.called)
+        self.assertFalse(
+            neut.user.neutron.disassociate_firewall_group_ports.called)
 
     def test_delete_with_ports(self):
         neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {
-            "id": "group-id", "name": "my-group",
-            "ports": ["port-1", "port-2"]}
+        neut.raw_resource = mock.Mock(id="group-id", ports=["port-1"])
+
+        client = neut.user.neutron
+
         neut.delete()
-        neut._manager().update_fwaas_firewall_group.assert_called_once_with(
-            "group-id", {"firewall_group": {"ports": []}})
-        neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
+
+        client.disassociate_firewall_group_ports.assert_called_once_with(
             "group-id")
-
-    def test_delete_skip_default(self):
-        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {"id": "group-id", "name": "default", "ports": []}
-        neut.delete()
-        self.assertFalse(neut._manager().delete_fwaas_firewall_group.called)
-        self.assertFalse(neut._manager().update_fwaas_firewall_group.called)
-
-    def test_delete_with_ports_disassociate_fails(self):
-        neut = self.get_firewall_group_resource(extensions=["fwaas_v2"])
-        neut.raw_resource = {
-            "id": "group-id", "name": "my-group",
-            "ports": ["port-1", "port-2"]}
-        neut._manager().update_fwaas_firewall_group.side_effect = Exception(
-            "PENDING state")
-        neut.delete()
-        neut._manager().update_fwaas_firewall_group.assert_called_once_with(
-            "group-id", {"firewall_group": {"ports": []}})
-        neut._manager().delete_fwaas_firewall_group.assert_called_once_with(
+        neut.user.neutron.delete_firewall_group.assert_called_once_with(
             "group-id")
 
 
 class NeutronTapMirrorTestCase(test.TestCase):
 
-    def get_tap_mirror_resource(self, extensions=None):
-        if extensions is None:
-            extensions = []
+    def get_tap_mirror_resource(self, extensions=()):
         user = mock.MagicMock()
         neut = resources.NeutronTapMirror(user=user)
         neut.tenant_uuid = "user_tenant"
-        # NeutronService.supports_extension now reads the openstacksdk network
-        # proxy (user._conn.network.extensions()) rather than the legacy
-        # neutronclient list_extensions() response.
-        _set_extensions(user, extensions)
+        _set_client_extensions(user, extensions)
         return neut
 
     def test_id_and_name(self):
@@ -560,11 +525,11 @@ class NeutronTapMirrorTestCase(test.TestCase):
 
 class NeutronTapServiceTestCase(test.TestCase):
 
-    def get_tap_service_resource(self, extensions=None):
+    def get_tap_service_resource(self, extensions=()):
         user = mock.MagicMock()
         resource = resources.NeutronTapService(user=user)
         resource.tenant_uuid = "user_tenant"
-        _set_extensions(user, extensions or [])
+        _set_client_extensions(user, extensions)
         return resource
 
     def test_id_and_name(self):
@@ -617,7 +582,7 @@ class NeutronTapServiceTestCase(test.TestCase):
         resource = self.get_tap_service_resource(extensions=["taas"])
         resource._admin_required = True
         resource.admin = mock.MagicMock()
-        _set_extensions(resource.admin, ["taas"])
+        _set_client_extensions(resource.admin, ["taas"])
         services = [
             tap_service.TapService(id="service-1", project_id="user_tenant"),
             tap_service.TapService(id="service-2", project_id="other-project"),

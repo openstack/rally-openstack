@@ -254,10 +254,17 @@ class Neutron(ResourceManager):
 
     def list_firewall_groups(
         self,
-    ) -> abc.Iterator["neutron_fw_group.FirewallGroup"]:
+    ) -> list["neutron_fw_group.FirewallGroup"]:
         if not self._has_extension("fwaas_v2"):
-            return iter([])
-        return self.conn.network.firewall_groups()
+            return []
+        # The first listing creates the default group of our own project but
+        # reads from a snapshot taken before that, so the group shows up
+        # only in the next listing and would look like a leak.
+        return [
+            group for group in self.conn.network.firewall_groups()
+            if not (group.name == "default"
+                    and group.project_id == self.conn.current_project_id)
+        ]
 
     def list_firewall_policies(
         self,
