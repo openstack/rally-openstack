@@ -119,11 +119,11 @@ class TempestContextTestCase(test.TestCase):
                           self.context._download_image_from_source,
                           os.path.join(self.context.data_dir, "foo"))
 
-    @mock.patch("rally_openstack.common.wrappers."
-                "network.NeutronWrapper.create_network")
+    @mock.patch("rally_openstack.common.services.network.neutron."
+                "NeutronService.create_network_topology")
     @mock.patch("%s.open" % PATH, side_effect=mock.mock_open())
     def test_options_configured_manually(
-            self, mock_open, mock_neutron_wrapper_create_network):
+            self, mock_open, mock_neutron_service_create_network_topology):
         self.context.available_services = ["glance", "heat", "nova", "neutron"]
 
         self.context.conf.set("compute", "image_ref", "id1")
@@ -141,7 +141,8 @@ class TempestContextTestCase(test.TestCase):
 
         self.assertEqual(0, glanceclient.images.create.call_count)
         self.assertEqual(0, novaclient.flavors.create.call_count)
-        self.assertEqual(0, mock_neutron_wrapper_create_network.call_count)
+        self.assertEqual(
+            0, mock_neutron_service_create_network_topology.call_count)
 
     def test__create_tempest_roles(self):
         role1 = CONF.openstack.swift_operator_role

@@ -10,6 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from rally.common.plugin import plugin
 from rally.task import validation
 
 from rally_openstack.common import consts
@@ -20,6 +21,9 @@ from rally_openstack.task.scenarios.neutron import utils
 """Scenarios for Neutron Loadbalancer v2."""
 
 
+@plugin.deprecated(
+    "Neutron LBaaS v2 API was removed from Neutron. Use "
+    "Octavia.create_and_list_loadbalancers instead.", rally_version="4.2.0")
 @validation.add("required_neutron_extensions", extensions=["lbaasv2"])
 @validation.add("required_services",
                 services=[consts.Service.NEUTRON])
@@ -31,7 +35,7 @@ from rally_openstack.task.scenarios.neutron import utils
 class CreateAndListLoadbalancers(utils.NeutronScenario):
 
     def run(self, lb_create_args=None):
-        """Create a loadbalancer(v2) and then list loadbalancers(v2).
+        """[DEPRECATED] Create a loadbalancer(v2) and then list them(v2).
 
         Measure the "neutron lbaas-loadbalancer-list" command performance.
         The scenario creates a loadbalancer for every subnet and then lists

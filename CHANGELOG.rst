@@ -249,9 +249,15 @@ Deprecated
 
 * openstack.pre_newton_neutron config option is deprecated.
 
-* Neutron LBaaS v1 plugins (all ``NeutronLoadbalancerV1.*`` scenarios and the
-  ``lbaas`` context) are deprecated. The LBaaS v1 API was removed from
-  Neutron; use the ``Octavia.*`` scenarios instead.
+* Neutron LBaaS v1 and v2 plugins (all ``NeutronLoadbalancerV1.*`` scenarios,
+  ``NeutronLoadbalancerV2.create_and_list_loadbalancers``, the ``lbaas``
+  context and the LBaaS helpers of ``NeutronScenario``) are deprecated. Both
+  APIs were removed from Neutron; use the ``Octavia.*`` scenarios instead.
+
+* The network wrapper (``rally_openstack.common.wrappers.network``) is
+  deprecated in favour of
+  ``rally_openstack.common.services.network.neutron.NeutronService``. Creating
+  a wrapper or calling its ``generate_cidr`` now emits a warning.
 
 Fixed
 ~~~~~

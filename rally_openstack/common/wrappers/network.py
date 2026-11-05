@@ -29,7 +29,15 @@ from rally_openstack.common.services.network import neutron
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
+_DEPRECATION_REASON = (
+    "The network wrapper (rally_openstack.common.wrappers.network) is "
+    "deprecated. Use rally_openstack.common.services.network.neutron."
+    "NeutronService instead")
 
+
+@logging.log_deprecated(
+    "use rally_openstack.common.services.network.net_utils.generate_cidr "
+    "instead", "4.2.0", once=True)
 def generate_cidr(start_cidr="10.2.0.0/24"):
     """Generate next CIDR for network or subnet, without IP overlapping.
 
@@ -50,7 +58,7 @@ class NetworkWrapperException(exceptions.RallyException):
 
 
 class NetworkWrapper(metaclass=abc.ABCMeta):
-    """Base class for network service implementations.
+    """[DEPRECATED] Base class for network service implementations.
 
     We actually have two network services implementations, with different API:
     NovaNetwork and Neutron. The idea is (at least to try) to use unified
@@ -61,6 +69,7 @@ class NetworkWrapper(metaclass=abc.ABCMeta):
     START_IPV6_CIDR = "dead:beaf::/64"
     SERVICE_IMPL = None
 
+    @logging.log_deprecated(_DEPRECATION_REASON, "4.2.0", once=True)
     def __init__(self, clients, owner, config=None):
         """Returns available network wrapper instance.
 

@@ -30,6 +30,11 @@ CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
 
+_LBAAS_V1_DEPRECATION = (
+    "Neutron LBaaS v1 API was removed from Neutron. Use Octavia instead")
+_LBAAS_V2_DEPRECATION = (
+    "Neutron LBaaS v2 API was removed from Neutron. Use Octavia instead")
+
 
 class NeutronBaseScenario(scenario.OpenStackScenario):
     """Base class for Neutron scenarios with basic atomic actions."""
@@ -427,6 +432,7 @@ class NeutronScenario(NeutronBaseScenario):
         """
         self.neutron.remove_gateway_from_router(router["router"]["id"])
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.create_pool")
     def _create_lb_pool(self, subnet_id, **pool_create_args):
         """Create LB pool(v1)
@@ -442,6 +448,7 @@ class NeutronScenario(NeutronBaseScenario):
         args.update(pool_create_args)
         return self.clients("neutron").create_pool({"pool": args})
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     def _create_v1_pools(self, networks, **pool_create_args):
         """Create LB pools(v1)
 
@@ -458,11 +465,13 @@ class NeutronScenario(NeutronBaseScenario):
                 subnet_id, **pool_create_args))
         return pools
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.list_pools")
     def _list_v1_pools(self, **kwargs):
         """Return user lb pool list(v1)."""
         return self.clients("neutron").list_pools(**kwargs)
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.delete_pool")
     def _delete_v1_pool(self, pool):
         """Delete neutron pool.
@@ -471,6 +480,7 @@ class NeutronScenario(NeutronBaseScenario):
         """
         self.clients("neutron").delete_pool(pool["id"])
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.update_pool")
     def _update_v1_pool(self, pool, **pool_update_args):
         """Update pool.
@@ -485,6 +495,7 @@ class NeutronScenario(NeutronBaseScenario):
         body = {"pool": pool_update_args}
         return self.clients("neutron").update_pool(pool["pool"]["id"], body)
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     def _create_v1_vip(self, pool, **vip_create_args):
         """Create VIP(v1)
 
@@ -500,11 +511,13 @@ class NeutronScenario(NeutronBaseScenario):
         args.update(vip_create_args)
         return self.clients("neutron").create_vip({"vip": args})
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.list_vips")
     def _list_v1_vips(self, **kwargs):
         """Return user lb vip list(v1)."""
         return self.clients("neutron").list_vips(**kwargs)
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.delete_vip")
     def _delete_v1_vip(self, vip):
         """Delete neutron vip.
@@ -513,6 +526,7 @@ class NeutronScenario(NeutronBaseScenario):
         """
         self.clients("neutron").delete_vip(vip["id"])
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.update_vip")
     def _update_v1_vip(self, vip, **vip_update_args):
         """Updates vip.
@@ -569,6 +583,7 @@ class NeutronScenario(NeutronBaseScenario):
         return self.neutron.dissociate_floatingip(
             floatingip_id=floatingip["id"])
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.create_healthmonitor")
     def _create_v1_healthmonitor(self, **healthmonitor_create_args):
         """Create LB healthmonitor.
@@ -587,6 +602,7 @@ class NeutronScenario(NeutronBaseScenario):
         return self.clients("neutron").create_health_monitor(
             {"health_monitor": args})
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.list_healthmonitors")
     def _list_v1_healthmonitors(self, **kwargs):
         """List LB healthmonitors.
@@ -598,6 +614,7 @@ class NeutronScenario(NeutronBaseScenario):
         """
         return self.clients("neutron").list_health_monitors(**kwargs)
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.delete_healthmonitor")
     def _delete_v1_healthmonitor(self, healthmonitor):
         """Delete neutron healthmonitor.
@@ -606,6 +623,7 @@ class NeutronScenario(NeutronBaseScenario):
         """
         self.clients("neutron").delete_health_monitor(healthmonitor["id"])
 
+    @logging.log_deprecated(_LBAAS_V1_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.update_healthmonitor")
     def _update_v1_healthmonitor(self, healthmonitor,
                                  **healthmonitor_update_args):
@@ -667,6 +685,7 @@ class NeutronScenario(NeutronBaseScenario):
             security_group["security_group"]["id"],
             **security_group_update_args)}
 
+    @logging.log_deprecated(_LBAAS_V2_DEPRECATION, "4.2.0", once=True)
     def update_loadbalancer_resource(self, lb):
         try:
             new_lb = self.clients("neutron").show_loadbalancer(lb["id"])
@@ -676,6 +695,7 @@ class NeutronScenario(NeutronBaseScenario):
             raise exceptions.GetResourceFailure(resource=lb, err=e)
         return new_lb["loadbalancer"]
 
+    @logging.log_deprecated(_LBAAS_V2_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.create_lbaasv2_loadbalancer")
     def _create_lbaasv2_loadbalancer(self, subnet_id, **lb_create_args):
         """Create LB loadbalancer(v2)
@@ -701,6 +721,7 @@ class NeutronScenario(NeutronBaseScenario):
         )
         return lb
 
+    @logging.log_deprecated(_LBAAS_V2_DEPRECATION, "4.2.0", once=True)
     @atomic.action_timer("neutron.list_lbaasv2_loadbalancers")
     def _list_lbaasv2_loadbalancers(self, retrieve_all=True, **lb_list_args):
         """List LB loadbalancers(v2)
