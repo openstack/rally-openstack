@@ -159,6 +159,30 @@ class UserGeneratorBaseTestCase(test.ScenarioTestCase):
         user_generator.use_existing_users.assert_called_once_with()
         self.assertFalse(user_generator.create_users.called)
 
+    def test_setup_shares_cloud_state_and_seeds_auth(self):
+        user_generator = users.UserGenerator(self.context)
+        admin = self.context["admin"]["credential"]
+        authenticated = oscredential.OpenStackCredential(
+            "https://example.com", "u1", "p", "proj")
+        authenticated._auth_state = "auth-state"
+        fresh = oscredential.OpenStackCredential(
+            "https://example.com", "u2", "p", "proj")
+
+        def create_users():
+            self.context["users"] = [{"credential": authenticated},
+                                     {"credential": fresh}]
+
+        user_generator.create_users = create_users
+
+        user_generator.setup()
+
+        self.assertIs(admin._cloud_state, authenticated._cloud_state)
+        self.assertIs(admin._cloud_state, fresh._cloud_state)
+        self.osclients.Clients.assert_has_calls(
+            [mock.call(fresh), mock.call(admin)], any_order=True)
+        self.assertNotIn(mock.call(authenticated),
+                         self.osclients.Clients.call_args_list)
+
     def test_cleanup(self):
         user_generator = users.UserGenerator(self.context)
         user_generator._remove_default_neutron_resources = mock.Mock()

@@ -39,13 +39,18 @@ class CheckOpenStackAPIVersionsValidator(validation.Validator):
             return
         for client, client_cfg in plugin_cfg.items():
             client_cls = osclients.BaseClient.get(client)
+            # Out-of-tree OSClient plugins override the validation
+            # classmethods, which the spec does not know about.
+            checker: t.Any = (
+                client_cls if issubclass(client_cls, osclients.OSClient)
+                else client_cls.spec)
             try:
                 if ("service_type" in client_cfg
                         or "service_name" in client_cfg):
-                    client_cls.spec.is_service_type_configurable()
+                    checker.is_service_type_configurable()
 
                 if "version" in client_cfg:
-                    client_cls.spec.validate_version(client_cfg["version"])
+                    checker.validate_version(client_cfg["version"])
 
             except exceptions.RallyException as e:
                 self.fail(

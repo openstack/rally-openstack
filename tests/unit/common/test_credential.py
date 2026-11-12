@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from unittest import mock
 
 from rally_openstack.common import credential
@@ -43,9 +44,7 @@ class OpenStackCredentialTestCase(test.TestCase):
                           "user_domain_name": None,
                           "profiler_hmac_key": None,
                           "profiler_conn_str": None,
-                          "api_info": {},
-                          "auth": None,
-                          "discovery_cache": {}},
+                          "api_info": {}},
                          self.credential.to_dict())
 
     def test_legacy_tenant_name(self):
@@ -72,12 +71,21 @@ class OpenStackCredentialTestCase(test.TestCase):
             https_cert="foo_cert", https_key="foo_key")
         self.assertEqual(("foo_cert", "foo_key"), cred.https_cert)
 
-    def test_none_api_info_and_discovery_cache_normalized(self):
+    def test_none_api_info_normalized(self):
         cred = credential.OpenStackCredential(
             "foo_url", "foo_user", "foo_password", "foo_project",
-            api_info=None, discovery_cache=None)
+            api_info=None)
         self.assertEqual({}, cred.api_info)
-        self.assertEqual({}, cred.discovery_cache)
+
+    def test_private_state_is_hidden(self):
+        self.credential._auth_state = "secret-token"
+        self.credential._cloud_state["neutron"] = {"extensions": ["trunk"]}
+        self.assertNotIn("secret-token", repr(self.credential))
+        self.assertNotIn("_auth_state", self.credential.to_dict())
+        self.assertNotIn("_cloud_state", self.credential.to_dict())
+        other = credential.OpenStackCredential(
+            "foo_url", "foo_user", "foo_password", "foo_project")
+        self.assertEqual(other, self.credential)
 
     def test_getitem(self):
         self.assertEqual("foo_url", self.credential["auth_url"])
@@ -88,13 +96,64 @@ class OpenStackCredentialTestCase(test.TestCase):
         self.assertEqual("foo_region", self.credential.region_name)
 
     def test_deepcopy(self):
-        import copy
+        self.credential._auth_state = "auth-state"
+        self.credential._cloud_state["neutron"] = {"extensions": ["trunk"]}
         clone = copy.deepcopy(self.credential)
         self.assertIsNot(clone, self.credential)
         self.assertEqual(self.credential.to_dict(), clone.to_dict())
+        self.assertEqual("auth-state", clone._auth_state)
+        self.assertEqual(self.credential._cloud_state, clone._cloud_state)
+        self.assertIsNot(self.credential._cloud_state, clone._cloud_state)
+
+    def test_deepcopy_keeps_cloud_state_shared(self):
+        other = credential.OpenStackCredential(
+            "foo_url", "bar_user", "bar_password", "bar_project")
+        other._cloud_state = self.credential._cloud_state
+
+        ctx = copy.deepcopy({"users": [self.credential, other]})
+
+        first, second = ctx["users"]
+        self.assertIs(first._cloud_state, second._cloud_state)
+        self.assertIsNot(self.credential._cloud_state, first._cloud_state)
 
     @mock.patch("rally_openstack.common.osclients.Clients")
     def test_clients(self, mock_clients):
-        clients = self.credential.clients()
-        mock_clients.assert_called_once_with(self.credential, cache={})
+        atomic_inst = []
+        name_generator = mock.Mock()
+        sleeper = mock.Mock()
+
+        with mock.patch.object(credential.LOG, "warning") as mock_warning:
+            clients = self.credential.clients(
+                atomic_inst=atomic_inst, name_generator=name_generator,
+                sleeper=sleeper)
+
+        mock_clients.assert_called_once_with(
+            self.credential, atomic_inst=atomic_inst,
+            name_generator=name_generator, sleeper=sleeper)
         self.assertIs(mock_clients.return_value, clients)
+        self.assertFalse(mock_warning.called)
+
+    @mock.patch("rally_openstack.common.osclients.Clients")
+    def test_clients_with_omitted_args(self, mock_clients):
+        with (
+            mock.patch.object(
+                credential, "_reported_implicit_clients_callers", set()),
+            mock.patch.object(credential.LOG, "warning") as mock_warning,
+        ):
+            for _ in range(2):
+                self.credential.clients(atomic_inst=None)
+            self.credential.clients()
+
+        self.assertEqual(
+            [mock.call(self.credential, atomic_inst=None,
+                       name_generator=None, sleeper=None)] * 3,
+            mock_clients.call_args_list)
+        self.assertEqual(2, mock_warning.call_count)
+        first, second = (c.args[0] for c in mock_warning.call_args_list)
+        self.assertIn("without name_generator, sleeper is deprecated", first)
+        self.assertIn(f"Used at {__file__}:", first)
+        self.assertIn(
+            "without atomic_inst, name_generator, sleeper is deprecated",
+            second)
+        self.assertNotEqual(first.rsplit(":", 1)[1],
+                            second.rsplit(":", 1)[1])

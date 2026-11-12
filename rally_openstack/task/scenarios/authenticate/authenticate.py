@@ -26,9 +26,9 @@ from rally_openstack.task import scenario
 class Keystone(scenario.OpenStackScenario):
 
     @atomic.action_timer("authenticate.keystone")
-    def run(self):
-        """Check Keystone Client."""
-        self.clients("keystone")
+    def run(self) -> None:
+        """Authenticate against Keystone and fetch a new token."""
+        self._clients.keystone.fetch_token()
 
 
 @validation.add("number", param_name="repetitions", minval=1)

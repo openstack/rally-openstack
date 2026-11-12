@@ -37,11 +37,15 @@ class SeekAndDestroyTestCase(test.TestCase):
         cred = mock.Mock()
         user = {"credential": cred}
 
-        clients = destroyer._get_cached_client(user)
-        self.assertIs(cred.clients.return_value, clients)
-        cred.clients.assert_called_once_with()
+        cache = {}
 
-        self.assertIsNone(destroyer._get_cached_client(None))
+        clients = destroyer._get_cached_client(user, cache)
+        self.assertIs(cred.clients.return_value, clients)
+        self.assertIs(clients, destroyer._get_cached_client(user, cache))
+        cred.clients.assert_called_once_with(
+            atomic_inst=None, name_generator=None, sleeper=None)
+
+        self.assertIsNone(destroyer._get_cached_client(None, cache))
 
     @mock.patch("%s.LOG" % BASE)
     def test__delete_single_resource(self, mock_log):
@@ -112,7 +116,7 @@ class SeekAndDestroyTestCase(test.TestCase):
 
         queue = []
         publish(queue)
-        mock__get_cached_client.assert_called_once_with(admin)
+        mock__get_cached_client.assert_called_once_with(admin, {})
         mock_mgr.assert_called_once_with(
             admin=mock__get_cached_client.return_value)
         self.assertEqual(queue, [(admin, None, x) for x in range(1, 4)])
@@ -127,7 +131,7 @@ class SeekAndDestroyTestCase(test.TestCase):
 
         queue = []
         publish(queue)
-        mock__get_cached_client.assert_called_once_with(admin)
+        mock__get_cached_client.assert_called_once_with(admin, {})
         mock_mgr.assert_called_once_with(
             admin=mock__get_cached_client.return_value)
         self.assertEqual(queue, [(admin, None, x) for x in range(1, 4)])
@@ -159,9 +163,9 @@ class SeekAndDestroyTestCase(test.TestCase):
             mock.call().list()
         ])
         mock__get_cached_client.assert_has_calls([
-            mock.call(admin),
-            mock.call(users[0]),
-            mock.call(users[1])
+            mock.call(admin, {}),
+            mock.call(users[0], {}),
+            mock.call(users[1], {})
         ])
         expected_queue = [(admin, users[0], x) for x in range(1, 4)]
         expected_queue += [(admin, users[1], x) for x in range(4, 6)]
@@ -199,9 +203,9 @@ class SeekAndDestroyTestCase(test.TestCase):
             mock.call().list()
         ])
         mock__get_cached_client.assert_has_calls([
-            mock.call(None),
-            mock.call(users[0]),
-            mock.call(users[2])
+            mock.call(None, {}),
+            mock.call(users[0], {}),
+            mock.call(users[2], {})
         ])
         self.assertEqual(queue, [(None, users[0], x) for x in range(1, 4)])
         self.assertTrue(mock_log.warning.mock_called)
@@ -234,8 +238,8 @@ class SeekAndDestroyTestCase(test.TestCase):
             user=mock__get_cached_client.return_value,
             tenant_uuid=user1["tenant_id"])
         mock__get_cached_client.assert_has_calls([
-            mock.call(admin),
-            mock.call(user1)
+            mock.call(admin, cache),
+            mock.call(user1, cache)
         ])
         mock__delete_single_resource.assert_called_once_with(
             mock_mgr.return_value)
@@ -253,8 +257,8 @@ class SeekAndDestroyTestCase(test.TestCase):
             tenant_uuid=None)
 
         mock__get_cached_client.assert_has_calls([
-            mock.call(admin),
-            mock.call(None)
+            mock.call(admin, cache),
+            mock.call(None, cache)
         ])
         mock__delete_single_resource.assert_called_once_with(
             mock_mgr.return_value)

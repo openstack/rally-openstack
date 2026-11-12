@@ -214,7 +214,10 @@ class OpenStack(platform.Platform):
             if "version" not in service_info:
                 continue
             try:
-                client_cls.spec.validate_version(service_info["version"])
+                if issubclass(client_cls, osclients.OSClient):
+                    client_cls.validate_version(service_info["version"])
+                else:
+                    client_cls.spec.validate_version(service_info["version"])
             except osclients.exceptions.RallyException as e:
                 return platform.HealthInfo(
                     available=False,

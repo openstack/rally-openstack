@@ -61,8 +61,11 @@ class ClientsPrefetchTestCase(test.TestCase):
     @ddt.data(True, False)
     def test_setup(self, with_admin):
         self.cloud.skip_discovery.add("image")
+        self.cloud.network_extensions = ["trunk", "tap-mirror"]
         users = [_credential("u1"), _credential("u2")]
         creds = ([_credential("admin")] if with_admin else []) + users
+        for cred in creds:
+            cred._cloud_state = creds[0]._cloud_state
         ctx = {"scenario_name": "ClientsPrefetchTestCase.mixed_services",
                "users": [{"credential": u} for u in users]}
         if with_admin:
@@ -71,12 +74,17 @@ class ClientsPrefetchTestCase(test.TestCase):
         clients_prefetch.ClientsPrefetch(ctx).setup()
 
         self.assertEqual(1, len(self.cloud.connections))
-        self.assertIs(creds[0].discovery_cache,
-                      self.cloud.connections[0].session._discovery_cache)
-        self.assertEqual(["image", "network"], self.cloud.accessed)
-        expected = {"https://network.example.com/": {"service": "network"}}
-        for cred in creds:
-            self.assertEqual(expected, cred.discovery_cache)
+        session = self.cloud.connections[0].session
+        self.assertEqual("admin" if with_admin else "u1",
+                         session.auth._username)
+        self.assertEqual(["image", "network", "network"], self.cloud.accessed)
+        self.assertEqual(
+            {"keystone": {"discovery": {
+                "https://network.example.com/": {"service": "network"}}},
+             "neutron": {"extensions": ["trunk", "tap-mirror"]}},
+            creds[0]._cloud_state)
+        self.assertIs(creds[0]._cloud_state["keystone"]["discovery"],
+                      session._discovery_cache)
 
     def test_setup_tolerates_discovery_errors(self):
         self.cloud.errors["network"] = RuntimeError("boom")
@@ -88,8 +96,9 @@ class ClientsPrefetchTestCase(test.TestCase):
 
         self.assertEqual(["image", "network"], self.cloud.accessed)
         self.assertEqual(
-            {"https://image.example.com/": {"service": "image"}},
-            users[1].discovery_cache)
+            {"keystone": {"discovery": {
+                "https://image.example.com/": {"service": "image"}}}},
+            users[0]._cloud_state)
 
     @ddt.data(
         {"users": [],
@@ -105,4 +114,4 @@ class ClientsPrefetchTestCase(test.TestCase):
 
         self.assertEqual([], self.cloud.accessed)
         for user in ctx["users"]:
-            self.assertEqual({}, user["credential"].discovery_cache)
+            self.assertEqual({}, user["credential"]._cloud_state)

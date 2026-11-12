@@ -85,12 +85,30 @@ class Keystone(base.LegacyClientCompat):
     def service_catalog(self) -> ks_service_catalog.ServiceCatalog:
         return self.auth_ref.service_catalog
 
+    def url_for(self, service_type: str | None) -> str:
+        """Return the catalog URL of a service.
+
+        The region and the interface (``endpoint_type``) come from the
+        credential of this client.
+        """
+        kw = {"service_type": service_type,
+              "region_name": self.credential.region_name}
+        if self.credential.endpoint_type:
+            kw["interface"] = self.credential.endpoint_type
+        api_url = self.service_catalog.url_for(**kw)
+        if api_url is None:
+            raise exceptions.RallyException(
+                f"The catalog entry of '{service_type}' service has no URL.")
+        return api_url
+
     @property
     def auth_ref(self) -> access.AccessInfo:
         try:
             if "keystone_auth_ref" not in self._cache:
                 sess, plugin = self.get_session()
                 self._cache["keystone_auth_ref"] = plugin.get_access(sess)
+                if self.credential._auth_state is None:
+                    self.credential._auth_state = plugin.get_auth_state()
         except Exception as original_e:
             e = base.AuthenticationFailed(
                 error=original_e,
@@ -131,6 +149,7 @@ class Keystone(base.LegacyClientCompat):
                 "project_name": self.credential.project_name
             }
 
+            discovery_cache = self._cloud_state.setdefault("discovery", {})
             if version is None:
                 # NOTE(rvasilets): If version not specified than we discover
                 # available version with the smallest number. To be able to
@@ -140,9 +159,12 @@ class Keystone(base.LegacyClientCompat):
                             or not self.credential.https_insecure),
                     cert=self.credential.https_cert,
                     timeout=CONF.openstack_client_http_timeout)
-                version = str(discover.Discover(
-                    temp_session,
-                    password_args["auth_url"]).version_data()[0]["version"][0])
+                # get_discovery stores the result in the shared cloud state,
+                # so later sessions of any credential skip this request
+                disc = discover.get_discovery(
+                    temp_session, password_args["auth_url"],
+                    cache=discovery_cache, authenticated=False)
+                version = str(disc.version_data()[0]["version"][0])
                 temp_session.session.close()
 
             if "v2.0" not in password_args["auth_url"] and version != "2":
@@ -152,18 +174,18 @@ class Keystone(base.LegacyClientCompat):
                     "project_domain_name": self.credential.project_domain_name
                 })
             identity_plugin = identity.Password(**password_args)
-            if self.credential.auth:
+            if self.credential._auth_state:
                 # Reuse the authentication captured by the context instead of
                 # re-authenticating; the Password plugin still refreshes the
                 # token itself once it expires.
-                identity_plugin.set_auth_state(self.credential.auth)
+                identity_plugin.set_auth_state(self.credential._auth_state)
             sess = session.Session(
                 auth=identity_plugin,
                 verify=(self.credential.https_cacert
                         or not self.credential.https_insecure),
                 cert=self.credential.https_cert,
                 timeout=CONF.openstack_client_http_timeout,
-                discovery_cache=self.credential.discovery_cache
+                discovery_cache=discovery_cache
             )
             self._cache[key] = (sess, identity_plugin)
         return self._cache[key]
@@ -313,13 +335,7 @@ class Keystone(base.LegacyClientCompat):
 
     @property
     def _auth_domain(self) -> tuple[str | None, str | None]:
-        session = self._conn.session
-        auth = session.auth
-        if auth is None:
-            return None, None
-        ref = auth.get_auth_ref(session)
-        if ref is None:
-            return None, None
+        ref = self.auth_ref
         return ref.project_domain_name, ref.project_domain_id
 
     def get_domain_id(self, domain_name_or_id: str) -> str:
@@ -814,7 +830,7 @@ class Keystone(base.LegacyClientCompat):
             # client, so it has to be closed here -- otherwise every iteration
             # of this scenario would leak a connection pool.
             credential = copy.deepcopy(self.credential)
-            credential.auth = None
+            credential._auth_state = None
             client = Keystone(credential)
             try:
                 token = client.auth_ref.auth_token

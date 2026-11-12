@@ -40,19 +40,16 @@ class ClientsPrefetch(context.OpenStackContext):
     }
 
     def setup(self) -> None:
-        # collect all data required to proceed
-        credentials: list[credential.OpenStackCredential] = [
-            u["credential"] for u in self.context.get("users", [])
-        ]
-        admin_cred = self.context.get("admin", {}).get("credential")
-        if admin_cred:
-            # discovery may reach a service with the token of the first
-            # credential (a 401 on an unauthenticated version request is
-            # retried with it), and the service caches that token's roles.
-            # Contexts running later (e.g. roles) change the roles of the
-            # users, not of the admin, so the admin is the one to use.
-            credentials.insert(0, admin_cred)
-        if not credentials:
+        # discovery may reach a service with the token of the credential (a
+        # 401 on an unauthenticated version request is retried with it), and
+        # the service caches that token's roles. Contexts running later (e.g.
+        # roles) change the roles of the users, not of the admin, so the
+        # admin is the one to use.
+        cred: credential.OpenStackCredential | None = (
+            self.context.get("admin", {}).get("credential"))
+        if cred is None and self.context.get("users"):
+            cred = self.context["users"][0]["credential"]
+        if cred is None:
             return
 
         scenario_name: str | None = self.context.get("scenario_name")
@@ -64,41 +61,30 @@ class ClientsPrefetch(context.OpenStackContext):
             return
 
         # ok, we can continue
-        clients = osclients.Clients(credentials[0])
+        clients = osclients.Clients(cred)
         processed: set[str] = set()
         for name, _args, kwargs in scenario_cls._meta_get("validators"):
             if name != "required_services":
                 continue
-            services = kwargs.get("services", [])
+            services: list[str] = kwargs.get("services", [])
             if not isinstance(services, (list, tuple)):
                 services = [services]
             for service in services:
-                try:
-                    client_cls = osclients.BaseClient.get(service)
-                except exceptions.PluginNotFound:
-                    continue
-                # a legacy wrapper builds its native client to check the
-                # service, and that client does not read the discovery cache
-                if issubclass(client_cls, osclients.OSClient):
-                    continue
-                sdk_type = client_cls.spec.sdk_service_type
-                if not sdk_type or sdk_type in processed:
+                if service in processed:
                     continue
 
+                # the users context gives every credential the same cloud
+                # state, so loading it through one of them is enough
                 try:
-                    getattr(clients, service).check_availability()
+                    client: osclients.BaseClient = getattr(clients, service)
+                    client.load_service_info()
                 except Exception:
                     LOG.debug(
-                        f"Failed to prefetch {sdk_type} version "
-                        f"discovery; it will be resolved lazily per worker "
-                        f"instead.",
+                        f"Failed to prefetch {service} service info; it "
+                        f"will be resolved lazily per worker instead.",
                         exc_info=True,
                     )
-                processed.add(sdk_type)
-
-        discovered = credentials[0].discovery_cache
-        for cred in credentials[1:]:
-            cred.discovery_cache.update(discovered)
+                processed.add(service)
 
     def cleanup(self) -> None:  # pragma: no cover
         pass

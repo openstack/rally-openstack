@@ -322,10 +322,17 @@ class Glance(base.LegacyClientCompat):
 
         import glanceclient as glance
 
+        if self._clients is None:
+            raise exceptions.RallyException(
+                "Cannot build python-glanceclient for a client that is not "
+                "attached to a Clients container.")
+        keystone = self._clients.keystone
+
         return glance.Client(
             version=self.spec.choose_version(self.credential, version),
-            endpoint_override=self._get_endpoint(service_type),
-            session=self.keystone.get_session()[0])
+            endpoint_override=keystone.url_for(
+                self.spec.choose_service_type(self.credential, service_type)),
+            session=keystone.get_session()[0])
 
     @t.overload
     def __call__(

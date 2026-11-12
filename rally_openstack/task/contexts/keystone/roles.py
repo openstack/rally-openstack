@@ -29,7 +29,8 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-@validation.add("required_platform", platform="openstack", users=True)
+@validation.add("required_platform", platform="openstack", admin=True,
+                users=True)
 @context.configure(name="roles", platform="openstack", order=330)
 class RoleGenerator(context.OpenStackContext):
     """Context class for assigning roles for users."""

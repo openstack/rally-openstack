@@ -22,9 +22,10 @@ from tests.unit import test
 class AuthenticateTestCase(test.ScenarioTestCase):
 
     def test_keystone(self):
-        scenario_inst = authenticate.Keystone()
+        clients = mock.Mock()
+        scenario_inst = authenticate.Keystone(clients=clients)
         scenario_inst.run()
-        self.assertTrue(self.client_created("keystone"))
+        clients.keystone.fetch_token.assert_called_once_with()
         self._test_atomic_action_timer(scenario_inst.atomic_actions(),
                                        "authenticate.keystone")
 

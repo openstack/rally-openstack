@@ -21,9 +21,6 @@ from rally_openstack.common.clients import neutron
 from tests.unit import test
 
 
-PATH = "rally_openstack.common.clients.neutron"
-
-
 class NeutronTestMixin(test.TestCase):
 
     def setUp(self):
@@ -46,13 +43,12 @@ class NeutronTestMixin(test.TestCase):
 
 class NeutronLegacyClientTestCase(NeutronTestMixin):
 
-    @mock.patch("%s.Neutron.keystone" % PATH, new_callable=mock.PropertyMock)
-    def test_create_client(self, mock_neutron_keystone):
+    def test_create_client(self):
         self.neutron = self._make_neutron(name_generator=False)
+        keystone = self.neutron._clients.keystone
         session = mock.Mock()
-        mock_neutron_keystone.return_value.get_session.return_value = (
-            session, mock.Mock())
-        self.neutron._get_endpoint = mock.Mock(return_value="http://neutron")
+        keystone.get_session.return_value = (session, mock.Mock())
+        keystone.url_for.return_value = "http://neutron"
 
         with mock.patch(
             "neutronclient.neutron.client.Client",
@@ -65,6 +61,14 @@ class NeutronLegacyClientTestCase(NeutronTestMixin):
             endpoint_override="http://neutron",
         )
         self.assertEqual(neutron_client.return_value, result)
+        keystone.url_for.assert_called_once_with("network")
+
+    def test_create_client_without_container(self):
+        self.neutron = self._make_neutron(name_generator=False)
+        self.neutron._clients = None
+
+        self.assertRaises(neutron.exceptions.RallyException,
+                          self.neutron.create_client)
 
     def test_call_returns_legacy_client_by_default(self):
         self.neutron = self._make_neutron(name_generator=False)
@@ -207,32 +211,54 @@ class NeutronTestCase(NeutronTestMixin):
         self.network.delete_security_group.assert_called_once_with(
             "sg-id", ignore_missing=False)
 
-    def test_list_extensions_is_cached(self):
+    def test_list_extensions(self):
         extensions = [mock.Mock(alias="ext-1"), mock.Mock(alias="ext-2")]
         self.network.extensions.return_value = iter(extensions)
 
-        self.assertEqual(extensions, self.neutron.list_extensions())
-        self.assertEqual(extensions, self.neutron.list_extensions())
+        self.assertEqual(["ext-1", "ext-2"], self.neutron.list_extensions())
+        self.assertEqual(["ext-1", "ext-2"], self.neutron.list_extensions())
 
         self.network.extensions.assert_called_once_with()
+        self.assertEqual({"neutron": {"extensions": ["ext-1", "ext-2"]}},
+                         self.credential._cloud_state)
 
-    def test_list_extensions_shares_cache(self):
-        cache = {}
+    def test_list_extensions_raw(self):
+        self.credential._cloud_state["neutron"] = {"extensions": ["old"]}
         extensions = [mock.Mock(alias="ext-1")]
-        first = self._make_neutron(cache=cache)
-        first._clients._conn.network.extensions.return_value = extensions
-        second = self._make_neutron(cache=cache)
+        self.network.extensions.return_value = iter(extensions)
 
-        first.list_extensions()
+        self.assertEqual(extensions, self.neutron.list_extensions(raw=True))
 
-        self.assertEqual(extensions, second.list_extensions())
-        self.assertFalse(second._clients._conn.network.extensions.called)
+        self.network.extensions.assert_called_once_with()
+        self.assertEqual({"neutron": {"extensions": ["ext-1"]}},
+                         self.credential._cloud_state)
+
+    def test_load_service_info(self):
+        self.network.extensions.return_value = [mock.Mock(alias="trunk")]
+
+        with mock.patch.object(self.neutron,
+                               "check_availability") as mock_check:
+            self.neutron.load_service_info()
+
+        mock_check.assert_called_once_with()
+        self.assertEqual({"neutron": {"extensions": ["trunk"]}},
+                         self.credential._cloud_state)
 
     def test_supports_extension(self):
         self.network.extensions.return_value = [mock.Mock(alias="fwaas_v2")]
 
         self.assertTrue(self.neutron.supports_extension("fwaas_v2"))
         self.assertFalse(self.neutron.supports_extension("taas"))
+
+        self.network.extensions.assert_called_once_with()
+        self.assertEqual({"neutron": {"extensions": ["fwaas_v2"]}},
+                         self.credential._cloud_state)
+
+    def test_supports_extension_uses_cloud_state(self):
+        self.credential._cloud_state["neutron"] = {"extensions": ["taas"]}
+
+        self.assertTrue(self.neutron.supports_extension("taas"))
+        self.assertFalse(self.network.extensions.called)
 
 
 class NeutronTapMirrorTestCase(NeutronTestMixin):

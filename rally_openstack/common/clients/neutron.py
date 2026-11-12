@@ -17,6 +17,7 @@ from __future__ import annotations
 import enum
 import typing as t
 
+from rally import exceptions
 from rally.task import atomic
 
 from rally_openstack.common.clients import base
@@ -115,14 +116,21 @@ class Neutron(base.LegacyClientCompat):
         """Return a neutronclient instance."""
         from neutronclient.neutron import client as neutron
 
+        if self._clients is None:
+            raise exceptions.RallyException(
+                "Cannot build python-neutronclient for a client that is not "
+                "attached to a Clients container.")
+        keystone = self._clients.keystone
+
         kw_args: dict[str, t.Any] = {}
         if self.credential.endpoint_type:
             kw_args["endpoint_type"] = self.credential.endpoint_type
 
         return neutron.Client(
-            self.choose_version(version),
-            session=self.keystone.get_session()[0],
-            endpoint_override=self._get_endpoint(service_type),
+            self.spec.choose_version(self.credential, version),
+            session=keystone.get_session()[0],
+            endpoint_override=keystone.url_for(
+                self.spec.choose_service_type(self.credential, service_type)),
             **kw_args,
         )
 
@@ -308,16 +316,35 @@ class Neutron(base.LegacyClientCompat):
         self._network.delete_security_group(
             security_group_id, ignore_missing=False)
 
-    def list_extensions(self) -> list[Extension]:
-        """Return the extensions neutron has loaded."""
-        key = "neutron:extensions"
-        if key not in self._cache:
-            self._cache[key] = list(self._network.extensions())
-        return self._cache[key]
+    @t.overload
+    def list_extensions(self, raw: t.Literal[False] = ...) -> list[str]: ...
+
+    @t.overload
+    def list_extensions(self, raw: t.Literal[True]) -> list[Extension]: ...
+
+    def list_extensions(
+        self, raw: bool = False
+    ) -> list[str] | list[Extension]:
+        """Return the extensions neutron has loaded.
+
+        :param raw: when true, fetch them from neutron and return the
+            openstacksdk ``Extension`` objects. Otherwise return their
+            aliases, fetched once and kept in the cloud state.
+        """
+        if raw or "extensions" not in self._cloud_state:
+            extensions = list(self._network.extensions())
+            self._cloud_state["extensions"] = [ext.alias for ext in extensions]
+            if raw:
+                return extensions
+        return self._cloud_state["extensions"]
+
+    def load_service_info(self) -> None:
+        super().load_service_info()
+        self.list_extensions(raw=True)
 
     def supports_extension(self, alias: str) -> bool:
         """Tell whether neutron has the extension with this alias loaded."""
-        return any(ext.alias == alias for ext in self.list_extensions())
+        return alias in self.list_extensions()
 
     @atomic.action_timer("neutron.create_firewall_rule")
     def create_firewall_rule(

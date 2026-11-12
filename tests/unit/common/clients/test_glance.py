@@ -184,17 +184,18 @@ class GlanceTestCase(_ClientTestCase):
         self.addCleanup(
             glance.base._reported_legacy_clients.discard, "glance")
         fake_glanceclient = mock.MagicMock()
-        self.gl._get_endpoint = mock.Mock(return_value="http://image")
-        with (
-            mock.patch.dict("sys.modules",
-                            {"glanceclient": fake_glanceclient}),
-            mock.patch.object(glance.base.LegacyClientCompat, "keystone",
-                              new_callable=mock.PropertyMock),
-        ):
+        keystone = self.gl._clients.keystone
+        keystone.get_session.return_value = ("session", mock.Mock())
+        keystone.url_for.return_value = "http://image"
+        with mock.patch.dict("sys.modules",
+                             {"glanceclient": fake_glanceclient}):
             self.gl.create_client()
             self.gl.create_client()
         self.assertEqual(1, mock_log_warning.call_count)
         self.assertEqual(2, fake_glanceclient.Client.call_count)
+        fake_glanceclient.Client.assert_called_with(
+            version="2", endpoint_override="http://image", session="session")
+        keystone.url_for.assert_called_with("image")
 
     def test_wait_for_status_ready(self):
         self.proxy.get_image.side_effect = [

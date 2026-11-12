@@ -55,6 +55,7 @@ class KeystoneTestMixin:
         ks = keystone.Keystone(
             self.credential, {} if cache is None else cache)
         ks._clients = mock.Mock()
+        ks._cache.setdefault("keystone_auth_ref", mock.Mock())
         if name_generator:
             ks._name_generator = mock.Mock(return_value="random_name")
         # shadow the ``version`` cached_property (a non-data descriptor)
@@ -87,6 +88,35 @@ class KeystoneSessionTestCase(KeystoneTestMixin, test.TestCase):
         ks._cache["keystone_auth_ref"] = auth_ref
         self.assertIs(auth_ref.service_catalog, ks.service_catalog)
 
+    @ddt.data(
+        {"endpoint_type": None, "region_name": None},
+        {"endpoint_type": "internal", "region_name": "RegionTwo"},
+    )
+    @ddt.unpack
+    def test_url_for(self, endpoint_type, region_name):
+        credential = oscredential.OpenStackCredential(
+            "http://auth_url/v3", "user", "pass", "tenant",
+            endpoint_type=endpoint_type, region_name=region_name)
+        ks = keystone.Keystone(credential, {})
+        auth_ref = mock.Mock()
+        ks._cache["keystone_auth_ref"] = auth_ref
+        url_for = auth_ref.service_catalog.url_for
+
+        self.assertEqual(url_for.return_value, ks.url_for("network"))
+
+        expected = {"service_type": "network", "region_name": region_name}
+        if endpoint_type:
+            expected["interface"] = endpoint_type
+        url_for.assert_called_once_with(**expected)
+
+    def test_url_for_without_url(self):
+        ks = keystone.Keystone(self.credential, {})
+        auth_ref = mock.Mock()
+        auth_ref.service_catalog.url_for.return_value = None
+        ks._cache["keystone_auth_ref"] = auth_ref
+
+        self.assertRaises(exceptions.RallyException, ks.url_for, "network")
+
     def test_auth_ref(self):
         ks = keystone.Keystone(self.credential, {})
         session, plugin = mock.Mock(), mock.Mock()
@@ -97,6 +127,17 @@ class KeystoneSessionTestCase(KeystoneTestMixin, test.TestCase):
         # cached: get_session is only called once
         ks.auth_ref
         ks.get_session.assert_called_once_with()
+        self.assertEqual(plugin.get_auth_state.return_value,
+                         self.credential._auth_state)
+
+    def test_auth_ref_keeps_existing_auth_state(self):
+        self.credential._auth_state = "auth-state"
+        ks = keystone.Keystone(self.credential, {})
+        ks.get_session = mock.Mock(return_value=(mock.Mock(), mock.Mock()))
+
+        ks.auth_ref
+
+        self.assertEqual("auth-state", self.credential._auth_state)
 
     @mock.patch("%s.LOG.exception" % PATH)
     @mock.patch("%s.logging.is_debug" % PATH)
@@ -129,12 +170,19 @@ class KeystoneSessionTestCase(KeystoneTestMixin, test.TestCase):
         cred = oscredential.OpenStackCredential(
             auth_url, "user", "pass", "tenant")
         ks = keystone.Keystone(cred, {})
-        self.ksa.discover.Discover.return_value.version_data.return_value = [
+        get_discovery = self.ksa.discover.get_discovery
+        get_discovery.return_value.version_data.return_value = [
             {"version": (1, 0)}]
         password = self.ksa.identity.Password
         session_cls = self.ksa.session.Session
         self.assertEqual((session_cls.return_value, password.return_value),
                          ks.get_session())
+        discovery = cred._cloud_state["keystone"]["discovery"]
+        get_discovery.assert_called_once_with(
+            session_cls.return_value, auth_url, cache=discovery,
+            authenticated=False)
+        self.assertIs(
+            discovery, session_cls.call_args.kwargs["discovery_cache"])
         if auth_url.endswith("v2.0"):
             password.assert_called_once_with(
                 auth_url=auth_url, password="pass",
@@ -153,13 +201,13 @@ class KeystoneSessionTestCase(KeystoneTestMixin, test.TestCase):
             "http://auth_url/v3", "u", "p", "t")
         ks = keystone.Keystone(cred, {})
         ks.get_session(version="3")
-        self.assertFalse(self.ksa.discover.Discover.called)
+        self.assertFalse(self.ksa.discover.get_discovery.called)
 
     def test_get_session_reuses_auth_state(self):
         self._set_up_ksa()
         cred = oscredential.OpenStackCredential(
             "http://auth_url/v3", "u", "p", "t")
-        cred.auth = "auth-state"
+        cred._auth_state = "auth-state"
         ks = keystone.Keystone(cred, {})
         ks.get_session(version="3")
         self.ksa.identity.Password.return_value.set_auth_state\
@@ -313,9 +361,9 @@ class KeystoneVersionTestCase(KeystoneTestMixin, test.TestCase):
         clients.keystone.check_availability()
 
         self.assertEqual(["identity"], cloud.accessed)
-        self.assertEqual(
-            {"https://identity.example.com/": {"service": "identity"}},
-            self.credential.discovery_cache)
+        discovery = self.credential._cloud_state["keystone"]["discovery"]
+        self.assertEqual({"service": "identity"},
+                         discovery["https://identity.example.com/"])
 
         cloud.auth_error = RuntimeError("bad credentials")
         clients = osclients.Clients(oscredential.OpenStackCredential(
@@ -346,22 +394,14 @@ class KeystoneVersionTestCase(KeystoneTestMixin, test.TestCase):
 
     def test_auth_domain(self):
         self.ks = self._make_keystone()
-        ref = self.ks._clients._conn.session.auth.get_auth_ref.return_value
+        ref = self.ks._cache["keystone_auth_ref"]
         self.assertEqual((ref.project_domain_name, ref.project_domain_id),
                          self.ks._auth_domain)
-
-    def test_auth_domain_no_auth(self):
-        ks = self._make_keystone()
-        ks._clients._conn.session.auth = None
-        self.assertEqual((None, None), ks._auth_domain)
-
-    def test_auth_domain_no_ref(self):
-        ks = self._make_keystone()
-        ks._clients._conn.session.auth.get_auth_ref.return_value = None
-        self.assertEqual((None, None), ks._auth_domain)
+        self.assertFalse(
+            self.ks._clients._conn.session.auth.get_auth_ref.called)
 
     def _set_auth_domain(self, ks, name, did):
-        ref = ks._clients._conn.session.auth.get_auth_ref.return_value
+        ref = ks._cache["keystone_auth_ref"]
         ref.project_domain_name = name
         ref.project_domain_id = did
 

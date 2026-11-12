@@ -240,12 +240,13 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
         keystone = osclients.Keystone(credential, {})
 
         version_data = mock.Mock(return_value=[{"version": (1, 0)}])
-        self.ksa_auth.discover.Discover.return_value = (
+        self.ksa_auth.discover.get_discovery.return_value = (
             mock.Mock(version_data=version_data))
 
         self.assertEqual((self.ksa_session.Session.return_value,
                           self.ksa_identity_plugin),
                          keystone.get_session())
+        discovery = credential._cloud_state["keystone"]["discovery"]
         if auth_url.endswith("v2.0"):
             self.ksa_password.assert_called_once_with(
                 auth_url=auth_url, password="pass",
@@ -260,7 +261,7 @@ class TestCreateKeystoneClient(test.TestCase, OSClientTestCaseUtils):
             [mock.call(timeout=180.0, verify=True, cert=None),
              mock.call(auth=self.ksa_identity_plugin, timeout=180.0,
                        verify=True, cert=None,
-                       discovery_cache=credential.discovery_cache)],
+                       discovery_cache=discovery)],
             self.ksa_session.Session.call_args_list
         )
 
@@ -518,10 +519,10 @@ class OSClientsTestCase(test.TestCase):
     def test_nova_service_type(self):
         self.clients.nova.spec.is_service_type_configurable()
 
-    @mock.patch("%s.Neutron._get_endpoint" % PATH)
-    def test_neutron(self, mock_neutron__get_endpoint):
+    @mock.patch("%s.Keystone.url_for" % PATH)
+    def test_neutron(self, mock_keystone_url_for):
         fake_neutron = fakes.FakeNeutronClient()
-        mock_neutron__get_endpoint.return_value = "http://fake.to:2/fake"
+        mock_keystone_url_for.return_value = "http://fake.to:2/fake"
         mock_neutron = mock.MagicMock()
         mock_keystoneauth1 = mock.MagicMock()
         mock_neutron.client.Client.return_value = fake_neutron
@@ -533,14 +534,15 @@ class OSClientsTestCase(test.TestCase):
             self.assertEqual(fake_neutron, client)
             kw = {
                 "session": mock_keystoneauth1.session.Session(),
-                "endpoint_override": mock_neutron__get_endpoint.return_value}
+                "endpoint_override": mock_keystone_url_for.return_value}
             mock_neutron.client.Client.assert_called_once_with("2.0", **kw)
             self.assertEqual(fake_neutron, self.clients.cache["neutron"])
+        mock_keystone_url_for.assert_called_once_with("network")
 
-    @mock.patch("%s.Neutron._get_endpoint" % PATH)
-    def test_neutron_endpoint_type(self, mock_neutron__get_endpoint):
+    @mock.patch("%s.Keystone.url_for" % PATH)
+    def test_neutron_endpoint_type(self, mock_keystone_url_for):
         fake_neutron = fakes.FakeNeutronClient()
-        mock_neutron__get_endpoint.return_value = "http://fake.to:2/fake"
+        mock_keystone_url_for.return_value = "http://fake.to:2/fake"
         mock_neutron = mock.MagicMock()
         mock_keystoneauth1 = mock.MagicMock()
         mock_neutron.client.Client.return_value = fake_neutron
@@ -553,7 +555,7 @@ class OSClientsTestCase(test.TestCase):
             self.assertEqual(fake_neutron, client)
             kw = {
                 "session": mock_keystoneauth1.session.Session(),
-                "endpoint_override": mock_neutron__get_endpoint.return_value,
+                "endpoint_override": mock_keystone_url_for.return_value,
                 "endpoint_type": "internal"}
             mock_neutron.client.Client.assert_called_once_with("2.0", **kw)
             self.assertEqual(fake_neutron, self.clients.cache["neutron"])
@@ -616,11 +618,11 @@ class OSClientsTestCase(test.TestCase):
             mock_heat.client.Client.assert_called_once_with("1", **kw)
         self.assertEqual(fake_heat, self.clients.cache["heat"])
 
-    @mock.patch("%s.Glance._get_endpoint" % PATH)
-    def test_glance_legacy(self, mock_glance__get_endpoint):
+    @mock.patch("%s.Keystone.url_for" % PATH)
+    def test_glance_legacy(self, mock_keystone_url_for):
         fake_glance = fakes.FakeGlanceClient()
         mock_glance = mock.MagicMock()
-        mock_glance__get_endpoint.return_value = "http://fake.to:2/fake"
+        mock_keystone_url_for.return_value = "http://fake.to:2/fake"
         mock_keystoneauth1 = mock.MagicMock()
         mock_glance.Client = mock.MagicMock(return_value=fake_glance)
         with mock.patch.dict("sys.modules",
@@ -633,8 +635,9 @@ class OSClientsTestCase(test.TestCase):
             kw = {
                 "version": "2",
                 "session": mock_keystoneauth1.session.Session(),
-                "endpoint_override": mock_glance__get_endpoint.return_value}
+                "endpoint_override": mock_keystone_url_for.return_value}
             mock_glance.Client.assert_called_once_with(**kw)
+            mock_keystone_url_for.assert_called_once_with("image")
             self.assertEqual(fake_glance,
                              self.clients.cache["glance_legacy_client_None"])
 
@@ -1023,8 +1026,18 @@ class ClientsContainerTestCase(test.TestCase):
         clients = osclients.Clients(self.credential)
         self.assertTrue(clients.nova)
         clients.cache["foo"] = "bar"
+        conn = mock.Mock()
+        clients.cache["sdk_connection_[null, {}]"] = conn
+        session = mock.Mock()
+        clients.cache["keystone_session_and_plugin_3"] = (session, "plugin")
+        clients._sdk_conn_key = "sdk_connection_[null, {}]"
+
         clients.clear()
+
         self.assertEqual({}, clients.cache)
+        self.assertIsNone(clients._sdk_conn_key)
+        conn.close.assert_called_once_with()
+        session.session.close.assert_called_once_with()
 
     def test_override(self):
         clients = osclients.Clients(self.credential)
@@ -1036,6 +1049,8 @@ class ClientsContainerTestCase(test.TestCase):
         self.assertEqual("shared-session", overridden.cache["session"])
         # the original credential is untouched
         self.assertNotIn("keystone", clients.credential.api_info)
+        self.assertIs(self.credential._cloud_state,
+                      overridden.credential._cloud_state)
 
     def test_override_does_not_inherit_client_handles(self):
         clients = osclients.Clients(self.credential)
@@ -1075,6 +1090,23 @@ class ClientsContainerTestCase(test.TestCase):
              "compute_api_version": "2",
              "block_storage_api_version": "3",
              "block_storage_service_type": "volumev3"}, config)
+
+    @mock.patch("%s.Clients._sdk_service_config" % PATH, return_value={})
+    def test_conn_keeps_config_of_first_use(self, mock__sdk_service_config):
+        clients = osclients.Clients(self.credential)
+        keystone = mock.Mock()
+        keystone.get_session.return_value = ("fake-session", "plugin")
+        clients.cache["client:keystone"] = keystone
+        fake_openstack = mock.Mock()
+        with mock.patch.dict(
+                "sys.modules",
+                {"openstack": fake_openstack,
+                 "openstack.connection": fake_openstack.connection}):
+            conn = clients._conn
+            self.credential.api_info["glance"] = {"version": "2"}
+            self.assertIs(conn, clients._conn)
+
+        mock__sdk_service_config.assert_called_once_with()
 
     def test_conn_is_built_and_cached(self):
         clients = osclients.Clients(self.credential)
@@ -1125,7 +1157,6 @@ class ClientsContainerTestCase(test.TestCase):
             region_name=credential.region_name,
             identity_endpoint_override="http://auth_url/v2.0",
             interface="internal")
-        self.assertIn("sdk_connection_interface=internal", clients.cache)
         self.assertEqual(connection.return_value, conn)
 
     def test_refresh_token_no_seeded_auth(self):
@@ -1136,7 +1167,7 @@ class ClientsContainerTestCase(test.TestCase):
         self.assertFalse(keystone.get_session.called)
 
     def test_refresh_token_non_string_auth_is_ignored(self):
-        self.credential.auth = mock.Mock()
+        self.credential._auth_state = mock.Mock()
         clients = osclients.Clients(self.credential)
         keystone = mock.Mock()
         clients.cache["client:keystone"] = keystone
@@ -1144,7 +1175,7 @@ class ClientsContainerTestCase(test.TestCase):
         self.assertFalse(keystone.get_session.called)
 
     def test_refresh_token_still_valid(self):
-        self.credential.auth = "auth-state"
+        self.credential._auth_state = "auth-state"
         clients = osclients.Clients(self.credential)
         keystone = mock.Mock()
         plugin = mock.Mock()
@@ -1157,7 +1188,7 @@ class ClientsContainerTestCase(test.TestCase):
         self.assertFalse(plugin.invalidate.called)
 
     def test_refresh_token_refreshes_when_expiring(self):
-        self.credential.auth = "auth-state"
+        self.credential._auth_state = "auth-state"
         clients = osclients.Clients(self.credential)
         keystone = mock.Mock()
         plugin = mock.Mock()
@@ -1170,6 +1201,8 @@ class ClientsContainerTestCase(test.TestCase):
         plugin.invalidate.assert_called_once_with()
         # get_access is called again after invalidation
         self.assertEqual(2, plugin.get_access.call_count)
+        self.assertEqual(plugin.get_auth_state.return_value,
+                         self.credential._auth_state)
 
     def test_create_from_env_unavailable(self):
         with mock.patch(

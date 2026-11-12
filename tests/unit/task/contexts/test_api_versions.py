@@ -16,8 +16,10 @@ import ddt
 
 from rally import exceptions
 from rally.common import utils
+from rally.common import validation
 from rally.task import context
 
+from rally_openstack.common import osclients
 from rally_openstack.task.contexts import api_versions
 from tests.unit import test
 
@@ -52,6 +54,21 @@ class OpenStackServicesTestCase(test.TestCase):
             self.assertEqual([], results)
         else:
             self.assertGreater(len(results), 0)
+
+    @mock.patch("rally_openstack.common.osclients.BaseClient.get")
+    def test_validate_calls_osclient_overrides(self, mock_base_client_get):
+        class CustomClient(osclients.OSClient):
+            @classmethod
+            def validate_version(cls, version):
+                raise exceptions.RallyException(f"custom {version}")
+
+        mock_base_client_get.return_value = CustomClient
+        validator = api_versions.CheckOpenStackAPIVersionsValidator()
+
+        e = self.assertRaises(
+            validation.ValidationError, validator.validate,
+            {}, None, None, {"custom": {"version": "7"}})
+        self.assertIn("custom 7", str(e))
 
     def test_setup_with_wrong_service_name(self):
         context_obj = {

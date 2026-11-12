@@ -231,11 +231,11 @@ Deprecated
   warning; use the ``clients.keystone`` attribute (or
   ``clients.keystone(legacy=False)``) for the openstacksdk-backed client.
 
-* ``OpenStackCredential.clients()`` is deprecated and emits a warning. A
-  credential is plain data that crosses the process boundary, while a client
-  container holds live sessions and connections, so the two should not be
-  reachable through each other. Build the container explicitly instead:
-  ``osclients.Clients(credential)``.
+* Calling ``OpenStackCredential.clients()`` without ``atomic_inst``,
+  ``name_generator`` and ``sleeper`` is deprecated and emits a warning. Pass
+  every argument explicitly (``None`` disables it), so the caller states
+  whether its clients record atomic actions, generate resource names and track
+  idle time.
 
 * The image service layer (``rally_openstack.common.services.image``) is
   deprecated in favour of the ``clients.glance`` client, and so is reaching for

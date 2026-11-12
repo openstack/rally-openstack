@@ -16,6 +16,7 @@ import functools
 import typing as t
 
 from rally.common import logging
+from rally.common import utils
 from rally.task import context
 
 
@@ -28,6 +29,9 @@ configure = functools.partial(context.configure, platform="openstack")
 
 class OpenStackContext(context.Context):
     """A base class for all OpenStack context classes."""
+
+    def sleep_between(self, sleep_time: float) -> None:
+        utils.interruptable_sleep(sleep_time)
 
     def _iterate_per_projects(
         self, users: list[users_ctx.UserInfo] | None = None

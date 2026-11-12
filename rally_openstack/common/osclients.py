@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import typing as t
 
@@ -415,10 +416,13 @@ class Clients:
         sleeper: t.Callable[[float], None] | None = None,
     ) -> None:
         self.credential = credential
-        self.cache: dict[str, t.Any] = cache or {}
+        self.cache: dict[str, t.Any] = {} if cache is None else cache
         self._atomic_inst = atomic_inst if atomic_inst is not None else []
         self._name_generator = name_generator
         self._sleeper = sleeper
+        # The openstacksdk connection is keyed by the api_info seen on its
+        # first use; later changes to it need a new container (override).
+        self._sdk_conn_key: str | None = None
 
     if t.TYPE_CHECKING:
         # Declare the ported clients so ``clients.<name>`` resolves to the
@@ -477,9 +481,16 @@ class Clients:
             https_insecure=creds["https_insecure"])
         return cls(oscred)
 
-    def clear(self):
-        """Remove all cached client handles and shared resources."""
+    def clear(self) -> None:
+        """Close and remove all cached clients, sessions and connections."""
+        for key, value in self.cache.items():
+            if key.startswith("sdk_connection_"):
+                value.close()
+        # the keystone sessions live in the shared cache, whichever Keystone
+        # instance opened them
+        self.keystone.close()
         self.cache = {}
+        self._sdk_conn_key = None
 
     def verified_keystone(self):
         """Ensure keystone endpoints are valid and then authenticate
@@ -513,12 +524,19 @@ class Clients:
 
     def override(self, **client_versions: str) -> Clients:
         """Return a Clients pinned to specific API versions."""
-        credential = copy.deepcopy(self.credential)
+        # the memo keeps the pinned credential on the same cloud state, so
+        # what it learns is not lost when it goes away
+        cloud_state = self.credential._cloud_state
+        credential = copy.deepcopy(
+            self.credential, {id(cloud_state): cloud_state})
         for client_name, version in client_versions.items():
-            credential["api_info"].setdefault(client_name, {})
-            credential["api_info"][client_name]["version"] = str(version)
-        cache = {key: value for key, value in self.cache.items()
-                 if not key.startswith("client:")}
+            credential.api_info.setdefault(client_name, {})
+            credential.api_info[client_name]["version"] = str(version)
+        cache = dict(
+            (key, value)
+            for key, value in self.cache.items()
+            if not key.startswith("client:")
+        )
         return Clients(credential,
                        cache=cache,
                        atomic_inst=self._atomic_inst,
@@ -550,17 +568,16 @@ class Clients:
     @property
     def _conn(self) -> openstack.connection.Connection:
         """Return an openstacksdk Connection sharing the keystone session."""
-        service_config = self._sdk_service_config()
-        key = "sdk_connection_"
-        key += "_".join(
-            f"{name}={value}"
-            for name, value in sorted(service_config.items())
-        )
-        if key not in self.cache:
+        if self._sdk_conn_key is None:
+            self._sdk_conn_key = "sdk_connection_" + json.dumps(
+                [self.credential.endpoint_type, self.credential.api_info],
+                sort_keys=True)
+        if self._sdk_conn_key not in self.cache:
             import openstack.connection
 
+            service_config = self._sdk_service_config()
             session = self.keystone.get_session()[0]
-            self.cache[key] = openstack.connection.Connection(
+            self.cache[self._sdk_conn_key] = openstack.connection.Connection(
                 session=session,
                 region_name=self.credential.region_name,
                 # Point the identity proxy straight at the versioned endpoint
@@ -573,7 +590,7 @@ class Clients:
                 # against the named Connection params.
                 **t.cast("dict[str, t.Any]", service_config),
             )
-        return self.cache[key]
+        return self.cache[self._sdk_conn_key]
 
     def refresh_token_if_needed(self):
         """Proactively refresh a reused token near expiry (untimed).
@@ -587,7 +604,7 @@ class Clients:
         # A seeded auth state is the string produced by ``get_auth_state()``;
         # anything else (None, or a test mock) means there is nothing to
         # refresh.
-        if not isinstance(self.credential.auth, str):
+        if not isinstance(self.credential._auth_state, str):
             return
         sess, plugin = self.keystone.get_session()
         margin = CONF.openstack_client_token_refresh_margin
@@ -596,3 +613,4 @@ class Clients:
             # overwrite the auth_ref memoized by the keystone client, otherwise
             # it would keep handing out the token we have just invalidated.
             self.cache["keystone_auth_ref"] = plugin.get_access(sess)
+            self.credential._auth_state = plugin.get_auth_state()

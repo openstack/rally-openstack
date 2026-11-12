@@ -383,6 +383,21 @@ class BaseClient(plugin.Plugin, atomic.ActionTimerMixin):
         if not getattr(proxy, "skip_discovery", False):
             proxy.get_endpoint_data()
 
+    @property
+    def _cloud_state(self) -> dict[str, t.Any]:
+        """This client's part of the facts the credential keeps per cloud."""
+        return self.credential._cloud_state.setdefault(self.get_name(), {})
+
+    def load_service_info(self) -> None:
+        """Fetch what this client needs to know about its service, once.
+
+        The results land in the credential (discovery data through the
+        keystoneauth session, anything else in :attr:`_cloud_state`), so
+        every client built later from it, or from a credential sharing its
+        cloud state, skips those requests.
+        """
+        self.check_availability()
+
     def _atomic_action(self, name: str) -> atomic.ActionTimer:
         """Return a context manager that times an atomic action."""
         return atomic.ActionTimer(self, name)
@@ -497,15 +512,8 @@ class LegacyClientCompat(BaseClient):
 
     @_deprecated_client_method
     def _get_endpoint(self, service_type: str | None = None) -> str:
-        kw = {"service_type": self.spec.choose_service_type(
-                  self.credential, service_type),
-              "region_name": self.credential.region_name}
-        if self.credential.endpoint_type:
-            kw["interface"] = self.credential.endpoint_type
-        api_url = self.keystone.service_catalog.url_for(**kw)
-        # url_for raises EndpointNotFound rather than returning None
-        assert api_url is not None
-        return api_url
+        return self.keystone.url_for(
+            self.spec.choose_service_type(self.credential, service_type))
 
     @_deprecated_client_method
     def _get_auth_info(
@@ -579,3 +587,6 @@ class OSClient(LegacyClientCompat):
         built instead.
         """
         self.create_client()
+
+    def load_service_info(self) -> None:
+        """Do nothing: a native ``python-*client`` keeps nothing to reuse."""

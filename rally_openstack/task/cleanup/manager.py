@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import time
 import typing as t
 
@@ -23,6 +25,10 @@ from rally.common.plugin import discover
 from rally.common.plugin import plugin
 
 from rally_openstack.task.cleanup import base
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.common import osclients
 
 
 LOG = logging.getLogger(__name__)
@@ -51,12 +57,24 @@ class SeekAndDestroy:
             rutils.RandomNameGeneratorMixin]
         self.task_id = task_id
 
-    def _get_cached_client(self, user):
-        """Simplifies initialization and caching OpenStack clients."""
+    def _get_cached_client(
+        self,
+        user: dict[str, t.Any] | None,
+        cache: dict[t.Any, t.Any],
+    ) -> osclients.Clients | None:
+        """Return the clients of a user, built once per given cache.
+
+        :param user: an item of context["users"], or context["admin"]
+        :param cache: a dict owned by the caller (one per broker thread), so
+            the clients are reused for every resource the caller handles
+        """
         if not user:
             return None
-        # NOTE(astudenov): Credential now supports caching by default
-        return user["credential"].clients()
+        key = ("clients", id(user["credential"]))
+        if key not in cache:
+            cache[key] = user["credential"].clients(
+                atomic_inst=None, name_generator=None, sleeper=None)
+        return cache[key]
 
     def _delete_single_resource(self, resource):
         """Safe resource deletion with retries and timeouts.
@@ -138,15 +156,16 @@ class SeekAndDestroy:
                     "It shouldn't raise any exceptions."
                     % (manager.__module__, type(manager).__name__))
 
+        clients_cache: dict[t.Any, t.Any] = {}
         if self.admin and (not self.users
                            or self.manager_cls._perform_for_admin_only):
             manager = self.manager_cls(
-                admin=self._get_cached_client(self.admin))
+                admin=self._get_cached_client(self.admin, clients_cache))
             _publish(self.admin, None, manager)
 
         else:
             visited_tenants = set()
-            admin_client = self._get_cached_client(self.admin)
+            admin_client = self._get_cached_client(self.admin, clients_cache)
             for user in self.users:
                 if (self.manager_cls._tenant_resource
                    and user["tenant_id"] in visited_tenants):
@@ -155,18 +174,20 @@ class SeekAndDestroy:
                 visited_tenants.add(user["tenant_id"])
                 manager = self.manager_cls(
                     admin=admin_client,
-                    user=self._get_cached_client(user),
+                    user=self._get_cached_client(user, clients_cache),
                     tenant_uuid=user["tenant_id"])
                 _publish(self.admin, user, manager)
 
-    def _consumer(self, cache, args):
+    def _consumer(
+        self, cache: dict[t.Any, t.Any], args: tuple[t.Any, t.Any, t.Any]
+    ) -> None:
         """Method that consumes single deletion job."""
         admin, user, raw_resource = args
 
         manager = self.manager_cls(
             resource=raw_resource,
-            admin=self._get_cached_client(admin),
-            user=self._get_cached_client(user),
+            admin=self._get_cached_client(admin, cache),
+            user=self._get_cached_client(user, cache),
             tenant_uuid=user and user["tenant_id"])
 
         if (isinstance(manager.name(), base.NoName)

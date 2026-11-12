@@ -13,18 +13,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import copy
 import dataclasses
+import traceback
+import types
 import typing as t
 
 from rally.common import logging
 
 
 if t.TYPE_CHECKING:
+    from rally.task import atomic
+
     from rally_openstack.common import osclients
 
 
 LOG = logging.getLogger(__file__)
+
+# (file, line) of the callers already warned for omitting clients() arguments,
+# so each wrong call site is reported once rather than on every call
+_reported_implicit_clients_callers: set[tuple[str, int | None]] = set()
 
 
 class ServiceApiInfo(t.TypedDict, total=False):
@@ -75,12 +85,23 @@ class OpenStackCredential:
     profiler_hmac_key: str | None
     profiler_conn_str: str | None
     api_info: dict[str, ServiceApiInfo]
-    auth: t.Any
-    discovery_cache: dict[str, t.Any]
 
     # TODO(andreykurilin): deprecate permission and endpoint
     permission: t.Any
     endpoint: str | None
+
+    # The output of keystoneauth's ``get_auth_state()`` for this user: the
+    # token plus the full token response (roles, catalog, expiry). Clients
+    # load it instead of authenticating again.
+    _auth_state: str | None = dataclasses.field(repr=False, compare=False)
+    # Facts about the cloud, keyed by client name (e.g. keystoneauth
+    # discovery results under "keystone", extension aliases under "neutron").
+    # The users context points every credential of a task at the same dict.
+    # It is kept apart from ``_auth_state`` because the token belongs to one
+    # user and must never be copied to another, while these facts are the
+    # same for everyone: one shared dict needs no copying at all.
+    _cloud_state: dict[str, dict[str, t.Any]] = dataclasses.field(
+        repr=False, compare=False)
 
     def __init__(
         self,
@@ -99,8 +120,6 @@ class OpenStackCredential:
         profiler_hmac_key: str | None = None,
         profiler_conn_str: str | None = None,
         api_info: dict[str, ServiceApiInfo] | None = None,
-        auth: t.Any = None,
-        discovery_cache: dict[str, t.Any] | None = None,
         permission: t.Any = None,
         endpoint: str | None = None,
         tenant_name: str | None = None,
@@ -128,14 +147,10 @@ class OpenStackCredential:
         self.profiler_hmac_key = profiler_hmac_key
         self.profiler_conn_str = profiler_conn_str
         self.api_info = {} if api_info is None else api_info
-        self.auth = auth
-        self.discovery_cache = (
-            {} if discovery_cache is None else discovery_cache)
         self.permission = permission
         self.endpoint = endpoint
-        # per-credential runtime cache reused by :meth:`clients`; not a field,
-        # so it never lands in :meth:`to_dict` / deepcopy.
-        self._clients_cache: dict[str, t.Any] = {}
+        self._auth_state = None
+        self._cloud_state = {}
 
     @property
     @logging.log_deprecated("use 'project_name' instead", "4.2.0", once=True)
@@ -174,13 +189,8 @@ class OpenStackCredential:
     ) -> dict[str, ServiceApiInfo]: ...
 
     @t.overload
-    def __getitem__(
-        self, key: t.Literal["discovery_cache"]
-    ) -> dict[str, t.Any]: ...
-
-    @t.overload
     def __getitem__(self, key: t.Literal[
-        "permission", "endpoint_type", "https_cert", "auth"]) -> t.Any: ...
+        "permission", "endpoint_type", "https_cert"]) -> t.Any: ...
 
     def __getitem__(self, key: str) -> t.Any:
         return getattr(self, key)
@@ -190,18 +200,69 @@ class OpenStackCredential:
 
     def to_dict(self) -> dict[str, t.Any]:
         return {f.name: getattr(self, f.name)
-                for f in dataclasses.fields(self)}
+                for f in dataclasses.fields(self)
+                if not f.name.startswith("_")}
 
     def __deepcopy__(
-        self, memodict: dict | None = None
-    ) -> "OpenStackCredential":
-        return self.__class__(**copy.deepcopy(self.to_dict()))
+        self, memo: dict[int, t.Any] | None = None
+    ) -> OpenStackCredential:
+        # ``memo`` must reach the copy of every field: the runner deep-copies
+        # the whole context once per iteration, and passing it on is what
+        # keeps ``_cloud_state`` one dict shared by all the copied
+        # credentials instead of one copy per user.
+        memo = {} if memo is None else memo
+        new = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new
+        for f in dataclasses.fields(self):
+            setattr(new, f.name, copy.deepcopy(getattr(self, f.name), memo))
+        return new
 
-    @logging.log_deprecated(
-        "build the container explicitly instead: "
-        "osclients.Clients(credential)",
-        "4.2.0", once=True)
-    def clients(self) -> "osclients.Clients":
+    def clients(
+        self,
+        *,
+        atomic_inst: (
+            list[atomic.AtomicAction] | None | types.EllipsisType) = ...,
+        name_generator: (
+            t.Callable[[], str] | None | types.EllipsisType) = ...,
+        sleeper: (
+            t.Callable[[float], None] | None | types.EllipsisType) = ...,
+    ) -> osclients.Clients:
+        """Build a Clients container for this credential.
+
+        Every argument has to be passed explicitly, ``None`` included, so a
+        caller states whether its clients record atomic actions, generate
+        resource names and track idle time. An omitted one is treated as
+        ``None`` and logged as deprecated.
+        """
         from rally_openstack.common import osclients
 
-        return osclients.Clients(self, cache=self._clients_cache)
+        omitted = [
+            name for name, value in (
+                ("atomic_inst", atomic_inst),
+                ("name_generator", name_generator),
+                ("sleeper", sleeper),
+            ) if isinstance(value, types.EllipsisType)
+        ]
+        if omitted:
+            caller = traceback.extract_stack()[-2]
+            key = (caller.filename, caller.lineno)
+            if key not in _reported_implicit_clients_callers:
+                _reported_implicit_clients_callers.add(key)
+                LOG.warning(
+                    f"Calling `OpenStackCredential.clients()` without "
+                    f"{', '.join(omitted)} is deprecated since 4.2.0. Pass "
+                    f"every argument explicitly (None to disable it). Used "
+                    f"at {caller.filename}:{caller.lineno}")
+
+        if isinstance(atomic_inst, types.EllipsisType):
+            atomic_inst = None
+        if isinstance(name_generator, types.EllipsisType):
+            name_generator = None
+        if isinstance(sleeper, types.EllipsisType):
+            sleeper = None
+        return osclients.Clients(
+            self,
+            atomic_inst=atomic_inst,
+            name_generator=name_generator,
+            sleeper=sleeper,
+        )

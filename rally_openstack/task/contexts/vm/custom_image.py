@@ -131,7 +131,10 @@ class BaseCustomImageGenerator(context.OpenStackContext,
 
             custom_image = self.create_one_image(user, nics=nics)
             # FIXME(andreykurilin): share the image instead of making it public
-            admin_clients = self.context["admin"]["credential"].clients()
+            admin_clients = self.context["admin"]["credential"].clients(
+                atomic_inst=self.atomic_actions(),
+                name_generator=self.generate_random_name,
+                sleeper=self.sleep_between)
             admin_clients.glance.update_image(
                 custom_image.id, visibility=glance.Visibility.PUBLIC)
 
@@ -228,7 +231,11 @@ class BaseCustomImageGenerator(context.OpenStackContext,
         with logging.ExceptionLogger(
                 LOG, f"Unable to delete image {custom_image.id}"):
 
-            user["credential"].clients().glance.delete_image(custom_image.id)
+            user["credential"].clients(
+                atomic_inst=self.atomic_actions(),
+                name_generator=self.generate_random_name,
+                sleeper=self.sleep_between,
+            ).glance.delete_image(custom_image.id)
 
     @logging.log_task_wrapper(LOG.info, "Custom image context: customizing")
     def customize_image(

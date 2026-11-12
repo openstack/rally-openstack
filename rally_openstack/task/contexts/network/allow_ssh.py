@@ -124,7 +124,10 @@ class AllowSSH(context.OpenStackContext):
 
     def setup(self) -> None:
         client = neutron.NeutronService(
-            clients=self.context["users"][0]["credential"].clients(),
+            clients=self.context["users"][0]["credential"].clients(
+                atomic_inst=self.atomic_actions(),
+                name_generator=self.generate_random_name,
+                sleeper=self.sleep_between),
             name_generator=self.generate_random_name,
             atomic_inst=self.atomic_actions()
         )
@@ -137,7 +140,10 @@ class AllowSSH(context.OpenStackContext):
         secgroups_per_project: dict[str, dict[str, t.Any]] = {}
         for user, project_id in self._iterate_per_projects():
             client = neutron.NeutronService(
-                clients=user["credential"].clients(),
+                clients=user["credential"].clients(
+                    atomic_inst=self.atomic_actions(),
+                    name_generator=self.generate_random_name,
+                    sleeper=self.sleep_between),
                 name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions()
             )

@@ -49,7 +49,8 @@ class TempestContext(context.VerifierContext):
             permission=consts.EndpointPermission.ADMIN,
             **openstack_platform["platform_data"]["admin"])
 
-        self.clients = admin_creds.clients()
+        self.clients = admin_creds.clients(
+            atomic_inst=None, name_generator=None, sleeper=None)
         self.available_services = self.clients.services().values()
 
         self.conf = configparser.ConfigParser(allow_no_value=True)

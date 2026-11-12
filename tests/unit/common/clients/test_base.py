@@ -173,10 +173,36 @@ class BaseClientTestCase(test.TestCase):
         getattr(osclients.Clients(cred), client_name).check_availability()
 
         self.assertEqual([proxy], cloud.accessed)
+        discovery = cred._cloud_state["keystone"]["discovery"]
         if skip_discovery:
-            self.assertEqual({}, cred.discovery_cache)
+            self.assertNotIn({"service": proxy}, discovery.values())
         else:
-            self.assertIn({"service": proxy}, cred.discovery_cache.values())
+            self.assertIn({"service": proxy}, discovery.values())
+
+    def test_cloud_state(self):
+        cred = _credential()
+        client = _BaseTestClient(cred)
+
+        client._cloud_state["foo"] = "bar"
+
+        self.assertEqual({"base_test_client": {"foo": "bar"}},
+                         cred._cloud_state)
+
+    def test_load_service_info(self):
+        client = _BaseTestPortedClient(_credential(), clients=mock.Mock(),
+                                       atomic_inst=[])
+        with mock.patch.object(client, "check_availability") as mock_check:
+            client.load_service_info()
+        mock_check.assert_called_once_with()
+
+    def test_load_service_info_without_openstacksdk(self):
+        cloud = fakes.FakeOpenStack(self)
+        clients = osclients.Clients(_credential())
+
+        clients.base_test_legacy_client.load_service_info()
+
+        self.assertNotIn("native_clients", clients.cache)
+        self.assertEqual([], cloud.accessed)
 
     def test_check_availability_without_openstacksdk(self):
         cloud = fakes.FakeOpenStack(self)

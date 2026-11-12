@@ -136,8 +136,9 @@ class ImageExistsValidator(validation.Validator):
                 if isinstance(image_args, dict) and "id" in image_args:
                     # an explicit id is handed back untouched by the resource
                     # type, so it takes a request of its own to check it
-                    user["credential"].clients().glance.get_image(
-                        image_args["id"])
+                    user["credential"].clients(
+                        atomic_inst=None, name_generator=None, sleeper=None
+                    ).glance.get_image(image_args["id"])
                     continue
                 image_processor = openstack_types.GlanceImage(
                     context={"admin": {"credential": user["credential"]}},
@@ -173,7 +174,9 @@ class ExternalNetworkExistsValidator(validation.Validator):
         for user in context["users"]:
             creds = user["credential"]
 
-            networks = creds.clients().neutron().list_networks()["networks"]
+            clients = creds.clients(
+                atomic_inst=None, name_generator=None, sleeper=None)
+            networks = clients.neutron().list_networks()["networks"]
             external_networks = [net["name"] for net in networks if
                                  net.get("router:external", False)]
             if ext_network not in external_networks:
@@ -211,7 +214,8 @@ class RequiredNeutronExtensionsValidator(validation.Validator):
 
     @with_roles_ctx()
     def validate(self, context, config, plugin_cls, plugin_cfg):
-        clients = context["users"][0]["credential"].clients()
+        clients = context["users"][0]["credential"].clients(
+            atomic_inst=None, name_generator=None, sleeper=None)
         for extension in self.req_ext:
             if not clients.neutron.supports_extension(extension):
                 self.fail(f"Neutron extension {extension} is not configured")
@@ -270,7 +274,8 @@ class FlavorExistsValidator(validation.Validator):
     def validate(self, context, config, plugin_cls, plugin_cfg):
         # flavors do not depend on user or tenant, so checking for one user
         # should be enough
-        clients = context["users"][0]["credential"].clients()
+        clients = context["users"][0]["credential"].clients(
+            atomic_inst=None, name_generator=None, sleeper=None)
         self._get_validated_flavor(config=config,
                                    clients=clients,
                                    param_name=self.param_name,
@@ -348,7 +353,8 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
 
         flavor = None
         for user in context["users"]:
-            clients = user["credential"].clients()
+            clients = user["credential"].clients(
+                atomic_inst=None, name_generator=None, sleeper=None)
 
             if not flavor:
                 flavor = self._get_validated_flavor(
@@ -418,7 +424,9 @@ class RequiredServicesValidator(validation.Validator):
             api_versions = config.get("contexts", {}).get(
                 "api_versions@openstack", {})
 
-        available_services = creds.clients().services().values()
+        available_services = creds.clients(
+            atomic_inst=None, name_generator=None, sleeper=None
+        ).services().values()
 
         for service in self.services:
             service_config = api_versions.get(service, {})
@@ -478,7 +486,9 @@ class ValidateHeatTemplateValidator(validation.Validator):
                 try:
                     template_file = f.read()
                     for user in context["users"]:
-                        clients = user["credential"].clients()
+                        clients = user["credential"].clients(
+                            atomic_inst=None, name_generator=None,
+                            sleeper=None)
                         clients.heat().stacks.validate(template=template_file)
                 except Exception as e:
                     self.fail("Heat template validation failed on %(path)s. "
@@ -504,7 +514,8 @@ class RequiredCinderServicesValidator(validation.Validator):
     @with_roles_ctx()
     def validate(self, context, config, plugin_cls, plugin_cfg):
 
-        clients = context["admin"]["credential"].clients()
+        clients = context["admin"]["credential"].clients(
+            atomic_inst=None, name_generator=None, sleeper=None)
         for service in clients.cinder().services.list():
             if (service.binary == str(self.services)
                     and service.state == "up"):
@@ -534,7 +545,8 @@ class RequiredAPIVersionsValidator(validation.Validator):
                "V%(version)s, but V%(found_version)s is "
                "selected.")
         for user in context["users"]:
-            clients = user["credential"].clients()
+            clients = user["credential"].clients(
+                atomic_inst=None, name_generator=None, sleeper=None)
             if self.component == "keystone":
                 found_version = clients.keystone.version
                 if "2.0" not in versions and found_version == "2":
@@ -588,7 +600,8 @@ class VolumeTypeExistsValidator(validation.Validator):
                       % self.param)
 
         for user in context["users"]:
-            clients = user["credential"].clients()
+            clients = user["credential"].clients(
+                atomic_inst=None, name_generator=None, sleeper=None)
             vt_names = [vt.name for vt in
                         clients.cinder().volume_types.list()]
             ctx = config.get("contexts", {}).get("volume_types", [])

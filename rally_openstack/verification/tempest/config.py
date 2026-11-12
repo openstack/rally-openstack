@@ -45,7 +45,8 @@ class TempestConfigfileManager:
                 f"Failed to configure 'tempest' for '{env} since "
                 "admin credentials for OpenStack platform is missed there."
             )
-        self.clients = self.credential.clients()
+        self.clients = self.credential.clients(
+            atomic_inst=None, name_generator=None, sleeper=None)
         self.available_services = self.clients.services().values()
 
         self.conf = configparser.ConfigParser(allow_no_value=True)

@@ -111,7 +111,10 @@ class Network(context.OpenStackContext):
             self.context["tenants"][project_id]["subnets"] = []
 
             client = neutron.NeutronService(
-                user["credential"].clients(),
+                user["credential"].clients(
+                    atomic_inst=self.atomic_actions(),
+                    name_generator=self.generate_random_name,
+                    sleeper=self.sleep_between),
                 name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions()
             )

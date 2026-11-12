@@ -361,10 +361,6 @@ class UserGenerator(context.OpenStackContext):
                     ctx_name=self.get_name(),
                     msg=f"Existing user '{user_credential.username}' is not "
                         f"scoped to a project.")
-            # the user is authenticated now, so keep that auth state instead
-            # of paying for a second authentication in _seed_auth_state.
-            user_credential.auth = (
-                user_clients.keystone.get_session()[1].get_auth_state())
 
             if project_id not in self.context["tenants"]:
                 self.context["tenants"][project_id] = ProjectInfo(
@@ -391,20 +387,28 @@ class UserGenerator(context.OpenStackContext):
         else:
             self.create_users()
 
-        self._seed_auth_state()
-
-    def _seed_auth_state(self) -> None:
-        """Authenticate each user (and admin) once so iterations reuse it.
-
-        Credentials that are already authenticated (the existing_users path
-        does it while resolving user and tenant ids) are skipped.
-        """
         credentials: list[credential.OpenStackCredential] = [
             user["credential"] for user in self.context["users"]
         ]
         admin = self.context.get("admin", {}).get("credential")
         if admin is not None:
             credentials.append(admin)
+        if credentials:
+            # Catalog and service info is not unique per user
+            cloud_state = credentials[-1]._cloud_state
+            for cred in credentials:
+                cred._cloud_state = cloud_state
+
+        self._seed_auth_state(credentials)
+
+    def _seed_auth_state(
+        self, credentials: list[credential.OpenStackCredential]
+    ) -> None:
+        """Authenticate each user (and admin) once so iterations reuse it.
+
+        Credentials that are already authenticated (the existing_users path
+        does it while resolving user and tenant ids) are skipped.
+        """
         if not credentials:
             return
 
@@ -412,16 +416,15 @@ class UserGenerator(context.OpenStackContext):
             queue: collections.deque[credential.OpenStackCredential],
         ) -> None:
             for cred in credentials:
-                if not cred.auth:
+                if not cred._auth_state:
                     queue.append(cred)
 
         def consume(
             cache: dict[str, object], cred: credential.OpenStackCredential
         ) -> None:
-            clients = osclients.Clients(cred)
-            sess, plugin = clients.keystone.get_session()
-            plugin.get_access(sess)
-            cred.auth = plugin.get_auth_state()
+            # reading auth_ref authenticates and stores the auth state in the
+            # credential
+            osclients.Clients(cred).keystone.auth_ref
 
         # NOTE(andreykurilin): resource_management_workers is defaulted only
         #   for the new-users path, while this runs for existing users too.

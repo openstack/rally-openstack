@@ -1822,6 +1822,10 @@ class FakeSDKProxy:
     def get_api_major_version(self):
         return self._cloud.identity_version
 
+    def extensions(self):
+        return [mock.Mock(alias=alias)
+                for alias in self._cloud.network_extensions]
+
 
 class FakeSDKConnection:
     """An openstacksdk Connection exposing the proxies of the fake cloud."""
@@ -1862,6 +1866,7 @@ class FakeOpenStack:
     :ivar skip_discovery: proxy names without version discovery
     :ivar errors: proxy name to the exception its discovery raises
     :ivar identity_version: identity API version the cloud runs
+    :ivar network_extensions: aliases of the neutron extensions
     :ivar admins: user names whose token carries the admin role
     :ivar auth_error: exception the token request raises, if any
     :ivar connections: every openstacksdk Connection built so far
@@ -1872,6 +1877,7 @@ class FakeOpenStack:
         self.skip_discovery = set()
         self.errors = {}
         self.identity_version = (3, 0)
+        self.network_extensions = []
         self.admins = {"admin"}
         self.auth_error = None
         self.connections = []
@@ -1902,7 +1908,7 @@ class FakeOpenStack:
                        else "member")
         return ks_access.create(body=token, auth_token="token")
 
-    def _discover(self, session, url):
+    def _discover(self, session, url, authenticated=None):
         return FakeIdentityDiscover(self)
 
     @property
