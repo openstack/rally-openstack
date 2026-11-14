@@ -422,7 +422,7 @@ class FirewallGroupScenario(scenario.OpenStackScenario):
         """
         networks = self.context["tenant"]["networks"]
         network = networks[self.context["iteration"] % len(networks)]
-        return network["router_port_id"]
+        return network["router_port_ids"][0]
 
     def _create_firewall_group_with_rule(
         self,

@@ -180,8 +180,8 @@ class FirewallScenarioTestCase(test.ScenarioTestCase):
     def _router_networks(self, iteration):
         return {
             "iteration": iteration,
-            "tenant": {"networks": [{"router_port_id": "port-0"},
-                                    {"router_port_id": "port-1"}]},
+            "tenant": {"networks": [{"router_port_ids": ["port-0"]},
+                                    {"router_port_ids": ["port-1"]}]},
         }
 
     def test_associate_disassociate_firewall_group_router_ports(self):

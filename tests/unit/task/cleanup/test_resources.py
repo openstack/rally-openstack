@@ -606,11 +606,11 @@ class NeutronTapServiceTestCase(test.TestCase):
 
 class NeutronTapFlowTestCase(test.TestCase):
 
-    def get_tap_flow_resource(self, extensions=None):
+    def get_tap_flow_resource(self, extensions=()):
         user = mock.MagicMock()
         resource = resources.NeutronTapFlow(user=user)
         resource.tenant_uuid = "user_tenant"
-        _set_extensions(user, extensions or [])
+        _set_client_extensions(user, extensions)
         return resource
 
     def test_id_and_name(self):
@@ -643,7 +643,7 @@ class NeutronTapFlowTestCase(test.TestCase):
         resource = self.get_tap_flow_resource(extensions=["taas"])
         resource._admin_required = True
         resource.admin = mock.MagicMock()
-        _set_extensions(resource.admin, ["taas"])
+        _set_client_extensions(resource.admin, ["taas"])
         flows = [tap_flow.TapFlow(id="flow-1", project_id="user_tenant")]
         resource.admin.neutron.list_tap_flows.return_value = flows
 
@@ -673,6 +673,7 @@ class NeutronFloatingIPTestCase(test.TestCase):
 
         fip_objs = [sdk_fip.FloatingIP(id="foo", tenant_id="foo")]
         user = mock.MagicMock()
+        user.credential.api_info = {}
         user._conn.network.ips.return_value = iter(fip_objs)
 
         result = list(
@@ -683,6 +684,15 @@ class NeutronFloatingIPTestCase(test.TestCase):
             result)
         # list_floatingips translates tenant_id to project_id for the sdk
         user._conn.network.ips.assert_called_once_with(project_id="foo")
+
+    def test_list_pre_newton(self):
+        user = mock.MagicMock()
+        user.credential.api_info = {"neutron": {"pre_newton": True}}
+
+        self.assertEqual(
+            [],
+            resources.NeutronFloatingIP(user=user, tenant_uuid="foo").list())
+        self.assertFalse(user._conn.network.ips.called)
 
 
 class NeutronTrunkTestcase(test.TestCase):

@@ -24,8 +24,8 @@ LOG = logging.getLogger(__name__)
 
 
 @plugin.deprecated(
-    "Neutron LBaaS v1 API was removed from Neutron. Use Octavia related "
-    "scenarios instead.", rally_version="4.2.0")
+    "Neutron LBaaS v1 and v2 APIs were removed from Neutron. Use Octavia "
+    "related scenarios instead.", rally_version="4.2.0")
 @validation.add("required_platform", platform="openstack", admin=True,
                 users=True)
 @context.configure(name="lbaas", platform="openstack", order=360)

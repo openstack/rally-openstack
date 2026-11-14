@@ -45,13 +45,14 @@ class ServiceApiInfo(t.TypedDict, total=False):
     are optional.
     """
 
-    #: API version to use, e.g. ``2`` or ``"2.2"``
+    # API version to use, e.g. ``2`` or ``"2.2"``
     version: str | int | float
-    #: service type overriding the default catalog lookup
+    # service type overriding the default catalog lookup
     service_type: str
-    #: service name (resolved to a service type by the api_versions context)
+    # service name (resolved to a service type by the api_versions context)
     service_name: str
-    #: neutron only: whether the Neutron API predates OpenStack Newton
+    # neutron only, deprecated
+    # whether the Neutron API predates OpenStack Newton
     pre_newton: bool
 
 

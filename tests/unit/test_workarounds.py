@@ -27,7 +27,14 @@ from tests.unit import test
 
 class WorkaroundTestCase(test.TestCase):
 
-    WORKAROUNDS = []
+    WORKAROUNDS = [
+        ([5, 3, 0], [
+            "rally_openstack/common/clients/neutron.py: replace "
+            "`request._root.remove(request.atomic_action)` in "
+            "Neutron._apply_firewall_group_update with "
+            "`request.discard()`",
+        ]),
+    ]
 
     def get_min_required_version(self):
         from packaging import requirements

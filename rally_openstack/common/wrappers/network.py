@@ -140,6 +140,10 @@ class NeutronWrapper(NetworkWrapper):
                 return outer.clients.credential
 
             @property
+            def cache(_self):  # noqa: N805
+                return outer.clients.cache
+
+            @property
             def _conn(_self):  # noqa: N805
                 return outer.clients._conn
 

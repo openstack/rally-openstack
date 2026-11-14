@@ -118,13 +118,42 @@ class NeutronTestCase(NeutronTestMixin):
         self.network.networks.assert_called_once_with()
 
     def test_get_network(self):
+        self.neutron._atomic_actions = []
         mock_network = mock.Mock(id="net-id")
         self.network.get_network.return_value = mock_network
 
-        result = self.neutron.get_network("net-id")
+        result = self.neutron.get_network("net-id", fields=["id"])
 
         self.assertEqual(mock_network, result)
-        self.network.get_network.assert_called_once_with("net-id")
+        self.network.get_network.assert_called_once_with(
+            "net-id", fields=["id"])
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.show_network")
+
+    def test_get_network_missing(self):
+        from openstack import exceptions as sdk_exc
+
+        self.neutron._atomic_actions = []
+        self.network.get_network.side_effect = sdk_exc.ResourceNotFound()
+
+        self.assertRaises(sdk_exc.NotFoundException,
+                          self.neutron.get_network, "net-id")
+
+        self.assertTrue(self.neutron.atomic_actions()[0]["failed"])
+
+    def test_get_network_missing_is_not_failure(self):
+        from openstack import exceptions as sdk_exc
+
+        self.neutron._atomic_actions = []
+        self.network.get_network.side_effect = sdk_exc.ResourceNotFound()
+
+        self.assertRaises(sdk_exc.NotFoundException,
+                          self.neutron.get_network, "net-id",
+                          missing_is_failure=False)
+
+        action = self.neutron.atomic_actions()[0]
+        self.assertEqual("neutron.show_network", action["name"])
+        self.assertNotIn("failed", action)
 
     def test_delete_network(self):
         self.neutron.delete_network("net-id")
@@ -723,7 +752,9 @@ class NeutronFWaaSTestCase(NeutronTestMixin):
             project_id="project-id", name="default")
 
     def test_update_firewall_group(self):
+        self.neutron._atomic_actions = []
         group = self.network.update_firewall_group.return_value
+        group.status = "ACTIVE"
 
         result = self.neutron.update_firewall_group(
             "group-id", name="new-name", ingress_firewall_policy_id="in-id")
@@ -731,6 +762,9 @@ class NeutronFWaaSTestCase(NeutronTestMixin):
         self.assertIs(group, result)
         self.network.update_firewall_group.assert_called_once_with(
             "group-id", name="new-name", ingress_firewall_policy_id="in-id")
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(), "neutron.update_firewall_group")
+        self.assertEqual([], self.neutron.atomic_actions()[0]["children"])
 
     def test_update_firewall_group_requires_changes(self):
         self.assertRaises(
@@ -741,6 +775,7 @@ class NeutronFWaaSTestCase(NeutronTestMixin):
     def test_associate_firewall_group_ports(self):
         self.neutron._atomic_actions = []
         group = self.network.update_firewall_group.return_value
+        group.status = "ACTIVE"
 
         result = self.neutron.associate_firewall_group_ports(
             "group-id", ["port-1", "port-2"])
@@ -748,13 +783,37 @@ class NeutronFWaaSTestCase(NeutronTestMixin):
         self.assertIs(group, result)
         self.network.update_firewall_group.assert_called_once_with(
             "group-id", ports=["port-1", "port-2"])
+        self.assertFalse(self.network.get_firewall_group.called)
         self._test_atomic_action_timer(
             self.neutron.atomic_actions(),
             "neutron.associate_firewall_group_port")
+        self.assertEqual([], self.neutron.atomic_actions()[0]["children"])
+
+    def test_associate_firewall_group_ports_pending(self):
+        self.neutron._atomic_actions = []
+        self.neutron._sleeper = mock.Mock()
+        self.network.update_firewall_group.return_value = mock.Mock(
+            status="PENDING_UPDATE")
+        applied = mock.Mock(status="ACTIVE")
+        self.network.get_firewall_group.return_value = applied
+
+        result = self.neutron.associate_firewall_group_ports(
+            "group-id", ["port-1"])
+
+        self.assertIs(applied, result)
+        self.network.get_firewall_group.assert_called_once_with("group-id")
+        actions = self.neutron.atomic_actions()
+        self.assertEqual(["neutron.associate_firewall_group_port"],
+                         [a["name"] for a in actions])
+        self.assertEqual(
+            ["neutron.associate_firewall_group_port_request",
+             "neutron.wait_for_firewall_group_applied"],
+            [a["name"] for a in actions[0]["children"]])
 
     def test_disassociate_firewall_group_ports(self):
         self.neutron._atomic_actions = []
         group = self.network.update_firewall_group.return_value
+        group.status = "INACTIVE"
 
         result = self.neutron.disassociate_firewall_group_ports("group-id")
 
@@ -764,6 +823,41 @@ class NeutronFWaaSTestCase(NeutronTestMixin):
         self._test_atomic_action_timer(
             self.neutron.atomic_actions(),
             "neutron.disassociate_firewall_group_port")
+        self.assertEqual([], self.neutron.atomic_actions()[0]["children"])
+
+    def test_wait_for_firewall_group(self):
+        self.neutron._atomic_actions = []
+        self.neutron._sleeper = mock.Mock()
+        settled = mock.Mock(status="DOWN")
+        self.network.get_firewall_group.side_effect = [
+            mock.Mock(status="PENDING_UPDATE"), settled]
+
+        result = self.neutron.wait_for_firewall_group("group-id")
+
+        self.assertIs(settled, result)
+        self.neutron._sleeper.assert_called_once_with(1.0)
+        self._test_atomic_action_timer(
+            self.neutron.atomic_actions(),
+            "neutron.wait_for_firewall_group_applied")
+
+    def test_wait_for_firewall_group_error(self):
+        self.neutron._sleeper = mock.Mock()
+        self.network.get_firewall_group.return_value = mock.Mock(
+            status="ERROR")
+
+        self.assertRaises(neutron.exceptions.GetResourceErrorStatus,
+                          self.neutron.wait_for_firewall_group, "group-id")
+        self.assertFalse(self.neutron._sleeper.called)
+
+    @mock.patch("rally_openstack.common.clients.neutron.time.time",
+                side_effect=[0, 0, 200, 200])
+    def test_wait_for_firewall_group_timeout(self, mock_time):
+        self.neutron._sleeper = mock.Mock()
+        self.network.get_firewall_group.return_value = mock.Mock(
+            status="PENDING_UPDATE")
+
+        self.assertRaises(neutron.exceptions.TimeoutException,
+                          self.neutron.wait_for_firewall_group, "group-id")
 
     def test_delete_firewall_group(self):
         self.neutron.delete_firewall_group("group-id")
@@ -799,7 +893,8 @@ class NeutronTrunkClientTestCase(NeutronTestMixin):
     def test_delete_trunk(self):
         self.neutron.delete_trunk("trunk-id")
 
-        self.network.delete_trunk.assert_called_once_with("trunk-id")
+        self.network.delete_trunk.assert_called_once_with(
+            "trunk-id", ignore_missing=False)
 
 
 @ddt.ddt

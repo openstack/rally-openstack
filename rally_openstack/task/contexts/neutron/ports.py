@@ -17,7 +17,6 @@ from rally.common import validation
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
-from rally_openstack.common.services.network import neutron
 from rally_openstack.task import context
 
 
@@ -62,23 +61,23 @@ class Ports(context.OpenStackContext):
                     f"No networks found for project {project_id}. "
                     f"Ensure network@openstack context is configured.")
 
-            client = neutron.NeutronService(
-                osclients.Clients(user["credential"]),
+            client = osclients.Clients(
+                user["credential"],
                 name_generator=self.generate_random_name,
                 atomic_inst=self.atomic_actions(),
-            )
+            ).neutron
             for i in range(self.config["ports_per_project"]):
                 network = networks[i % len(networks)]
                 port = client.create_port(network_id=network["id"])
-                project_ctx["ports"].append(port)
+                project_ctx["ports"].append(port.to_dict(
+                    computed=False, original_names=True, headers=False,
+                    ignore_none=True))
 
     def cleanup(self) -> None:
         for user, project_id in self._iterate_per_projects():
-            client = neutron.NeutronService(
-                osclients.Clients(user["credential"]),
-                name_generator=self.generate_random_name,
-                atomic_inst=self.atomic_actions(),
-            )
+            client = osclients.Clients(
+                user["credential"], atomic_inst=self.atomic_actions(),
+            ).neutron
             for port in self.context["tenants"][project_id].get(
                     "ports", []):
                 with logging.ExceptionLogger(

@@ -13,6 +13,7 @@
 #    under the License.
 
 import itertools
+import typing as t
 
 from openstack import exceptions as sdk_exceptions
 
@@ -23,11 +24,27 @@ from rally.task import atomic
 from rally.task import service
 
 from rally_openstack.common import consts
+from rally_openstack.common.clients import neutron as neutron_client
 from rally_openstack.common.services.network import net_utils
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.common import credential as oscred
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
+
+
+def is_pre_newton(credential: "oscred.OpenStackCredential") -> bool:
+    """Tell whether the Neutron API of a credential predates Newton.
+
+    Either the ``pre_newton`` key of the neutron ``api_info`` or the
+    ``openstack.pre_newton_neutron`` option says so. Both are deprecated
+    together with the support of such Neutron API.
+    """
+    return bool(credential.api_info.get("neutron", {}).get("pre_newton")
+                or CONF.openstack.pre_newton_neutron)
 
 
 def _args_adapter(arguments_map):
@@ -94,12 +111,31 @@ class NeutronService(service.Service):
         super().__init__(*args, **kwargs)
         self._cached_supported_extensions = None
         self._client = None
+        self._neutron_client = None
 
     @property
     def client(self):
         if self._client is None:
             self._client = self._clients._conn.network
         return self._client
+
+    @property
+    def _neutron(self) -> neutron_client.Neutron:
+        """The openstacksdk-backed client recording into this service.
+
+        It is built here rather than taken from ``clients.neutron``, so that
+        its atomic actions land in the atomic list of the service even when
+        the given container records into another one.
+        """
+        if self._neutron_client is None:
+            self._neutron_client = neutron_client.Neutron(
+                self._clients.credential,
+                self._clients.cache,
+                clients=self._clients,
+                atomic_inst=self._atomic_actions,
+                name_generator=self._name_generator,
+                sleeper=None)
+        return self._neutron_client
 
     def create_network_topology(
             self, network_create_args=None,
@@ -276,8 +312,7 @@ class NeutronService(service.Service):
         return resp.to_dict(computed=False, original_names=True,
                             headers=False, ignore_none=True)
 
-    @atomic.action_timer("neutron.show_network")
-    def get_network(self, network_id, fields=_NONE):
+    def get_network(self, network_id, fields=_NONE, missing_is_failure=True):
         """Get network by ID
 
         :param network_id: Network ID to fetch data for
@@ -285,9 +320,15 @@ class NeutronService(service.Service):
             fields list is specified, the networking API returns all
             attributes allowed by the policy settings. By using fields
             parameter, the API returns only the requested set of attributes.
+        :param missing_is_failure: whether a missing network marks the
+            ``neutron.show_network`` atomic action as failed. Pass False when
+            the call only probes whether the network exists. The
+            ``NotFoundException`` is raised either way.
         """
-        body = _clean_dict(fields=fields)
-        resp = self.client.get_network(network_id, **body)
+        resp = self._neutron.get_network(
+            network_id,
+            fields=None if fields is _NONE else fields,
+            missing_is_failure=missing_is_failure)
         return resp.to_dict(
             computed=False, original_names=True,
             headers=False, ignore_none=True)
@@ -299,12 +340,10 @@ class NeutronService(service.Service):
         :param external: check target network is external or not
         """
         network = None
-        # Try to treat the identifier as an ID first (single measured call).
         try:
-            network = self.get_network(network_id_or_name)
-        except sdk_exceptions.SDKException:
-            # Not an ID (or not found by ID): fall back to a measured
-            # name-based lookup via list_networks.
+            network = self.get_network(network_id_or_name,
+                                       missing_is_failure=False)
+        except sdk_exceptions.NotFoundException:
             network = None
         if network is None:
             for net in self.list_networks():
@@ -448,6 +487,8 @@ class NeutronService(service.Service):
 
         :param network_id: The ID of the network to which the subnet belongs.
         :param router_id: An external router and add as an interface to subnet.
+            The ID of the router port of that interface is returned as the
+            ``router_port_id`` key of the subnet.
         :param project_id: The ID of the project that owns the resource.
             Only administrative and users with advsvc role can specify a
             project ID other than their own. You cannot change this value
@@ -532,8 +573,9 @@ class NeutronService(service.Service):
         subnet = subnet.to_dict(computed=False, original_names=True,
                                 headers=False, ignore_none=True)
         if router_id:
-            self.add_interface_to_router(router_id=router_id,
-                                         subnet_id=subnet["id"])
+            interface = self.add_interface_to_router(router_id=router_id,
+                                                     subnet_id=subnet["id"])
+            subnet["router_port_id"] = interface["port_id"]
         return subnet
 
     @atomic.action_timer("neutron.show_subnet")
@@ -1007,9 +1049,7 @@ class NeutronService(service.Service):
             net_id = ext_networks[0]["id"]
 
         description = _NONE
-        api_info = self._clients.credential.api_info.get("neutron", {})
-        if (not api_info.get("pre_newton", False)
-                and not CONF.openstack.pre_newton_neutron):
+        if not is_pre_newton(self._clients.credential):
             description = self.generate_random_name()
 
         body = _clean_dict(
@@ -1031,10 +1071,10 @@ class NeutronService(service.Service):
         except sdk_exceptions.BadRequestException as e:
             error = "%s" % e
             if "Unrecognized attribute" in error and "'description'" in error:
-                LOG.info("It looks like you have Neutron API of pre-Newton "
-                         "OpenStack release. Setting "
-                         "openstack.pre_newton_neutron option via Rally "
-                         "configuration should fix an issue.")
+                LOG.info("The Neutron API seems older than OpenStack Newton, "
+                         "which is deprecated. Until its support is removed, "
+                         "set `pre_newton: true` in the neutron api_info of "
+                         "the environment.")
             raise
 
     @atomic.action_timer("neutron.show_floating_ip")

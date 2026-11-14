@@ -28,6 +28,7 @@ if t.TYPE_CHECKING:
     from openstack.network.v2.firewall_group import FirewallGroup
     from openstack.network.v2.firewall_policy import FirewallPolicy
     from openstack.network.v2.firewall_rule import FirewallRule
+    from openstack.network.v2.tap_flow import TapFlow
     from openstack.network.v2.tap_mirror import TapMirror
     from openstack.network.v2.tap_service import TapService
 
@@ -449,28 +450,20 @@ class NeutronTapMirror(NeutronSDKMixin):
 
 @base.resource("neutron", "tap_flow", order=next(_neutron_order),
                tenant_resource=True)
-class NeutronTapFlow(NeutronMixin):
+class NeutronTapFlow(NeutronSDKMixin):
 
-    def _neutron_client(self):
-        return (self._admin_required and self.admin or self.user).neutron
-
-    def id(self):
-        return self.raw_resource.id
-
-    def name(self):
-        return self.raw_resource.name
-
-    def list(self):
-        if not self._neutron.supports_extension("taas", silent=True):
+    def list(self) -> list["TapFlow"]:
+        client = self._neutron_client
+        if not client.supports_extension("taas"):
             return []
-        flows = self._neutron_client().list_tap_flows()
+        flows = client.list_tap_flows()
         if self.tenant_uuid:
             flows = [flow for flow in flows
                      if flow.project_id == self.tenant_uuid]
         return flows
 
-    def delete(self):
-        self._neutron_client().delete_tap_flow(self.id())
+    def delete(self) -> None:
+        self._neutron_client.delete_tap_flow(self.id())
 
 
 @base.resource("neutron", "tap_service", order=next(_neutron_order),
@@ -500,7 +493,8 @@ class NeutronFloatingIP(NeutronMixin):
         return self.raw_resource.get("description", "")
 
     def list(self):
-        if CONF.openstack.pre_newton_neutron:
+        client = self._admin_required and self.admin or self.user
+        if neutron.is_pre_newton(client.credential):
             # NOTE(andreykurilin): Neutron API of pre-newton openstack
             #   releases does not support description field in Floating IPs.
             #   We do not want to remove not-rally resources, so let's just do

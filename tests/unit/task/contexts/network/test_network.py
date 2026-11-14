@@ -18,7 +18,6 @@ from unittest import mock
 import ddt
 import netaddr
 from openstack.network.v2 import network as sdk_net
-from openstack.network.v2 import port as sdk_port
 from openstack.network.v2 import router as sdk_router
 from openstack.network.v2 import subnet as sdk_subnet
 
@@ -63,7 +62,12 @@ class NetworkTestCase(test.TestCase):
         self.assertEqual(("1.2.3.4", "5.6.7.8"),
                          context.config["dns_nameservers"])
 
-    def test_setup(self):
+    @ddt.data(
+        (["port-1", "port-2"], ["port-1", "port-2"]),
+        (["port-1", "port-1"], ["port-1"]),
+    )
+    @ddt.unpack
+    def test_setup(self, interface_port_ids, router_port_ids):
         ctx = self.get_context(networks_per_tenant=1,
                                network_create_args={},
                                subnets_per_network=2,
@@ -82,10 +86,8 @@ class NetworkTestCase(test.TestCase):
         nc.create_router.return_value = sdk_router.Router(**router)
         nc.create_subnet.side_effect = [
             sdk_subnet.Subnet(**s) for s in subnets]
-        nc.ports.return_value = [
-            sdk_port.Port(**{"id": "router-port-id",
-                             "device_owner": "network:router_interface"})
-        ]
+        nc.add_interface_to_router.side_effect = [
+            {"port_id": port_id} for port_id in interface_port_ids]
 
         network_context.Network(ctx).setup()
 
@@ -94,7 +96,7 @@ class NetworkTestCase(test.TestCase):
             computed=False, original_names=True, headers=False,
             ignore_none=True)
         expected_network["router_id"] = router["id"]
-        expected_network["router_port_id"] = "router-port-id"
+        expected_network["router_port_ids"] = router_port_ids
         expected_network["subnets"] = [s["id"] for s in subnets]
         self.assertEqual(
             [expected_network],
@@ -120,6 +122,7 @@ class NetworkTestCase(test.TestCase):
             ],
             nc.add_interface_to_router.call_args_list
         )
+        self.assertFalse(nc.ports.called)
 
     def test_setup_without_router(self):
         dns_nameservers = ["1.2.3.4", "5.6.7.8"]
@@ -149,7 +152,7 @@ class NetworkTestCase(test.TestCase):
             computed=False, original_names=True, headers=False,
             ignore_none=True)
         expected_network["router_id"] = None
-        expected_network["router_port_id"] = None
+        expected_network["router_port_ids"] = []
         expected_network["subnets"] = [s["id"] for s in subnets]
         self.assertEqual(
             [expected_network],

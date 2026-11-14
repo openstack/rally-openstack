@@ -14,12 +14,10 @@
 
 from unittest import mock
 
+from openstack.network.v2 import port as sdk_port
+
 from rally_openstack.task.contexts.neutron import ports
 from tests.unit import test
-
-
-NEUTRON = ("rally_openstack.common.services.network.neutron"
-           ".NeutronService")
 
 
 class PortsContextTestCase(test.TestCase):
@@ -28,6 +26,7 @@ class PortsContextTestCase(test.TestCase):
         super().setUp()
         self.mock_clients = mock.patch.object(
             ports.osclients, "Clients").start()
+        self.neutron = self.mock_clients.return_value.neutron
 
     def _get_context(self, **kwargs):
         foo_tenant = {"networks": [{"id": "net-foo"}, {"id": "net-bar"}]}
@@ -44,13 +43,12 @@ class PortsContextTestCase(test.TestCase):
             },
         }
 
-    @mock.patch(NEUTRON)
-    def test_setup_creates_ports(self, mock_neutron_service):
-        mock_client = mock_neutron_service.return_value
-        mock_client.create_port.side_effect = [
-            {"id": "port-1"}, {"id": "port-2"},
-            {"id": "port-3"}, {"id": "port-4"},
-        ]
+    def test_setup_creates_ports(self):
+        created = [sdk_port.Port(id=f"port-{i}") for i in range(1, 5)]
+        self.neutron.create_port.side_effect = created
+        expected = [port.to_dict(computed=False, original_names=True,
+                                 headers=False, ignore_none=True)
+                    for port in created]
         context = self._get_context(ports_per_project=2)
         ctx = ports.Ports(context)
         ctx._iterate_per_projects = mock.MagicMock(return_value=[
@@ -60,26 +58,22 @@ class PortsContextTestCase(test.TestCase):
 
         ctx.setup()
 
-        self.assertEqual(
-            [{"id": "port-1"}, {"id": "port-2"}],
-            context["tenants"]["foo_tenant"]["ports"])
-        self.assertEqual(
-            [{"id": "port-3"}, {"id": "port-4"}],
-            context["tenants"]["bar_tenant"]["ports"])
+        self.assertEqual(expected[:2],
+                         context["tenants"]["foo_tenant"]["ports"])
+        self.assertEqual(expected[2:],
+                         context["tenants"]["bar_tenant"]["ports"])
         self.mock_clients.assert_has_calls([
-            mock.call(context["users"][0]["credential"]),
-            mock.call(context["users"][1]["credential"]),
-        ])
-        self.assertIs(
-            self.mock_clients.return_value,
-            mock_neutron_service.call_args.args[0])
+            mock.call(context["users"][0]["credential"],
+                      name_generator=ctx.generate_random_name,
+                      atomic_inst=ctx.atomic_actions()),
+            mock.call(context["users"][1]["credential"],
+                      name_generator=ctx.generate_random_name,
+                      atomic_inst=ctx.atomic_actions()),
+        ], any_order=True)
 
-    @mock.patch(NEUTRON)
-    def test_setup_distributes_across_networks(self, mock_neutron_service):
-        mock_client = mock_neutron_service.return_value
-        mock_client.create_port.side_effect = [
-            {"id": "port-1"}, {"id": "port-2"}, {"id": "port-3"},
-        ]
+    def test_setup_distributes_across_networks(self):
+        self.neutron.create_port.side_effect = [
+            sdk_port.Port(id=f"port-{i}") for i in range(1, 4)]
         context = self._get_context(ports_per_project=3)
         ctx = ports.Ports(context)
         ctx._iterate_per_projects = mock.MagicMock(return_value=[
@@ -88,13 +82,13 @@ class PortsContextTestCase(test.TestCase):
 
         ctx.setup()
 
-        calls = mock_client.create_port.call_args_list
-        self.assertEqual("net-foo", calls[0].kwargs["network_id"])
-        self.assertEqual("net-bar", calls[1].kwargs["network_id"])
-        self.assertEqual("net-foo", calls[2].kwargs["network_id"])
+        self.assertEqual(
+            [mock.call(network_id="net-foo"),
+             mock.call(network_id="net-bar"),
+             mock.call(network_id="net-foo")],
+            self.neutron.create_port.call_args_list)
 
-    @mock.patch(NEUTRON)
-    def test_setup_empty_networks(self, mock_neutron_service):
+    def test_setup_empty_networks(self):
         context = self._get_context(ports_per_project=2)
         context["tenants"]["foo_tenant"]["networks"] = []
         ctx = ports.Ports(context)
@@ -106,11 +100,9 @@ class PortsContextTestCase(test.TestCase):
 
         self.assertIn("No networks found for project foo_tenant", str(error))
         self.assertIn("network@openstack", str(error))
-        mock_neutron_service.return_value.create_port.assert_not_called()
+        self.assertFalse(self.neutron.create_port.called)
 
-    @mock.patch(NEUTRON)
-    def test_cleanup(self, mock_neutron_service):
-        mock_client = mock_neutron_service.return_value
+    def test_cleanup(self):
         context = self._get_context()
         context["tenants"]["foo_tenant"]["ports"] = [
             {"id": "port-1"}, {"id": "port-2"}]
@@ -123,17 +115,12 @@ class PortsContextTestCase(test.TestCase):
 
         ctx.cleanup()
 
-        mock_client.delete_port.assert_has_calls(
-            [mock.call("port-1"), mock.call("port-2")])
-        self.mock_clients.assert_has_calls([
-            mock.call(context["users"][0]["credential"]),
-            mock.call(context["users"][1]["credential"]),
-        ])
+        self.assertEqual(
+            [mock.call("port-1"), mock.call("port-2")],
+            self.neutron.delete_port.call_args_list)
 
-    @mock.patch(NEUTRON)
-    def test_cleanup_handles_delete_failure(self, mock_neutron_service):
-        mock_client = mock_neutron_service.return_value
-        mock_client.delete_port.side_effect = [Exception("gone"), None]
+    def test_cleanup_handles_delete_failure(self):
+        self.neutron.delete_port.side_effect = [Exception("gone"), None]
         context = self._get_context()
         context["tenants"]["foo_tenant"]["ports"] = [
             {"id": "port-1"}, {"id": "port-2"}]
@@ -145,4 +132,4 @@ class PortsContextTestCase(test.TestCase):
 
         ctx.cleanup()
 
-        self.assertEqual(2, mock_client.delete_port.call_count)
+        self.assertEqual(2, self.neutron.delete_port.call_count)

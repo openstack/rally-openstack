@@ -89,12 +89,12 @@ class OpenStack(platform.Platform):
                             "service_type": {"type": "string"},
                             "pre_newton": {
                                 "type": "boolean",
-                                "description": "Whether Neutron API is older "
-                                               "then OpenStack Newton or not. "
-                                               "Based on this option, some "
-                                               "external fields for "
-                                               "identifying resources can be "
-                                               "applied."
+                                "description": "Deprecated. Whether Neutron "
+                                               "API is older then OpenStack "
+                                               "Newton or not. Based on this "
+                                               "option, some external fields "
+                                               "for identifying resources "
+                                               "can be applied."
                             }
                         },
                         "minProperties": 1,
@@ -211,6 +211,12 @@ class OpenStack(platform.Platform):
                     message=f"There is no OSClient plugin '{name}' for "
                             f"communicating with OpenStack API."
                 )
+            if name == "neutron" and "pre_newton" in service_info:
+                notices.append(
+                    "'pre_newton' of the neutron api_info is deprecated "
+                    "since Rally-OpenStack 4.2.0 and will be removed "
+                    "together with support of Neutron API older than "
+                    "Newton.")
             if "version" not in service_info:
                 continue
             try:

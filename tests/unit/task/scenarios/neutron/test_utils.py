@@ -85,14 +85,15 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         # resolves it by name.
         self.assertEqual("foo-id",
                          self.scenario._get_network_id("foo-network"))
-        self._nc.get_network.assert_called_once_with("foo-network")
+        self._nc.get_network.assert_called_once_with(
+            "foo-network", fields=None)
         self._nc.networks.assert_called_once_with()
         self._nc.get_network.reset_mock()
         self._nc.networks.reset_mock()
 
         # Valid network-id: get_network resolves it directly (single call).
         self.assertEqual("foo-id", self.scenario._get_network_id("foo-id"))
-        self._nc.get_network.assert_called_once_with("foo-id")
+        self._nc.get_network.assert_called_once_with("foo-id", fields=None)
         self.assertFalse(self._nc.networks.called)
         self._nc.get_network.reset_mock()
         self._nc.networks.reset_mock()
@@ -101,7 +102,8 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         # GetResourceFailure, scenario re-raises NotFoundException.
         self.assertRaises(exceptions.NotFoundException,
                           self.scenario._get_network_id, "absent-network")
-        self._nc.get_network.assert_called_once_with("absent-network")
+        self._nc.get_network.assert_called_once_with(
+            "absent-network", fields=None)
         self._nc.networks.assert_called_once_with()
 
     def test_create_network(self):
@@ -143,7 +145,7 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
 
         return_network = self.scenario._show_network(network)
         self.assertEqual({"network": net_dict}, return_network)
-        self._nc.get_network.assert_called_once_with("fake-id")
+        self._nc.get_network.assert_called_once_with("fake-id", fields=None)
         resource.to_dict.assert_called_with(
             computed=False, original_names=True, headers=False,
             ignore_none=True)
@@ -1243,7 +1245,8 @@ class NeutronScenarioTestCase(test.ScenarioTestCase):
         self._nc.create_ip.assert_called_once_with(
             floating_network_id=network_id,
             description="random_name")
-        self._nc.get_network.assert_called_once_with(floating_network)
+        self._nc.get_network.assert_called_once_with(
+            floating_network, fields=None)
         self._nc.networks.assert_called_once_with()
         self._test_atomic_action_timer(self.scenario.atomic_actions(),
                                        "neutron.create_floating_ip")

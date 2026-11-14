@@ -104,7 +104,7 @@ class NeutronNetworksTestCase(test.TestCase):
 
         self.nc.create_network.assert_called_once_with(
             name=mock.ANY, **network_create_args)
-        self.nc.get_network.assert_called_once_with(net["id"])
+        self.nc.get_network.assert_called_once_with(net["id"], fields=None)
 
     def test_create_and_update_networks(self):
         net = {

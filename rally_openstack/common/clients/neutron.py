@@ -15,12 +15,17 @@
 from __future__ import annotations
 
 import enum
+import time
 import typing as t
 
 from rally import exceptions
+from rally.common import cfg
 from rally.task import atomic
 
 from rally_openstack.common.clients import base
+
+
+CONF = cfg.CONF
 
 
 class MirrorType(enum.StrEnum):
@@ -28,6 +33,11 @@ class MirrorType(enum.StrEnum):
 
     GRE = "gre"
     ERSPANV1 = "erspanv1"
+
+
+# The highest tunnel ID a mirror type carries on the wire (the GRE key and the
+# 10-bit ERSPAN v1 session ID); IDs start at 1.
+MAX_TUNNEL_ID = {MirrorType.GRE: 16777215, MirrorType.ERSPANV1: 1023}
 
 
 MirrorDirection = t.Literal["IN", "OUT"]
@@ -186,9 +196,34 @@ class Neutron(base.LegacyClientCompat):
     def list_networks(self, **filters: t.Any) -> list[Network]:
         return list(self._network.networks(**filters))
 
-    @atomic.action_timer("neutron.show_network")
-    def get_network(self, network_id: str) -> Network:
-        return self._network.get_network(network_id)
+    def get_network(
+        self,
+        network_id: str,
+        *,
+        fields: list[str] | None = None,
+        missing_is_failure: bool = True,
+    ) -> Network:
+        """Return a network by id.
+
+        :param fields: limit the attributes neutron returns
+        :param missing_is_failure: whether a missing network marks the
+            ``neutron.show_network`` atomic action as failed. Pass False when
+            the call only probes whether the network exists. The
+            ``NotFoundException`` is raised either way.
+        """
+        from openstack import exceptions as sdk_exc
+
+        missing: sdk_exc.NotFoundException | None = None
+        with self._atomic_action("neutron.show_network"):
+            try:
+                network = self._network.get_network(network_id, fields=fields)
+            except sdk_exc.NotFoundException as e:
+                if missing_is_failure:
+                    raise
+                missing = e
+        if missing is not None:
+            raise missing
+        return network
 
     @atomic.action_timer("neutron.delete_network")
     def delete_network(self, network_id: str) -> None:
@@ -584,21 +619,74 @@ class Neutron(base.LegacyClientCompat):
         if not attrs:
             raise ValueError("update_firewall_group requires something to "
                              "change")
-        return self._network.update_firewall_group(group_id, **attrs)
+        return self._apply_firewall_group_update(
+            "neutron.update_firewall_group_request", group_id, attrs)
 
     @atomic.action_timer("neutron.associate_firewall_group_port")
     def associate_firewall_group_ports(
         self, group_id: str, port_ids: list[str]
     ) -> FirewallGroup:
         """Make these ports the ones the group protects."""
-        return self._network.update_firewall_group(group_id, ports=port_ids)
+        return self._apply_firewall_group_update(
+            "neutron.associate_firewall_group_port_request", group_id,
+            {"ports": port_ids})
 
     @atomic.action_timer("neutron.disassociate_firewall_group_port")
     def disassociate_firewall_group_ports(
         self, group_id: str
     ) -> FirewallGroup:
         """Detach every port from the group."""
-        return self._network.update_firewall_group(group_id, ports=[])
+        return self._apply_firewall_group_update(
+            "neutron.disassociate_firewall_group_port_request", group_id,
+            {"ports": []})
+
+    def _apply_firewall_group_update(
+        self, request_action: str, group_id: str, attrs: dict[str, t.Any]
+    ) -> FirewallGroup:
+        """Update a group and wait until the backend has applied the change.
+
+        The response tells whether the change is already applied: the OVN
+        backend applies it within the request, the agent-based one leaves the
+        group ``PENDING_*`` until its agents report back. The request and the
+        wait are timed as separate children of the calling action only when
+        there is something to wait for.
+        """
+        with self._atomic_action(request_action) as request:
+            group = self._network.update_firewall_group(group_id, **attrs)
+        if not (group.status or "").startswith("PENDING_"):
+            request._root.remove(request.atomic_action)
+            return group
+        return self.wait_for_firewall_group(group_id)
+
+    @atomic.action_timer("neutron.wait_for_firewall_group_applied")
+    def wait_for_firewall_group(self, group_id: str) -> FirewallGroup:
+        """Poll a firewall group until no change to it is pending.
+
+        A change of the ports or the policies of a group leaves it in a
+        ``PENDING_*`` status until the backend applies it, and neutron rejects
+        any other update of the group meanwhile. The OVN backend applies the
+        change within the request, while the agent-based one does it later.
+        """
+        timeout = CONF.openstack.neutron_firewall_group_timeout
+        start = time.time()
+        while True:
+            group = self._network.get_firewall_group(group_id)
+            status = group.status or ""
+            if status == "ERROR":
+                raise exceptions.GetResourceErrorStatus(
+                    resource=group_id, status=status,
+                    fault="The backend failed to apply the firewall group")
+            if not status.startswith("PENDING_"):
+                return group
+            self._sleeper(CONF.openstack.neutron_firewall_group_poll_interval)
+            if time.time() - start > timeout:
+                raise exceptions.TimeoutException(
+                    desired_status="not PENDING_*",
+                    resource_name=group.name,
+                    resource_type="FirewallGroup",
+                    resource_id=group_id,
+                    resource_status=status,
+                    timeout=timeout)
 
     @atomic.action_timer("neutron.delete_firewall_group")
     def delete_firewall_group(self, group_id: str) -> None:
@@ -610,7 +698,7 @@ class Neutron(base.LegacyClientCompat):
 
     @atomic.action_timer("neutron.delete_trunk")
     def delete_trunk(self, trunk_id: str) -> None:
-        self._network.delete_trunk(trunk_id)
+        self._network.delete_trunk(trunk_id, ignore_missing=False)
 
     @atomic.action_timer("neutron.create_tap_flow")
     def create_tap_flow(

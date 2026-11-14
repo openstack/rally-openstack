@@ -22,6 +22,7 @@ from rally import exceptions
 
 from rally_openstack.common import consts
 from rally_openstack.common import validators
+from rally_openstack.task.scenarios.neutron import taas
 from tests.unit import test
 
 
@@ -221,43 +222,56 @@ class ExternalNetworkExistsValidatorTestCase(test.TestCase):
         self.config = make_config()
         self.context = make_context()
 
-    @ddt.unpack
-    @ddt.data(
-        {"foo_conf": {}},
-        {"foo_conf": {"args": {"net": "custom"}}},
-        {"foo_conf": {"args": {"net": "non_exist"}},
-         "err_msg": "External (floating) network with name non_exist"
-                    " not found by user {}. Available networks:"
-                    " [{}, {}]"},
-        {"foo_conf": {"args": {"net": "custom"}},
-         "net1_name": {"name": {"net": "public"}},
-         "net2_name": {"name": {"net": "custom"}},
-         "err_msg": "External (floating) network with name custom"
-                    " not found by user {}. Available networks:"
-                    " [{}, {}]"}
-    )
-    def test_validator(self, foo_conf, net1_name="public", net2_name="custom",
-                       err_msg=""):
+    def _set_external_networks(self, *names):
+        networks = []
+        for name in names:
+            network = mock.Mock()
+            network.name = name
+            networks.append(network)
 
-        user = self.context["users"][0]
+        def list_networks(**filters):
+            if "name" in filters:
+                return [n for n in networks if n.name == filters["name"]]
+            return networks
 
-        net1 = {"name": net1_name, "router:external": True}
-        net2 = {"name": net2_name, "router:external": True}
+        neutron = self.context["users"][0]["credential"].clients().neutron
+        neutron.list_networks.side_effect = list_networks
+        return neutron
 
-        user["credential"].clients().neutron().list_networks.return_value = {
-            "networks": [net1, net2]}
-        if err_msg:
-            e = self.assertRaises(
-                validators.validation.ValidationError,
-                self.validator.validate, self.context, foo_conf,
-                None, None)
-            self.assertEqual(
-                err_msg.format(user["credential"].username, net1, net2),
-                e.message)
-        else:
-            result = self.validator.validate(self.context, foo_conf,
-                                             None, None)
-            self.assertIsNone(result, "Unexpected result '%s'" % result)
+    def test_validator_without_network_arg(self):
+        neutron = self._set_external_networks("public")
+
+        self.validator.validate(self.context, {}, None, None)
+
+        self.assertFalse(neutron.list_networks.called)
+
+    def test_validator(self):
+        neutron = self._set_external_networks("public", "custom")
+
+        self.validator.validate(
+            self.context, {"args": {"net": "custom"}}, None, None)
+
+        neutron.list_networks.assert_called_once_with(
+            is_router_external=True, name="custom")
+
+    def test_validator_network_not_found(self):
+        neutron = self._set_external_networks("public", "custom")
+        username = self.context["users"][0]["credential"].username
+
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            self.validator.validate, self.context,
+            {"args": {"net": "non_exist"}}, None, None)
+
+        self.assertEqual(
+            f"External (floating) network with name non_exist not found by "
+            f"user {username}. Available external networks: "
+            f"['public', 'custom']",
+            e.message)
+        self.assertEqual(
+            [mock.call(is_router_external=True, name="non_exist"),
+             mock.call(is_router_external=True)],
+            neutron.list_networks.call_args_list)
 
 
 @ddt.ddt
@@ -1115,27 +1129,81 @@ class RequiredContextConfigValidatorTestCase(test.TestCase):
         self.assertIn("network", e.message)
 
 
+@ddt.ddt
+class IterationsPerProjectTestCase(test.TestCase):
+
+    @ddt.data(
+        ({"runner_type": "constant", "runner": {"concurrency": 5}}, 5),
+        ({"runner_type": "constant", "runner": {}}, 1),
+        ({"runner_type": "constant_for_duration",
+          "runner": {"concurrency": 3}}, 3),
+        ({"runner_type": "rps", "runner": {"times": 7}}, 7),
+        ({"runner_type": "rps",
+          "runner": {"times": 7, "max_concurrency": 2}}, 2),
+        ({"runner_type": "serial", "runner": {"times": 7}}, 1),
+        ({"runner_type": "constant@default",
+          "runner": {"concurrency": 4}}, 4),
+        ({}, 1),
+    )
+    @ddt.unpack
+    def test_concurrency(self, config, concurrency):
+        self.assertEqual(
+            (concurrency, 1, concurrency),
+            validators._iterations_per_project(config, None))
+
+    @ddt.data("users", "users@openstack")
+    def test_projects(self, users_ctx_name):
+        config = {"contexts": {users_ctx_name: {"tenants": 3}},
+                  "runner_type": "constant", "runner": {"concurrency": 7}}
+        self.assertEqual(
+            (7, 3, 3), validators._iterations_per_project(config, None))
+
+
+class ContextConfigTestCase(test.TestCase):
+
+    def test_short_name(self):
+        config = {"contexts": {"ports": {"ports_per_project": 2}}}
+        self.assertEqual({"ports_per_project": 2},
+                         validators._context_config(config, None, "ports"))
+
+    def test_full_name(self):
+        config = {"contexts": {"ports@openstack": {"ports_per_project": 2}}}
+        self.assertEqual({"ports_per_project": 2},
+                         validators._context_config(config, None, "ports"))
+
+    def test_scenario_default_context(self):
+        self.assertEqual({}, validators._context_config(
+            {}, taas.CreateAndListTapServices, "ports"))
+
+    def test_workload_context_wins_over_scenario_default(self):
+        config = {"contexts": {"ports": {"ports_per_project": 3}}}
+        self.assertEqual({"ports_per_project": 3}, validators._context_config(
+            config, taas.CreateAndListTapServices, "ports"))
+
+    def test_missing(self):
+        self.assertIsNone(validators._context_config(
+            {"contexts": {"network": {}}}, None, "ports"))
+
+
 class RequiredNetworksPerProjectValidatorTestCase(test.TestCase):
 
     def test_valid_sizing(self):
         validator = validators.RequiredNetworksPerProjectValidator()
         cfg = {
-            "contexts": {
-                "network": {"networks_per_tenant": 5},
-                "users": {"tenants": 2},
-            },
-            "runner": {"constant": {"concurrency": 10}},
+            "contexts": {"network": {"networks_per_tenant": 5},
+                         "users": {"tenants": 2}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 10},
         }
         validator.validate({}, cfg, None, None)
 
     def test_insufficient_networks(self):
         validator = validators.RequiredNetworksPerProjectValidator()
         cfg = {
-            "contexts": {
-                "network": {"networks_per_tenant": 2},
-                "users": {"tenants": 1},
-            },
-            "runner": {"constant": {"concurrency": 5}},
+            "contexts": {"network": {"networks_per_tenant": 2},
+                         "users": {"tenants": 1}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 5},
         }
         e = self.assertRaises(
             validators.validation.ValidationError,
@@ -1143,31 +1211,42 @@ class RequiredNetworksPerProjectValidatorTestCase(test.TestCase):
         self.assertIn("networks_per_tenant=2", e.message)
         self.assertIn("at least 5", e.message)
 
+    def test_empty_network_config(self):
+        validator = validators.RequiredNetworksPerProjectValidator()
+        cfg = {
+            "contexts": {"network@openstack": {}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 2},
+        }
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertIn("networks_per_tenant=1", e.message)
+
     def test_multi_project_sizing(self):
         validator = validators.RequiredNetworksPerProjectValidator()
         cfg = {
-            "contexts": {
-                "network": {"networks_per_tenant": 3},
-                "users": {"tenants": 4},
-            },
-            "runner": {"constant": {"concurrency": 10}},
+            "contexts": {"network": {"networks_per_tenant": 3},
+                         "users": {"tenants": 4}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 10},
         }
         validator.validate({}, cfg, None, None)
 
     def test_no_network_context(self):
         validator = validators.RequiredNetworksPerProjectValidator()
-        cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
+        cfg = {"contexts": {}, "runner_type": "constant",
+               "runner": {"concurrency": 5}}
         validator.validate({}, cfg, None, None)
 
     def test_multiplier(self):
         validator = validators.RequiredNetworksPerProjectValidator(
             multiplier=2)
         cfg = {
-            "contexts": {
-                "network": {"networks_per_tenant": 5},
-                "users": {"tenants": 1},
-            },
-            "runner": {"constant": {"concurrency": 5}},
+            "contexts": {"network": {"networks_per_tenant": 5},
+                         "users": {"tenants": 1}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 5},
         }
         e = self.assertRaises(
             validators.validation.ValidationError,
@@ -1180,22 +1259,20 @@ class RequiredPortsPerProjectValidatorTestCase(test.TestCase):
     def test_valid_sizing(self):
         validator = validators.RequiredPortsPerProjectValidator()
         cfg = {
-            "contexts": {
-                "ports": {"ports_per_project": 5},
-                "users": {"tenants": 2},
-            },
-            "runner": {"constant": {"concurrency": 10}},
+            "contexts": {"ports": {"ports_per_project": 5},
+                         "users": {"tenants": 2}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 10},
         }
         validator.validate({}, cfg, None, None)
 
     def test_insufficient_ports(self):
         validator = validators.RequiredPortsPerProjectValidator()
         cfg = {
-            "contexts": {
-                "ports": {"ports_per_project": 2},
-                "users": {"tenants": 1},
-            },
-            "runner": {"constant": {"concurrency": 5}},
+            "contexts": {"ports@openstack": {"ports_per_project": 2},
+                         "users@openstack": {"tenants": 1}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 5},
         }
         e = self.assertRaises(
             validators.validation.ValidationError,
@@ -1206,25 +1283,35 @@ class RequiredPortsPerProjectValidatorTestCase(test.TestCase):
     def test_multi_project_sizing(self):
         validator = validators.RequiredPortsPerProjectValidator()
         cfg = {
-            "contexts": {
-                "ports": {"ports_per_project": 3},
-                "users": {"tenants": 4},
-            },
-            "runner": {"constant": {"concurrency": 10}},
+            "contexts": {"ports": {"ports_per_project": 3},
+                         "users": {"tenants": 4}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 10},
         }
         validator.validate({}, cfg, None, None)
 
     def test_no_ports_context(self):
         validator = validators.RequiredPortsPerProjectValidator()
-        cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
+        cfg = {"contexts": {}, "runner_type": "constant",
+               "runner": {"concurrency": 5}}
         validator.validate({}, cfg, None, None)
+
+    def test_default_ports_context_of_scenario(self):
+        validator = validators.RequiredPortsPerProjectValidator()
+        cfg = {"contexts": {}, "runner_type": "constant",
+               "runner": {"concurrency": 2}}
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, taas.CreateAndListTapServices, None)
+        self.assertIn("ports_per_project=1", e.message)
 
 
 class RequiredPortsForTapFlowsValidatorTestCase(test.TestCase):
 
     def test_empty_ports_config(self):
         validator = validators.RequiredPortsForTapFlowsValidator()
-        cfg = {"contexts": {"ports": {}, "tap_services": {}}}
+        cfg = {"contexts": {"ports": {}, "tap_services": {}},
+               "runner_type": "constant", "runner": {}}
 
         self.assertRaises(
             validators.validation.ValidationError,
@@ -1233,24 +1320,23 @@ class RequiredPortsForTapFlowsValidatorTestCase(test.TestCase):
     def test_valid_sizing(self):
         validator = validators.RequiredPortsForTapFlowsValidator()
         cfg = {
-            "contexts": {
-                "ports": {"ports_per_project": 4},
-                "tap_services": {"services_per_project": 2},
-                "users": {"tenants": 2},
-            },
-            "runner": {"constant": {"concurrency": 4}},
+            "contexts": {"ports": {"ports_per_project": 4},
+                         "tap_services": {"services_per_project": 2},
+                         "users": {"tenants": 2}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 4},
         }
         validator.validate({}, cfg, None, None)
 
     def test_insufficient_ports(self):
         validator = validators.RequiredPortsForTapFlowsValidator()
         cfg = {
-            "contexts": {
-                "ports": {"ports_per_project": 2},
-                "tap_services": {"services_per_project": 1},
-                "users": {"tenants": 1},
-            },
-            "runner": {"constant": {"concurrency": 5}},
+            "contexts": {"ports": {"ports_per_project": 2},
+                         "tap_services@openstack": {
+                             "services_per_project": 1},
+                         "users": {"tenants": 1}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 5},
         }
         e = self.assertRaises(
             validators.validation.ValidationError,
@@ -1262,15 +1348,47 @@ class RequiredPortsForTapFlowsValidatorTestCase(test.TestCase):
     def test_default_services_per_project(self):
         validator = validators.RequiredPortsForTapFlowsValidator()
         cfg = {
-            "contexts": {
-                "ports": {"ports_per_project": 3},
-                "users": {"tenants": 1},
-            },
-            "runner": {"constant": {"concurrency": 2}},
+            "contexts": {"ports": {"ports_per_project": 3},
+                         "users": {"tenants": 1}},
+            "runner_type": "constant",
+            "runner": {"concurrency": 2},
         }
         validator.validate({}, cfg, None, None)
 
     def test_no_ports_context(self):
         validator = validators.RequiredPortsForTapFlowsValidator()
-        cfg = {"contexts": {}, "runner": {"constant": {"concurrency": 5}}}
+        cfg = {"contexts": {}, "runner_type": "constant",
+               "runner": {"concurrency": 5}}
         validator.validate({}, cfg, None, None)
+
+
+@ddt.ddt
+class TapMirrorTunnelIdsValidatorTestCase(test.TestCase):
+
+    @ddt.data(
+        ({"mirror_type": "erspanv1"}, {"times": 1023}),
+        ({"mirror_type": "erspanv1", "mirror_directions": ["IN", "OUT"]},
+         {"times": 511}),
+        ({}, {"times": 100000}),
+        ({"mirror_type": "erspanv1"}, {"duration": 600}),
+        ({"mirror_type": "unknown"}, {"times": 100000}),
+    )
+    @ddt.unpack
+    def test_validate(self, args, runner):
+        validator = validators.TapMirrorTunnelIdsValidator()
+        validator.validate(
+            {}, {"args": args, "runner_type": "constant", "runner": runner},
+            None, None)
+
+    def test_validate_too_many_iterations(self):
+        validator = validators.TapMirrorTunnelIdsValidator()
+        cfg = {"args": {"mirror_type": "erspanv1",
+                        "mirror_directions": ["IN", "OUT"]},
+               "runner_type": "constant", "runner": {"times": 512}}
+
+        e = self.assertRaises(
+            validators.validation.ValidationError,
+            validator.validate, {}, cfg, None, None)
+        self.assertEqual(
+            "erspanv1 tap mirrors have 1023 tunnel IDs, but 512 iterations "
+            "mirroring 2 direction(s) each need 1024.", e.message)

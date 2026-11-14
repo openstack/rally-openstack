@@ -25,6 +25,13 @@ OPTS = {"openstack": [
                  default=float(2),
                  deprecated_group="benchmark",
                  help="Neutron create loadbalancer poll interval"),
+    cfg.FloatOpt("neutron_firewall_group_timeout",
+                 default=float(120),
+                 help="How long to wait for a pending change of a Neutron "
+                      "firewall group to be applied"),
+    cfg.FloatOpt("neutron_firewall_group_poll_interval",
+                 default=float(1),
+                 help="Neutron firewall group status poll interval"),
     cfg.BoolOpt("pre_newton_neutron",
                 default=False,
                 deprecated_for_removal=True,

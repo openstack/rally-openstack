@@ -100,7 +100,7 @@ class NeutronWrapperTestCase(test.TestCase):
         self._nc.get_network.return_value = sdk_net.Network(**neutron_net)
         net = self.wrapper.get_network(net_id="foo_id")
         self.assertEqual(expected_net, net)
-        self._nc.get_network.assert_called_once_with("foo_id")
+        self._nc.get_network.assert_called_once_with("foo_id", fields=None)
 
         self._nc.get_network.side_effect = (
             sdk_exceptions.NotFoundException)
@@ -395,7 +395,7 @@ class NeutronWrapperTestCase(test.TestCase):
         self._nc.networks.return_value = iter([sdk_net.Network(**ext_net)])
         self.wrapper.create_floating_ip(
             tenant_id="foo_tenant", ext_network="ext_net", port_id="port_id")
-        self._nc.get_network.assert_called_with("ext_net")
+        self._nc.get_network.assert_called_with("ext_net", fields=None)
         self._nc.networks.assert_called_with()
 
         self._nc.networks.return_value = iter([])

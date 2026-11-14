@@ -13,23 +13,37 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import inspect
 import os
 import re
+import typing as t
 
 import yaml
 
 from rally import exceptions
 from rally.common import logging
 from rally.common import validation
+from rally.common.plugin import plugin
 from rally.plugins.common import validators
+from rally.task import scenario
 from rally.task import types
 
 from rally_openstack.common import consts
 from rally_openstack.common import osclients
+from rally_openstack.common.clients import neutron as neutron_client
 from rally_openstack.task import types as openstack_types
 from rally_openstack.task.contexts.keystone import roles
 from rally_openstack.task.contexts.nova import flavors as flavors_ctx
+
+
+if t.TYPE_CHECKING:
+    from rally_openstack.common import credential
+    from rally_openstack.task.contexts.keystone import users as users_ctx
+
+    class ContextWithUsers(t.TypedDict):
+        users: list[users_ctx.UserInfo]
 
 
 LOG = logging.getLogger(__name__)
@@ -37,7 +51,7 @@ LOG = logging.getLogger(__name__)
 
 @validation.configure("required_platform", platform="openstack")
 class RequiredOpenStackValidator(validation.RequiredPlatformValidator):
-    def __init__(self, admin=False, users=False):
+    def __init__(self, admin: bool=False, users: bool=False) -> None:
         """Validates credentials for OpenStack platform.
 
         This allows us to create 3 kind of tests cases:
@@ -97,7 +111,7 @@ def with_roles_ctx():
 @validation.configure(name="image_exists", platform="openstack")
 class ImageExistsValidator(validation.Validator):
 
-    def __init__(self, param_name, nullable):
+    def __init__(self, param_name: str, nullable: bool) -> None:
         """Validator checks existed image or not
 
         :param param_name: defines which variable should be used
@@ -109,7 +123,9 @@ class ImageExistsValidator(validation.Validator):
         self.nullable = nullable
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self, context: ContextWithUsers, config, plugin_cls, plugin_cfg
+    ):
 
         image_args = config.get("args", {}).get(self.param_name)
 
@@ -155,7 +171,7 @@ class ImageExistsValidator(validation.Validator):
 @validation.configure(name="external_network_exists", platform="openstack")
 class ExternalNetworkExistsValidator(validation.Validator):
 
-    def __init__(self, param_name):
+    def __init__(self, param_name: str) -> None:
         """Validator checks that external network with given name exists.
 
         :param param_name: name of validated network
@@ -164,7 +180,13 @@ class ExternalNetworkExistsValidator(validation.Validator):
         self.param_name = param_name
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self,
+        context: ContextWithUsers,
+        config: dict[str, t.Any],
+        plugin_cls: type[plugin.Plugin] | None,
+        plugin_cfg: t.Any,
+    ) -> None:
 
         ext_network = config.get("args", {}).get(self.param_name)
         if not ext_network:
@@ -176,14 +198,15 @@ class ExternalNetworkExistsValidator(validation.Validator):
 
             clients = creds.clients(
                 atomic_inst=None, name_generator=None, sleeper=None)
-            networks = clients.neutron().list_networks()["networks"]
-            external_networks = [net["name"] for net in networks if
-                                 net.get("router:external", False)]
-            if ext_network not in external_networks:
+            if not clients.neutron.list_networks(
+                    is_router_external=True, name=ext_network):
+                external_networks = [
+                    net.name for net in
+                    clients.neutron.list_networks(is_router_external=True)]
                 message = (
                     f"External (floating) network with name "
                     f"{ext_network} not found by user {creds.username}. "
-                    f"Available networks: {networks}")
+                    f"Available external networks: {external_networks}")
                 result.append(message)
         if result:
             self.fail("\n".join(result))
@@ -193,7 +216,7 @@ class ExternalNetworkExistsValidator(validation.Validator):
 @validation.configure(name="required_neutron_extensions", platform="openstack")
 class RequiredNeutronExtensionsValidator(validation.Validator):
 
-    def __init__(self, extensions, *args):
+    def __init__(self, extensions: list[str] | tuple[str] | str, *args: str):
         """Validator checks if the specified Neutron extension is available
 
         :param extensions: list of Neutron extensions
@@ -213,8 +236,10 @@ class RequiredNeutronExtensionsValidator(validation.Validator):
             self.req_ext.extend(args)
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
-        clients = context["users"][0]["credential"].clients(
+    def validate(
+        self, context: ContextWithUsers, config, plugin_cls, plugin_cfg
+    ):
+        clients: osclients.Clients = context["users"][0]["credential"].clients(
             atomic_inst=None, name_generator=None, sleeper=None)
         for extension in self.req_ext:
             if not clients.neutron.supports_extension(extension):
@@ -244,10 +269,12 @@ class FlavorExistsValidator(validation.Validator):
         resource = types.obj_from_name(resource_config=flavor_value,
                                        resources=flavors, typename="flavor")
         flavor = flavors_ctx.FlavorConfig(**resource)
-        flavor.id = "<context flavor: %s>" % flavor.name
+        flavor.id = f"<context flavor: {flavor.name}>"
         return flavor
 
-    def _get_validated_flavor(self, config, clients, param_name, plugin_cls):
+    def _get_validated_flavor(
+        self, config, clients: osclients.Clients, param_name, plugin_cls
+    ):
 
         from novaclient import exceptions as nova_exc
 
@@ -271,7 +298,9 @@ class FlavorExistsValidator(validation.Validator):
             self.fail("Flavor '%s' not found" % flavor_value)
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self, context: ContextWithUsers, config, plugin_cls, plugin_cfg
+    ):
         # flavors do not depend on user or tenant, so checking for one user
         # should be enough
         clients = context["users"][0]["credential"].clients(
@@ -306,7 +335,9 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
         self.fail_on_404_image = fail_on_404_image
         self.validate_disk = validate_disk
 
-    def _get_validated_image(self, config, clients, param_name, plugin_cls):
+    def _get_validated_image(
+        self, config, clients: osclients.Clients, param_name, plugin_cls
+    ):
 
         image_context = config.get("contexts", {}).get("images", {})
         image_args = config.get("args", {}).get(param_name)
@@ -349,7 +380,9 @@ class ImageValidOnFlavorValidator(FlavorExistsValidator):
             self.fail("Image '%s' not found" % image_args)
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self, context: ContextWithUsers, config, plugin_cls, plugin_cfg
+    ):
 
         flavor = None
         for user in context["users"]:
@@ -415,8 +448,10 @@ class RequiredServicesValidator(validation.Validator):
                       "long time and latest novaclient doesn't support it, so "
                       "we too.")
 
-        creds = (context.get("admin", {}).get("credential", None)
-                 or context["users"][0]["credential"])
+        creds: credential.OpenStackCredential = (
+            context.get("admin", {}).get("credential", None)
+            or context["users"][0]["credential"]
+        )
 
         if "api_versions" in config.get("contexts", {}):
             api_versions = config["contexts"]["api_versions"]
@@ -469,7 +504,9 @@ class ValidateHeatTemplateValidator(validation.Validator):
             self.params.extend(args)
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self, context: ContextWithUsers, config, plugin_cls, plugin_cfg
+    ):
 
         for param_name in self.params:
             template_path = config.get("args", {}).get(param_name)
@@ -514,7 +551,7 @@ class RequiredCinderServicesValidator(validation.Validator):
     @with_roles_ctx()
     def validate(self, context, config, plugin_cls, plugin_cfg):
 
-        clients = context["admin"]["credential"].clients(
+        clients: osclients.Clients = context["admin"]["credential"].clients(
             atomic_inst=None, name_generator=None, sleeper=None)
         for service in clients.cinder().services.list():
             if (service.binary == str(self.services)
@@ -538,13 +575,21 @@ class RequiredAPIVersionsValidator(validation.Validator):
         self.component = component
         self.versions = versions
 
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin],
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        users_context = t.cast("ContextWithUsers", context)
+        config = config or {}
         versions = [str(v) for v in self.versions]
         versions_str = ", ".join(versions)
         msg = ("Task was designed to be used with %(component)s "
                "V%(version)s, but V%(found_version)s is "
                "selected.")
-        for user in context["users"]:
+        for user in users_context["users"]:
             clients = user["credential"].clients(
                 atomic_inst=None, name_generator=None, sleeper=None)
             if self.component == "keystone":
@@ -576,7 +621,7 @@ class RequiredAPIVersionsValidator(validation.Validator):
 @validation.configure(name="volume_type_exists", platform="openstack")
 class VolumeTypeExistsValidator(validation.Validator):
 
-    def __init__(self, param_name, nullable=True):
+    def __init__(self, param_name: str, nullable: bool=True):
         """Returns validator for volume types.
 
         :param param_name: defines variable to be used as the flag to
@@ -589,7 +634,9 @@ class VolumeTypeExistsValidator(validation.Validator):
         self.nullable = nullable
 
     @with_roles_ctx()
-    def validate(self, context, config, plugin_cls, plugin_cfg):
+    def validate(
+        self, context: ContextWithUsers, config, plugin_cls, plugin_cfg
+    ):
         volume_type = config.get("args", {}).get(self.param, False)
 
         if not volume_type:
@@ -683,6 +730,53 @@ class RequiredContextConfigValidator(validation.Validator):
                 f"expects '{self.context_config}'")
 
 
+def _context_config(
+    config: dict[str, t.Any] | None,
+    plugin_cls: type[plugin.Plugin] | None,
+    name: str,
+) -> dict[str, t.Any] | None:
+    """Return the config of a context the workload runs, or None.
+
+    The workload keeps context names as the task wrote them, with or without
+    the platform suffix, and leaves out the contexts a scenario adds by
+    default, so both have to be looked at.
+    """
+    names = (name, f"{name}@openstack")
+    contexts = (config or {}).get("contexts") or {}
+    for key in names:
+        if key in contexts:
+            return contexts[key]
+    if plugin_cls is not None and issubclass(plugin_cls, scenario.Scenario):
+        defaults = plugin_cls.get_default_context()
+        for key in names:
+            if key in defaults:
+                return defaults[key]
+    return None
+
+
+def _iterations_per_project(
+    config: dict[str, t.Any] | None,
+    plugin_cls: type[plugin.Plugin] | None,
+) -> tuple[int, int, int]:
+    """Return concurrency, projects and iterations running per project.
+
+    The workload holds the runner config already unwrapped, with the runner
+    name kept apart in ``runner_type``.
+    """
+    config = config or {}
+    runner_type = (config.get("runner_type") or "").split("@")[0]
+    runner_cfg = config.get("runner") or {}
+    if runner_type == "rps":
+        concurrency = runner_cfg.get(
+            "max_concurrency", runner_cfg.get("times", 1))
+    else:
+        concurrency = runner_cfg.get("concurrency", 1)
+
+    users_ctx = _context_config(config, plugin_cls, "users") or {}
+    projects = users_ctx.get("tenants", 1)
+    return concurrency, projects, -(-concurrency // projects)
+
+
 @validation.configure(name="required_networks_per_project",
                       platform="openstack")
 class RequiredNetworksPerProjectValidator(validation.Validator):
@@ -696,33 +790,32 @@ class RequiredNetworksPerProjectValidator(validation.Validator):
         (default 1)
     """
 
-    def __init__(self, multiplier=1):
+    def __init__(self, multiplier: int = 1) -> None:
         super().__init__()
         self.multiplier = multiplier
 
-    def validate(self, context, config, plugin_cls, plugin_cfg):
-        net_ctx = config.get("contexts", {}).get("network", {})
-        if not net_ctx:
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin] | None,
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        net_ctx = _context_config(config, plugin_cls, "network")
+        if net_ctx is None:
             return
         networks_per_project = net_ctx.get("networks_per_tenant", 1)
+        concurrency, projects, per_project = _iterations_per_project(
+            config, plugin_cls)
 
-        users_ctx = config.get("contexts", {}).get("users", {})
-        projects = users_ctx.get("tenants", 1)
-
-        runner_cfg = config.get("runner", {})
-        concurrency = 1
-        for cfg in runner_cfg.values():
-            if isinstance(cfg, dict):
-                concurrency = cfg.get("concurrency", 1)
-
-        required = ((concurrency + projects - 1) // projects) * self.multiplier
+        required = per_project * self.multiplier
         if networks_per_project < required:
             self.fail(
-                "Scenario requires at least ceil(concurrency / projects)"
-                " * %d networks per project. Got networks_per_tenant=%d"
-                " but need at least %d (concurrency=%d, projects=%d)."
-                % (self.multiplier, networks_per_project, required,
-                   concurrency, projects))
+                f"Scenario requires at least ceil(concurrency / projects) * "
+                f"{self.multiplier} networks per project. Got "
+                f"networks_per_tenant={networks_per_project} but need at "
+                f"least {required} (concurrency={concurrency}, "
+                f"projects={projects}).")
 
 
 @validation.configure(name="required_ports_per_project", platform="openstack")
@@ -734,28 +827,26 @@ class RequiredPortsPerProjectValidator(validation.Validator):
     runner concurrency.
     """
 
-    def validate(self, context, config, plugin_cls, plugin_cfg):
-        ports_ctx = config.get("contexts", {}).get("ports", {})
-        if not ports_ctx:
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin] | None,
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        ports_ctx = _context_config(config, plugin_cls, "ports")
+        if ports_ctx is None:
             return
         ports_per_project = ports_ctx.get("ports_per_project", 1)
+        concurrency, projects, required = _iterations_per_project(
+            config, plugin_cls)
 
-        users_ctx = config.get("contexts", {}).get("users", {})
-        projects = users_ctx.get("tenants", 1)
-
-        runner_cfg = config.get("runner", {})
-        concurrency = 1
-        for cfg in runner_cfg.values():
-            if isinstance(cfg, dict):
-                concurrency = cfg.get("concurrency", 1)
-
-        required = (concurrency + projects - 1) // projects
         if ports_per_project < required:
             self.fail(
-                "Scenario requires at least ceil(concurrency / projects) "
-                "ports_per_project. Got ports_per_project=%d but need "
-                "at least %d (concurrency=%d, projects=%d)."
-                % (ports_per_project, required, concurrency, projects))
+                f"Scenario requires at least ceil(concurrency / projects) "
+                f"ports_per_project. Got ports_per_project="
+                f"{ports_per_project} but need at least {required} "
+                f"(concurrency={concurrency}, projects={projects}).")
 
 
 @validation.configure(name="required_ports_for_tap_flows",
@@ -770,32 +861,65 @@ class RequiredPortsForTapFlowsValidator(validation.Validator):
     ``services_per_project + ceil(concurrency / projects)`` ports.
     """
 
-    def validate(self, context, config, plugin_cls, plugin_cfg):
-        contexts = config.get("contexts", {})
-        if "ports" not in contexts:
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin] | None,
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        ports_ctx = _context_config(config, plugin_cls, "ports")
+        if ports_ctx is None:
             return
-        ports_ctx = contexts["ports"]
         ports_per_project = ports_ctx.get("ports_per_project", 1)
-
-        services_ctx = config.get("contexts", {}).get("tap_services", {})
+        services_ctx = _context_config(
+            config, plugin_cls, "tap_services") or {}
         services_per_project = services_ctx.get("services_per_project", 1)
+        concurrency, projects, per_project = _iterations_per_project(
+            config, plugin_cls)
 
-        users_ctx = config.get("contexts", {}).get("users", {})
-        projects = users_ctx.get("tenants", 1)
-
-        runner_cfg = config.get("runner", {})
-        concurrency = 1
-        for cfg in runner_cfg.values():
-            if isinstance(cfg, dict):
-                concurrency = cfg.get("concurrency", 1)
-
-        required = (
-            services_per_project + (concurrency + projects - 1) // projects)
+        required = services_per_project + per_project
         if ports_per_project < required:
             self.fail(
-                "Tap-flow scenario requires ports_per_project >= "
-                "services_per_project + ceil(concurrency / projects). "
-                "Got ports_per_project=%d but need at least %d "
-                "(services_per_project=%d, concurrency=%d, projects=%d)."
-                % (ports_per_project, required, services_per_project,
-                   concurrency, projects))
+                f"Tap-flow scenario requires ports_per_project >= "
+                f"services_per_project + ceil(concurrency / projects). "
+                f"Got ports_per_project={ports_per_project} but need at "
+                f"least {required} (services_per_project="
+                f"{services_per_project}, concurrency={concurrency}, "
+                f"projects={projects}).")
+
+
+@validation.configure(name="tap_mirror_tunnel_ids", platform="openstack")
+class TapMirrorTunnelIdsValidator(validation.Validator):
+    """Validate that every iteration gets tunnel IDs of its own.
+
+    A tap mirror takes one tunnel ID per mirrored direction and TaaS refuses
+    an ID another mirror already uses, so the IDs a workload hands out must
+    fit the range of its mirror type.
+    """
+
+    def validate(
+        self,
+        context: dict[str, t.Any],
+        config: dict[str, t.Any] | None,
+        plugin_cls: type[plugin.Plugin] | None,
+        plugin_cfg: dict[str, t.Any] | None,
+    ) -> None:
+        config = config or {}
+        times = (config.get("runner") or {}).get("times")
+        if times is None:
+            return
+        args = config.get("args") or {}
+        try:
+            mirror_type = neutron_client.MirrorType(
+                args.get("mirror_type", neutron_client.MirrorType.GRE))
+        except ValueError:
+            # the scenario arguments validation reports an unknown type
+            return
+        directions = len(args.get("mirror_directions", ["IN"]))
+        max_id = neutron_client.MAX_TUNNEL_ID[mirror_type]
+        if times * directions > max_id:
+            self.fail(
+                f"{mirror_type.value} tap mirrors have {max_id} tunnel IDs, "
+                f"but {times} iterations mirroring {directions} "
+                f"direction(s) each need {times * directions}.")

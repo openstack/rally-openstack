@@ -247,7 +247,9 @@ Deprecated
   working; the in-tree Glance scenarios now derive from ``OpenStackScenario``
   and use ``self._clients.glance`` directly.
 
-* openstack.pre_newton_neutron config option is deprecated.
+* The ``openstack.pre_newton_neutron`` config option and the ``pre_newton``
+  key of the neutron ``api_info`` are deprecated, together with support of
+  Neutron API older than Newton.
 
 * Neutron LBaaS v1 and v2 plugins (all ``NeutronLoadbalancerV1.*`` scenarios,
   ``NeutronLoadbalancerV2.create_and_list_loadbalancers``, the ``lbaas``

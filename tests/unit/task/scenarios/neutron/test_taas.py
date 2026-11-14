@@ -42,20 +42,34 @@ class TaaSScenarioTestCase(test.ScenarioTestCase):
         self.assertEqual(1, len(directions))
         self.assertIn("IN", directions)
 
-    def test_allocate_directions_different_iteration(self):
+    def test_allocate_directions_unique_within_task(self):
+        ids = []
+        for iteration in range(1, 512):
+            self.context["iteration"] = iteration
+            ids.extend(self.scenario._allocate_directions(
+                ("IN", "OUT"), neutron_client.MirrorType.ERSPANV1).values())
+
+        self.assertEqual(1022, len(set(ids)))
+        self.assertTrue(all(1 <= i <= 1023 for i in ids))
+
+    def test_allocate_directions_consecutive(self):
+        first = self.scenario._allocate_directions(
+            ("IN", "OUT"), neutron_client.MirrorType.GRE)
+        self.context["iteration"] = 6
+        second = self.scenario._allocate_directions(
+            ("IN", "OUT"), neutron_client.MirrorType.GRE)
+
+        self.assertEqual(first["IN"] + 1, first["OUT"])
+        self.assertEqual(first["OUT"] + 1, second["IN"])
+
+    def test_allocate_directions_depends_on_task(self):
         first = self.scenario._allocate_directions(
             ("IN",), neutron_client.MirrorType.GRE)
-        self.context["iteration"] = 6
+        self.context["owner_id"] = "another-owner-uuid"
         second = self.scenario._allocate_directions(
             ("IN",), neutron_client.MirrorType.GRE)
 
-        self.assertNotEqual(first["IN"], second["IN"])
-
-    def test_allocate_directions_in_and_out_differ(self):
-        directions = self.scenario._allocate_directions(
-            ("IN", "OUT"), neutron_client.MirrorType.GRE)
-
-        self.assertNotEqual(directions["IN"], directions["OUT"])
+        self.assertNotEqual(first, second)
 
     def test_allocate_directions_erspan_range(self):
         directions = self.scenario._allocate_directions(
@@ -207,11 +221,12 @@ class NeutronTaaSTestCase(test.TestCase):
         scenario = taas.CreateAndListTapMirrors()
         self._setup_scenario(scenario)
 
-        scenario.run(remote_ip="10.0.0.50")
+        scenario.run(remote_ip="10.0.0.50", description="created")
 
         create_kwargs = (
             scenario._clients.neutron.create_tap_mirror.call_args.kwargs)
         self.assertNotIn("name", create_kwargs)
+        self.assertEqual("created", create_kwargs["description"])
 
     @ddt.data(
         taas.CreateAndListTapServices,
@@ -223,7 +238,7 @@ class NeutronTaaSTestCase(test.TestCase):
         self._setup_scenario(scenario)
         scenario.context["iteration"] = 6
 
-        scenario.run(tap_service_create_args={"description": "created"})
+        scenario.run(description="created")
 
         scenario._clients.neutron.create_tap_service.assert_called_once_with(
             port_id="port-2", description="created")
@@ -266,9 +281,7 @@ class NeutronTaaSTestCase(test.TestCase):
         scenario = taas.CreateAndUpdateTapServices()
         self._setup_scenario(scenario)
 
-        scenario.run(
-            tap_service_create_args={"name": "custom-create"},
-            tap_service_update_args={"name": "custom-update"})
+        scenario.run(tap_service_update_args={"name": "custom-update"})
 
         create_kwargs = (
             scenario._clients.neutron.create_tap_service.call_args.kwargs)

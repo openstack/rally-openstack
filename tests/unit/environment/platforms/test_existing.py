@@ -330,6 +330,22 @@ class ExistingPlatformTestCase(PlatformBaseTestCase):
         self.assertEqual(expected, result)
         self.assertEqual(accessed, cloud.accessed)
 
+    def test_check_health_pre_newton(self):
+        fakes.FakeOpenStack(self)
+        pdata = {"admin": _user("admin"),
+                 "users": [],
+                 "api_info": {"neutron": {"pre_newton": True}}}
+
+        result = existing.OpenStack({}, platform_data=pdata).check_health()
+
+        self.assertEqual(
+            {"available": True,
+             "message": "'pre_newton' of the neutron api_info is deprecated "
+                        "since Rally-OpenStack 4.2.0 and will be removed "
+                        "together with support of Neutron API older than "
+                        "Newton."},
+            result)
+
     @ddt.data(
         ({"api_info": {"fakeclient": {"version": 1}}},
          "There is no OSClient plugin 'fakeclient' for communicating with "

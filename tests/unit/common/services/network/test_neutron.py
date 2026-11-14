@@ -39,6 +39,26 @@ def _dict(resource):
         computed=False, original_names=True, headers=False, ignore_none=True)
 
 
+class IsPreNewtonTestCase(test.TestCase):
+
+    @mock.patch("%s.CONF" % PATH)
+    def test_api_info(self, mock_conf):
+        mock_conf.openstack.pre_newton_neutron = False
+        cred = mock.Mock(api_info={"neutron": {"pre_newton": True}})
+        self.assertTrue(neutron.is_pre_newton(cred))
+
+    @mock.patch("%s.CONF" % PATH)
+    def test_conf_option(self, mock_conf):
+        mock_conf.openstack.pre_newton_neutron = True
+        self.assertTrue(neutron.is_pre_newton(mock.Mock(api_info={})))
+
+    @mock.patch("%s.CONF" % PATH)
+    def test_not_pre_newton(self, mock_conf):
+        mock_conf.openstack.pre_newton_neutron = False
+        cred = mock.Mock(api_info={"neutron": {"version": "2.0"}})
+        self.assertFalse(neutron.is_pre_newton(cred))
+
+
 class NeutronServiceTestCase(test.TestCase):
     def setUp(self):
         super().setUp()
@@ -118,6 +138,8 @@ class NeutronServiceTestCase(test.TestCase):
         self.nc.create_network.return_value = net_obj
         self.nc.create_router.return_value = router_obj
         self.nc.create_subnet.side_effect = list(subnet_objs)
+        self.nc.add_interface_to_router.side_effect = [
+            {"port_id": "port-1"}, {"port_id": "port-2"}]
 
         network_create_args = {}
         subnet_create_args = {}
@@ -135,7 +157,9 @@ class NeutronServiceTestCase(test.TestCase):
         self.assertEqual(
             {
                 "network": expected_network,
-                "subnets": [_dict(subnet_objs[0]), _dict(subnet_objs[1])],
+                "subnets": [
+                    dict(_dict(subnet_objs[0]), router_port_id="port-1"),
+                    dict(_dict(subnet_objs[1]), router_port_id="port-2")],
                 "routers": [_dict(router_obj)]
             },
             topo
@@ -218,21 +242,25 @@ class NeutronServiceTestCase(test.TestCase):
 
     def test_get_network(self):
         net_obj = sdk_net.Network(**{"id": "foo"})
-        network = _dict(net_obj)
         self.nc.get_network.return_value = net_obj
-        net_id = "net-id"
 
-        self.assertEqual(network, self.neutron.get_network(net_id))
-        self.nc.get_network.assert_called_once_with(net_id)
+        self.assertEqual(_dict(net_obj), self.neutron.get_network("net-id"))
+        self.nc.get_network.assert_called_once_with("net-id", fields=None)
 
         self.nc.get_network.reset_mock()
 
-        fields = ["a", "b"]
-        self.assertEqual(network,
-                         self.neutron.get_network(net_id, fields=fields))
-        self.nc.get_network.assert_called_once_with(net_id, fields=fields)
+        self.assertEqual(
+            _dict(net_obj),
+            self.neutron.get_network("net-id", fields=["a", "b"]))
+        self.nc.get_network.assert_called_once_with(
+            "net-id", fields=["a", "b"])
+        self.assertEqual(
+            ["neutron.show_network"] * 2,
+            [a["name"] for a in self.atomic_inst])
 
     def test_find_network(self):
+        from openstack import exceptions as sdk_exceptions
+
         net1 = {"id": "net-1", "name": "foo"}
         net2 = {"id": "net-2", "name": "bar"}
         net1_obj = sdk_net.Network(**net1)
@@ -242,32 +270,32 @@ class NeutronServiceTestCase(test.TestCase):
             for net, net_obj in ((net1, net1_obj), (net2, net2_obj)):
                 if network_id == net["id"]:
                     return net_obj
-            from openstack import exceptions as sdk_exceptions
             raise sdk_exceptions.ResourceNotFound()
 
         self.nc.get_network = mock.Mock(side_effect=fake_get_network)
         self.nc.networks.return_value = iter([net1_obj, net2_obj])
 
-        # Lookup by name falls back to list_networks (get_network raises).
         self.assertEqual(_dict(net2_obj), self.neutron.find_network("bar"))
-        self.nc.get_network.assert_called_once_with("bar")
+        self.nc.get_network.assert_called_once_with("bar", fields=None)
         self.nc.networks.assert_called_once_with()
+        self.assertEqual(
+            [("neutron.show_network", False),
+             ("neutron.list_networks", False)],
+            [(a["name"], a.get("failed", False)) for a in self.atomic_inst])
 
         self.nc.get_network.reset_mock()
         self.nc.networks.reset_mock()
         self.nc.networks.return_value = iter([net1_obj, net2_obj])
 
-        # Lookup by id is served by get_network directly (single call).
         self.assertEqual(_dict(net1_obj),
                          self.neutron.find_network("net-1"))
-        self.nc.get_network.assert_called_once_with("net-1")
+        self.nc.get_network.assert_called_once_with("net-1", fields=None)
         self.assertFalse(self.nc.networks.called)
 
         self.nc.get_network.reset_mock()
         self.nc.networks.reset_mock()
         self.nc.networks.return_value = iter([net1_obj, net2_obj])
 
-        # Unknown id or name raises GetResourceFailure.
         self.assertRaises(exceptions.GetResourceFailure,
                           self.neutron.find_network, "net-3")
 
@@ -329,7 +357,9 @@ class NeutronServiceTestCase(test.TestCase):
         subnet = {"id": "subnet-id"}
         subnet_obj = sdk_subnet.Subnet(**subnet)
         expected_subnet = _dict(subnet_obj)
+        attached_subnet = dict(expected_subnet, router_port_id="port-id")
         self.nc.create_subnet.return_value = subnet_obj
+        self.nc.add_interface_to_router.return_value = {"port_id": "port-id"}
 
         # case 1:
         #  - cidr is not specified, so it should be generated
@@ -337,7 +367,7 @@ class NeutronServiceTestCase(test.TestCase):
         #  - router_id is specified, so add_interface_to_router method should
         #    be called
         self.assertEqual(
-            expected_subnet,
+            attached_subnet,
             self.neutron.create_subnet(network_id=net_id,
                                        router_id=router_id,
                                        ip_version=6)
@@ -393,7 +423,7 @@ class NeutronServiceTestCase(test.TestCase):
         #  - router_id is specified, so add_interface_to_router method should
         #    be called
         self.assertEqual(
-            expected_subnet,
+            attached_subnet,
             self.neutron.create_subnet(network_id=net_id,
                                        router_id=router_id,
                                        cidr="some-cidr",
@@ -892,7 +922,8 @@ class NeutronServiceTestCase(test.TestCase):
             floating_network_id="net2-id"
         )
         # Name lookup: get_network raises, then list_networks resolves it.
-        self.nc.get_network.assert_called_once_with(floating_network)
+        self.nc.get_network.assert_called_once_with(
+            floating_network, fields=None)
         self.nc.networks.assert_called_once_with()
         self.nc.create_ip.reset_mock()
         self.nc.get_network.reset_mock()
@@ -909,7 +940,8 @@ class NeutronServiceTestCase(test.TestCase):
             description="s-3",
             floating_network_id="net2-id"
         )
-        self.nc.get_network.assert_called_once_with(floating_network)
+        self.nc.get_network.assert_called_once_with(
+            floating_network, fields=None)
         self.nc.networks.assert_called_once_with()
         self.nc.create_ip.reset_mock()
         self.nc.get_network.reset_mock()
@@ -924,7 +956,8 @@ class NeutronServiceTestCase(test.TestCase):
         )
         self.assertFalse(self.nc.create_ip.called)
 
-        self.nc.get_network.assert_called_once_with(floating_network)
+        self.nc.get_network.assert_called_once_with(
+            floating_network, fields=None)
         self.nc.networks.assert_called_once_with()
         self.nc.create_ip.reset_mock()
         self.nc.get_network.reset_mock()

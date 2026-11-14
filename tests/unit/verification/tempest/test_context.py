@@ -256,6 +256,7 @@ class TempestContextTestCase(test.TestCase):
             sdk_router.Router(**{"id": "rid1"})]
         client.create_subnet.side_effect = [
             sdk_subnet.Subnet(**{"id": "subid1"})]
+        client.add_interface_to_router.return_value = {"port_id": "pid1"}
         client.networks.return_value = iter([])
 
         net_topo = self.context._create_network_resources()
@@ -285,6 +286,7 @@ class TempestContextTestCase(test.TestCase):
             sdk_router.Router(**{"id": "rid1"})]
         client.create_subnet.side_effect = [
             sdk_subnet.Subnet(**{"id": "subid1"})]
+        client.add_interface_to_router.return_value = {"port_id": "pid1"}
         client.networks.return_value = iter([])
 
         self.context._create_network_resources()
